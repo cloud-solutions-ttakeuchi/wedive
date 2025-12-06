@@ -1,45 +1,58 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-// import { useLanguage } from '../context/LanguageContext';
-import { ChevronRight, ChevronLeft, Star, Heart, Bookmark, Check } from 'lucide-react';
+import { ImageWithFallback } from '../components/common/ImageWithFallback'; // Import
+import { LogDetailModal } from '../components/LogDetailModal';
+import { ChevronRight, ChevronLeft, Star, Heart, Bookmark, Calendar, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
+import type { Log } from '../types'; // Import Log type
 
 export const Home = () => {
-  const { logs, points, creatures, areas, currentUser, toggleFavorite, toggleWanted } = useApp();
-  // const { t } = useLanguage();
+  const { logs, points, creatures, areas, currentUser, toggleFavorite, recentLogs } = useApp();
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [selectedLog, setSelectedLog] = useState<Log | null>(null);
 
-  // Popular Spots for Carousel (Pickup)
-  // Note: Using 'logs' (current user's logs) for popularity ranking for now.
-  // Ideally this should use global stats or filtered by available data.
-  const pickupSpots = points
-    .map(point => ({ ...point, logCount: logs.filter(l => l.spotId === point.id).length }))
-    .sort((a, b) => b.logCount - a.logCount)
+  // 1. Featured Points (Top 5 by Log usage + Bookmark)
+  // Logic: Combining log usage (local/global?) and bookmarks.
+  // Since we don't have global log count per point easily, use local + bookmarks.
+  const featuredSpots = points
+    .map(point => ({
+      ...point,
+      score: (point.bookmarkCount || 0) * 2 + (logs.filter(l => l.spotId === point.id).length)
+    }))
+    .sort((a, b) => b.score - a.score)
     .slice(0, 5);
 
-  // All Creatures for Grid
-  const allCreatures = creatures;
+  // 2. Popular Creatures (Global Popularity Stats)
+  const popularCreatures = [...creatures]
+    .sort((a, b) => (b.stats?.popularity || 0) - (a.stats?.popularity || 0))
+    .slice(0, 10);
+
+  // 3. Popular Points (By bookmark)
+  const popularPoints = [...points]
+    .sort((a, b) => (b.bookmarkCount || 0) - (a.bookmarkCount || 0))
+    .slice(0, 4);
 
   // Auto-advance carousel
   useEffect(() => {
+    if (featuredSpots.length === 0) return;
     const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % pickupSpots.length);
-    }, 5000);
+      setCurrentSlide((prev) => (prev + 1) % featuredSpots.length);
+    }, 6000);
     return () => clearInterval(timer);
-  }, [pickupSpots.length]);
+  }, [featuredSpots.length]);
 
-  // if (isLoading) return null; // Handled by Layout
-  if (pickupSpots.length === 0) {
+  if (featuredSpots.length === 0) {
     return <div className="p-8 text-center bg-gray-50 rounded-xl m-4">Loading data...</div>;
   }
 
   return (
-    <div className="pb-24">
-      {/* Pickup Carousel Section - Exact Replica Style */}
-      <section className="bg-white pt-8 pb-12 relative overflow-hidden">
-        {/* Decorative Background Elements */}
+    <div className="pb-24 space-y-16">
+
+      {/* 1. Slideshow: Featured / New / Popular Points */}
+      <section className="bg-white pt-8 pb-4 relative overflow-hidden">
+        {/* Decorative Background */}
         <div className="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
           <div className="absolute top-10 left-10 w-32 h-32 rounded-full border-8 border-gray-900"></div>
           <div className="absolute bottom-10 right-10 w-48 h-48 rounded-full bg-gray-900"></div>
@@ -47,9 +60,9 @@ export const Home = () => {
 
         <div className="max-w-[1280px] mx-auto px-4">
           <div className="flex items-center gap-2 mb-6">
-            <div className="w-10 h-10 bg-cyan-100 rounded-full flex items-center justify-center text-cyan-600 font-black shadow-sm text-xl" style={{ fontFamily: '"M PLUS Rounded 1c", sans-serif' }}>P</div>
+            <div className="w-10 h-10 bg-cyan-100 rounded-full flex items-center justify-center text-cyan-600 font-black shadow-sm text-xl" style={{ fontFamily: '"M PLUS Rounded 1c", sans-serif' }}>F</div>
             <h2 className="text-2xl font-black text-gray-800 tracking-tight" style={{ fontFamily: '"M PLUS Rounded 1c", sans-serif' }}>
-              <span className="text-cyan-500">PICK</span> UP
+              <span className="text-cyan-500">FEATURED</span> POINTS
             </h2>
           </div>
 
@@ -66,12 +79,16 @@ export const Home = () => {
                 <div className="w-full h-full flex flex-col md:flex-row">
                   {/* Image Side */}
                   <div className="w-full md:w-1/2 h-1/2 md:h-full relative overflow-hidden">
-                    <img
-                      src={pickupSpots[currentSlide].imageUrl}
-                      alt={pickupSpots[currentSlide].name}
+                    <ImageWithFallback
+                      src={featuredSpots[currentSlide].imageUrl}
+                      alt={featuredSpots[currentSlide].name}
+                      type="point"
                       className="w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-transparent"></div>
+                    <div className="absolute top-4 left-4 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                      PICK UP
+                    </div>
                   </div>
 
                   {/* Info Side */}
@@ -79,31 +96,31 @@ export const Home = () => {
                     <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-cyan-400 to-blue-500"></div>
 
                     <div className="text-sm font-bold text-gray-400 mb-2">No.{String(currentSlide + 1).padStart(3, '0')}</div>
-                    <h3 className="text-4xl md:text-5xl font-black text-gray-900 mb-4 leading-tight" style={{ fontFamily: '"M PLUS Rounded 1c", sans-serif' }}>
-                      {pickupSpots[currentSlide].name}
+                    <h3 className="text-3xl md:text-5xl font-black text-gray-900 mb-4 leading-tight" style={{ fontFamily: '"M PLUS Rounded 1c", sans-serif' }}>
+                      {featuredSpots[currentSlide].name}
                     </h3>
 
                     <div className="flex flex-wrap gap-2 mb-6">
                       <span className={clsx(
                         "px-4 py-1 rounded-full text-sm font-bold text-white shadow-sm",
-                        pickupSpots[currentSlide].level === 'Beginner' ? "bg-cyan-400" :
-                          pickupSpots[currentSlide].level === 'Intermediate' ? "bg-blue-400" :
+                        featuredSpots[currentSlide].level === 'Beginner' ? "bg-cyan-400" :
+                          featuredSpots[currentSlide].level === 'Intermediate' ? "bg-blue-400" :
                             "bg-indigo-400"
                       )}>
-                        {pickupSpots[currentSlide].level}
+                        {featuredSpots[currentSlide].level}
                       </span>
                       <span className="px-4 py-1 rounded-full text-sm font-bold bg-gray-100 text-gray-600">
-                        {areas.find(a => a.id === pickupSpots[currentSlide].areaId)?.name}
+                        {areas.find(a => a.id === featuredSpots[currentSlide].areaId)?.name}
                       </span>
                     </div>
 
                     <p className="text-gray-600 font-medium leading-relaxed mb-8 line-clamp-3">
-                      {pickupSpots[currentSlide].description}
+                      {featuredSpots[currentSlide].description}
                     </p>
 
                     <Link
-                      to={`/point/${pickupSpots[currentSlide].id}`}
-                      className="inline-flex items-center justify-center gap-2 bg-cyan-500 text-white px-8 py-4 rounded-full font-bold hover:bg-cyan-600 transition-colors self-start shadow-lg shadow-cyan-200"
+                      to={`/point/${featuredSpots[currentSlide].id}`}
+                      className="inline-flex items-center justify-center gap-2 bg-cyan-500 text-white px-8 py-3 rounded-full font-bold hover:bg-cyan-600 transition-colors self-start shadow-lg shadow-cyan-200"
                     >
                       View Details <ChevronRight size={20} />
                     </Link>
@@ -112,132 +129,196 @@ export const Home = () => {
               </motion.div>
             </AnimatePresence>
 
-            {/* Carousel Controls */}
+            {/* Controls */}
             <button
-              onClick={() => setCurrentSlide((prev) => (prev - 1 + pickupSpots.length) % pickupSpots.length)}
-              className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/80 backdrop-blur rounded-full flex items-center justify-center text-gray-900 hover:bg-white transition-colors shadow-lg z-10"
+              onClick={() => setCurrentSlide((prev) => (prev - 1 + featuredSpots.length) % featuredSpots.length)}
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 backdrop-blur rounded-full flex items-center justify-center text-gray-900 hover:bg-white transition-colors shadow-lg z-10"
             >
-              <ChevronLeft size={24} />
+              <ChevronLeft size={20} />
             </button>
             <button
-              onClick={() => setCurrentSlide((prev) => (prev + 1) % pickupSpots.length)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/80 backdrop-blur rounded-full flex items-center justify-center text-gray-900 hover:bg-white transition-colors shadow-lg z-10"
+              onClick={() => setCurrentSlide((prev) => (prev + 1) % featuredSpots.length)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 backdrop-blur rounded-full flex items-center justify-center text-gray-900 hover:bg-white transition-colors shadow-lg z-10"
             >
-              <ChevronRight size={24} />
+              <ChevronRight size={20} />
             </button>
-
-            {/* Dots */}
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-10">
-              {pickupSpots.map((_, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setCurrentSlide(idx)}
-                  className={clsx(
-                    "w-3 h-3 rounded-full transition-all shadow-sm",
-                    idx === currentSlide ? "bg-cyan-500 w-8" : "bg-white/80 hover:bg-white"
-                  )}
-                />
-              ))}
-            </div>
           </div>
         </div>
       </section>
 
-
-
-      {/* Pokemon List Grid - Strict Replica from Screenshot */}
+      {/* 2. Latest Logs (Public) */}
       <section className="max-w-[1280px] mx-auto px-4">
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {allCreatures.map((creature) => {
-            const isFavorite = currentUser.favorites.includes(creature.id);
-            const isWanted = currentUser.wanted.includes(creature.id);
-            const isDiscovered = currentUser.logs.some(logId => {
-              const log = logs.find(l => l.id === logId);
-              return log?.creatureId === creature.id;
-            });
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-black shadow-sm text-lg" style={{ fontFamily: '"M PLUS Rounded 1c", sans-serif' }}>L</div>
+            <h2 className="text-xl font-black text-gray-800 tracking-tight" style={{ fontFamily: '"M PLUS Rounded 1c", sans-serif' }}>
+              <span className="text-blue-500">LATEST</span> LOGS
+            </h2>
+          </div>
+          <Link to="/logs" className="text-sm font-bold text-gray-400 hover:text-blue-500 transition-colors">See All</Link>
+        </div>
 
+        {recentLogs.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {recentLogs.map(log => {
+              const mainPhoto = log.photos.length > 0 ? log.photos[0] :
+                (creatures.find(c => c.id === log.creatureId)?.imageUrl ||
+                  points.find(p => p.id === log.location.pointId)?.imageUrl); // Fallback handled by ImageWithFallback
+
+              // Determine type for fallback
+              const fallbackType = log.creatureId ? 'creature' : 'point';
+
+              return (
+                <div key={log.id} onClick={() => setSelectedLog(log)} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group cursor-pointer">
+                  <div className="relative aspect-video bg-gray-100 overflow-hidden">
+                    <ImageWithFallback
+                      src={mainPhoto}
+                      alt="Log"
+                      type={fallbackType}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute top-2 right-2 bg-black/50 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-md font-medium flex items-center gap-1">
+                      <Calendar size={10} />
+                      {new Date(log.date).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 rounded-full bg-gray-200 overflow-hidden">
+                        {/* We don't have user info in log object easily unless we fetch or it's embedded. Assumed simplified display or mock. Log type has 'userId'. */}
+                        <div className="w-full h-full flex items-center justify-center bg-blue-500 text-white text-[10px] font-bold">U</div>
+                      </div>
+                      <span className="text-xs text-gray-500 font-medium truncate">Diver</span>
+                    </div>
+
+                    {/* Creature Info */}
+                    {(log.creatureId || (log.sightedCreatures && log.sightedCreatures.length > 0)) && (
+                      <div className="flex items-center gap-2 mb-2">
+                        {log.creatureId && (() => {
+                          const c = creatures.find(c => c.id === log.creatureId);
+                          if (!c) return null;
+                          return (
+                            <div className="flex items-center gap-1 bg-orange-50 text-orange-600 px-2 py-1 rounded-md text-xs font-bold border border-orange-100 truncate max-w-[150px]">
+                              <span className="truncate">{c.name}</span>
+                            </div>
+                          );
+                        })()}
+                        {log.sightedCreatures && log.sightedCreatures.filter(id => id !== log.creatureId).length > 0 && (
+                          <span className="text-xs text-gray-400 font-bold">
+                            +{log.sightedCreatures.filter(id => id !== log.creatureId).length}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="font-bold text-gray-800 mb-1 truncate">{log.location.pointName}</div>
+                    <div className="flex items-center text-xs text-gray-500 gap-1">
+                      <MapPin size={10} /> {log.location.region}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-10 bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-gray-400">
+            No public logs yet.
+          </div>
+        )}
+
+        <LogDetailModal
+          log={selectedLog}
+          isOpen={!!selectedLog}
+          onClose={() => setSelectedLog(null)}
+          isOwner={selectedLog?.userId === currentUser.id}
+        />
+      </section>
+
+      {/* 3. Popular Points (Horizontal Scroll) */}
+      <section className="max-w-[1280px] mx-auto px-4">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-black shadow-sm text-lg" style={{ fontFamily: '"M PLUS Rounded 1c", sans-serif' }}>P</div>
+            <h2 className="text-xl font-black text-gray-800 tracking-tight" style={{ fontFamily: '"M PLUS Rounded 1c", sans-serif' }}>
+              <span className="text-purple-500">POPULAR</span> POINTS
+            </h2>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {popularPoints.map((point) => (
+            <Link key={point.id} to={`/point/${point.id}`} className="flex bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-all group h-[120px]">
+              <div className="w-[120px] bg-gray-200 relative shrink-0">
+                <ImageWithFallback
+                  src={point.imageUrl}
+                  alt={point.name}
+                  type="point"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="p-4 flex flex-col justify-center flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">{point.level}</span>
+                  <span className="text-xs text-gray-500">{areas.find(a => a.id === point.areaId)?.name}</span>
+                </div>
+                <h3 className="font-bold text-gray-800 text-lg mb-1 group-hover:text-purple-600 transition-colors line-clamp-1">{point.name}</h3>
+                <div className="flex items-center gap-3 text-xs text-gray-400 mt-auto">
+                  <span className="flex items-center gap-1"><Bookmark size={12} className="fill-gray-300" /> {point.bookmarkCount || 0}</span>
+                  {/* <span className="flex items-center gap-1"><Star size={12} className="fill-gray-300" /> 4.5</span> */}
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* 4. Popular Creatures (Grid) */}
+      <section className="max-w-[1280px] mx-auto px-4">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 font-black shadow-sm text-lg" style={{ fontFamily: '"M PLUS Rounded 1c", sans-serif' }}>C</div>
+            <h2 className="text-xl font-black text-gray-800 tracking-tight" style={{ fontFamily: '"M PLUS Rounded 1c", sans-serif' }}>
+              <span className="text-orange-500">POPULAR</span> CREATURES
+            </h2>
+          </div>
+
+          <Link to="/pokedex" className="text-sm font-bold text-gray-400 hover:text-orange-500 transition-colors">See Pokedex</Link>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          {popularCreatures.map((creature) => {
+            const isFavorite = currentUser.favorites.includes(creature.id);
             return (
-              <Link
-                key={creature.id}
-                to={`/creature/${creature.id}`}
-                className="group block w-full relative"
-              >
-                {/* Image Container - White Box with Border */}
-                <div className="bg-white border border-gray-200 rounded-[10px] aspect-square flex items-center justify-center mb-2 overflow-hidden transition-shadow hover:shadow-md relative">
-                  <img
+              <Link key={creature.id} to={`/creature/${creature.id}`} className="group relative block bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                <div className="aspect-square bg-white p-4 relative flex items-center justify-center">
+                  <ImageWithFallback
                     src={creature.imageUrl}
                     alt={creature.name}
-                    className="w-[85%] h-[85%] object-contain group-hover:scale-110 transition-transform duration-300"
+                    type="creature"
+                    className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
                   />
-
-                  {/* Action Buttons (Visible on Hover or if active) */}
-                  <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        toggleFavorite(creature.id);
-                      }}
-                      className={clsx(
-                        "p-1.5 rounded-full shadow-sm transition-colors",
-                        isFavorite ? "bg-red-50 text-red-500" : "bg-white text-gray-400 hover:text-red-500"
-                      )}
-                    >
-                      <Heart size={16} fill={isFavorite ? "currentColor" : "none"} />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        toggleWanted(creature.id);
-                      }}
-                      className={clsx(
-                        "p-1.5 rounded-full shadow-sm transition-colors",
-                        isWanted ? "bg-yellow-50 text-yellow-500" : "bg-white text-gray-400 hover:text-yellow-500"
-                      )}
-                    >
-                      <Bookmark size={16} fill={isWanted ? "currentColor" : "none"} />
-                    </button>
-                  </div>
-
-                  {/* Discovered Badge */}
-                  {isDiscovered && (
-                    <div className="absolute top-2 left-2 bg-green-500 text-white p-1 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Check size={12} strokeWidth={3} />
-                    </div>
-                  )}
                 </div>
-
-                {/* Name and Rarity */}
-                <div className="px-1">
-                  <h3 className="text-sm font-bold text-gray-700 group-hover:text-gray-900 leading-tight mb-1">
-                    {creature.name}
-                  </h3>
-                  <div className="flex gap-0.5">
-                    {Array.from({ length: 4 }).map((_, i) => {
-                      const rarityLevel = creature.rarity === 'Legendary' ? 4 :
-                        creature.rarity === 'Epic' ? 3 :
-                          creature.rarity === 'Rare' ? 2 : 1;
-                      const isActive = i < rarityLevel;
-                      return (
-                        <Star
-                          key={i}
-                          size={10}
-                          className={isActive ? "text-yellow-400 fill-yellow-400" : "text-gray-200"}
-                        />
-                      );
-                    })}
+                <div className="p-3 bg-gray-50/50 border-t border-gray-100">
+                  <div className="text-xs text-gray-500 font-bold mb-0.5">{creature.category}</div>
+                  <h3 className="font-bold text-gray-900 truncate">{creature.name}</h3>
+                  <div className="flex items-center justify-between mt-2">
+                    <div className="flex gap-0.5">
+                      {Array.from({ length: 4 }).map((_, i) => {
+                        const r = creature.rarity === 'Legendary' ? 4 : creature.rarity === 'Epic' ? 3 : creature.rarity === 'Rare' ? 2 : 1;
+                        return <Star key={i} size={8} className={i < r ? "fill-orange-400 text-orange-400" : "text-gray-200"} />;
+                      })}
+                    </div>
+                    <button onClick={(e) => { e.preventDefault(); toggleFavorite(creature.id); }}>
+                      {isFavorite ? <Heart size={12} className="fill-red-500 text-red-500" /> : <Heart size={12} className="text-gray-300 hover:text-red-500" />}
+                    </button>
                   </div>
                 </div>
               </Link>
             );
           })}
         </div>
-
-        <div className="mt-16 text-center">
-          <button className="bg-white border border-gray-300 text-gray-600 px-12 py-3 rounded-full font-bold hover:bg-gray-100 transition-colors text-sm">
-            もっと見る
-          </button>
-        </div>
       </section>
+
     </div>
   );
 };

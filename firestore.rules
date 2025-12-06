@@ -1,0 +1,57 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check auth
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read: if isAuthenticated(); // Or public? For profiles.
+      allow write: if isOwner(userId);
+
+      // Logs Subcollection
+      match /logs/{logId} {
+        // Allow read if (Public) OR (Owner)
+        allow read: if resource.data.isPrivate == false || isOwner(userId);
+        allow write: if isOwner(userId);
+      }
+    }
+
+    // Global Creatures/Points (Read Public, Write Admin/Auth)
+    match /creatures/{creatureId} {
+      allow read: if true;
+      allow write: if isAuthenticated(); // Refine for moderation later
+    }
+
+    match /points/{pointId} {
+      allow read: if true;
+      allow write: if isAuthenticated(); // Refine later
+    }
+
+    match /point_creatures/{relId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // Proposals
+    match /creature_proposals/{propId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+    match /point_proposals/{propId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // Catch-all (Default deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

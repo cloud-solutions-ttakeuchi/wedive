@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { ImageWithFallback } from '../components/common/ImageWithFallback'; // Import
 import { MapPin, Droplets, Wind, Mountain, ArrowLeft, Plus, Search, X, Check, Anchor, AlertCircle, Bookmark, Star } from 'lucide-react';
 import clsx from 'clsx';
 import type { Creature, Rarity } from '../types';
@@ -37,7 +38,15 @@ export const PointDetailPage = () => {
       };
     }).filter((c): c is Creature & { _status: 'approved' | 'pending' | 'deletion_requested' } => c !== null);
 
-    return validCreatures;
+    // Deduplicate by creature ID (in case of data inconsistency)
+    const uniqueMap = new Map();
+    validCreatures.forEach(c => {
+      if (!uniqueMap.has(c.id)) {
+        uniqueMap.set(c.id, c);
+      }
+    });
+    return Array.from(uniqueMap.values());
+
   }, [point, creatures, pointCreatures]); // Removed pendingCreatures usage as we now rely on Context State
 
   if (!point) {
@@ -48,9 +57,10 @@ export const PointDetailPage = () => {
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header with Large Image */}
       <div className="relative h-[40vh] min-h-[300px]">
-        <img
-          src={point.imageUrl || '/images/no-image-point.png'}
+        <ImageWithFallback
+          src={point.imageUrl}
           alt={point.name}
+          type="point"
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
@@ -157,9 +167,10 @@ export const PointDetailPage = () => {
                     to={`/creature/${creature.id}`}
                     className="group relative aspect-square rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1"
                   >
-                    <img
-                      src={creature.imageUrl || '/images/no-image-creature.png'}
+                    <ImageWithFallback
+                      src={creature.imageUrl}
                       alt={creature.name}
+                      type="creature"
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-deepBlue-900 via-transparent to-transparent opacity-90" />
@@ -410,7 +421,7 @@ const AddCreatureModal = ({
                       disabled={isJustAdded}
                       className="w-full flex items-center gap-3 p-3 text-left"
                     >
-                      <img src={creature.imageUrl} alt={creature.name} className="w-12 h-12 rounded-lg object-cover bg-gray-200" />
+                      <ImageWithFallback src={creature.imageUrl} alt={creature.name} type="creature" className="w-12 h-12 rounded-lg object-cover bg-gray-200" />
                       <div className="flex-1 min-w-0">
                         <div className="font-bold text-gray-900 truncate">{creature.name}</div>
                         <div className="text-xs text-gray-500 truncate">{creature.category}</div>

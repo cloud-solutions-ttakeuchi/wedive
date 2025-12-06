@@ -19,6 +19,7 @@ import { ProposeCreaturePage } from './pages/ProposeCreaturePage';
 import { ProposePointPage } from './pages/ProposePointPage';
 import { AdminProposalsPage } from './pages/AdminProposalsPage';
 import { AdminUsersPage } from './pages/AdminUsersPage';
+import { PublicLogsPage } from './pages/PublicLogsPage';
 import { LanguageProvider } from './context/LanguageContext';
 
 function App() {
@@ -45,6 +46,7 @@ function App() {
               <Route path="/admin/proposals" element={<AdminProposalsPage />} />
               <Route path="/admin/users" element={<AdminUsersPage />} />
               <Route path="/points" element={<PointSearchPage />} />
+              <Route path="/logs" element={<PublicLogsPage />} />
               <Route path="/point/:id" element={<PointDetailPage />} />
             </Routes>
           </Layout>

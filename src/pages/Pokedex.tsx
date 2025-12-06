@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { useLanguage } from '../context/LanguageContext';
+import { ImageWithFallback } from '../components/common/ImageWithFallback'; // Import
 import { Search, Filter, Star, CheckCircle } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -101,9 +102,10 @@ export const Pokedex = () => {
                 className="group relative aspect-[4/5] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
               >
                 {/* Image Background */}
-                <img
+                <ImageWithFallback
                   src={creature.imageUrl}
                   alt={creature.name}
+                  type="creature"
                   className={clsx(
                     "w-full h-full object-cover transition-transform duration-700 group-hover:scale-110",
                     !isDiscovered && "grayscale contrast-125 brightness-75"

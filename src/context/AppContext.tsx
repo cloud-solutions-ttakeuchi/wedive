@@ -4,7 +4,7 @@ import { INITIAL_DATA, TRUST_RANKS } from '../data/mockData';
 import { auth, googleProvider, db as firestore } from '../lib/firebase';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, setDoc, updateDoc, deleteDoc, collection, onSnapshot, query, orderBy, where, getDoc, collectionGroup, limit } from 'firebase/firestore';
-
+import { seedFirestore } from '../utils/seeder';
 interface AppContextType {
   // db: DB; // Removed
   currentUser: User;
@@ -237,11 +237,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     let unsubPublicLogs: () => void = () => { };
     try {
       // Fetch more than needed to account for private logs filtering
-      const publicLogsQuery = query(collectionGroup(firestore, 'logs'), orderBy('date', 'desc'), limit(20));
+      // Update: Must include where clause for security rules to work and index to be used correctly.
+      const publicLogsQuery = query(
+        collectionGroup(firestore, 'logs'),
+        where('isPrivate', '==', false),
+        orderBy('date', 'desc'),
+        limit(20)
+      );
       unsubPublicLogs = onSnapshot(publicLogsQuery, (snapshot) => {
         const loadedLogs = snapshot.docs.map(doc => doc.data() as Log);
-        const publicLogs = loadedLogs.filter(l => !l.isPrivate);
-        setRecentLogs(publicLogs.slice(0, 10));
+        // const publicLogs = loadedLogs.filter(l => !l.isPrivate); // Filtered by query now
+        setRecentLogs(loadedLogs);
       });
     } catch (e) { console.error("Error fetching public logs:", e); }
 
