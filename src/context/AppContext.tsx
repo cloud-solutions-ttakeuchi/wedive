@@ -3,8 +3,7 @@ import type { User, Log, Rarity, Creature, Point, PointCreature } from '../types
 import { INITIAL_DATA, TRUST_RANKS } from '../data/mockData';
 import { auth, googleProvider, db as firestore } from '../lib/firebase';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
-import { doc, setDoc, updateDoc, deleteDoc, collection, onSnapshot, query, orderBy, where, getDoc } from 'firebase/firestore';
-import { seedFirestore } from '../utils/seeder';
+import { doc, setDoc, updateDoc, deleteDoc, collection, onSnapshot, query, orderBy, where, getDoc, collectionGroup, limit } from 'firebase/firestore';
 
 interface AppContextType {
   // db: DB; // Removed
@@ -39,6 +38,7 @@ interface AppContextType {
   points: Point[];
   pointCreatures: PointCreature[]; // New relationship collection
   logs: Log[];
+  recentLogs: Log[]; // Global recent logs
   proposalCreatures: (Creature & { proposalType?: string, diffData?: any, targetId?: string })[];
   proposalPoints: (Point & { proposalType?: string, diffData?: any, targetId?: string })[];
   regions: typeof INITIAL_DATA.regions;
@@ -63,6 +63,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [proposalCreatures, setProposalCreatures] = useState<Creature[]>([]);
   const [proposalPoints, setProposalPoints] = useState<Point[]>([]);
   const [allLogs, setAllLogs] = useState<Log[]>([]);
+  const [recentLogs, setRecentLogs] = useState<Log[]>([]); // Added state
   const [allUsers, setAllUsers] = useState<User[]>([]);
 
   // Listen for proposals (Admin view mostly)
@@ -232,10 +233,23 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setPointCreatures(data);
     });
 
+    // 4. Global Recent Public Logs (for Home)
+    let unsubPublicLogs: () => void = () => { };
+    try {
+      // Fetch more than needed to account for private logs filtering
+      const publicLogsQuery = query(collectionGroup(firestore, 'logs'), orderBy('date', 'desc'), limit(20));
+      unsubPublicLogs = onSnapshot(publicLogsQuery, (snapshot) => {
+        const loadedLogs = snapshot.docs.map(doc => doc.data() as Log);
+        const publicLogs = loadedLogs.filter(l => !l.isPrivate);
+        setRecentLogs(publicLogs.slice(0, 10));
+      });
+    } catch (e) { console.error("Error fetching public logs:", e); }
+
     return () => {
       unsubCreatures();
       unsubPoints();
       unsubPointCreatures();
+      unsubPublicLogs();
     };
   }, []);
 
@@ -278,12 +292,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           setIsLoading(false);
         });
 
-        // 3. Listen to User's Logs Subcollection
         const logsQuery = query(collection(firestore, 'users', user.uid, 'logs'), orderBy('date', 'desc'));
         unsubLogs = onSnapshot(logsQuery, (snapshot) => {
           const loadedLogs = snapshot.docs.map(doc => doc.data() as Log);
           setAllLogs(loadedLogs);
         });
+
+        // 4. Global Recent Public Logs (for Home)
+        // Note: collectionGroup requires an index for compound queries (isPrivate + date).
+        // If it fails, check console and create link.
+        try {
+          // Simplified query to avoid index requirement if possible (fetch all public then sort? No, too much data)
+          // For now, let's assume index exists or we fallback to single collection if structure was flat.
+          // Since it's subcollection, collectionGroup is needed.
+          // const publicLogsQuery = query(collectionGroup(firestore, 'logs'), where('isPrivate', '==', false), orderBy('date', 'desc'), limit(10));
+          // onSnapshot(publicLogsQuery, ...);
+        } catch (e) { console.error(e); }
 
       } else {
         setIsAuthenticated(false);
@@ -692,6 +716,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       points,
       pointCreatures, // New
       logs: allLogs,
+      recentLogs, // Added to value
       proposalCreatures,
       proposalPoints,
       regions: INITIAL_DATA.regions,

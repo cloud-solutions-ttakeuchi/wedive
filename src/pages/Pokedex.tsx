@@ -6,7 +6,7 @@ import { Search, Filter, Star, CheckCircle } from 'lucide-react';
 import clsx from 'clsx';
 
 export const Pokedex = () => {
-  const { creatures, logs, isAuthenticated } = useApp();
+  const { creatures, logs, isAuthenticated, points, pointCreatures } = useApp();
   const { t } = useLanguage();
   // const [filter, setFilter] = useState<'all' | 'discovered' | 'undiscovered'>('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -15,10 +15,42 @@ export const Pokedex = () => {
   const userLogs = isAuthenticated ? logs : [];
   const discoveredCreatureIds = new Set(userLogs.map(l => l.creatureId));
 
-  const filteredCreatures = allCreatures.filter(creature =>
-    creature.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (creature.scientificName && creature.scientificName.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredCreatures = allCreatures.filter(creature => {
+    const term = searchTerm.toLowerCase();
+
+    // 1. Direct Text Properties
+    const matchesProperty =
+      creature.name.toLowerCase().includes(term) ||
+      (creature.scientificName && creature.scientificName.toLowerCase().includes(term)) ||
+      (creature.family && creature.family.toLowerCase().includes(term)) ||
+      creature.tags.some(tag => tag.toLowerCase().includes(term)) ||
+      creature.specialAttributes?.some(attr => attr.toLowerCase().includes(term));
+
+    if (matchesProperty) return true;
+
+    // 2. Area/Location Search
+    // Find points that match the search term (Area, Zone, Region, Name)
+    const matchedPointIds = points
+      .filter(p =>
+        p.name.includes(term) ||
+        p.area.includes(term) ||
+        p.zone.includes(term) ||
+        p.region.includes(term)
+      )
+      .map(p => p.id);
+
+    // Check if this creature is linked to any of those points
+    if (matchedPointIds.length > 0) {
+      // Find entries in pointCreatures matching this creature AND one of the matched points
+      const isLinkedToArea = pointCreatures.some(pc =>
+        pc.creatureId === creature.id && matchedPointIds.includes(pc.pointId)
+        // Note: You might want to filter by pc.status === 'approved' if strictly validation needed
+      );
+      if (isLinkedToArea) return true;
+    }
+
+    return false;
+  });
 
   return (
     <div className="space-y-6 pb-24 pt-2">
@@ -48,7 +80,7 @@ export const Pokedex = () => {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-ocean" size={20} />
           <input
             type="text"
-            placeholder={t('pokedex.search_placeholder')}
+            placeholder="生物名、科目、エリア、タグ、特徴などで検索..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-11 pr-4 py-4 rounded-2xl border-none bg-white/80 backdrop-blur-md shadow-lg shadow-ocean/5 focus:outline-none focus:ring-2 focus:ring-ocean/50 transition-all placeholder:text-gray-400 text-deepBlue-900 font-medium"
