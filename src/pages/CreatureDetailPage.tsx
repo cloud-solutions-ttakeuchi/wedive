@@ -2,20 +2,30 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 // Duplicate import removed
-import { Heart, Fish, ChevronLeft, ChevronRight, X, Camera, Bookmark, Star } from 'lucide-react';
+import { Heart, Fish, ChevronLeft, ChevronRight, X, Camera, Bookmark, Star, MapPin } from 'lucide-react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
-import type { Log } from '../types';
+import type { Rarity } from '../types';
+import { Image as ImageIcon } from 'lucide-react';
 
 export const CreatureDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   // Remove db, use state directly
-  const { creatures, points, currentUser, isAuthenticated, addLog, toggleFavorite, toggleWanted } = useApp();
+  const { creatures, points, pointCreatures, currentUser, isAuthenticated, toggleFavorite, toggleWanted, addPointCreature } = useApp();
+
+  // Calculate Discovery Points
+  const discoveryPoints = pointCreatures
+    .filter(pc => pc.creatureId === id && pc.status === 'approved')
+    .map(pc => {
+      const point = points.find(p => p.id === pc.pointId);
+      return point ? { point, rarity: pc.localRarity } : null;
+    })
+    .filter((item): item is { point: import('../types').Point, rarity: import('../types').Rarity } => item !== null);
   // const { t } = useLanguage();
-  const [isLogging, setIsLogging] = useState(false);
+  const [isDiscoveryModalOpen, setIsDiscoveryModalOpen] = useState(false);
   const [selectedSpotId, setSelectedSpotId] = useState<string>('');
-  const [comment, setComment] = useState('');
+  const [selectedRarity, setSelectedRarity] = useState<Rarity>('Common');
 
   const creature = creatures.find(c => c.id === id);
   if (!creature) return <div className="text-center mt-20">Not Found</div>;
@@ -26,34 +36,23 @@ export const CreatureDetailPage = () => {
   const prevCreature = currentIndex > 0 ? allCreatures[currentIndex - 1] : null;
   const nextCreature = currentIndex < allCreatures.length - 1 ? allCreatures[currentIndex + 1] : null;
 
-  const handleSaveLog = () => {
-    if (selectedSpotId) {
-      const selectedPoint = points.find(p => p.id === selectedSpotId);
-      const logData: Omit<Log, 'id' | 'userId'> = {
-        date: new Date().toISOString().split('T')[0],
-        diveNumber: (currentUser.logs.length || 0) + 1,
-        location: {
-          pointId: selectedSpotId,
-          pointName: selectedPoint?.name || 'Unknown',
-          region: selectedPoint?.region || 'Unknown',
-        },
-        time: { duration: 0 }, // Placeholder
-        depth: { max: 0, average: 0 }, // Placeholder
-        photos: [],
-        comment: comment,
-        isPrivate: false,
-        creatureId: creature.id,
-        sightedCreatures: [],
-        spotId: selectedSpotId, // Legacy
-        likeCount: 0,
-        likedBy: [],
-      };
+  const handleReportDiscovery = async () => {
+    if (!selectedSpotId) return;
 
-      addLog(logData);
-      setIsLogging(false);
-      setComment('');
+    try {
+      if (currentUser.role === 'admin' || currentUser.role === 'moderator') {
+        await addPointCreature(selectedSpotId, creature.id, selectedRarity);
+        alert('生物を追加しました！');
+      } else {
+        await addPointCreature(selectedSpotId, creature.id, selectedRarity);
+        alert('発見報告を送信しました。\n管理者の承認をお待ちください。');
+      }
+      setIsDiscoveryModalOpen(false);
       setSelectedSpotId('');
-      alert('Log saved!');
+      setSelectedRarity('Common');
+    } catch (e) {
+      console.error(e);
+      alert('エラーが発生しました。');
     }
   };
 
@@ -330,11 +329,49 @@ export const CreatureDetailPage = () => {
           </div>
         </div>
 
+        {/* Discovery Points Section */}
+        {discoveryPoints.length > 0 && (
+          <div className="mb-12">
+            <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+              <MapPin className="text-ocean" /> この生物が見られるポイント
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {discoveryPoints.map(({ point, rarity }) => (
+                <Link to={`/point/${point.id}`} key={point.id} className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-all flex items-center gap-4 group">
+                  <div className="w-16 h-16 shrink-0 rounded-lg overflow-hidden relative bg-gray-100 flex items-center justify-center border border-gray-100">
+                    {(point.imageUrl && !point.imageUrl.includes('loremflickr') && point.imageUrl.match(/\((https?:\/\/.*?)\)/)?.[1]) || (point.imageUrl && !point.imageUrl.includes('loremflickr')) ? (
+                      <img
+                        src={(point.imageUrl.match(/\((https?:\/\/.*?)\)/)?.[1]) || point.imageUrl}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        alt={point.name}
+                      />
+                    ) : (
+                      <ImageIcon size={20} className="text-gray-300" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="font-bold text-gray-900 group-hover:text-ocean transition-colors">{point.name}</div>
+                    <div className="text-xs text-gray-500 mb-1">{point.area}</div>
+                    <div className={clsx(
+                      "text-xs font-bold inline-block px-2 py-0.5 rounded",
+                      rarity === 'Legendary' ? 'bg-purple-100 text-purple-700' :
+                        rarity === 'Epic' ? 'bg-pink-100 text-pink-700' :
+                          rarity === 'Rare' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
+                    )}>
+                      {rarity}
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Action Button */}
         {isAuthenticated && (
           <div className="flex justify-center">
             <button
-              onClick={() => setIsLogging(true)}
+              onClick={() => setIsDiscoveryModalOpen(true)}
               className="bg-red-500 text-white px-12 py-4 rounded-full font-bold hover:bg-red-600 transition-colors shadow-lg flex items-center gap-3 text-lg"
             >
               <Camera size={24} />
@@ -347,13 +384,13 @@ export const CreatureDetailPage = () => {
 
       {/* Logging Modal (Same as before but styled) */}
       <AnimatePresence>
-        {isLogging && (
+        {isDiscoveryModalOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
-            onClick={() => setIsLogging(false)}
+            onClick={() => setIsDiscoveryModalOpen(false)}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
@@ -362,44 +399,63 @@ export const CreatureDetailPage = () => {
               className="bg-white w-full max-w-md rounded-3xl p-8 shadow-2xl relative"
               onClick={(e) => e.stopPropagation()}
             >
-              <button onClick={() => setIsLogging(false)} className="absolute top-4 right-4 p-2 bg-gray-100 rounded-full hover:bg-gray-200">
+              <button onClick={() => setIsDiscoveryModalOpen(false)} className="absolute top-4 right-4 p-2 bg-gray-100 rounded-full hover:bg-gray-200">
                 <X size={20} />
               </button>
 
-              <h3 className="text-2xl font-black text-gray-900 mb-6 text-center">Log Sighting</h3>
+              <h3 className="text-2xl font-black text-gray-900 mb-2 text-center">発見報告</h3>
+              <p className="text-gray-500 text-sm text-center mb-6">この生物を見つけたポイントを教えてください</p>
 
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Location</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">場所 (Point)</label>
                   <select
-                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-gray-900 font-bold"
+                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-gray-900 font-bold appearance-none"
                     value={selectedSpotId}
                     onChange={(e) => setSelectedSpotId(e.target.value)}
                   >
-                    <option value="">Select a spot...</option>
+                    <option value="">ポイントを選択...</option>
                     {points.map(p => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
+                      <option key={p.id} value={p.id}>{p.name} ({p.area})</option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Comment</label>
-                  <textarea
-                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-gray-900 min-h-[120px] resize-none font-medium"
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    placeholder="Describe your encounter..."
-                  />
+                  <label className="block text-sm font-bold text-gray-700 mb-2">レア度 (このポイントでの出現率)</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(['Common', 'Rare', 'Epic', 'Legendary'] as Rarity[]).map((r) => (
+                      <button
+                        key={r}
+                        onClick={() => setSelectedRarity(r)}
+                        className={clsx(
+                          "px-4 py-3 rounded-xl text-sm font-bold border transition-all",
+                          selectedRarity === r
+                            ? r === 'Common' ? "bg-gray-100 border-gray-400 text-gray-700 shadow-inner" :
+                              r === 'Rare' ? "bg-blue-100 border-blue-400 text-blue-700 shadow-inner" :
+                                r === 'Epic' ? "bg-orange-100 border-orange-400 text-orange-700 shadow-inner" :
+                                  "bg-purple-100 border-purple-400 text-purple-700 shadow-inner"
+                            : "bg-white border-gray-200 text-gray-500 hover:bg-gray-50"
+                        )}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <button
-                  onClick={handleSaveLog}
+                  onClick={handleReportDiscovery}
                   disabled={!selectedSpotId}
-                  className="w-full py-4 rounded-full font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg mt-4"
+                  className="w-full py-4 rounded-full font-bold bg-gradient-to-r from-red-500 to-pink-500 text-white hover:from-red-600 hover:to-pink-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg flex items-center justify-center gap-2 mt-2"
                 >
-                  Save Entry
+                  <Camera size={20} />
+                  報告を送信
                 </button>
+                <p className="text-xs text-center text-gray-400">
+                  ※報告内容は管理者の承認を経てマップに反映されます。<br />
+                  ユーザーには承認待ちとして表示されます。
+                </p>
               </div>
             </motion.div>
           </motion.div>

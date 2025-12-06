@@ -66,6 +66,35 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [recentLogs, setRecentLogs] = useState<Log[]>([]); // Added state
   const [allUsers, setAllUsers] = useState<User[]>([]);
 
+  // Master Data State (Initialized with Mock/Static, updated from DB if available)
+  const [regions, setRegions] = useState<typeof INITIAL_DATA.regions>(INITIAL_DATA.regions);
+  const [zones, setZones] = useState<typeof INITIAL_DATA.zones>(INITIAL_DATA.zones);
+  const [areas, setAreas] = useState<typeof INITIAL_DATA.areas>(INITIAL_DATA.areas);
+
+  // Subscribe to Master Data Collections
+  useEffect(() => {
+    // Regions
+    const unsubR = onSnapshot(collection(firestore, 'regions'), (snap) => {
+      if (!snap.empty) {
+        setRegions(snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as any)));
+      }
+    });
+    // Zones
+    const unsubZ = onSnapshot(collection(firestore, 'zones'), (snap) => {
+      if (!snap.empty) {
+        setZones(snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as any)));
+      }
+    });
+    // Areas
+    const unsubA = onSnapshot(collection(firestore, 'areas'), (snap) => {
+      if (!snap.empty) {
+        setAreas(snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as any)));
+      }
+    });
+
+    return () => { unsubR(); unsubZ(); unsubA(); };
+  }, []);
+
   // Listen for proposals (Admin view mostly)
   useEffect(() => {
     if (isAuthenticated) { // Ideally check for admin role here too, but simple Auth check for now
@@ -725,9 +754,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       recentLogs, // Added to value
       proposalCreatures,
       proposalPoints,
-      regions: INITIAL_DATA.regions,
-      zones: INITIAL_DATA.zones,
-      areas: INITIAL_DATA.areas,
+      regions,
+      zones,
+      areas,
       addCreatureProposal,
       addPointProposal,
       approveProposal,

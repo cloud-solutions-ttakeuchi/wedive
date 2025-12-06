@@ -96,6 +96,8 @@ let POINTS: Point[] = []; // will be updated with creature links
 
 const rawLocations = locationsSeed as SeedLocationNode[];
 
+// Removed DIVING_IMAGES logic as per user request for simplicity
+
 rawLocations.forEach(regionNode => {
   REGIONS.push({
     id: regionNode.id,
@@ -136,8 +138,9 @@ rawLocations.forEach(regionNode => {
           description: pointNode.description || '',
           // creatures: [], // Populated dynamically later
           // Use provided image or fallback
-          imageUrl: pointNode.image || 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&q=80',
-          images: pointNode.image ? [pointNode.image] : ['https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&q=80'],
+          // Simplify: No random images. Let UI handle fallback.
+          imageUrl: (pointNode.image && pointNode.image.match(/\((.*?)\)/)?.[1]) || pointNode.image || '',
+          images: pointNode.image ? [(pointNode.image.match(/\((.*?)\)/)?.[1] || pointNode.image)] : [],
           status: 'approved',
           submitterId: 'system',
           createdAt: '2023-01-01T00:00:00Z',

@@ -5,11 +5,13 @@ import { useNavigate } from 'react-router-dom';
 import { writeBatch, collection, getDocs, query, where, doc, updateDoc, arrayRemove, arrayUnion, deleteDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import type { Point } from '../types';
+import { seedFirestore } from '../utils/seeder';
+import { INITIAL_DATA } from '../data/mockData';
 
 type TargetField = 'area' | 'zone' | 'region' | 'point';
 
 export const AdminAreaCleansingPage = () => {
-  const { points, currentUser } = useApp();
+  const { points, currentUser, regions, zones, areas } = useApp();
   const navigate = useNavigate();
   const [targetField, setTargetField] = useState<TargetField>('area');
   const [editingValue, setEditingValue] = useState<string | null>(null);
@@ -25,6 +27,11 @@ export const AdminAreaCleansingPage = () => {
   const [mergeModalOpen, setMergeModalOpen] = useState(false);
   const [mergeSource, setMergeSource] = useState<Point | null>(null);
   const [mergeTargetId, setMergeTargetId] = useState('');
+
+  // Group Merge Modal State
+  const [groupMergeModalOpen, setGroupMergeModalOpen] = useState(false);
+  const [groupMergeSource, setGroupMergeSource] = useState('');
+  const [groupMergeTargetName, setGroupMergeTargetName] = useState('');
 
   // 1. Aggregate Stats based on Target Field with Parent Info
   const fieldStats = useMemo(() => {
@@ -139,6 +146,230 @@ export const AdminAreaCleansingPage = () => {
     } catch (e) {
       console.error(e);
       alert('更新に失敗しました。');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+
+
+  const handleSyncMasterData = async () => {
+    if (!window.confirm('Master Data (Regions/Zones/Areas) をFirestoreに同期します。\n※既にデータがある場合は上書き(Merge)されます。\n\n実行してよろしいですか？')) return;
+    setProcessing(true);
+    const success = await seedFirestore(true, ['regions', 'zones', 'areas']); // Safe update: Only Master Data
+    setProcessing(false);
+    if (success) alert('同期完了しました。');
+    else alert('同期に失敗しました。');
+  };
+
+  const handleRepairDuplicates = async () => {
+    if (!window.confirm('重複したマスターデータ（同名のArea/Zoneなど）を検出し、IDベースで統合・修復します。\n\n※初期データ(INITIAL_DATA)に含まれるIDを正とし、それ以外（ランダムID等）を削除してポイントを寄せます。\n\n実行しますか？')) return;
+    setProcessing(true);
+    try {
+      let totalFixed = 0;
+      const fixCollection = async (field: 'area' | 'zone' | 'region', collectionName: 'areas' | 'zones' | 'regions', initialList: any[]) => {
+        const items = field === 'area' ? areas : field === 'zone' ? zones : regions;
+
+        // Group by Name
+        const groups: Record<string, any[]> = {};
+        items.forEach(item => {
+          if (!groups[item.name]) groups[item.name] = [];
+          groups[item.name].push(item);
+        });
+
+        const batch = writeBatch(db);
+        let ops = 0;
+
+        for (const name of Object.keys(groups)) {
+          const group = groups[name];
+          if (group.length > 1) {
+            console.log(`Found duplicate for ${field}: ${name}`, group);
+            // Determine Winner: Match ID in INITIAL_DATA, or shortest ID (assuming seed is simple)
+            const standardId = initialList.find(i => i.name === name)?.id;
+            // Sort: Winner first
+            group.sort((a, b) => {
+              if (a.id === standardId) return -1;
+              if (b.id === standardId) return 1;
+              return 0; // If neither is standard, just pick first
+            });
+
+            const winner = group[0];
+            const losers = group.slice(1);
+
+            for (const loser of losers) {
+              // 1. Move Points (Update ID)
+              const qField = field + 'Id'; // areaId, zoneId... wait. Point only has areaId.
+              // Point has: areaId.
+              // Point does NOT have zoneId / regionId on document (only denormalized strings).
+              // BUT we updated logic to maintain Area.zoneId etc.
+              // So:
+
+              if (field === 'area') {
+                // Update Points: areaId
+                const q = query(collection(db, 'points'), where('areaId', '==', loser.id));
+                const snaps = await getDocs(q);
+                snaps.forEach(doc => {
+                  batch.update(doc.ref, { areaId: winner.id });
+                });
+                ops += snaps.size;
+              } else if (field === 'zone') {
+                // Update Areas: zoneId
+                const q = query(collection(db, 'areas'), where('zoneId', '==', loser.id));
+                const snaps = await getDocs(q);
+                snaps.forEach(doc => {
+                  batch.update(doc.ref, { zoneId: winner.id });
+                });
+                ops += snaps.size;
+              } else if (field === 'region') {
+                // Update Zones: regionId
+                const q = query(collection(db, 'zones'), where('regionId', '==', loser.id));
+                const snaps = await getDocs(q);
+                snaps.forEach(doc => {
+                  batch.update(doc.ref, { regionId: winner.id });
+                });
+                ops += snaps.size;
+              }
+
+              // 2. Delete Loser Doc
+              batch.delete(doc(db, collectionName, loser.id));
+              ops++;
+              totalFixed++;
+            }
+          }
+        }
+        if (ops > 0) await batch.commit();
+      };
+
+      await fixCollection('region', 'regions', INITIAL_DATA.regions);
+      await fixCollection('zone', 'zones', INITIAL_DATA.zones);
+      await fixCollection('area', 'areas', INITIAL_DATA.areas);
+
+      alert(`修復完了: ${totalFixed} 件の重複データを整理しました。`);
+    } catch (e) {
+      console.error(e);
+      alert('修復中にエラーが発生しました。');
+    } finally {
+      setProcessing(false);
+    }
+  };
+  const handleMergeGroup = async () => {
+    if (!groupMergeSource || !groupMergeTargetName || groupMergeSource === groupMergeTargetName) return;
+
+    const label = getLabel();
+    if (!window.confirm(`【重要】${label}統合 (MERGE) を実行します。\n\nSource (統合元): ${groupMergeSource}\nTarget (統合先): ${groupMergeTargetName}\n\n対象の全ポイントの ${label} を「${groupMergeTargetName}」に書き換えます。\nAreaの場合、統合先の ${label}ID も適用されます。\n\n本当によろしいですか？`)) return;
+
+    setProcessing(true);
+    try {
+      const queryField = targetField === 'point' ? 'name' : targetField;
+
+      // 1. Get Source Docs
+      const sourceQuery = query(collection(db, 'points'), where(queryField, '==', groupMergeSource));
+      const sourceSnapshot = await getDocs(sourceQuery);
+
+      if (sourceSnapshot.empty) {
+        alert('対象データが見つかりません。');
+        setProcessing(false);
+        return;
+      }
+
+      // 2. Prepare Update Data
+      const updateData: any = {
+        [targetField]: groupMergeTargetName
+      };
+
+      // 3. For Area, we need to resolve the Target Area ID
+      //    AND for Zone/Region, we need to update the Child Master Data (Areas/Zones) hierarchy
+      if (targetField === 'area') {
+        const targetQuery = query(collection(db, 'points'), where('area', '==', groupMergeTargetName), where('areaId', '!=', ''));
+        const targetSnapshot = await getDocs(targetQuery);
+        if (!targetSnapshot.empty) {
+          const targetPoint = targetSnapshot.docs[0].data() as Point;
+          if (targetPoint.areaId) updateData['areaId'] = targetPoint.areaId;
+        }
+
+        // Delete Source Area Doc (Master Data cleanup)
+        const sourceArea = areas.find(a => a.name === groupMergeSource);
+        if (sourceArea) {
+          const batchMaster = writeBatch(db);
+          batchMaster.delete(doc(db, 'areas', sourceArea.id));
+          await batchMaster.commit();
+        }
+      } else if (targetField === 'zone') {
+        // Zone Merge: Update Child Areas' zoneId
+        // 1. Find Source Zone ID & Target Zone ID from Master Data (zones state)
+        const sourceZone = zones.find(z => z.name === groupMergeSource);
+        const targetZone = zones.find(z => z.name === groupMergeTargetName);
+
+        if (sourceZone && targetZone) {
+          // Find all Areas belonging to Source Zone
+          const childAreas = areas.filter(a => a.zoneId === sourceZone.id);
+          const batchMaster = writeBatch(db);
+          let masterOps = 0;
+
+          childAreas.forEach(area => {
+            const areaRef = doc(db, 'areas', area.id);
+            batchMaster.update(areaRef, { zoneId: targetZone.id });
+            masterOps++;
+          });
+
+          // Delete the Source Zone Doc
+          const sourceRef = doc(db, 'zones', sourceZone.id);
+          batchMaster.delete(sourceRef);
+          masterOps++;
+
+          if (masterOps > 0) {
+            await batchMaster.commit();
+            console.log(`Master Data Updated: Moved ${childAreas.length} Areas to ${targetZone.name}`);
+          }
+        }
+      } else if (targetField === 'region') {
+        // Region Merge: Update Child Zones' regionId
+        const sourceRegion = regions.find(r => r.name === groupMergeSource);
+        const targetRegion = regions.find(r => r.name === groupMergeTargetName);
+
+        if (sourceRegion && targetRegion) {
+          const childZones = zones.filter(z => z.regionId === sourceRegion.id);
+          const batchMaster = writeBatch(db);
+          let masterOps = 0;
+
+          childZones.forEach(zone => {
+            const zoneRef = doc(db, 'zones', zone.id);
+            batchMaster.update(zoneRef, { regionId: targetRegion.id });
+            masterOps++;
+          });
+
+          const sourceRef = doc(db, 'regions', sourceRegion.id);
+          batchMaster.delete(sourceRef);
+          masterOps++;
+
+          if (masterOps > 0) {
+            await batchMaster.commit();
+          }
+        }
+      }
+
+      // 4. Batch Update (Chunked) - Update Points
+      const chunkedDocs = chunkArray(sourceSnapshot.docs, 450);
+      let updatedCount = 0;
+
+      for (const chunk of chunkedDocs) {
+        const batch = writeBatch(db);
+        chunk.forEach(doc => {
+          batch.update(doc.ref, updateData);
+        });
+        await batch.commit();
+        updatedCount += chunk.length;
+      }
+
+      alert(`統合完了: ${updatedCount} 件のポイントを「${groupMergeTargetName}」に統合しました。`);
+      setGroupMergeModalOpen(false);
+      setGroupMergeSource('');
+      setGroupMergeTargetName('');
+      setEditingValue(null);
+
+    } catch (e) {
+      console.error(e);
+      alert('統合処理中にエラーが発生しました。');
     } finally {
       setProcessing(false);
     }
@@ -412,6 +643,22 @@ export const AdminAreaCleansingPage = () => {
               <ArrowLeft size={24} />
             </button>
             <h1 className="text-xl font-bold text-gray-900">マスタデータ整理</h1>
+            <button
+              onClick={handleSyncMasterData}
+              disabled={processing}
+              className="px-3 py-1 bg-gray-800 text-white font-bold rounded hover:bg-gray-900 transition-colors flex items-center gap-2 text-xs ml-4"
+            >
+              <RefreshCw size={12} />
+              DB同期
+            </button>
+            <button
+              onClick={handleRepairDuplicates}
+              disabled={processing}
+              className="px-3 py-1 bg-red-800 text-white font-bold rounded hover:bg-red-900 transition-colors flex items-center gap-2 text-xs"
+            >
+              <AlertTriangle size={12} />
+              重複修復
+            </button>
           </div>
           <div className="text-sm text-gray-500">
             Total Points: {points.length}
@@ -580,6 +827,15 @@ export const AdminAreaCleansingPage = () => {
                               >
                                 <Trash2 size={16} />
                               </button>
+                              {targetField !== 'point' && ( // Only show group merge for Area/Zone/Region
+                                <button
+                                  onClick={() => { setGroupMergeSource(item.name); setGroupMergeModalOpen(true); }}
+                                  className="p-2 text-purple-500 hover:bg-purple-50 rounded-full transition-colors"
+                                  title="Merge Group (Name & ID)"
+                                >
+                                  <GitMerge size={16} />
+                                </button>
+                              )}
                             </>
                           )}
                         </div>
@@ -758,6 +1014,75 @@ export const AdminAreaCleansingPage = () => {
                 className="px-4 py-2 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700 disabled:opacity-50 flex items-center gap-2"
               >
                 {processing ? <RefreshCw className="animate-spin" size={18} /> : <GitMerge size={18} />}
+                統合実行
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* GROUP MERGE MODAL (Area/Zone/Region) */}
+      {groupMergeModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-6">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <GitMerge size={24} className="text-purple-600" />
+              {getLabel()} 統合 (Merge)
+            </h2>
+            <div className="mb-4 p-3 bg-purple-50 border border-purple-100 rounded text-sm text-purple-800">
+              <p className="font-bold">From (統合元):</p>
+              <p>{groupMergeSource} ({fieldStats.find(s => s.name === groupMergeSource)?.count} points)</p>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-semibold mb-2">To (統合先を選択):</label>
+
+              <div className="mb-2 max-h-48 overflow-y-auto border rounded divide-y">
+                {fieldStats
+                  .filter(s => s.name !== groupMergeSource && s.name !== '(Empty)')
+                  .map(s => (
+                    <button
+                      key={s.name}
+                      onClick={() => setGroupMergeTargetName(s.name)}
+                      className={`w-full text-left p-2 text-sm hover:bg-gray-50 flex justify-between ${groupMergeTargetName === s.name ? 'bg-purple-100 text-purple-900 font-bold' : ''}`}
+                    >
+                      <span>{s.name}</span>
+                      <span className="text-gray-400 text-xs">({s.count})</span>
+                    </button>
+                  ))
+                }
+              </div>
+
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                  <Edit2 size={14} />
+                </div>
+                <input
+                  type="text"
+                  className="w-full pl-9 border rounded p-2 text-sm"
+                  placeholder="手入力も可能..."
+                  value={groupMergeTargetName}
+                  onChange={e => setGroupMergeTargetName(e.target.value)}
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                ※統合先の既存データがある場合、その {targetField === 'area' ? 'ID (AreaID)' : '情報'} も適用されます。
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setGroupMergeModalOpen(false)}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleMergeGroup}
+                disabled={!groupMergeTargetName || processing}
+                className="px-4 py-2 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                {processing ? <RefreshCw className="animate-spin" size={18} /> : <Layers size={18} />}
                 統合実行
               </button>
             </div>

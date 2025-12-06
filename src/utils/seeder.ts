@@ -2,8 +2,8 @@ import { collection, doc, writeBatch, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { INITIAL_DATA } from '../data/mockData';
 
-export const seedFirestore = async (force: boolean = false) => {
-  console.log('Starting seeding...', { force });
+export const seedFirestore = async (force: boolean = false, targetCollections?: string[]) => {
+  console.log('Starting seeding...', { force, targetCollections });
   const batchLimit = 500;
   let batch = writeBatch(db);
   let operationCount = 0;
@@ -27,7 +27,7 @@ export const seedFirestore = async (force: boolean = false) => {
       { name: 'creatures', data: INITIAL_DATA.creatures },
       { name: 'points', data: INITIAL_DATA.points },
       { name: 'point_creatures', data: INITIAL_DATA.pointCreatures },
-    ];
+    ].filter(c => !targetCollections || targetCollections.includes(c.name));
 
     for (const { name, data } of masterCollections) {
       // If not forced, check if empty first (to preserve old behavior if strictly needed,

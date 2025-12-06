@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { ChevronRight, MapPin, Droplets, Anchor, Wind, Mountain, ArrowRight, Bookmark } from 'lucide-react';
+import { ChevronRight, MapPin, Droplets, Anchor, Wind, Mountain, ArrowRight, Bookmark, Image as ImageIcon } from 'lucide-react';
 import clsx from 'clsx';
 import type { Region, Zone, Area } from '../types';
 
@@ -187,12 +187,19 @@ export const PointSearchPage = () => {
                     className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all group flex flex-col md:flex-row"
                   >
                     {/* Image */}
-                    <div className="w-full md:w-48 h-48 md:h-auto relative overflow-hidden">
-                      <img
-                        src={point.imageUrl}
-                        alt={point.name}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      />
+                    <div className="w-full md:w-48 h-48 md:h-auto relative overflow-hidden bg-gray-100 flex items-center justify-center shrink-0">
+                      {(point.imageUrl && !point.imageUrl.includes('loremflickr') && point.imageUrl.match(/\((https?:\/\/.*?)\)/)?.[1]) || (point.imageUrl && !point.imageUrl.includes('loremflickr')) ? (
+                        <img
+                          src={(point.imageUrl.match(/\((https?:\/\/.*?)\)/)?.[1]) || point.imageUrl}
+                          alt={point.name}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        />
+                      ) : (
+                        <div className="text-gray-300 flex flex-col items-center gap-2">
+                          <ImageIcon size={32} />
+                          {/* <span className="text-[10px] uppercase font-bold tracking-widest">No Image</span> */}
+                        </div>
+                      )}
                       <div className="absolute top-2 left-2 bg-black/50 backdrop-blur-sm text-white text-xs font-bold px-2 py-1 rounded">
                         {point.level}
                       </div>
@@ -249,13 +256,14 @@ export const PointSearchPage = () => {
                       </div>
                     </div>
                   </Link>
-                ))}
-              </div>
+                ))
+                }
+              </div >
             )}
-          </div>
+          </div >
         )}
-      </div>
-    </div>
+      </div >
+    </div >
   );
 };
 
