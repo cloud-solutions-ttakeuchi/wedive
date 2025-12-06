@@ -36,7 +36,10 @@ export const seedFirestore = async (force: boolean = false) => {
       // We'll stick to: if !force, check empty. if force, skip check.)
 
       let shouldRun = force;
-      if (!force) {
+      if (name === 'creatures') {
+        // ALWAYS update creatures to ensure new schema fields (family, size, etc.) are applied
+        shouldRun = true;
+      } else if (!force) {
         const snap = await getDocs(collection(db, name));
         shouldRun = snap.empty;
       }

@@ -9,6 +9,9 @@ type SeedCreature = {
   id: string;
   name: string;
   category: string;
+  scientificName?: string;
+  englishName?: string;
+  family?: string;
   tags: string[];
   description: string;
   baseRarity: string; // JSONではbaseRarity
@@ -164,6 +167,10 @@ const rarityMap: Record<string, Rarity> = {
 const CREATURES: Creature[] = creaturesSeed.map((c: SeedCreature) => ({
   id: c.id,
   name: c.name,
+  scientificName: c.scientificName,
+  englishName: c.englishName,
+  family: c.family,
+  size: c.size,
   category: c.category,
   tags: c.tags,
   description: c.description,

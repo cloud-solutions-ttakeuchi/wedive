@@ -212,7 +212,7 @@ export const CreatureDetailPage = () => {
           <div className="bg-white rounded-[10px] p-8 shadow-sm border border-gray-200 h-full">
             <div className="space-y-6">
               <div>
-                <div className="text-sm font-bold text-gray-500 mb-1">分類</div>
+                <div className="text-sm font-bold text-gray-500 mb-1">学名</div>
                 <div className="text-gray-900 font-bold">{creature.scientificName || '不明'}</div>
               </div>
 
@@ -251,7 +251,16 @@ export const CreatureDetailPage = () => {
                 </div>
               </div>
 
-/* regions removed */
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-sm font-bold text-gray-500 mb-1">体長</div>
+                  <div className="text-gray-900 font-bold">{creature.size || '不明'}</div>
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-gray-500 mb-1">科目</div>
+                  <div className="text-gray-900 font-bold">{creature.family || '不明'}</div>
+                </div>
+              </div>
             </div>
           </div>
 
