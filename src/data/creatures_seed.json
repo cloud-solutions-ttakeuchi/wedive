@@ -1,0 +1,7799 @@
+[
+  {
+    "id": "c_伊豆_1764770429_0",
+    "name": "カエルアンコウ",
+    "imageKeyword": "frogfish",
+    "category": "魚類",
+    "tags": [
+      "黄色",
+      "オレンジ",
+      "擬態",
+      "人気"
+    ],
+    "description": "伊豆のアイドル的存在。擬態名人なので、じっくり探してみよう。体色も様々。",
+    "baseRarity": "SR",
+    "depthRange": {
+      "min": 10,
+      "max": 30
+    },
+    "size": "10cm",
+    "season": [
+      "autumn",
+      "winter",
+      "spring"
+    ],
+    "specialAttributes": [
+      "擬態",
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 15,
+      "max": 25
+    },
+    "regions": [
+      "伊豆半島",
+      "伊豆"
+    ],
+    "image": "https://loremflickr.com/400/400/frogfish,underwater"
+  },
+  {
+    "id": "c_伊豆_1764770429_1",
+    "name": "クマノミ",
+    "imageKeyword": "clownfish",
+    "category": "魚類",
+    "tags": [
+      "オレンジ",
+      "白",
+      "イソギンチャク",
+      "ペア"
+    ],
+    "description": "イソギンチャクと共生する姿が可愛らしい。伊豆では稀に見られる程度。",
+    "baseRarity": "SR",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "8cm",
+    "season": [
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 22,
+      "max": 28
+    },
+    "regions": [
+      "伊豆半島",
+      "伊豆"
+    ],
+    "image": "https://loremflickr.com/400/400/clownfish,underwater"
+  },
+  {
+    "id": "c_伊豆_1764770429_2",
+    "name": "オオモンハタ",
+    "imageKeyword": "grouper",
+    "category": "魚類",
+    "tags": [
+      "大型",
+      "白点",
+      "食用"
+    ],
+    "description": "伊豆の根付きの魚の代表格。高級食材としても有名。堂々とした姿は圧巻。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 10,
+      "max": 40
+    },
+    "size": "60cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 18,
+      "max": 28
+    },
+    "regions": [
+      "伊豆半島",
+      "伊豆"
+    ],
+    "image": "https://loremflickr.com/400/400/grouper,underwater"
+  },
+  {
+    "id": "c_伊豆_1764770429_3",
+    "name": "イロカエルアンコウ",
+    "imageKeyword": "painted frogfish",
+    "category": "魚類",
+    "tags": [
+      "ピンク",
+      "紫",
+      "レア",
+      "擬態"
+    ],
+    "description": "カエルアンコウの仲間で、さらにレア。鮮やかな体色が目を引く。",
+    "baseRarity": "SSR",
+    "depthRange": {
+      "min": 15,
+      "max": 35
+    },
+    "size": "5cm",
+    "season": [
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "擬態",
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 15,
+      "max": 24
+    },
+    "regions": [
+      "伊豆半島",
+      "伊豆",
+      "伊豆大島"
+    ],
+    "image": "https://loremflickr.com/400/400/paintedfrogfish,underwater"
+  },
+  {
+    "id": "c_伊豆_1764770429_4",
+    "name": "ミドリイシ",
+    "imageKeyword": "staghorn coral",
+    "category": "サンゴ",
+    "tags": [
+      "緑",
+      "枝状",
+      "群生"
+    ],
+    "description": "伊豆の海を彩る代表的なサンゴ。美しい群生は必見。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 3,
+      "max": 15
+    },
+    "size": "1m",
+    "season": [
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 23,
+      "max": 28
+    },
+    "regions": [
+      "伊豆半島",
+      "伊豆"
+    ],
+    "image": "https://loremflickr.com/400/400/staghorncoral,underwater"
+  },
+  {
+    "id": "c_伊豆_1764770429_5",
+    "name": "アオリイカ",
+    "imageKeyword": "squid",
+    "category": "その他",
+    "tags": [
+      "イカ",
+      "産卵",
+      "群れ"
+    ],
+    "description": "産卵期には大きな群れを作る。水中を優雅に泳ぐ姿は美しい。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "40cm",
+    "season": [
+      "spring",
+      "summer"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 20,
+      "max": 26
+    },
+    "regions": [
+      "伊豆半島",
+      "伊豆"
+    ],
+    "image": "https://loremflickr.com/400/400/squid,underwater"
+  },
+  {
+    "id": "c_伊豆_1764770429_6",
+    "name": "ウミウシカクレエビ",
+    "imageKeyword": "shrimp",
+    "category": "甲殻類",
+    "tags": [
+      "透明",
+      "エビ",
+      "ウミウシ"
+    ],
+    "description": "特定のウミウシに共生する。小さいので見つけるのが難しい。",
+    "baseRarity": "SR",
+    "depthRange": {
+      "min": 10,
+      "max": 30
+    },
+    "size": "2cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [
+      "擬態",
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 20,
+      "max": 27
+    },
+    "regions": [
+      "伊豆半島",
+      "伊豆"
+    ],
+    "image": "https://loremflickr.com/400/400/shrimp,underwater"
+  },
+  {
+    "id": "c_伊豆_1764770429_7",
+    "name": "マダコ",
+    "imageKeyword": "octopus",
+    "category": "その他",
+    "tags": [
+      "タコ",
+      "擬態",
+      "夜行性"
+    ],
+    "description": "知能が高く、擬態も得意。夜行性なのでナイトダイビングで出会えるかも。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "50cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "擬態",
+      "夜行性"
+    ],
+    "waterTempRange": {
+      "min": 15,
+      "max": 28
+    },
+    "regions": [
+      "伊豆半島",
+      "伊豆"
+    ],
+    "image": "https://loremflickr.com/400/400/octopus,underwater"
+  },
+  {
+    "id": "c_伊豆_1764770429_8",
+    "name": "サラサエビ",
+    "imageKeyword": "shrimp",
+    "category": "甲殻類",
+    "tags": [
+      "紅白",
+      "エビ",
+      "クリーナー"
+    ],
+    "description": "紅白の模様が美しいクリーナーシュリンプ。岩陰などで見られる。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 25
+    },
+    "size": "3cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 18,
+      "max": 27
+    },
+    "regions": [
+      "伊豆半島",
+      "伊豆"
+    ],
+    "image": "https://loremflickr.com/400/400/shrimp,underwater"
+  },
+  {
+    "id": "c_伊豆_1764770429_9",
+    "name": "キビナゴ",
+    "imageKeyword": "sprat",
+    "category": "魚類",
+    "tags": [
+      "群れ",
+      "銀色",
+      "小魚"
+    ],
+    "description": "光を浴びてキラキラと輝く群れは圧巻。捕食シーンも見られる。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 3,
+      "max": 15
+    },
+    "size": "8cm",
+    "season": [
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 22,
+      "max": 28
+    },
+    "regions": [
+      "伊豆半島",
+      "伊豆"
+    ],
+    "image": "https://loremflickr.com/400/400/sprat,underwater"
+  },
+  {
+    "id": "c_伊豆_1764770429_10",
+    "name": "ネンブツダイ",
+    "imageKeyword": "cardinalfish",
+    "category": "魚類",
+    "tags": [
+      "群れ",
+      "黒",
+      "縞"
+    ],
+    "description": "岩陰などに群れていることが多い。夜は活発に活動する。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "10cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "夜行性"
+    ],
+    "waterTempRange": {
+      "min": 17,
+      "max": 27
+    },
+    "regions": [
+      "伊豆半島",
+      "伊豆",
+      "伊豆大島"
+    ],
+    "image": "https://loremflickr.com/400/400/cardinalfish,underwater"
+  },
+  {
+    "id": "c_伊豆_1764770429_11",
+    "name": "イサキ",
+    "imageKeyword": "grunt",
+    "category": "魚類",
+    "tags": [
+      "群れ",
+      "食用",
+      "縞"
+    ],
+    "description": "食用としても人気。大きな群れで回遊している。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "30cm",
+    "season": [
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 20,
+      "max": 27
+    },
+    "regions": [
+      "伊豆半島",
+      "伊豆"
+    ],
+    "image": "https://loremflickr.com/400/400/grunt,underwater"
+  },
+  {
+    "id": "c_伊豆_1764770429_12",
+    "name": "ハナタツ",
+    "imageKeyword": "pipefish",
+    "category": "魚類",
+    "tags": [
+      "タツノオトシゴ",
+      "細長い",
+      "レア"
+    ],
+    "description": "タツノオトシゴの仲間。海藻に擬態していることが多い。",
+    "baseRarity": "SR",
+    "depthRange": {
+      "min": 10,
+      "max": 25
+    },
+    "size": "15cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [
+      "擬態",
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 18,
+      "max": 26
+    },
+    "regions": [
+      "伊豆半島",
+      "伊豆",
+      "伊豆大島"
+    ],
+    "image": "https://loremflickr.com/400/400/pipefish,underwater"
+  },
+  {
+    "id": "c_伊豆_1764770429_13",
+    "name": "コウイカ",
+    "imageKeyword": "cuttlefish",
+    "category": "その他",
+    "tags": [
+      "イカ",
+      "擬態",
+      "墨"
+    ],
+    "description": "擬態が得意。危険を感じると墨を吐く。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "20cm",
+    "season": [
+      "spring",
+      "summer"
+    ],
+    "specialAttributes": [
+      "擬態"
+    ],
+    "waterTempRange": {
+      "min": 18,
+      "max": 26
+    },
+    "regions": [
+      "伊豆半島",
+      "伊豆"
+    ],
+    "image": "https://loremflickr.com/400/400/cuttlefish,underwater"
+  },
+  {
+    "id": "c_伊豆_1764770429_14",
+    "name": "ミズヒキガニ",
+    "imageKeyword": "crab",
+    "category": "甲殻類",
+    "tags": [
+      "カニ",
+      "ピンク",
+      "触手"
+    ],
+    "description": "ピンク色の体色と長い触手が特徴的。岩の隙間などに隠れている。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 10,
+      "max": 30
+    },
+    "size": "3cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 16,
+      "max": 25
+    },
+    "regions": [
+      "伊豆半島",
+      "伊豆"
+    ],
+    "image": "https://loremflickr.com/400/400/crab,underwater"
+  },
+  {
+    "id": "c_伊豆_1764770429_15",
+    "name": "ホウライヒメジ",
+    "imageKeyword": "goatfish",
+    "category": "魚類",
+    "tags": [
+      "黄色",
+      "ヒゲ",
+      "砂地"
+    ],
+    "description": "砂地をヒゲで探る姿が特徴的。群れで見かけることが多い。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "20cm",
+    "season": [
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 22,
+      "max": 28
+    },
+    "regions": [
+      "伊豆半島",
+      "伊豆"
+    ],
+    "image": "https://loremflickr.com/400/400/goatfish,underwater"
+  },
+  {
+    "id": "c_伊豆_1764770429_16",
+    "name": "トラウツボ",
+    "imageKeyword": "moray eel",
+    "category": "魚類",
+    "tags": [
+      "ウツボ",
+      "縞模様",
+      "危険"
+    ],
+    "description": "岩陰に潜むことが多い。不用意に手を出さないように。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "80cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "噛みつく"
+    ],
+    "waterTempRange": {
+      "min": 16,
+      "max": 27
+    },
+    "regions": [
+      "伊豆半島",
+      "伊豆"
+    ],
+    "image": "https://loremflickr.com/400/400/morayeel,underwater"
+  },
+  {
+    "id": "c_伊豆_1764770429_17",
+    "name": "オルトマンワラエビ",
+    "imageKeyword": "shrimp",
+    "category": "甲殻類",
+    "tags": [
+      "エビ",
+      "派手",
+      "オレンジ"
+    ],
+    "description": "鮮やかなオレンジ色のエビ。イソギンチャクに共生。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "2cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 20,
+      "max": 27
+    },
+    "regions": [
+      "伊豆半島",
+      "伊豆"
+    ],
+    "image": "https://loremflickr.com/400/400/shrimp,underwater"
+  },
+  {
+    "id": "c_伊豆_1764770429_18",
+    "name": "タテジマキンチャクダイ",
+    "imageKeyword": "angelfish",
+    "category": "魚類",
+    "tags": [
+      "縞模様",
+      "黄色",
+      "幼魚"
+    ],
+    "description": "幼魚は黄色と黒の縞模様が美しい。成魚になると模様が変わる。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 25
+    },
+    "size": "20cm",
+    "season": [
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 28
+    },
+    "regions": [
+      "伊豆半島",
+      "伊豆"
+    ],
+    "image": "https://loremflickr.com/400/400/angelfish,underwater"
+  },
+  {
+    "id": "c_伊豆_1764770429_19",
+    "name": "シロウミウシ",
+    "imageKeyword": "nudibranch",
+    "category": "ウミウシ",
+    "tags": [
+      "白",
+      "ツノ",
+      "人気"
+    ],
+    "description": "定番人気のウミウシ。白い体に黄色いツノが特徴。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "3cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 16,
+      "max": 27
+    },
+    "regions": [
+      "伊豆半島",
+      "伊豆"
+    ],
+    "image": "https://loremflickr.com/400/400/nudibranch,underwater"
+  },
+  {
+    "id": "c_伊豆_1764770429_20",
+    "name": "アオウミウシ",
+    "imageKeyword": "nudibranch",
+    "category": "ウミウシ",
+    "tags": [
+      "青",
+      "人気",
+      "派手"
+    ],
+    "description": "鮮やかな青色が目を引く。ダイバーに人気のウミウシ。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "3cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 16,
+      "max": 27
+    },
+    "regions": [
+      "伊豆半島",
+      "伊豆"
+    ],
+    "image": "https://loremflickr.com/400/400/nudibranch,underwater"
+  },
+  {
+    "id": "c_伊豆_1764770429_21",
+    "name": "ミアミラウミウシ",
+    "imageKeyword": "nudibranch",
+    "category": "ウミウシ",
+    "tags": [
+      "ピンク",
+      "フリル",
+      "人気"
+    ],
+    "description": "ピンク色のフリルが可愛らしい。比較的よく見られる。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "3cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 16,
+      "max": 27
+    },
+    "regions": [
+      "伊豆半島",
+      "伊豆"
+    ],
+    "image": "https://loremflickr.com/400/400/nudibranch,underwater"
+  },
+  {
+    "id": "c_伊豆_1764770429_22",
+    "name": "コガラシエビ",
+    "imageKeyword": "shrimp",
+    "category": "甲殻類",
+    "tags": [
+      "エビ",
+      "オレンジ",
+      "イソギンチャク"
+    ],
+    "description": "イソギンチャクに共生。小さくて見つけにくいが、ペアでいることが多い。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "1cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 20,
+      "max": 27
+    },
+    "regions": [
+      "伊豆半島",
+      "伊豆"
+    ],
+    "image": "https://loremflickr.com/400/400/shrimp,underwater"
+  },
+  {
+    "id": "c_伊豆_1764770429_23",
+    "name": "イボイソバナガニ",
+    "imageKeyword": "crab",
+    "category": "甲殻類",
+    "tags": [
+      "カニ",
+      "イソバナ",
+      "共生"
+    ],
+    "description": "イソバナに擬態しているカニ。見つけるのが難しい。",
+    "baseRarity": "SR",
+    "depthRange": {
+      "min": 15,
+      "max": 30
+    },
+    "size": "2cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "擬態",
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 18,
+      "max": 26
+    },
+    "regions": [
+      "伊豆半島",
+      "伊豆"
+    ],
+    "image": "https://loremflickr.com/400/400/crab,underwater"
+  },
+  {
+    "id": "c_伊豆_1764770429_24",
+    "name": "ニシキウミウシ",
+    "imageKeyword": "nudibranch",
+    "category": "ウミウシ",
+    "tags": [
+      "カラフル",
+      "ウミウシ",
+      "人気"
+    ],
+    "description": "様々な色彩が美しい。小さいのでじっくり探してみよう。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 25
+    },
+    "size": "2cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 16,
+      "max": 27
+    },
+    "regions": [
+      "伊豆半島",
+      "伊豆",
+      "奄美大島",
+      "串本"
+    ],
+    "image": "https://loremflickr.com/400/400/nudibranch,underwater"
+  },
+  {
+    "id": "c_伊豆_1764770429_25",
+    "name": "ヒメギンポ",
+    "imageKeyword": "blenny",
+    "category": "魚類",
+    "tags": [
+      "可愛い",
+      "岩",
+      "小型"
+    ],
+    "description": "岩の隙間から顔を出す姿が可愛い。警戒心が強い。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 3,
+      "max": 15
+    },
+    "size": "5cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 16,
+      "max": 27
+    },
+    "regions": [
+      "伊豆半島",
+      "伊豆"
+    ],
+    "image": "https://loremflickr.com/400/400/blenny,underwater"
+  },
+  {
+    "id": "c_伊豆_1764770429_26",
+    "name": "ボウズコバンザメ",
+    "imageKeyword": "remora",
+    "category": "魚類",
+    "tags": [
+      "コバンザメ",
+      "頭",
+      "くっつく"
+    ],
+    "description": "頭に吸盤を持ち、大型の魚に付いて移動する。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 10,
+      "max": 30
+    },
+    "size": "30cm",
+    "season": [
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 22,
+      "max": 28
+    },
+    "regions": [
+      "伊豆半島",
+      "伊豆"
+    ],
+    "image": "https://loremflickr.com/400/400/remora,underwater"
+  },
+  {
+    "id": "c_伊豆_1764770429_27",
+    "name": "オニカサゴ",
+    "imageKeyword": "scorpionfish",
+    "category": "魚類",
+    "tags": [
+      "毒",
+      "擬態",
+      "危険"
+    ],
+    "description": "岩に擬態している。背びれに毒があるので注意。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 10,
+      "max": 30
+    },
+    "size": "30cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "毒",
+      "擬態"
+    ],
+    "waterTempRange": {
+      "min": 16,
+      "max": 27
+    },
+    "regions": [
+      "伊豆半島",
+      "伊豆"
+    ],
+    "image": "https://loremflickr.com/400/400/scorpionfish,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764770484_0",
+    "name": "カクレクマノミ",
+    "imageKeyword": "clownfish",
+    "category": "魚類",
+    "tags": [
+      "オレンジ",
+      "白",
+      "模様",
+      "イソギンチャク"
+    ],
+    "description": "沖縄のアイドル！イソギンチャクと共生し、ちょこまか泳ぐ姿がキュート。実は性転換する魚。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 3,
+      "max": 15
+    },
+    "size": "8cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島"
+    ],
+    "image": "https://loremflickr.com/400/400/clownfish,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764770484_1",
+    "name": "マンタ",
+    "imageKeyword": "manta ray",
+    "category": "大物",
+    "tags": [
+      "黒",
+      "白",
+      "エイ",
+      "回遊"
+    ],
+    "description": "優雅に舞う姿は圧巻！遭遇できれば幸運。黒島や慶良間諸島が有名スポットです。",
+    "baseRarity": "SR",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "3m",
+    "season": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島"
+    ],
+    "image": "https://loremflickr.com/400/400/manta,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764770484_2",
+    "name": "アオウミガメ",
+    "imageKeyword": "turtle",
+    "category": "その他",
+    "tags": [
+      "緑",
+      "甲羅",
+      "のんびり",
+      "癒し"
+    ],
+    "description": "穏やかな性格でダイバーに人気。砂地で休憩している姿や、食事中の姿を見かけることも。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "80cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 22,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島"
+    ],
+    "image": "https://loremflickr.com/400/400/turtle,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764770484_3",
+    "name": "ハナミノカサゴ",
+    "imageKeyword": "lionfish",
+    "category": "魚類",
+    "tags": [
+      "赤",
+      "白",
+      "縞模様",
+      "優雅"
+    ],
+    "description": "優雅なヒレを持つが、毒針に注意！近づきすぎないように観察しましょう。夜行性。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "30cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "毒",
+      "夜行性"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島"
+    ],
+    "image": "https://loremflickr.com/400/400/lionfish,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764770484_4",
+    "name": "ミドリイシ",
+    "imageKeyword": "acropora",
+    "category": "サンゴ",
+    "tags": [
+      "緑",
+      "枝状",
+      "サンゴ礁",
+      "群生"
+    ],
+    "description": "沖縄のサンゴ礁を代表する種。枝状に広がり、美しい景観を作り出します。温暖化に弱い。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 3,
+      "max": 20
+    },
+    "size": "50cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 22,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島"
+    ],
+    "image": "https://loremflickr.com/400/400/acropora,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764770484_5",
+    "name": "オニヒトデ",
+    "imageKeyword": "crown-of-thorns starfish",
+    "category": "その他",
+    "tags": [
+      "棘",
+      "ヒトデ",
+      "サンゴ",
+      "捕食"
+    ],
+    "description": "サンゴを食害する厄介者。駆除活動も行われています。全身に毒のある棘を持つので触らないで！",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 2,
+      "max": 30
+    },
+    "size": "40cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "毒"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島"
+    ],
+    "image": "https://loremflickr.com/400/400/crown-of-thornsstarfish,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764770484_6",
+    "name": "イソギンチャクモエビ",
+    "imageKeyword": "shrimp",
+    "category": "甲殻類",
+    "tags": [
+      "透明",
+      "エビ",
+      "イソギンチャク",
+      "共生"
+    ],
+    "description": "イソギンチャクの中に隠れている小さなエビ。透明で美しい姿はマクロ撮影の被写体として人気。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "2cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島"
+    ],
+    "image": "https://loremflickr.com/400/400/shrimp,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764770484_7",
+    "name": "コブシメ",
+    "imageKeyword": "cuttlefish",
+    "category": "その他",
+    "tags": [
+      "イカ",
+      "擬態",
+      "模様",
+      "変化"
+    ],
+    "description": "沖縄の海で見られる大型のコウイカ。擬態が得意で、体の色や模様を瞬時に変化させます。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 3,
+      "max": 30
+    },
+    "size": "50cm",
+    "season": [
+      "winter",
+      "spring"
+    ],
+    "specialAttributes": [
+      "擬態"
+    ],
+    "waterTempRange": {
+      "min": 20,
+      "max": 28
+    },
+    "regions": [
+      "沖縄本島"
+    ],
+    "image": "https://loremflickr.com/400/400/cuttlefish,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764770484_8",
+    "name": "リュウキュウキッカサンゴ",
+    "imageKeyword": "coral",
+    "category": "サンゴ",
+    "tags": [
+      "黄色",
+      "塊状",
+      "キッカサンゴ",
+      "サンゴ礁"
+    ],
+    "description": "黄色が鮮やかな塊状のサンゴ。沖縄のサンゴ礁でよく見られます。水深の浅い場所を好む。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 2,
+      "max": 15
+    },
+    "size": "30cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 22,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島"
+    ],
+    "image": "https://loremflickr.com/400/400/coral,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764770484_9",
+    "name": "ハダカハオコゼ",
+    "imageKeyword": "scorpionfish",
+    "category": "魚類",
+    "tags": [
+      "赤",
+      "ピンク",
+      "擬態",
+      "岩"
+    ],
+    "description": "岩に擬態していることが多い魚。見つけるのが難しいですが、見つけた時の喜びは格別！",
+    "baseRarity": "SR",
+    "depthRange": {
+      "min": 5,
+      "max": 25
+    },
+    "size": "10cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "擬態",
+      "毒"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島"
+    ],
+    "image": "https://loremflickr.com/400/400/scorpionfish,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764770484_10",
+    "name": "モンツキカエルウオ",
+    "imageKeyword": "blenny",
+    "category": "魚類",
+    "tags": [
+      "白",
+      "黒",
+      "水玉",
+      "可愛い"
+    ],
+    "description": "白地に黒い水玉模様が特徴的なカエルウオ。岩の上でちょこんと座っている姿が可愛い。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 1,
+      "max": 10
+    },
+    "size": "5cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "慶良間諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/blenny,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764770484_11",
+    "name": "ジョーフィッシュ",
+    "imageKeyword": "jawfish",
+    "category": "魚類",
+    "tags": [
+      "黄色",
+      "巣穴",
+      "警戒",
+      "子育て"
+    ],
+    "description": "巣穴から顔を出す姿が可愛いジョーフィッシュ。危険を感じるとすぐに巣穴に隠れます。オスが卵を守る。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 25
+    },
+    "size": "10cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 22,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "伊豆",
+      "奄美大島"
+    ],
+    "image": "https://loremflickr.com/400/400/jawfish,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764770484_12",
+    "name": "ニシキテグリ",
+    "imageKeyword": "dragonet",
+    "category": "魚類",
+    "tags": [
+      "カラフル",
+      "派手",
+      "婚姻色",
+      "砂地"
+    ],
+    "description": "鮮やかな色彩が美しいニシキテグリ。ペアで行動することが多く、求愛ダンスも観察できます。",
+    "baseRarity": "SR",
+    "depthRange": {
+      "min": 3,
+      "max": 20
+    },
+    "size": "7cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島"
+    ],
+    "image": "https://loremflickr.com/400/400/dragonet,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764770484_13",
+    "name": "ウミテング",
+    "imageKeyword": "pipefish",
+    "category": "魚類",
+    "tags": [
+      "茶色",
+      "細長い",
+      "海藻",
+      "擬態"
+    ],
+    "description": "海藻に擬態している細長い魚。じっくり観察しないとなかなか見つけられません。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "15cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "擬態"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島"
+    ],
+    "image": "https://loremflickr.com/400/400/pipefish,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764770484_14",
+    "name": "ゾウゲイロウミウシ",
+    "imageKeyword": "nudibranch",
+    "category": "ウミウシ",
+    "tags": [
+      "白",
+      "黄色",
+      "触覚",
+      "カラフル"
+    ],
+    "description": "象牙色の体に黄色のラインが美しいウミウシ。砂地や岩の上で見られます。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "3cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島"
+    ],
+    "image": "https://loremflickr.com/400/400/nudibranch,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764770484_15",
+    "name": "ミアミラウミウシ",
+    "imageKeyword": "nudibranch",
+    "category": "ウミウシ",
+    "tags": [
+      "白",
+      "黒",
+      "オレンジ",
+      "派手"
+    ],
+    "description": "白地に黒とオレンジの模様が特徴的なウミウシ。小さくて可愛らしい。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "2cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "伊豆"
+    ],
+    "image": "https://loremflickr.com/400/400/nudibranch,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764770484_16",
+    "name": "サラサエビ",
+    "imageKeyword": "shrimp",
+    "category": "甲殻類",
+    "tags": [
+      "白",
+      "赤",
+      "模様",
+      "掃除"
+    ],
+    "description": "赤い体に白い模様が美しいエビ。他の魚の体を掃除するクリーナーシュリンプとして知られる。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "3cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島"
+    ],
+    "image": "https://loremflickr.com/400/400/shrimp,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764770484_17",
+    "name": "アカマツカサ",
+    "imageKeyword": "soldierfish",
+    "category": "魚類",
+    "tags": [
+      "赤",
+      "夜行性",
+      "目",
+      "大きい"
+    ],
+    "description": "大きな目が特徴的な夜行性の魚。昼間は岩陰に隠れていることが多い。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "20cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "夜行性"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島"
+    ],
+    "image": "https://loremflickr.com/400/400/soldierfish,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764770484_18",
+    "name": "ネムリブカ",
+    "imageKeyword": "shark",
+    "category": "大物",
+    "tags": [
+      "サメ",
+      "寝ている",
+      "岩陰",
+      "大人しい"
+    ],
+    "description": "岩陰で寝ていることが多いサメ。大人しい性格で、刺激しなければ安全。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 10,
+      "max": 30
+    },
+    "size": "1.5m",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 22,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島"
+    ],
+    "image": "https://loremflickr.com/400/400/shark,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764770484_19",
+    "name": "テングカワハギ",
+    "imageKeyword": "filefish",
+    "category": "魚類",
+    "tags": [
+      "青",
+      "黄色",
+      "模様",
+      "ユニーク"
+    ],
+    "description": "ユニークな模様が特徴的なカワハギ。警戒心が強く、近づくとすぐに逃げてしまう。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 25
+    },
+    "size": "15cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 22,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島"
+    ],
+    "image": "https://loremflickr.com/400/400/filefish,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764770484_20",
+    "name": "ハナダイ",
+    "imageKeyword": "anthias",
+    "category": "魚類",
+    "tags": [
+      "ピンク",
+      "群れ",
+      "サンゴ礁",
+      "華やか"
+    ],
+    "description": "サンゴ礁を華やかに彩るハナダイの群れ。オスとメスで色が異なる。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 25
+    },
+    "size": "10cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 22,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島"
+    ],
+    "image": "https://loremflickr.com/400/400/anthias,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764770484_21",
+    "name": "ヒレナガヤッコ",
+    "imageKeyword": "angelfish",
+    "category": "魚類",
+    "tags": [
+      "青",
+      "黄色",
+      "模様",
+      "優雅"
+    ],
+    "description": "青と黄色の模様が美しいヤッコ。優雅に泳ぐ姿はダイバーを魅了します。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "15cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 22,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島"
+    ],
+    "image": "https://loremflickr.com/400/400/angelfish,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764770484_22",
+    "name": "イシガキカエルウオ",
+    "imageKeyword": "blenny",
+    "category": "魚類",
+    "tags": [
+      "茶色",
+      "模様",
+      "岩",
+      "擬態"
+    ],
+    "description": "岩に擬態しているカエルウオ。よく見ると可愛い顔をしています。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 1,
+      "max": 10
+    },
+    "size": "8cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "擬態"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "石垣島",
+      "奄美大島"
+    ],
+    "image": "https://loremflickr.com/400/400/blenny,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764770484_23",
+    "name": "ミナミハコフグ",
+    "imageKeyword": "boxfish",
+    "category": "魚類",
+    "tags": [
+      "黄色",
+      "模様",
+      "箱",
+      "可愛い"
+    ],
+    "description": "箱のような形をした可愛い魚。動きはゆっくり。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 3,
+      "max": 20
+    },
+    "size": "10cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 22,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島"
+    ],
+    "image": "https://loremflickr.com/400/400/boxfish,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764770484_24",
+    "name": "ツノダシ",
+    "imageKeyword": "moorish idol",
+    "category": "魚類",
+    "tags": [
+      "白",
+      "黒",
+      "黄色",
+      "優雅"
+    ],
+    "description": "白、黒、黄色の模様が美しい魚。サンゴ礁を優雅に泳ぎます。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 3,
+      "max": 25
+    },
+    "size": "20cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 22,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島"
+    ],
+    "image": "https://loremflickr.com/400/400/moorishidol,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764770484_25",
+    "name": "コクテンフグ",
+    "imageKeyword": "pufferfish",
+    "category": "魚類",
+    "tags": [
+      "黒",
+      "水玉",
+      "フグ",
+      "可愛い"
+    ],
+    "description": "黒地に白い水玉模様が可愛いフグ。危険を感じると体を膨らませます。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "15cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "毒"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島"
+    ],
+    "image": "https://loremflickr.com/400/400/pufferfish,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764770484_26",
+    "name": "ウコンハネガイ",
+    "imageKeyword": "scallop",
+    "category": "その他",
+    "tags": [
+      "黄色",
+      "貝",
+      "砂地",
+      "レア"
+    ],
+    "description": "鮮やかな黄色の貝。砂地に生息し、レア度高め。ライトを当てると光って綺麗。",
+    "baseRarity": "SR",
+    "depthRange": {
+      "min": 10,
+      "max": 30
+    },
+    "size": "10cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島"
+    ],
+    "image": "https://loremflickr.com/400/400/scallop,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764770484_27",
+    "name": "シマウミスズメ",
+    "imageKeyword": "seasnake",
+    "category": "その他",
+    "tags": [
+      "蛇",
+      "毒",
+      "縞模様",
+      "警戒"
+    ],
+    "description": "縞模様が特徴的なウミヘビ。毒を持つので注意。刺激しないように観察しましょう。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 3,
+      "max": 20
+    },
+    "size": "80cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "毒"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島"
+    ],
+    "image": "https://loremflickr.com/400/400/seasnake,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764770484_28",
+    "name": "クマノミ",
+    "imageKeyword": "anemonefish",
+    "category": "魚類",
+    "tags": [
+      "オレンジ",
+      "白",
+      "イソギンチャク",
+      "共生"
+    ],
+    "description": "カクレクマノミによく似ていますが、少し模様が違います。イソギンチャクと共生。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 3,
+      "max": 15
+    },
+    "size": "10cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "伊豆",
+      "石垣島",
+      "慶良間諸島",
+      "伊豆大島"
+    ],
+    "image": "https://loremflickr.com/400/400/anemonefish,underwater"
+  },
+  {
+    "id": "c_石垣島_1764770531_0",
+    "name": "カクレクマノミ",
+    "imageKeyword": "clownfish",
+    "category": "魚類",
+    "tags": [
+      "クマノミ",
+      "オレンジ",
+      "白",
+      "イソギンチャク"
+    ],
+    "description": "イソギンチャクと共生する人気者。石垣島ではセジロクマノミと共生していることも。幼魚は体が小さいので見つけやすい。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 3,
+      "max": 15
+    },
+    "size": "8cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "慶良間諸島",
+      "石垣島",
+      "宮古島"
+    ],
+    "image": "https://loremflickr.com/400/400/clownfish,underwater"
+  },
+  {
+    "id": "c_石垣島_1764770531_1",
+    "name": "マンタ",
+    "imageKeyword": "manta",
+    "category": "大物",
+    "tags": [
+      "オニイトマキエイ",
+      "エイ",
+      "黒",
+      "回遊"
+    ],
+    "description": "石垣島といえばマンタ！川平石崎マンタスクランブルが有名。クリーニングステーションでのお食事シーンは圧巻。",
+    "baseRarity": "SR",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "5m",
+    "season": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "石垣島",
+      "宮古島"
+    ],
+    "image": "https://loremflickr.com/400/400/manta,underwater"
+  },
+  {
+    "id": "c_石垣島_1764770531_2",
+    "name": "ハナヒゲウツボ",
+    "imageKeyword": "ribbon_eel",
+    "category": "魚類",
+    "tags": [
+      "ウツボ",
+      "青",
+      "黄色",
+      "細長い"
+    ],
+    "description": "幼魚は黒、成長すると青、さらに黄色へと性転換する珍しいウツボ。砂地の穴に隠れていることが多いです。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 25
+    },
+    "size": "80cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "擬態"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "慶良間諸島",
+      "石垣島",
+      "宮古島",
+      "小笠原諸島",
+      "奄美大島"
+    ],
+    "image": "https://loremflickr.com/400/400/ribbon_eel,underwater"
+  },
+  {
+    "id": "c_石垣島_1764770531_3",
+    "name": "ウミウシカクレエビ",
+    "imageKeyword": "shrimp",
+    "category": "甲殻類",
+    "tags": [
+      "エビ",
+      "透明",
+      "ウミウシ",
+      "共生"
+    ],
+    "description": "イロウミウシなどのウミウシに寄生する小さなエビ。注意深く探さないと見つけられない、隠れた人気者。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "2cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "擬態"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "慶良間諸島",
+      "石垣島",
+      "宮古島",
+      "伊豆",
+      "小笠原諸島",
+      "奄美大島"
+    ],
+    "image": "https://loremflickr.com/400/400/shrimp,underwater"
+  },
+  {
+    "id": "c_石垣島_1764770531_4",
+    "name": "コブシメ",
+    "imageKeyword": "cuttlefish",
+    "category": "その他",
+    "tags": [
+      "イカ",
+      "甲イカ",
+      "擬態",
+      "産卵"
+    ],
+    "description": "産卵期には浅瀬に集まり、独特の求愛行動を見せる。擬態の名人で、周囲の環境に合わせて体色を変化させる。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 3,
+      "max": 20
+    },
+    "size": "50cm",
+    "season": [
+      "spring"
+    ],
+    "specialAttributes": [
+      "擬態"
+    ],
+    "waterTempRange": {
+      "min": 20,
+      "max": 28
+    },
+    "regions": [
+      "沖縄本島",
+      "慶良間諸島",
+      "石垣島",
+      "宮古島"
+    ],
+    "image": "https://loremflickr.com/400/400/cuttlefish,underwater"
+  },
+  {
+    "id": "c_石垣島_1764770531_5",
+    "name": "ハダカハオコゼ",
+    "imageKeyword": "scorpionfish",
+    "category": "魚類",
+    "tags": [
+      "オコゼ",
+      "ピンク",
+      "紫",
+      "擬態"
+    ],
+    "description": "岩やサンゴに擬態していることが多い。背びれに毒を持つ。じっとしているので写真が撮りやすい。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "15cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "毒",
+      "擬態"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "慶良間諸島",
+      "石垣島",
+      "宮古島"
+    ],
+    "image": "https://loremflickr.com/400/400/scorpionfish,underwater"
+  },
+  {
+    "id": "c_石垣島_1764770531_6",
+    "name": "アオウミガメ",
+    "imageKeyword": "turtle",
+    "category": "大物",
+    "tags": [
+      "ウミガメ",
+      "青",
+      "のんびり",
+      "癒やし"
+    ],
+    "description": "穏やかな性格で、ダイバーに人気。サンゴ礁で海藻を食べている姿をよく見かける。一緒に泳ぐと癒される。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 2,
+      "max": 20
+    },
+    "size": "1m",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "慶良間諸島",
+      "石垣島",
+      "宮古島"
+    ],
+    "image": "https://loremflickr.com/400/400/turtle,underwater"
+  },
+  {
+    "id": "c_石垣島_1764770531_7",
+    "name": "ニシキテグリ",
+    "imageKeyword": "dragonet",
+    "category": "魚類",
+    "tags": [
+      "テグリ",
+      "派手",
+      "模様",
+      "ペア"
+    ],
+    "description": "鮮やかな色彩が美しい小型の魚。ペアで行動することが多い。夕暮れ時に求愛ダンスをすることがある。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 3,
+      "max": 15
+    },
+    "size": "6cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "慶良間諸島",
+      "石垣島",
+      "宮古島"
+    ],
+    "image": "https://loremflickr.com/400/400/dragonet,underwater"
+  },
+  {
+    "id": "c_石垣島_1764770531_8",
+    "name": "ミカヅキコモンエビ",
+    "imageKeyword": "shrimp",
+    "category": "甲殻類",
+    "tags": [
+      "エビ",
+      "半透明",
+      "赤い線",
+      "ウミシダ"
+    ],
+    "description": "ウミシダに共生するエビ。半透明の体に赤い線が入っている。ウミシダの色に合わせて体色を変化させる。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "2cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "擬態"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "慶良間諸島",
+      "石垣島",
+      "宮古島"
+    ],
+    "image": "https://loremflickr.com/400/400/shrimp,underwater"
+  },
+  {
+    "id": "c_石垣島_1764770531_9",
+    "name": "イソギンチャクモエビ",
+    "imageKeyword": "shrimp",
+    "category": "甲殻類",
+    "tags": [
+      "エビ",
+      "イソギンチャク",
+      "共生",
+      "模様"
+    ],
+    "description": "イソギンチャクの中に隠れていることが多い。透明感のある体に模様が入っている。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 3,
+      "max": 15
+    },
+    "size": "2cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "擬態"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "慶良間諸島",
+      "石垣島",
+      "宮古島"
+    ],
+    "image": "https://loremflickr.com/400/400/shrimp,underwater"
+  },
+  {
+    "id": "c_石垣島_1764770531_10",
+    "name": "リュウキュウイボイソバナガニ",
+    "imageKeyword": "crab",
+    "category": "甲殻類",
+    "tags": [
+      "カニ",
+      "イソバナ",
+      "共生",
+      "小さい"
+    ],
+    "description": "イソバナに擬態しているカニ。非常に小さく、見つけるのが難しい。イソバナの色に合わせて体色を変化させる。",
+    "baseRarity": "SR",
+    "depthRange": {
+      "min": 10,
+      "max": 30
+    },
+    "size": "1cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "擬態"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "慶良間諸島",
+      "石垣島",
+      "宮古島",
+      "奄美大島"
+    ],
+    "image": "https://loremflickr.com/400/400/crab,underwater"
+  },
+  {
+    "id": "c_石垣島_1764770531_11",
+    "name": "オドリハゼ",
+    "imageKeyword": "goby",
+    "category": "魚類",
+    "tags": [
+      "ハゼ",
+      "黄色",
+      "ダンス",
+      "ホバーリング"
+    ],
+    "description": "常にヒレを動かしてホバーリングしている姿が踊っているように見える。テッポウエビと共生している。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "5cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "慶良間諸島",
+      "石垣島",
+      "宮古島"
+    ],
+    "image": "https://loremflickr.com/400/400/goby,underwater"
+  },
+  {
+    "id": "c_石垣島_1764770531_12",
+    "name": "パンダダルマハゼ",
+    "imageKeyword": "goby",
+    "category": "魚類",
+    "tags": [
+      "ハゼ",
+      "白黒",
+      "小さい",
+      "サンゴ"
+    ],
+    "description": "サンゴの隙間に隠れていることが多い。白黒の模様がパンダに似ている。非常に小さい。",
+    "baseRarity": "SR",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "2cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "慶良間諸島",
+      "石垣島",
+      "宮古島"
+    ],
+    "image": "https://loremflickr.com/400/400/goby,underwater"
+  },
+  {
+    "id": "c_石垣島_1764770531_13",
+    "name": "イバラカンザシ",
+    "imageKeyword": "worm",
+    "category": "その他",
+    "tags": [
+      "ゴカイ",
+      "カラフル",
+      "クリスマスツリー",
+      "観賞"
+    ],
+    "description": "サンゴに付着しているゴカイの仲間。刺激を受けると引っ込む。クリスマスツリーのような形をしている。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 3,
+      "max": 30
+    },
+    "size": "5cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "慶良間諸島",
+      "石垣島",
+      "宮古島"
+    ],
+    "image": "https://loremflickr.com/400/400/worm,underwater"
+  },
+  {
+    "id": "c_石垣島_1764770531_14",
+    "name": "ムカデミノウミウシ",
+    "imageKeyword": "nudibranch",
+    "category": "ウミウシ",
+    "tags": [
+      "ウミウシ",
+      "白",
+      "オレンジ",
+      "触覚"
+    ],
+    "description": "背中にたくさんの突起があるウミウシ。突起の先端がオレンジ色になっている。他の生物に擬態している。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 25
+    },
+    "size": "3cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "擬態"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "慶良間諸島",
+      "石垣島",
+      "宮古島"
+    ],
+    "image": "https://loremflickr.com/400/400/nudibranch,underwater"
+  },
+  {
+    "id": "c_石垣島_1764770531_15",
+    "name": "ゾウゲイロウミウシ",
+    "imageKeyword": "nudibranch",
+    "category": "ウミウシ",
+    "tags": [
+      "ウミウシ",
+      "黄色",
+      "白",
+      "ツノ"
+    ],
+    "description": "鮮やかな黄色が目を引くウミウシ。背中に白い線が入っている。触覚が象の牙に似ている。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 25
+    },
+    "size": "3cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "慶良間諸島",
+      "石垣島",
+      "宮古島"
+    ],
+    "image": "https://loremflickr.com/400/400/nudibranch,underwater"
+  },
+  {
+    "id": "c_石垣島_1764770531_16",
+    "name": "キイロウミコチョウ",
+    "imageKeyword": "nudibranch",
+    "category": "ウミウシ",
+    "tags": [
+      "ウミウシ",
+      "黄色",
+      "触覚",
+      "レース"
+    ],
+    "description": "レースのような模様が美しいウミウシ。触覚が特徴的。黄色い体色が目を引く。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 25
+    },
+    "size": "3cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "慶良間諸島",
+      "石垣島",
+      "宮古島"
+    ],
+    "image": "https://loremflickr.com/400/400/nudibranch,underwater"
+  },
+  {
+    "id": "c_石垣島_1764770531_17",
+    "name": "ミドリイシ",
+    "imageKeyword": "coral",
+    "category": "サンゴ",
+    "tags": [
+      "サンゴ",
+      "緑",
+      "テーブル",
+      "群生"
+    ],
+    "description": "テーブル状に成長するサンゴ。群生していることが多い。熱帯魚の隠れ家になっている。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 3,
+      "max": 20
+    },
+    "size": "1m",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "慶良間諸島",
+      "石垣島",
+      "宮古島"
+    ],
+    "image": "https://loremflickr.com/400/400/coral,underwater"
+  },
+  {
+    "id": "c_石垣島_1764770531_18",
+    "name": "ハナヤサイサンゴ",
+    "imageKeyword": "coral",
+    "category": "サンゴ",
+    "tags": [
+      "サンゴ",
+      "ピンク",
+      "花",
+      "ソフトコーラル"
+    ],
+    "description": "花のような形をしたソフトコーラル。ピンク色が美しい。水流に乗って揺れる姿が優雅。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 25
+    },
+    "size": "30cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "慶良間諸島",
+      "石垣島",
+      "宮古島"
+    ],
+    "image": "https://loremflickr.com/400/400/coral,underwater"
+  },
+  {
+    "id": "c_石垣島_1764770531_19",
+    "name": "ノコギリダイ",
+    "imageKeyword": "sweetlips",
+    "category": "魚類",
+    "tags": [
+      "魚",
+      "群れ",
+      "黄色",
+      "模様"
+    ],
+    "description": "幼魚は黒地に黄色い斑点模様。成長とともに模様が変化する。群れで行動することが多い。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 25
+    },
+    "size": "30cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "慶良間諸島",
+      "石垣島",
+      "宮古島"
+    ],
+    "image": "https://loremflickr.com/400/400/sweetlips,underwater"
+  },
+  {
+    "id": "c_石垣島_1764770531_20",
+    "name": "ヨスジフエダイ",
+    "imageKeyword": "snapper",
+    "category": "魚類",
+    "tags": [
+      "魚",
+      "黄色",
+      "ストライプ",
+      "群れ"
+    ],
+    "description": "黄色い体に4本のストライプが入っている。群れで行動することが多い。浅瀬でよく見かける。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 3,
+      "max": 15
+    },
+    "size": "20cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "慶良間諸島",
+      "石垣島",
+      "宮古島"
+    ],
+    "image": "https://loremflickr.com/400/400/snapper,underwater"
+  },
+  {
+    "id": "c_石垣島_1764770531_21",
+    "name": "カスミチョウチョウウオ",
+    "imageKeyword": "butterflyfish",
+    "category": "魚類",
+    "tags": [
+      "魚",
+      "チョウチョウウオ",
+      "黄色",
+      "青"
+    ],
+    "description": "鮮やかな黄色と青色の模様が美しいチョウチョウウオ。ペアで行動することが多い。サンゴ礁で見かける。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 3,
+      "max": 20
+    },
+    "size": "15cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "慶良間諸島",
+      "石垣島",
+      "宮古島"
+    ],
+    "image": "https://loremflickr.com/400/400/butterflyfish,underwater"
+  },
+  {
+    "id": "c_石垣島_1764770531_22",
+    "name": "ツムブリ",
+    "imageKeyword": "rainbow_runner",
+    "category": "魚類",
+    "tags": [
+      "魚",
+      "回遊魚",
+      "青",
+      "速い"
+    ],
+    "description": "細長い体で素早く泳ぐ回遊魚。背中に青いラインが入っている。群れで行動することが多い。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "1m",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "慶良間諸島",
+      "石垣島",
+      "宮古島"
+    ],
+    "image": "https://loremflickr.com/400/400/rainbow_runner,underwater"
+  },
+  {
+    "id": "c_石垣島_1764770531_23",
+    "name": "ロウニンアジ",
+    "imageKeyword": "giant_trevally",
+    "category": "大物",
+    "tags": [
+      "魚",
+      "アジ",
+      "大きい",
+      "シルバー"
+    ],
+    "description": "巨大なアジ。ダイバーに突進してくることがあるので注意。迫力満点。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "1.7m",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "慶良間諸島",
+      "石垣島",
+      "宮古島"
+    ],
+    "image": "https://loremflickr.com/400/400/giant_trevally,underwater"
+  },
+  {
+    "id": "c_石垣島_1764770531_24",
+    "name": "ネムリブカ",
+    "imageKeyword": "whitetip_reef_shark",
+    "category": "大物",
+    "tags": [
+      "サメ",
+      "休憩",
+      "寝る",
+      "白いヒレ"
+    ],
+    "description": "サンゴ礁の岩陰などで休んでいることが多い。おとなしいサメ。白いヒレが特徴。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 10,
+      "max": 30
+    },
+    "size": "2m",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "慶良間諸島",
+      "石垣島",
+      "宮古島"
+    ],
+    "image": "https://loremflickr.com/400/400/whitetip_reef_shark,underwater"
+  },
+  {
+    "id": "c_石垣島_1764770531_25",
+    "name": "ハナダイ",
+    "imageKeyword": "anthias",
+    "category": "魚類",
+    "tags": [
+      "ハナダイ",
+      "ピンク",
+      "オレンジ",
+      "群れ"
+    ],
+    "description": "サンゴ礁の斜面を華やかに彩る。オスとメスで体色が異なる。群れで行動する。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "10cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "慶良間諸島",
+      "石垣島",
+      "宮古島"
+    ],
+    "image": "https://loremflickr.com/400/400/anthias,underwater"
+  },
+  {
+    "id": "c_石垣島_1764770531_26",
+    "name": "ガラスハゼ",
+    "imageKeyword": "glass_goby",
+    "category": "魚類",
+    "tags": [
+      "ハゼ",
+      "透明",
+      "小さい",
+      "群れ"
+    ],
+    "description": "体が透明なハゼ。群れで行動することが多い。サンゴの隙間に隠れている。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "2cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "慶良間諸島",
+      "石垣島",
+      "宮古島"
+    ],
+    "image": "https://loremflickr.com/400/400/glass_goby,underwater"
+  },
+  {
+    "id": "c_石垣島_1764770531_27",
+    "name": "コガラシエビ",
+    "imageKeyword": "shrimp",
+    "category": "甲殻類",
+    "tags": [
+      "エビ",
+      "黒",
+      "白",
+      "ウミシダ"
+    ],
+    "description": "ウミシダに共生するエビ。黒と白の模様が特徴的。非常に小さい。",
+    "baseRarity": "SR",
+    "depthRange": {
+      "min": 10,
+      "max": 30
+    },
+    "size": "1cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "擬態"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "慶良間諸島",
+      "石垣島",
+      "宮古島",
+      "伊豆"
+    ],
+    "image": "https://loremflickr.com/400/400/shrimp,underwater"
+  },
+  {
+    "id": "c_石垣島_1764770531_28",
+    "name": "イロブダイ",
+    "imageKeyword": "parrotfish",
+    "category": "魚類",
+    "tags": [
+      "魚",
+      "ブダイ",
+      "カラフル",
+      "模様"
+    ],
+    "description": "オスは派手な色彩、メスは地味な色彩をしている。サンゴを食べる。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 3,
+      "max": 20
+    },
+    "size": "40cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "慶良間諸島",
+      "石垣島",
+      "宮古島"
+    ],
+    "image": "https://loremflickr.com/400/400/parrotfish,underwater"
+  },
+  {
+    "id": "c_慶良間諸島_1764770586_0",
+    "name": "カクレクマノミ",
+    "imageKeyword": "clownfish",
+    "category": "魚類",
+    "tags": [
+      "クマノミ",
+      "オレンジ",
+      "白",
+      "イソギンチャク"
+    ],
+    "description": "イソギンチャクと共生する人気者。慶良間の浅瀬でよく見られます。小さくて可愛い姿は癒やし効果抜群！",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 3,
+      "max": 15
+    },
+    "size": "8cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "慶良間諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/clownfish,underwater"
+  },
+  {
+    "id": "c_慶良間諸島_1764770586_1",
+    "name": "マンタ",
+    "imageKeyword": "manta",
+    "category": "大物",
+    "tags": [
+      "エイ",
+      "黒",
+      "回遊魚",
+      "マクロ"
+    ],
+    "description": "優雅に空を舞うように泳ぐマンタ。遭遇率は時期によるが、見れた時の感動は格別！クリーニングステーションでの観察がオススメ。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "3m",
+    "season": [
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 26,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "慶良間諸島",
+      "沖縄本島",
+      "石垣島"
+    ],
+    "image": "https://loremflickr.com/400/400/manta,underwater"
+  },
+  {
+    "id": "c_慶良間諸島_1764770586_2",
+    "name": "アオウミガメ",
+    "imageKeyword": "turtle",
+    "category": "その他",
+    "tags": [
+      "ウミガメ",
+      "緑",
+      "のんびり",
+      "癒やし"
+    ],
+    "description": "慶良間の海を代表する生物。穏やかな性格で、ダイバーに近寄ってくることも。一緒に泳ぐと癒やされます。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "1m",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "慶良間諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/turtle,underwater"
+  },
+  {
+    "id": "c_慶良間諸島_1764770586_3",
+    "name": "ハナゴンベ",
+    "imageKeyword": "hawkfish",
+    "category": "魚類",
+    "tags": [
+      "ゴンベ",
+      "ピンク",
+      "可愛い",
+      "マクロ"
+    ],
+    "description": "サンゴの上にちょこんと座る姿が愛らしい。臆病な性格なので、ゆっくり近づいて撮影しましょう。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 10,
+      "max": 30
+    },
+    "size": "5cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "慶良間諸島",
+      "石垣島",
+      "小笠原諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/hawkfish,underwater"
+  },
+  {
+    "id": "c_慶良間諸島_1764770586_4",
+    "name": "ミナミハコフグ",
+    "imageKeyword": "boxfish",
+    "category": "魚類",
+    "tags": [
+      "ハコフグ",
+      "黄色",
+      "水玉",
+      "幼魚"
+    ],
+    "description": "黄色い体に黒い水玉模様がキュートな幼魚。動きが遅いので、写真も撮りやすいです。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "5cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "慶良間諸島",
+      "沖縄本島",
+      "小笠原諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/boxfish,underwater"
+  },
+  {
+    "id": "c_慶良間諸島_1764770586_5",
+    "name": "リュウキュウキッカサンゴ",
+    "imageKeyword": "coral",
+    "category": "サンゴ",
+    "tags": [
+      "サンゴ",
+      "テーブル",
+      "ピンク",
+      "群生"
+    ],
+    "description": "テーブル状に広がる美しいサンゴ。ソフトコーラルとのコントラストが楽しめます。慶良間を代表する景観。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 25
+    },
+    "size": "2m",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "慶良間諸島",
+      "沖縄本島",
+      "石垣島",
+      "奄美大島"
+    ],
+    "image": "https://loremflickr.com/400/400/coral,underwater"
+  },
+  {
+    "id": "c_慶良間諸島_1764770586_6",
+    "name": "オニヒトデ",
+    "imageKeyword": "crown-of-thorns starfish",
+    "category": "その他",
+    "tags": [
+      "ヒトデ",
+      "棘",
+      "サンゴ",
+      "捕食"
+    ],
+    "description": "サンゴを食べる厄介者。見つけたら駆除にご協力ください。棘に毒があるので注意。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 2,
+      "max": 30
+    },
+    "size": "40cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "毒"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "慶良間諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/crown-of-thornsstarfish,underwater"
+  },
+  {
+    "id": "c_慶良間諸島_1764770586_7",
+    "name": "ウミテング",
+    "imageKeyword": "seamoth",
+    "category": "魚類",
+    "tags": [
+      "魚",
+      "迷彩",
+      "砂地",
+      "珍しい"
+    ],
+    "description": "砂地に擬態しているため見つけにくいですが、愛嬌のある顔立ちをしています。ペアでいることが多い。",
+    "baseRarity": "SR",
+    "depthRange": {
+      "min": 10,
+      "max": 25
+    },
+    "size": "8cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "擬態",
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "慶良間諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/seamoth,underwater"
+  },
+  {
+    "id": "c_慶良間諸島_1764770586_8",
+    "name": "ゾウゲイロウミウシ",
+    "imageKeyword": "nudibranch",
+    "category": "ウミウシ",
+    "tags": [
+      "ウミウシ",
+      "白",
+      "黄色",
+      "触覚"
+    ],
+    "description": "白と黄色のコントラストが美しいウミウシ。小さくて見つけにくいですが、マクロ好きにはたまらない被写体。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 10,
+      "max": 20
+    },
+    "size": "3cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "慶良間諸島",
+      "沖縄本島",
+      "石垣島",
+      "小笠原諸島",
+      "奄美大島"
+    ],
+    "image": "https://loremflickr.com/400/400/nudibranch,underwater"
+  },
+  {
+    "id": "c_慶良間諸島_1764770586_9",
+    "name": "ハダカハオコゼ",
+    "imageKeyword": "scorpionfish",
+    "category": "魚類",
+    "tags": [
+      "オコゼ",
+      "ピンク",
+      "擬態",
+      "毒"
+    ],
+    "description": "岩に擬態していることが多いので、見つけるのが難しい。背びれに毒があるので、触らないように注意。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 10,
+      "max": 30
+    },
+    "size": "15cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "擬態",
+      "毒",
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "慶良間諸島",
+      "奄美大島"
+    ],
+    "image": "https://loremflickr.com/400/400/scorpionfish,underwater"
+  },
+  {
+    "id": "c_慶良間諸島_1764770586_10",
+    "name": "イソマグロ",
+    "imageKeyword": "tuna",
+    "category": "大物",
+    "tags": [
+      "マグロ",
+      "回遊魚",
+      "群れ",
+      "迫力"
+    ],
+    "description": "回遊魚のイソマグロの群れに遭遇すると圧巻。時にダイバーに興味を示し近寄ってくることもあります。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 15,
+      "max": 40
+    },
+    "size": "1.5m",
+    "season": [
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 26,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "慶良間諸島",
+      "沖縄本島",
+      "石垣島",
+      "小笠原諸島",
+      "奄美大島"
+    ],
+    "image": "https://loremflickr.com/400/400/tuna,underwater"
+  },
+  {
+    "id": "c_慶良間諸島_1764770586_11",
+    "name": "ネムリブカ",
+    "imageKeyword": "whitetip reef shark",
+    "category": "大物",
+    "tags": [
+      "サメ",
+      "白い",
+      "おとなしい",
+      "寝ている"
+    ],
+    "description": "昼間は洞窟や岩陰で休んでいることが多い。おとなしい性格なので、刺激しないように観察しましょう。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 10,
+      "max": 30
+    },
+    "size": "1.6m",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "夜行性",
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "慶良間諸島",
+      "沖縄本島",
+      "奄美大島"
+    ],
+    "image": "https://loremflickr.com/400/400/whitetipreefshark,underwater"
+  },
+  {
+    "id": "c_慶良間諸島_1764770586_12",
+    "name": "ヨスジフエダイ",
+    "imageKeyword": "yellowstripe scad",
+    "category": "魚類",
+    "tags": [
+      "フエダイ",
+      "黄色",
+      "群れ",
+      "縦縞"
+    ],
+    "description": "黄色い縦縞が特徴的なフエダイ。群れで行動することが多く、圧巻の光景を作り出します。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 25
+    },
+    "size": "30cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "慶良間諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/yellowstripescad,underwater"
+  },
+  {
+    "id": "c_慶良間諸島_1764770586_13",
+    "name": "アカネダルマオコゼ",
+    "imageKeyword": "devil scorpionfish",
+    "category": "魚類",
+    "tags": [
+      "オコゼ",
+      "赤",
+      "擬態",
+      "毒"
+    ],
+    "description": "岩にそっくりな姿で擬態。鮮やかな赤色が特徴。毒を持つため、注意が必要です。",
+    "baseRarity": "SR",
+    "depthRange": {
+      "min": 15,
+      "max": 30
+    },
+    "size": "10cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "擬態",
+      "毒",
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "慶良間諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/devilscorpionfish,underwater"
+  },
+  {
+    "id": "c_慶良間諸島_1764770586_14",
+    "name": "モンガラカワハギ",
+    "imageKeyword": "triggerfish",
+    "category": "魚類",
+    "tags": [
+      "カワハギ",
+      "模様",
+      "派手",
+      "可愛い"
+    ],
+    "description": "ユニークな模様が目を引くカワハギ。好奇心旺盛で、ダイバーに近づいてくることもあります。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "20cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "慶良間諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/triggerfish,underwater"
+  },
+  {
+    "id": "c_慶良間諸島_1764770586_15",
+    "name": "パンダダルマハゼ",
+    "imageKeyword": "goby",
+    "category": "魚類",
+    "tags": [
+      "ハゼ",
+      "白黒",
+      "パンダ",
+      "可愛い",
+      "極小"
+    ],
+    "description": "白黒模様がパンダのような可愛いハゼ。体長1cmほどの極小サイズなので、見つけるのが大変。",
+    "baseRarity": "SSR",
+    "depthRange": {
+      "min": 10,
+      "max": 25
+    },
+    "size": "1cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "慶良間諸島",
+      "石垣島"
+    ],
+    "image": "https://loremflickr.com/400/400/goby,underwater"
+  },
+  {
+    "id": "c_慶良間諸島_1764770586_16",
+    "name": "クリアクリーナーシュリンプ",
+    "imageKeyword": "shrimp",
+    "category": "甲殻類",
+    "tags": [
+      "エビ",
+      "透明",
+      "掃除",
+      "クリーニング"
+    ],
+    "description": "魚の体を掃除するエビ。岩陰にいることが多く、魚がクリーニングを求めてやってくる姿が見られます。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "3cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "慶良間諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/shrimp,underwater"
+  },
+  {
+    "id": "c_慶良間諸島_1764770586_17",
+    "name": "センジュイソギンチャク",
+    "imageKeyword": "anemone",
+    "category": "その他",
+    "tags": [
+      "イソギンチャク",
+      "触手",
+      "カラフル",
+      "群生"
+    ],
+    "description": "無数の触手が美しいイソギンチャク。光の当たり方によって色が変わって見えます。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "50cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "慶良間諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/anemone,underwater"
+  },
+  {
+    "id": "c_慶良間諸島_1764770586_18",
+    "name": "ハナダイ",
+    "imageKeyword": "anthias",
+    "category": "魚類",
+    "tags": [
+      "魚",
+      "ピンク",
+      "群れ",
+      "華やか"
+    ],
+    "description": "サンゴ礁を華やかに彩るハナダイの群れ。オスは派手な色をしており、縄張りを主張します。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 25
+    },
+    "size": "10cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "慶良間諸島",
+      "石垣島"
+    ],
+    "image": "https://loremflickr.com/400/400/anthias,underwater"
+  },
+  {
+    "id": "c_慶良間諸島_1764770586_19",
+    "name": "マダラタルミ",
+    "imageKeyword": "sweetlips",
+    "category": "魚類",
+    "tags": [
+      "魚",
+      "幼魚",
+      "模様",
+      "黄色"
+    ],
+    "description": "幼魚の時は黄色い体に黒い水玉模様が特徴的で可愛らしい。成長とともに模様が変化します。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "60cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "慶良間諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/sweetlips,underwater"
+  },
+  {
+    "id": "c_慶良間諸島_1764770586_20",
+    "name": "ツムブリ",
+    "imageKeyword": "rainbow runner",
+    "category": "魚類",
+    "tags": [
+      "魚",
+      "回遊魚",
+      "シルバー",
+      "細長い"
+    ],
+    "description": "細長い体で、シルバーの体色に黄色いラインが特徴的。群れで高速で泳ぐ姿は圧巻。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 10,
+      "max": 30
+    },
+    "size": "1m",
+    "season": [
+      "summer",
+      "autumn"
+    ],
+    "waterTempRange": {
+      "min": 26,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "慶良間諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/rainbowrunner,underwater"
+  },
+  {
+    "id": "c_慶良間諸島_1764770586_21",
+    "name": "ハナミノカサゴ",
+    "imageKeyword": "lionfish",
+    "category": "魚類",
+    "tags": [
+      "魚",
+      "ミノカサゴ",
+      "赤白",
+      "優雅",
+      "毒"
+    ],
+    "description": "優雅にヒレを広げて泳ぐ姿が美しいですが、背びれに毒を持つので注意が必要です。観賞魚としても人気。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "30cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "毒",
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "慶良間諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/lionfish,underwater"
+  },
+  {
+    "id": "c_慶良間諸島_1764770586_22",
+    "name": "イロブダイ",
+    "imageKeyword": "parrotfish",
+    "category": "魚類",
+    "tags": [
+      "魚",
+      "ブダイ",
+      "カラフル",
+      "派手"
+    ],
+    "description": "鮮やかな体色が目を引くブダイ。サンゴを食べる姿を観察できます。夜は粘膜の膜を作って寝ます。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "50cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "慶良間諸島",
+      "伊豆大島",
+      "串本"
+    ],
+    "image": "https://loremflickr.com/400/400/parrotfish,underwater"
+  },
+  {
+    "id": "c_慶良間諸島_1764770586_23",
+    "name": "フタスジリュウキュウスズメダイ",
+    "imageKeyword": "damselfish",
+    "category": "魚類",
+    "tags": [
+      "魚",
+      "スズメダイ",
+      "青",
+      "黄色",
+      "幼魚"
+    ],
+    "description": "鮮やかな青と黄色のラインが特徴的なスズメダイ。幼魚は特に美しい。サンゴの周りでよく見られます。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 3,
+      "max": 15
+    },
+    "size": "8cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "慶良間諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/damselfish,underwater"
+  },
+  {
+    "id": "c_慶良間諸島_1764770586_24",
+    "name": "ミドリイシ",
+    "imageKeyword": "staghorn coral",
+    "category": "サンゴ",
+    "tags": [
+      "サンゴ",
+      "緑",
+      "枝状",
+      "群生"
+    ],
+    "description": "枝状に成長するサンゴ。群生している場所は圧巻の景観。慶良間の海を代表するサンゴの一つ。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 3,
+      "max": 20
+    },
+    "size": "1m",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "慶良間諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/staghorncoral,underwater"
+  },
+  {
+    "id": "c_慶良間諸島_1764770586_25",
+    "name": "オドリハゼ",
+    "imageKeyword": "goby",
+    "category": "魚類",
+    "tags": [
+      "ハゼ",
+      "砂地",
+      "ホバリング",
+      "ペア"
+    ],
+    "description": "砂地でホバリングしながらプランクトンを食べるハゼ。ペアでいることが多い。警戒心が強い。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 10,
+      "max": 25
+    },
+    "size": "5cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "慶良間諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/goby,underwater"
+  },
+  {
+    "id": "c_慶良間諸島_1764770586_26",
+    "name": "コクテンフグ",
+    "imageKeyword": "pufferfish",
+    "category": "魚類",
+    "tags": [
+      "フグ",
+      "水玉",
+      "可愛い",
+      "毒"
+    ],
+    "description": "白い水玉模様が可愛らしいフグ。興奮すると体を膨らませます。内臓に毒があるので食べられません。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "20cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "毒"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "慶良間諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/pufferfish,underwater"
+  },
+  {
+    "id": "c_慶良間諸島_1764770586_27",
+    "name": "イセエビ",
+    "imageKeyword": "lobster",
+    "category": "甲殻類",
+    "tags": [
+      "エビ",
+      "伊勢海老",
+      "高級",
+      "美味しい"
+    ],
+    "description": "高級食材として知られるイセエビ。岩陰に隠れていることが多い。漁獲禁止期間があるので注意。",
+    "baseRarity": "SR",
+    "depthRange": {
+      "min": 10,
+      "max": 30
+    },
+    "size": "30cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "夜行性"
+    ],
+    "waterTempRange": {
+      "min": 20,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "慶良間諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/lobster,underwater"
+  },
+  {
+    "id": "c_慶良間諸島_1764770586_28",
+    "name": "ウメイロモドキ",
+    "imageKeyword": "fusilier",
+    "category": "魚類",
+    "tags": [
+      "魚",
+      "青",
+      "群れ",
+      "回遊"
+    ],
+    "description": "青い体色が美しい魚。群れで行動することが多く、太陽光を浴びて輝く姿は圧巻です。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "25cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "慶良間諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/fusilier,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764770633_0",
+    "name": "カクレクマノミ",
+    "imageKeyword": "clownfish",
+    "category": "魚類",
+    "tags": [
+      "オレンジ",
+      "白",
+      "模様",
+      "ペア",
+      "人気"
+    ],
+    "description": "イソギンチャクと共生する人気者。縄張り意識が強く、近づくと威嚇してくることも。ペアで仲良く暮らしています。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 15
+    },
+    "size": "8cm",
+    "season": [
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 24,
+      "max": 28
+    },
+    "regions": [
+      "伊豆大島",
+      "沖縄本島",
+      "石垣島",
+      "慶良間諸島",
+      "奄美大島",
+      "串本"
+    ],
+    "image": "https://loremflickr.com/400/400/clownfish,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764770633_1",
+    "name": "アオウミウシ",
+    "imageKeyword": "nudibranch",
+    "category": "ウミウシ",
+    "tags": [
+      "青",
+      "黄色",
+      "触覚",
+      "人気",
+      "かわいい"
+    ],
+    "description": "鮮やかな青色が目を引くウミウシ。ピカチュウに似ている？様々な色や模様のウミウシを探すのも楽しい。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "2cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 18,
+      "max": 28
+    },
+    "regions": [
+      "伊豆大島",
+      "伊豆",
+      "串本"
+    ],
+    "image": "https://loremflickr.com/400/400/nudibranch,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764770633_2",
+    "name": "イシダイ",
+    "imageKeyword": "knifejaw",
+    "category": "魚類",
+    "tags": [
+      "白",
+      "黒",
+      "縞模様",
+      "岩場",
+      "食用"
+    ],
+    "description": "幼魚の頃は縞模様がはっきりしているが、成長するとオスは黒っぽくなる。磯の王者。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 3,
+      "max": 30
+    },
+    "size": "40cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 15,
+      "max": 25
+    },
+    "regions": [
+      "伊豆大島"
+    ],
+    "image": "https://loremflickr.com/400/400/knifejaw,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764770633_3",
+    "name": "キンギョハナダイ",
+    "imageKeyword": "anthias",
+    "category": "魚類",
+    "tags": [
+      "オレンジ",
+      "群れ",
+      "華やか",
+      "癒し"
+    ],
+    "description": "オスは鮮やかなオレンジ色で、メスは黄色っぽい。群れで泳ぐ姿はとても華やか。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 25
+    },
+    "size": "10cm",
+    "season": [
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 22,
+      "max": 28
+    },
+    "regions": [
+      "伊豆大島",
+      "伊豆",
+      "串本"
+    ],
+    "image": "https://loremflickr.com/400/400/anthias,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764770633_4",
+    "name": "ヒラメ",
+    "imageKeyword": "flounder",
+    "category": "魚類",
+    "tags": [
+      "茶色",
+      "擬態",
+      "砂地",
+      "食用"
+    ],
+    "description": "砂地に擬態しているため、見つけるのが難しい。目が片側に寄っているのが特徴。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 10,
+      "max": 30
+    },
+    "size": "30cm",
+    "season": [
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "擬態"
+    ],
+    "waterTempRange": {
+      "min": 15,
+      "max": 22
+    },
+    "regions": [
+      "伊豆大島",
+      "伊豆"
+    ],
+    "image": "https://loremflickr.com/400/400/flounder,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764770633_5",
+    "name": "マダイ",
+    "imageKeyword": "snapper",
+    "category": "魚類",
+    "tags": [
+      "赤",
+      "食用",
+      "高級魚",
+      "養殖"
+    ],
+    "description": "お祝いの席でおなじみ。養殖も盛んですが、天然物は味が格別。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 10,
+      "max": 50
+    },
+    "size": "50cm",
+    "season": [
+      "spring",
+      "autumn"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 18,
+      "max": 25
+    },
+    "regions": [
+      "伊豆大島"
+    ],
+    "image": "https://loremflickr.com/400/400/snapper,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764770633_6",
+    "name": "メジナ",
+    "imageKeyword": "largescale blackfish",
+    "category": "魚類",
+    "tags": [
+      "黒",
+      "磯",
+      "食用",
+      "釣り"
+    ],
+    "description": "磯釣りの人気ターゲット。成長すると体色が黒くなる。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 1,
+      "max": 20
+    },
+    "size": "30cm",
+    "season": [
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 15,
+      "max": 22
+    },
+    "regions": [
+      "伊豆大島",
+      "伊豆"
+    ],
+    "image": "https://loremflickr.com/400/400/largescaleblackfish,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764770633_7",
+    "name": "イサキ",
+    "imageKeyword": "grunt",
+    "category": "魚類",
+    "tags": [
+      "銀色",
+      "縞模様",
+      "群れ",
+      "食用"
+    ],
+    "description": "背中に黄色い線が入る。群れで行動することが多い。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "25cm",
+    "season": [
+      "summer"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 22,
+      "max": 28
+    },
+    "regions": [
+      "伊豆大島"
+    ],
+    "image": "https://loremflickr.com/400/400/grunt,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764770633_8",
+    "name": "タカベ",
+    "imageKeyword": "striped beakfish",
+    "category": "魚類",
+    "tags": [
+      "黄色",
+      "縞模様",
+      "群れ",
+      "食用"
+    ],
+    "description": "黄色い縦縞が特徴的。塩焼きにすると美味。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "20cm",
+    "season": [
+      "summer"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 22,
+      "max": 28
+    },
+    "regions": [
+      "伊豆大島"
+    ],
+    "image": "https://loremflickr.com/400/400/stripedbeakfish,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764770633_9",
+    "name": "ミヤコテングハギ",
+    "imageKeyword": "bluespine unicornfish",
+    "category": "魚類",
+    "tags": [
+      "青",
+      "角",
+      "ユニーク",
+      "回遊魚"
+    ],
+    "description": "額に角のような突起がある。回遊魚で、伊豆大島周辺にもやってくる。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 10,
+      "max": 30
+    },
+    "size": "40cm",
+    "season": [
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 24,
+      "max": 28
+    },
+    "regions": [
+      "伊豆大島",
+      "沖縄本島",
+      "慶良間諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/bluespineunicornfish,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764770633_10",
+    "name": "オオモンハタ",
+    "imageKeyword": "leopard coral grouper",
+    "category": "魚類",
+    "tags": [
+      "茶色",
+      "模様",
+      "高級魚",
+      "根魚"
+    ],
+    "description": "美味しい高級魚。岩陰に隠れていることが多い。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 10,
+      "max": 50
+    },
+    "size": "40cm",
+    "season": [
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 20,
+      "max": 28
+    },
+    "regions": [
+      "伊豆大島",
+      "伊豆",
+      "奄美大島",
+      "串本"
+    ],
+    "image": "https://loremflickr.com/400/400/leopardcoralgrouper,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764770633_11",
+    "name": "クエ",
+    "imageKeyword": "grouper",
+    "category": "魚類",
+    "tags": [
+      "茶色",
+      "模様",
+      "超高級魚",
+      "根魚"
+    ],
+    "description": "幻の超高級魚。なかなかお目にかかれない。見れたらラッキー！",
+    "baseRarity": "SSR",
+    "depthRange": {
+      "min": 20,
+      "max": 50
+    },
+    "size": "80cm",
+    "season": [
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 18,
+      "max": 25
+    },
+    "regions": [
+      "伊豆大島"
+    ],
+    "image": "https://loremflickr.com/400/400/grouper,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764770633_12",
+    "name": "ツノダシ",
+    "imageKeyword": "moorish idol",
+    "category": "魚類",
+    "tags": [
+      "白",
+      "黄色",
+      "黒",
+      "模様",
+      "熱帯魚"
+    ],
+    "description": "背びれが長く伸びる熱帯魚。ハタタテダイに似ている。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "20cm",
+    "season": [
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 24,
+      "max": 28
+    },
+    "regions": [
+      "伊豆大島"
+    ],
+    "image": "https://loremflickr.com/400/400/moorishidol,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764770633_13",
+    "name": "チョウチョウウオ",
+    "imageKeyword": "butterflyfish",
+    "category": "魚類",
+    "tags": [
+      "黄色",
+      "黒",
+      "模様",
+      "ペア",
+      "優雅"
+    ],
+    "description": "様々な種類がいる。ペアで仲良く泳いでいる姿がよく見られる。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "15cm",
+    "season": [
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 22,
+      "max": 28
+    },
+    "regions": [
+      "伊豆大島"
+    ],
+    "image": "https://loremflickr.com/400/400/butterflyfish,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764770633_14",
+    "name": "ハコフグ",
+    "imageKeyword": "boxfish",
+    "category": "魚類",
+    "tags": [
+      "黄色",
+      "箱型",
+      "ユニーク",
+      "かわいい"
+    ],
+    "description": "箱のような体型で、ゆっくり泳ぐ姿が愛らしい。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "20cm",
+    "season": [
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [
+      "毒"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 28
+    },
+    "regions": [
+      "伊豆大島"
+    ],
+    "image": "https://loremflickr.com/400/400/boxfish,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764770633_15",
+    "name": "マダコ",
+    "imageKeyword": "octopus",
+    "category": "その他",
+    "tags": [
+      "茶色",
+      "吸盤",
+      "知能",
+      "食用",
+      "擬態"
+    ],
+    "description": "高い知能を持つ。岩陰に隠れていたり、擬態していることが多い。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "60cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "擬態"
+    ],
+    "waterTempRange": {
+      "min": 15,
+      "max": 28
+    },
+    "regions": [
+      "伊豆大島",
+      "伊豆"
+    ],
+    "image": "https://loremflickr.com/400/400/octopus,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764770633_16",
+    "name": "アオリイカ",
+    "imageKeyword": "squid",
+    "category": "その他",
+    "tags": [
+      "透明",
+      "胴長",
+      "食用",
+      "美味",
+      "産卵"
+    ],
+    "description": "透明感のある体が美しい。産卵期には、海藻に卵を産み付ける。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "40cm",
+    "season": [
+      "spring",
+      "autumn"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 20,
+      "max": 28
+    },
+    "regions": [
+      "伊豆大島",
+      "伊豆"
+    ],
+    "image": "https://loremflickr.com/400/400/squid,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764770633_17",
+    "name": "イセエビ",
+    "imageKeyword": "lobster",
+    "category": "甲殻類",
+    "tags": [
+      "赤",
+      "高級",
+      "食用",
+      "縁起物"
+    ],
+    "description": "高級食材。縁起物としても知られる。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 10,
+      "max": 40
+    },
+    "size": "30cm",
+    "season": [
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 15,
+      "max": 22
+    },
+    "regions": [
+      "伊豆大島"
+    ],
+    "image": "https://loremflickr.com/400/400/lobster,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764770633_18",
+    "name": "ゾウリエビ",
+    "imageKeyword": "slipper lobster",
+    "category": "甲殻類",
+    "tags": [
+      "茶色",
+      "平たい",
+      "ユニーク",
+      "食用"
+    ],
+    "description": "平たい体型が特徴的。イセエビよりも美味しいという人も。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 20,
+      "max": 40
+    },
+    "size": "20cm",
+    "season": [
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 20,
+      "max": 28
+    },
+    "regions": [
+      "伊豆大島"
+    ],
+    "image": "https://loremflickr.com/400/400/slipperlobster,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764770633_19",
+    "name": "ウミガメ",
+    "imageKeyword": "turtle",
+    "category": "大物",
+    "tags": [
+      "甲羅",
+      "泳ぐ",
+      "のんびり",
+      "感動"
+    ],
+    "description": "優雅に泳ぐ姿に感動。見かけると幸運が訪れるかも。",
+    "baseRarity": "SR",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "80cm",
+    "season": [
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 22,
+      "max": 28
+    },
+    "regions": [
+      "伊豆大島"
+    ],
+    "image": "https://loremflickr.com/400/400/turtle,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764770633_20",
+    "name": "ハンマーヘッドシャーク",
+    "imageKeyword": "hammerhead shark",
+    "category": "大物",
+    "tags": [
+      "ハンマー",
+      "サメ",
+      "群れ",
+      "迫力"
+    ],
+    "description": "頭部がハンマーのような形をしている。群れで現れることも。",
+    "baseRarity": "SR",
+    "depthRange": {
+      "min": 10,
+      "max": 40
+    },
+    "size": "300cm",
+    "season": [
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 24,
+      "max": 28
+    },
+    "regions": [
+      "伊豆大島"
+    ],
+    "image": "https://loremflickr.com/400/400/hammerheadshark,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764770633_21",
+    "name": "ジンベイザメ",
+    "imageKeyword": "whale shark",
+    "category": "大物",
+    "tags": [
+      "巨大",
+      "サメ",
+      "優しい",
+      "感動"
+    ],
+    "description": "世界最大の魚類。プランクトンを食べるおとなしいサメ。",
+    "baseRarity": "SSR",
+    "depthRange": {
+      "min": 10,
+      "max": 30
+    },
+    "size": "800cm",
+    "season": [
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 24,
+      "max": 28
+    },
+    "regions": [
+      "伊豆大島",
+      "沖縄本島",
+      "慶良間諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/whaleshark,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764770633_22",
+    "name": "マダラエイ",
+    "imageKeyword": "spotted eagle ray",
+    "category": "大物",
+    "tags": [
+      "エイ",
+      "斑点",
+      "優雅",
+      "回遊"
+    ],
+    "description": "黒地に白い斑点が美しいエイ。優雅に泳ぐ姿に見惚れる。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "200cm",
+    "season": [
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 22,
+      "max": 28
+    },
+    "regions": [
+      "伊豆大島"
+    ],
+    "image": "https://loremflickr.com/400/400/spottedeagleray,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764770633_23",
+    "name": "ウスメバル",
+    "imageKeyword": "rockfish",
+    "category": "魚類",
+    "tags": [
+      "茶色",
+      "岩場",
+      "根魚",
+      "食用"
+    ],
+    "description": "岩陰に隠れていることが多い。煮付けにすると美味。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "25cm",
+    "season": [
+      "spring",
+      "winter"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 15,
+      "max": 22
+    },
+    "regions": [
+      "伊豆大島"
+    ],
+    "image": "https://loremflickr.com/400/400/rockfish,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764770633_24",
+    "name": "サラサエビ",
+    "imageKeyword": "shrimp",
+    "category": "甲殻類",
+    "tags": [
+      "赤",
+      "白",
+      "模様",
+      "クリーナー"
+    ],
+    "description": "赤い体に白い模様が美しいエビ。他の魚の体を掃除するクリーナー。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "3cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 18,
+      "max": 28
+    },
+    "regions": [
+      "伊豆大島",
+      "伊豆"
+    ],
+    "image": "https://loremflickr.com/400/400/shrimp,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764770633_25",
+    "name": "コブダイ",
+    "imageKeyword": "bumphead parrotfish",
+    "category": "魚類",
+    "tags": [
+      "青",
+      "コブ",
+      "老成魚",
+      "迫力"
+    ],
+    "description": "老成魚になると額に大きなコブができる。迫力満点。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "60cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 18,
+      "max": 28
+    },
+    "regions": [
+      "伊豆大島",
+      "伊豆",
+      "串本"
+    ],
+    "image": "https://loremflickr.com/400/400/bumpheadparrotfish,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764770633_26",
+    "name": "トラウツボ",
+    "imageKeyword": "moray eel",
+    "category": "魚類",
+    "tags": [
+      "茶色",
+      "模様",
+      "ウツボ",
+      "夜行性",
+      "危険"
+    ],
+    "description": "岩陰に潜むことが多い。噛みつくことがあるので注意。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "80cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "噛みつく",
+      "夜行性"
+    ],
+    "waterTempRange": {
+      "min": 18,
+      "max": 28
+    },
+    "regions": [
+      "伊豆大島",
+      "伊豆"
+    ],
+    "image": "https://loremflickr.com/400/400/morayeel,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764770633_27",
+    "name": "ミノカサゴ",
+    "imageKeyword": "lionfish",
+    "category": "魚類",
+    "tags": [
+      "赤",
+      "白",
+      "縞模様",
+      "毒",
+      "危険"
+    ],
+    "description": "優雅なヒレを持つが、毒があるので注意。観賞魚としても人気。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "30cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "毒"
+    ],
+    "waterTempRange": {
+      "min": 18,
+      "max": 28
+    },
+    "regions": [
+      "伊豆大島"
+    ],
+    "image": "https://loremflickr.com/400/400/lionfish,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764770633_28",
+    "name": "オニカサゴ",
+    "imageKeyword": "scorpionfish",
+    "category": "魚類",
+    "tags": [
+      "茶色",
+      "擬態",
+      "毒",
+      "危険"
+    ],
+    "description": "岩に擬態しているため見つけにくい。背びれに毒があるので注意。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 10,
+      "max": 30
+    },
+    "size": "30cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "擬態",
+      "毒"
+    ],
+    "waterTempRange": {
+      "min": 18,
+      "max": 28
+    },
+    "regions": [
+      "伊豆大島"
+    ],
+    "image": "https://loremflickr.com/400/400/scorpionfish,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764770687_0",
+    "name": "オガサワラヨシノボリ",
+    "imageKeyword": "goby",
+    "category": "魚類",
+    "tags": [
+      "固有種",
+      "小笠原",
+      "淡水",
+      "汽水"
+    ],
+    "description": "小笠原諸島固有のヨシノボリ。淡水域から汽水域に生息し、他のヨシノボリと比べてやや丸みを帯びた体型が特徴です。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 0,
+      "max": 3
+    },
+    "size": "5cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 20,
+      "max": 30
+    },
+    "regions": [
+      "小笠原",
+      "小笠原諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/goby,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764770687_1",
+    "name": "ユウゼン",
+    "imageKeyword": "butterflyfish",
+    "category": "魚類",
+    "tags": [
+      "固有種",
+      "小笠原",
+      "黄色",
+      "黒"
+    ],
+    "description": "小笠原固有のチョウチョウウオ。鮮やかな黄色と黒の模様が特徴的。警戒心が強いですが、ゆっくり近づけば観察できます。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 3,
+      "max": 20
+    },
+    "size": "15cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 28
+    },
+    "regions": [
+      "小笠原",
+      "小笠原諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/butterflyfish,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764770687_2",
+    "name": "アカマツカサ",
+    "imageKeyword": "soldierfish",
+    "category": "魚類",
+    "tags": [
+      "赤",
+      "夜行性",
+      "群れ"
+    ],
+    "description": "夜行性で、昼間は岩陰などに群れて隠れています。赤い体色が特徴的で、夜になると活発に活動を始めます。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "20cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "夜行性"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 28
+    },
+    "regions": [
+      "小笠原",
+      "伊豆諸島",
+      "沖縄",
+      "小笠原諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/soldierfish,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764770687_3",
+    "name": "アオウミガメ",
+    "imageKeyword": "turtle",
+    "category": "その他",
+    "tags": [
+      "海亀",
+      "回遊",
+      "産卵"
+    ],
+    "description": "小笠原はアオウミガメの産卵地として有名です。穏やかな性格で、一緒に泳ぐこともできます。見かけたらそっと見守りましょう。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 1,
+      "max": 20
+    },
+    "size": "100cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "小笠原",
+      "熱帯",
+      "亜熱帯",
+      "小笠原諸島",
+      "沖縄本島",
+      "石垣島",
+      "慶良間諸島",
+      "奄美大島"
+    ],
+    "image": "https://loremflickr.com/400/400/turtle,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764770687_4",
+    "name": "ミナミハンドウイルカ",
+    "imageKeyword": "dolphin",
+    "category": "大物",
+    "tags": [
+      "イルカ",
+      "群れ",
+      "哺乳類"
+    ],
+    "description": "好奇心旺盛で人懐っこいイルカたち。一緒に泳いだり、船の周りで遊ぶ姿を見ることができます。繁殖期には子連れの群れも見られます。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 0,
+      "max": 10
+    },
+    "size": "250cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 30
+    },
+    "regions": [
+      "小笠原",
+      "熱帯",
+      "亜熱帯",
+      "小笠原諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/dolphin,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764770687_5",
+    "name": "マダラトビエイ",
+    "imageKeyword": "ray",
+    "category": "大物",
+    "tags": [
+      "エイ",
+      "斑点",
+      "回遊"
+    ],
+    "description": "優雅に海中を舞う姿は圧巻。黒地に白い斑点が特徴的です。群れで回遊していることもあります。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 40
+    },
+    "size": "300cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 30
+    },
+    "regions": [
+      "小笠原",
+      "熱帯",
+      "亜熱帯",
+      "小笠原諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/ray,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764770687_6",
+    "name": "オオテンハナゴイ",
+    "imageKeyword": "anthias",
+    "category": "魚類",
+    "tags": [
+      "ピンク",
+      "群れ",
+      "ハナゴイ"
+    ],
+    "description": "鮮やかなピンク色の体色が美しいハナゴイ。オスは背びれが伸長します。群れでサンゴ礁周辺を泳ぐ姿は華やかです。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 10,
+      "max": 30
+    },
+    "size": "10cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 28
+    },
+    "regions": [
+      "小笠原",
+      "沖縄",
+      "小笠原諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/anthias,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764770687_7",
+    "name": "ハナミノカサゴ",
+    "imageKeyword": "lionfish",
+    "category": "魚類",
+    "tags": [
+      "ミノカサゴ",
+      "毒",
+      "赤"
+    ],
+    "description": "優雅なヒレを持つ美しい魚ですが、背びれに毒棘があるので注意が必要です。ゆっくりと近づけば写真撮影も可能です。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 40
+    },
+    "size": "30cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "毒",
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 20,
+      "max": 30
+    },
+    "regions": [
+      "小笠原",
+      "沖縄",
+      "伊豆",
+      "小笠原諸島",
+      "沖縄本島",
+      "奄美大島",
+      "串本"
+    ],
+    "image": "https://loremflickr.com/400/400/lionfish,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764770687_8",
+    "name": "カスミチョウチョウウオ",
+    "imageKeyword": "butterflyfish",
+    "category": "魚類",
+    "tags": [
+      "チョウチョウウオ",
+      "黄色",
+      "青"
+    ],
+    "description": "鮮やかな黄色と青色の模様が特徴的なチョウチョウウオ。サンゴ礁周辺を活発に泳ぎ回ります。ペアで行動することが多いです。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 3,
+      "max": 20
+    },
+    "size": "15cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 28
+    },
+    "regions": [
+      "小笠原",
+      "沖縄",
+      "小笠原諸島",
+      "慶良間諸島",
+      "奄美大島"
+    ],
+    "image": "https://loremflickr.com/400/400/butterflyfish,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764770687_9",
+    "name": "ツノダシ",
+    "imageKeyword": "moorish idol",
+    "category": "魚類",
+    "tags": [
+      "モノクロ",
+      "模様",
+      "ツノ"
+    ],
+    "description": "白と黒の縞模様と、長く伸びた背びれが特徴的。名前の通り、頭部に角のような突起があります。水質の良い場所に生息します。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "20cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 28
+    },
+    "regions": [
+      "小笠原",
+      "沖縄",
+      "伊豆",
+      "小笠原諸島",
+      "慶良間諸島",
+      "伊豆大島"
+    ],
+    "image": "https://loremflickr.com/400/400/moorishidol,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764770687_10",
+    "name": "ナンヨウハギ",
+    "imageKeyword": "tang",
+    "category": "魚類",
+    "tags": [
+      "青",
+      "黄色",
+      "ハギ"
+    ],
+    "description": "鮮やかな青色と黄色のコントラストが美しいハギ。幼魚の頃は全身黄色をしています。水槽でも人気の魚です。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 3,
+      "max": 20
+    },
+    "size": "20cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 28
+    },
+    "regions": [
+      "小笠原",
+      "沖縄",
+      "小笠原諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/tang,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764770687_11",
+    "name": "オニヒトデ",
+    "imageKeyword": "crown-of-thorns starfish",
+    "category": "その他",
+    "tags": [
+      "ヒトデ",
+      "棘",
+      "サンゴ"
+    ],
+    "description": "サンゴを食べるヒトデ。棘に毒があるので注意が必要です。大量発生するとサンゴ礁に大きな被害をもたらします。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 1,
+      "max": 30
+    },
+    "size": "40cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "毒"
+    ],
+    "waterTempRange": {
+      "min": 20,
+      "max": 30
+    },
+    "regions": [
+      "小笠原",
+      "沖縄",
+      "小笠原諸島",
+      "沖縄本島",
+      "石垣島",
+      "慶良間諸島",
+      "奄美大島"
+    ],
+    "image": "https://loremflickr.com/400/400/crown-of-thornsstarfish,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764770687_12",
+    "name": "ミドリイシ",
+    "imageKeyword": "staghorn coral",
+    "category": "サンゴ",
+    "tags": [
+      "サンゴ",
+      "枝",
+      "緑"
+    ],
+    "description": "枝状に成長するサンゴ。小笠原のサンゴ礁を代表する種類の一つです。魚たちの隠れ家や産卵場所にもなっています。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 1,
+      "max": 20
+    },
+    "size": "100cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 30
+    },
+    "regions": [
+      "小笠原",
+      "沖縄",
+      "小笠原諸島",
+      "伊豆",
+      "沖縄本島",
+      "石垣島",
+      "慶良間諸島",
+      "伊豆大島",
+      "奄美大島",
+      "串本"
+    ],
+    "image": "https://loremflickr.com/400/400/staghorncoral,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764770687_13",
+    "name": "イソギンチャクモエビ",
+    "imageKeyword": "shrimp",
+    "category": "甲殻類",
+    "tags": [
+      "エビ",
+      "共生",
+      "透明"
+    ],
+    "description": "イソギンチャクと共生するエビ。透明な体をしており、イソギンチャクの中で身を隠しています。よく見ると可愛い姿をしています。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 3,
+      "max": 20
+    },
+    "size": "2cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "擬態",
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 28
+    },
+    "regions": [
+      "小笠原",
+      "沖縄",
+      "小笠原諸島",
+      "沖縄本島",
+      "石垣島",
+      "慶良間諸島",
+      "奄美大島"
+    ],
+    "image": "https://loremflickr.com/400/400/shrimp,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764770687_14",
+    "name": "コブシメ",
+    "imageKeyword": "cuttlefish",
+    "category": "その他",
+    "tags": [
+      "イカ",
+      "擬態",
+      "墨"
+    ],
+    "description": "大きなコブが特徴的なイカ。擬態が得意で、周囲の環境に合わせて体色を変化させます。威嚇する際には墨を吐きます。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "50cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "擬態"
+    ],
+    "waterTempRange": {
+      "min": 20,
+      "max": 30
+    },
+    "regions": [
+      "小笠原",
+      "沖縄",
+      "小笠原諸島",
+      "沖縄本島",
+      "石垣島",
+      "奄美大島",
+      "串本"
+    ],
+    "image": "https://loremflickr.com/400/400/cuttlefish,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764770687_15",
+    "name": "ヒレナガカンパチ",
+    "imageKeyword": "amberjack",
+    "category": "魚類",
+    "tags": [
+      "カンパチ",
+      "回遊魚",
+      "大型"
+    ],
+    "description": "大型の回遊魚で、ダイナミックな泳ぎを見せてくれます。幼魚の頃は流れ藻についていることも。成長すると迫力満点です。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 10,
+      "max": 50
+    },
+    "size": "150cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 22,
+      "max": 28
+    },
+    "regions": [
+      "小笠原",
+      "沖縄",
+      "小笠原諸島",
+      "伊豆大島",
+      "奄美大島"
+    ],
+    "image": "https://loremflickr.com/400/400/amberjack,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764770687_16",
+    "name": "モンガラカワハギ",
+    "imageKeyword": "triggerfish",
+    "category": "魚類",
+    "tags": [
+      "カワハギ",
+      "模様",
+      "カラフル"
+    ],
+    "description": "カラフルな模様が特徴的なカワハギ。警戒心が強く、縄張り意識も強いです。近づきすぎると攻撃してくることもあります。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 3,
+      "max": 30
+    },
+    "size": "30cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "噛みつく"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 28
+    },
+    "regions": [
+      "小笠原",
+      "沖縄",
+      "小笠原諸島",
+      "石垣島"
+    ],
+    "image": "https://loremflickr.com/400/400/triggerfish,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764770687_17",
+    "name": "シロワニ",
+    "imageKeyword": "shark",
+    "category": "大物",
+    "tags": [
+      "サメ",
+      "おとなしい",
+      "歯"
+    ],
+    "description": "見た目は厳ついですが、性格は比較的おとなしいサメ。水族館でも人気の種類です。大きな歯が特徴的です。",
+    "baseRarity": "SR",
+    "depthRange": {
+      "min": 10,
+      "max": 40
+    },
+    "size": "300cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 20,
+      "max": 28
+    },
+    "regions": [
+      "小笠原",
+      "伊豆",
+      "沖縄",
+      "小笠原諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/shark,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764770687_18",
+    "name": "ムラサキウミコチョウ",
+    "imageKeyword": "nudibranch",
+    "category": "ウミウシ",
+    "tags": [
+      "ウミウシ",
+      "紫",
+      "触覚"
+    ],
+    "description": "鮮やかな紫色が美しいウミウシ。背中の突起が特徴的です。小さくて見つけにくいですが、見つけた時の感動はひとしおです。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "3cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 28
+    },
+    "regions": [
+      "小笠原",
+      "沖縄",
+      "小笠原諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/nudibranch,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764770687_19",
+    "name": "オオグソクムシ",
+    "imageKeyword": "isopod",
+    "category": "甲殻類",
+    "tags": [
+      "グソクムシ",
+      "深海",
+      "ダンゴムシ"
+    ],
+    "description": "深海に生息する巨大なダンゴムシのような生物。水深数百メートルに生息しており、ダイビングで見られることは稀です。",
+    "baseRarity": "SSR",
+    "depthRange": {
+      "min": 200,
+      "max": 600
+    },
+    "size": "30cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 5,
+      "max": 10
+    },
+    "regions": [
+      "小笠原",
+      "深海",
+      "小笠原諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/isopod,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764770687_20",
+    "name": "ロウニンアジ",
+    "imageKeyword": "trevally",
+    "category": "魚類",
+    "tags": [
+      "アジ",
+      "大型",
+      "回遊"
+    ],
+    "description": "巨大なアジの仲間。迫力のある魚影はダイバーに人気です。群れで行動することが多く、遭遇すると圧倒されます。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 40
+    },
+    "size": "150cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 28
+    },
+    "regions": [
+      "小笠原",
+      "沖縄",
+      "小笠原諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/trevally,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764770687_21",
+    "name": "ハシナガイルカ",
+    "imageKeyword": "spinner dolphin",
+    "category": "大物",
+    "tags": [
+      "イルカ",
+      "スピン",
+      "群れ"
+    ],
+    "description": "高速で回転しながらジャンプする姿が特徴的なイルカ。活発な動きを見ているだけでも楽しめます。小笠原では比較的高確率で遭遇できます。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 0,
+      "max": 10
+    },
+    "size": "200cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 30
+    },
+    "regions": [
+      "小笠原",
+      "熱帯",
+      "亜熱帯",
+      "小笠原諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/spinnerdolphin,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764770687_22",
+    "name": "コガシラネズミフグ",
+    "imageKeyword": "pufferfish",
+    "category": "魚類",
+    "tags": [
+      "フグ",
+      "膨らむ",
+      "可愛い"
+    ],
+    "description": "危険を感じると体を膨らませるフグ。つぶらな瞳が可愛らしいです。毒を持っているので、触らないようにしましょう。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 3,
+      "max": 20
+    },
+    "size": "20cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "毒"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 28
+    },
+    "regions": [
+      "小笠原",
+      "沖縄",
+      "小笠原諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/pufferfish,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764770687_23",
+    "name": "ケラマハナダイ",
+    "imageKeyword": "anthias",
+    "category": "魚類",
+    "tags": [
+      "ハナダイ",
+      "オレンジ",
+      "群れ"
+    ],
+    "description": "鮮やかなオレンジ色のハナダイ。オスは背びれが長く伸びています。群れでサンゴ礁を彩る姿は圧巻です。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 10,
+      "max": 30
+    },
+    "size": "10cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 28
+    },
+    "regions": [
+      "小笠原",
+      "沖縄",
+      "小笠原諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/anthias,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764770687_24",
+    "name": "シマキンチャクフグ",
+    "imageKeyword": "pufferfish",
+    "category": "魚類",
+    "tags": [
+      "フグ",
+      "縞模様",
+      "可愛い"
+    ],
+    "description": "白と黒の縞模様が特徴的なフグ。警戒心が強く、近づくとすぐに隠れてしまいます。水槽でも人気の種類です。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 3,
+      "max": 20
+    },
+    "size": "10cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "毒"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 28
+    },
+    "regions": [
+      "小笠原",
+      "沖縄",
+      "小笠原諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/pufferfish,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764770687_25",
+    "name": "イセエビ",
+    "imageKeyword": "lobster",
+    "category": "甲殻類",
+    "tags": [
+      "エビ",
+      "高級",
+      "伊勢"
+    ],
+    "description": "高級食材として知られるイセエビ。岩陰などに隠れていることが多いです。小笠原では比較的見つけやすいです。",
+    "baseRarity": "R",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "30cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 20,
+      "max": 30
+    },
+    "regions": [
+      "小笠原",
+      "伊豆",
+      "沖縄",
+      "小笠原諸島",
+      "沖縄本島",
+      "石垣島",
+      "慶良間諸島",
+      "伊豆大島",
+      "串本"
+    ],
+    "image": "https://loremflickr.com/400/400/lobster,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764770687_26",
+    "name": "テングハギモドキ",
+    "imageKeyword": "surgeonfish",
+    "category": "魚類",
+    "tags": [
+      "ハギ",
+      "青",
+      "テング"
+    ],
+    "description": "額から角のように突き出た突起が特徴的なハギ。青みがかった体色が美しいです。群れで行動することが多いです。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "30cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 28
+    },
+    "regions": [
+      "小笠原",
+      "沖縄",
+      "小笠原諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/surgeonfish,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764770687_27",
+    "name": "マダラエイ",
+    "imageKeyword": "stingray",
+    "category": "大物",
+    "tags": [
+      "エイ",
+      "砂地",
+      "危険"
+    ],
+    "description": "砂地に潜んでいることが多いエイ。尾に毒針があるので、不用意に近づかないようにしましょう。優雅に泳ぐ姿は美しいです。",
+    "baseRarity": "N",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "100cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "毒"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 28
+    },
+    "regions": [
+      "小笠原",
+      "沖縄",
+      "小笠原諸島",
+      "伊豆",
+      "伊豆大島",
+      "奄美大島",
+      "串本"
+    ],
+    "image": "https://loremflickr.com/400/400/stingray,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764770687_28",
+    "name": "オオメジロザメ",
+    "imageKeyword": "shark",
+    "category": "大物",
+    "tags": [
+      "サメ",
+      "大型",
+      "危険"
+    ],
+    "description": "小笠原で遭遇する可能性のある大型のサメ。好奇心旺盛な性格で、ダイバーに接近してくることもあります。注意が必要です。",
+    "baseRarity": "SR",
+    "depthRange": {
+      "min": 10,
+      "max": 50
+    },
+    "size": "300cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 22,
+      "max": 28
+    },
+    "regions": [
+      "小笠原",
+      "小笠原諸島"
+    ],
+    "image": "https://loremflickr.com/400/400/shark,underwater"
+  },
+  {
+    "id": "c_伊豆_1764951982_2_9",
+    "name": "ネジリンボウ",
+    "imageKeyword": "YellownoseShrimpGoby",
+    "category": "魚類",
+    "tags": [
+      "黄色",
+      "共生",
+      "エビ",
+      "砂地"
+    ],
+    "description": "黄色い鼻先が特徴的なハゼ。テッポウエビと共生しており、巣穴から顔を出す姿が可愛らしい。臆病なのでそっと観察。",
+    "baseRarity": "Common",
+    "depthRange": {
+      "min": 10,
+      "max": 25
+    },
+    "size": "5-8cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 20,
+      "max": 30
+    },
+    "regions": [
+      "伊豆半島",
+      "伊豆"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)YellownoseShrimpGoby,underwater"
+  },
+  {
+    "id": "c_伊豆_1764952070_3_2",
+    "name": "オオモンカエルアンコウ",
+    "imageKeyword": "GiantFrogfish",
+    "category": "魚類",
+    "tags": [
+      "茶色",
+      "黄色",
+      "擬態",
+      "底生"
+    ],
+    "description": "大きな口が特徴。他のカエルアンコウよりも大きく、迫力満点。見つけるとラッキー！",
+    "baseRarity": "Epic",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "20cm",
+    "season": [
+      "autumn",
+      "winter",
+      "spring"
+    ],
+    "specialAttributes": [
+      "擬態",
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 15,
+      "max": 25
+    },
+    "regions": [
+      "伊豆半島",
+      "伊豆",
+      "串本"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)GiantFrogfish,underwater"
+  },
+  {
+    "id": "c_伊豆_1764952088_4_4",
+    "name": "ブリ",
+    "imageKeyword": "Yellowtail",
+    "category": "魚類",
+    "tags": [
+      "回遊魚",
+      "青物",
+      "群れ",
+      "大型魚"
+    ],
+    "description": "時に大群で現れるブリ。その迫力に圧倒されます。成長と共に名前が変わる出世魚としても有名。",
+    "baseRarity": "Common",
+    "depthRange": {
+      "min": 10,
+      "max": 50
+    },
+    "size": "80cm",
+    "season": [
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "群れ"
+    ],
+    "waterTempRange": {
+      "min": 15,
+      "max": 25
+    },
+    "regions": [
+      "伊豆半島",
+      "伊豆",
+      "串本"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)Yellowtail,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764952108_0_9",
+    "name": "ナポレオンフィッシュ",
+    "imageKeyword": "HumpheadWrasse",
+    "category": "魚類",
+    "tags": [
+      "大型",
+      "コブ",
+      "人懐っこい",
+      "青"
+    ],
+    "description": "額のコブが特徴的な大型の魚。人懐っこい性格で、ダイバーに近づいてくることも。成長すると2mを超える個体も。",
+    "baseRarity": "Rare",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "100cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)HumpheadWrasse,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764952124_1_4",
+    "name": "ウミウシ",
+    "imageKeyword": "Nudibranch",
+    "category": "ウミウシ",
+    "tags": [
+      "カラフル",
+      "小さい",
+      "触覚",
+      "背中"
+    ],
+    "description": "鮮やかな色彩とユニークな形状が魅力。様々な種類が生息し、探すのが楽しい。",
+    "baseRarity": "Common",
+    "depthRange": {
+      "min": 3,
+      "max": 20
+    },
+    "size": "5cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "石垣島",
+      "慶良間諸島"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)Nudibranch,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764952124_1_6",
+    "name": "リュウキュウイボイソギンチャク",
+    "imageKeyword": "SeaAnemone",
+    "category": "サンゴ",
+    "tags": [
+      "イソギンチャク",
+      "紫",
+      "触手",
+      "ゆらゆら"
+    ],
+    "description": "鮮やかな紫色が美しいイソギンチャク。カクレクマノミなどの隠れ家となる。",
+    "baseRarity": "Common",
+    "depthRange": {
+      "min": 3,
+      "max": 20
+    },
+    "size": "30cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "共生"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)SeaAnemone,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764952124_1_7",
+    "name": "オニダルマオコゼ",
+    "imageKeyword": "Stonefish",
+    "category": "魚類",
+    "tags": [
+      "オコゼ",
+      "石",
+      "擬態",
+      "毒"
+    ],
+    "description": "岩に擬態しているため、見つけにくい。背びれに強力な毒を持つため注意が必要。",
+    "baseRarity": "Common",
+    "depthRange": {
+      "min": 1,
+      "max": 15
+    },
+    "size": "30cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "毒",
+      "擬態"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "石垣島",
+      "慶良間諸島",
+      "奄美大島"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)Stonefish,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764952124_1_9",
+    "name": "デバスズメダイ",
+    "imageKeyword": "Chromis",
+    "category": "魚類",
+    "tags": [
+      "スズメダイ",
+      "青",
+      "群れ",
+      "キラキラ"
+    ],
+    "description": "鮮やかな青色が美しいスズメダイ。群れで泳ぐ姿は、太陽光を浴びてキラキラと輝く。",
+    "baseRarity": "Common",
+    "depthRange": {
+      "min": 3,
+      "max": 15
+    },
+    "size": "5cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)Chromis,underwater"
+  },
+  {
+    "id": "c_沖縄本島_1764952142_2_2",
+    "name": "ハナゴイ",
+    "imageKeyword": "Anthias",
+    "category": "魚類",
+    "tags": [
+      "ピンク",
+      "群れ",
+      "華やか",
+      "サンゴ礁"
+    ],
+    "description": "サンゴ礁域に群れで生息する。オスは鮮やかなピンク色で、メスは黄色っぽい色。群れで泳ぐ姿は非常に美しい。",
+    "baseRarity": "Common",
+    "depthRange": {
+      "min": 10,
+      "max": 25
+    },
+    "size": "8cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 23,
+      "max": 30
+    },
+    "regions": [
+      "沖縄本島",
+      "小笠原諸島"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)Anthias,underwater"
+  },
+  {
+    "id": "c_石垣島_1764952199_0_6",
+    "name": "ハマクマノミ",
+    "imageKeyword": "TomatoClownfish",
+    "category": "魚類",
+    "tags": [
+      "赤",
+      "クマノミ",
+      "イソギンチャク",
+      "ペア"
+    ],
+    "description": "鮮やかな赤い体が特徴。気が強い個体もいるので、近づきすぎには注意。",
+    "baseRarity": "Common",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "14cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "石垣島"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)TomatoClownfish,underwater"
+  },
+  {
+    "id": "c_石垣島_1764952240_2_4",
+    "name": "ハゼ",
+    "imageKeyword": "Goby",
+    "category": "魚類",
+    "tags": [
+      "黄色",
+      "砂地",
+      "ペア",
+      "ホバリング",
+      "マクロ"
+    ],
+    "description": "砂地に生息する種類が多く、テッポウエビと共生するものも。ホバリングしながら周囲を警戒する姿が可愛らしい。",
+    "baseRarity": "Common",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "5cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "共生",
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "石垣島"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)Goby,underwater"
+  },
+  {
+    "id": "c_石垣島_1764952240_2_6",
+    "name": "サンゴ",
+    "imageKeyword": "Coral",
+    "category": "サンゴ",
+    "tags": [
+      "テーブルサンゴ",
+      "枝サンゴ",
+      "ソフトコーラル",
+      "群生"
+    ],
+    "description": "石垣島の海を彩る様々な種類のサンゴ。特に、広大なテーブルサンゴの群生は圧巻です。",
+    "baseRarity": "Common",
+    "depthRange": {
+      "min": 2,
+      "max": 20
+    },
+    "size": "1m",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "石垣島"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)Coral,underwater"
+  },
+  {
+    "id": "c_石垣島_1764952278_4_8",
+    "name": "キンメモドキ",
+    "imageKeyword": "Glassfish",
+    "category": "魚類",
+    "tags": [
+      "黄色",
+      "群れ",
+      "洞窟",
+      "ライト"
+    ],
+    "description": "光が差し込む洞窟に群れる黄色い魚。ライトを当てるとキラキラと輝き、幻想的な光景を作り出す。",
+    "baseRarity": "Common",
+    "depthRange": {
+      "min": 5,
+      "max": 15
+    },
+    "size": "5cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "石垣島"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)Glassfish,underwater"
+  },
+  {
+    "id": "c_慶良間諸島_1764952297_0_7",
+    "name": "イソバナ",
+    "imageKeyword": "GorgonianCoral",
+    "category": "サンゴ",
+    "tags": [
+      "ソフトコーラル",
+      "黄色",
+      "赤",
+      "群生"
+    ],
+    "description": "ソフトコーラルの仲間で、水中を華やかに彩ります。鮮やかな黄色や赤色のイソバナの群生は必見です。",
+    "baseRarity": "Common",
+    "depthRange": {
+      "min": 15,
+      "max": 30
+    },
+    "size": "100cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 23,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "慶良間諸島"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)GorgonianCoral,underwater"
+  },
+  {
+    "id": "c_慶良間諸島_1764952297_0_9",
+    "name": "アカホシカクレエビ",
+    "imageKeyword": "Shrimp",
+    "category": "甲殻類",
+    "tags": [
+      "エビ",
+      "透明",
+      "赤",
+      "星",
+      "可愛い"
+    ],
+    "description": "透明な体に赤い星のような模様が特徴。ウミシダに共生しており、注意深く探さないと見つけられません。",
+    "baseRarity": "Rare",
+    "depthRange": {
+      "min": 10,
+      "max": 25
+    },
+    "size": "2cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "共生",
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "沖縄",
+      "慶良間諸島",
+      "奄美大島"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)Shrimp,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764952391_0_0",
+    "name": "カメ",
+    "imageKeyword": "Turtle",
+    "category": "大物",
+    "tags": [
+      "ウミガメ",
+      "アオウミガメ",
+      "タイマイ",
+      "のんびり"
+    ],
+    "description": "伊豆大島ではアオウミガメやタイマイに遭遇するチャンス！優雅に泳ぐ姿に癒やされます。水中で見かけたら、そっと見守りましょう。",
+    "baseRarity": "Common",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "80-120cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 18,
+      "max": 30
+    },
+    "regions": [
+      "伊豆大島"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)Turtle,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764952391_0_4",
+    "name": "ミヤコウミウシ",
+    "imageKeyword": "Nudibranch",
+    "category": "ウミウシ",
+    "tags": [
+      "黄色",
+      "フリル",
+      "可愛い",
+      "人気"
+    ],
+    "description": "鮮やかな黄色とフリルが特徴のミヤコウミウシ。小さいですが、その美しさは格別。じっくり探してみましょう。良い写真が撮れます。",
+    "baseRarity": "Common",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "2-4cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 20,
+      "max": 30
+    },
+    "regions": [
+      "伊豆大島"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)Nudibranch,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764952408_1_7",
+    "name": "ムツ",
+    "imageKeyword": "Gnomefish",
+    "category": "魚類",
+    "tags": [
+      "黒",
+      "深海魚",
+      "美味",
+      "群れ"
+    ],
+    "description": "やや深い場所に生息。水深20m以深で群れで見かけることが多い。脂が乗っていて美味。",
+    "baseRarity": "Rare",
+    "depthRange": {
+      "min": 20,
+      "max": 40
+    },
+    "size": "40cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "食用",
+      "群れ"
+    ],
+    "waterTempRange": {
+      "min": 18,
+      "max": 26
+    },
+    "regions": [
+      "伊豆大島"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)Gnomefish,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764952425_2_7",
+    "name": "ツバメウオ",
+    "imageKeyword": "Batfish",
+    "category": "魚類",
+    "tags": [
+      "群れ",
+      "銀色",
+      "幼魚"
+    ],
+    "description": "幼魚は流れ藻についていたり、単独で漂っている。成長すると群れで行動。人懐っこく寄ってくることも。",
+    "baseRarity": "Common",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "30cm",
+    "season": [
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "伊豆大島"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)Batfish,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764952425_2_8",
+    "name": "ネコザメ",
+    "imageKeyword": "Bullhead Shark",
+    "category": "大物",
+    "tags": [
+      "サメ",
+      "夜行性",
+      "おとなしい"
+    ],
+    "description": "夜行性でおとなしいサメ。岩陰で休んでいることが多い。つぶらな瞳が可愛い。刺激しなければ安全。",
+    "baseRarity": "Rare",
+    "depthRange": {
+      "min": 10,
+      "max": 30
+    },
+    "size": "80cm",
+    "season": [
+      "spring",
+      "autumn"
+    ],
+    "specialAttributes": [
+      "夜行性"
+    ],
+    "waterTempRange": {
+      "min": 18,
+      "max": 25
+    },
+    "regions": [
+      "伊豆大島"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)BullheadShark,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764952425_2_9",
+    "name": "マツカサウオ",
+    "imageKeyword": "Pineconefish",
+    "category": "魚類",
+    "tags": [
+      "黄色",
+      "発光",
+      "夜行性"
+    ],
+    "description": "鎧のようなウロコを持つ魚。胸の発光器が特徴的。夜行性で、昼間は岩陰に隠れていることが多い。",
+    "baseRarity": "Rare",
+    "depthRange": {
+      "min": 10,
+      "max": 30
+    },
+    "size": "15cm",
+    "season": [
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "夜行性",
+      "発光"
+    ],
+    "waterTempRange": {
+      "min": 18,
+      "max": 25
+    },
+    "regions": [
+      "伊豆大島"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)Pineconefish,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764952443_3_5",
+    "name": "タカサゴ",
+    "imageKeyword": "Fusilier",
+    "category": "魚類",
+    "tags": [
+      "黄色",
+      "群れ",
+      "回遊魚",
+      "活発"
+    ],
+    "description": "黄色い体色が美しい群れを作る魚。ダイナミックな群泳は圧巻。水中で見るとさらに鮮やかです。",
+    "baseRarity": "Common",
+    "depthRange": {
+      "min": 3,
+      "max": 25
+    },
+    "size": "20cm",
+    "season": [
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 23,
+      "max": 30
+    },
+    "regions": [
+      "伊豆大島"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)Fusilier,underwater"
+  },
+  {
+    "id": "c_伊豆大島_1764952461_4_0",
+    "name": "カゴカキダイ",
+    "imageKeyword": "Heniochus",
+    "category": "魚類",
+    "tags": [
+      "黄色",
+      "黒",
+      "白",
+      "縞模様",
+      "群れ",
+      "ペア"
+    ],
+    "description": "鮮やかな黄色と黒の縞模様が特徴。幼魚は特に可愛らしく、ペアで行動することも。水深10m前後の岩礁域でよく見られます。",
+    "baseRarity": "Common",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "15cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 28
+    },
+    "regions": [
+      "伊豆諸島",
+      "相模湾以南",
+      "伊豆大島"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)Heniochus,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764952500_1_9",
+    "name": "ムラサキハナギンチャク",
+    "imageKeyword": "Anemone",
+    "category": "その他",
+    "tags": [
+      "触手",
+      "紫",
+      "群体",
+      "繊細"
+    ],
+    "description": "紫色の触手が美しい群体性のハナギンチャク。強い毒性を持つ。群生している様子は幻想的。",
+    "baseRarity": "Common",
+    "depthRange": {
+      "min": 5,
+      "max": 25
+    },
+    "size": "20cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "毒"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "太平洋",
+      "インド洋",
+      "小笠原諸島"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)Anemone,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764952517_2_2",
+    "name": "オガサワラヨウジ",
+    "imageKeyword": "Pipefish",
+    "category": "魚類",
+    "tags": [
+      "固有種",
+      "細長い",
+      "擬態",
+      "隠れる"
+    ],
+    "description": "小笠原固有のヨウジウオ。海藻に擬態して身を隠すのが得意。見つけるのが難しいが、見つけた時の喜びは格別。",
+    "baseRarity": "Rare",
+    "depthRange": {
+      "min": 3,
+      "max": 15
+    },
+    "size": "8cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "擬態"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "小笠原諸島"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)Pipefish,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764952517_2_3",
+    "name": "バラフエダイ",
+    "imageKeyword": "Snapper",
+    "category": "魚類",
+    "tags": [
+      "群れ",
+      "赤色",
+      "回遊",
+      "迫力"
+    ],
+    "description": "時に数百匹の群れを作る。幼魚は黄色いが、成長すると鮮やかな赤色になる。群れの中を泳ぐ体験は圧巻。",
+    "baseRarity": "Common",
+    "depthRange": {
+      "min": 10,
+      "max": 40
+    },
+    "size": "50cm",
+    "season": [
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 25,
+      "max": 30
+    },
+    "regions": [
+      "小笠原諸島",
+      "伊豆諸島"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)Snapper,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764952517_2_8",
+    "name": "ゴマフビロードウミウシ",
+    "imageKeyword": "Nudibranch",
+    "category": "ウミウシ",
+    "tags": [
+      "カラフル",
+      "模様",
+      "小さい",
+      "可愛い"
+    ],
+    "description": "黒地に白い斑点が特徴的なウミウシ。小さいながらも、その美しい模様はダイバーを魅了する。",
+    "baseRarity": "Common",
+    "depthRange": {
+      "min": 3,
+      "max": 20
+    },
+    "size": "3cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "小笠原諸島",
+      "沖縄"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)Nudibranch,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764952537_3_6",
+    "name": "シロブチハタ",
+    "imageKeyword": "Grouper",
+    "category": "魚類",
+    "tags": [
+      "ハタ",
+      "白",
+      "模様",
+      "大型"
+    ],
+    "description": "堂々とした風格の大型ハタ。白い斑点が特徴的。根の周りや岩陰に潜んでいることが多い。近づきすぎると逃げる。",
+    "baseRarity": "Common",
+    "depthRange": {
+      "min": 10,
+      "max": 40
+    },
+    "size": "50cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 29
+    },
+    "regions": [
+      "小笠原",
+      "小笠原諸島"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)Grouper,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764952537_3_7",
+    "name": "オオモンイカタ",
+    "imageKeyword": "Squid",
+    "category": "その他",
+    "tags": [
+      "イカ",
+      "赤",
+      "発光",
+      "夜行性"
+    ],
+    "description": "夜の海で出会えるチャンス！赤く光る姿は幻想的。臆病な性格で、光に敏感。ナイトダイビングで探してみよう。",
+    "baseRarity": "Rare",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "20cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "夜行性",
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "小笠原",
+      "小笠原諸島"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)Squid,underwater"
+  },
+  {
+    "id": "c_小笠原諸島_1764952537_3_9",
+    "name": "ケアカフウセンガニ",
+    "imageKeyword": "Crab",
+    "category": "甲殻類",
+    "tags": [
+      "カニ",
+      "赤",
+      "毛",
+      "レア"
+    ],
+    "description": "全身が赤い毛で覆われた珍しいカニ。岩の隙間やサンゴの下に隠れている。見つけたら超ラッキー！",
+    "baseRarity": "Epic",
+    "depthRange": {
+      "min": 10,
+      "max": 30
+    },
+    "size": "5cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "小笠原",
+      "小笠原諸島"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)Crab,underwater"
+  },
+  {
+    "id": "c_奄美大島_1764952590_1_5",
+    "name": "アマミスズメダイ",
+    "imageKeyword": "Damselfish",
+    "category": "魚類",
+    "tags": [
+      "固有種",
+      "幼魚",
+      "黄色",
+      "群れ"
+    ],
+    "description": "奄美大島固有種。幼魚は鮮やかな黄色で、群れで泳ぐ姿が美しい。成長すると体色は地味になる。",
+    "baseRarity": "Common",
+    "depthRange": {
+      "min": 1,
+      "max": 10
+    },
+    "size": "8cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 25,
+      "max": 30
+    },
+    "regions": [
+      "奄美大島"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)Damselfish,underwater"
+  },
+  {
+    "id": "c_奄美大島_1764952608_2_8",
+    "name": "ニシキフウライウオ",
+    "imageKeyword": "GhostPipefish",
+    "category": "魚類",
+    "tags": [
+      "カサゴ",
+      "擬態",
+      "海藻",
+      "ペア"
+    ],
+    "description": "海藻に擬態するカサゴの仲間。ペアで行動することが多く、見つけるのが難しい。熟練ダイバー向け。",
+    "baseRarity": "Epic",
+    "depthRange": {
+      "min": 10,
+      "max": 30
+    },
+    "size": "10cm",
+    "season": [
+      "spring",
+      "autumn"
+    ],
+    "specialAttributes": [
+      "擬態"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "奄美大島",
+      "沖縄"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)GhostPipefish,underwater"
+  },
+  {
+    "id": "c_奄美大島_1764952608_2_9",
+    "name": "バラクーダ",
+    "imageKeyword": "Barracuda",
+    "category": "大物",
+    "tags": [
+      "オニカマス",
+      "群れ",
+      "銀色",
+      "迫力"
+    ],
+    "description": "銀色の体で群れをなして泳ぐ。大きな口と鋭い歯が特徴的。ダイナミックな光景を楽しめる。",
+    "baseRarity": "Common",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "100cm",
+    "season": [
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "奄美大島",
+      "沖縄"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)Barracuda,underwater"
+  },
+  {
+    "id": "c_奄美大島_1764952644_4_6",
+    "name": "ホシゾラワラエビ",
+    "imageKeyword": "WireCoralShrimp",
+    "category": "甲殻類",
+    "tags": [
+      "エビ",
+      "白",
+      "ワイヤー",
+      "共生"
+    ],
+    "description": "ワイヤー状のサンゴに共生するホシゾラワラエビ。白い体に星のような模様が特徴です。非常に小さく、見つけるのが難しいエビ。",
+    "baseRarity": "Rare",
+    "depthRange": {
+      "min": 15,
+      "max": 30
+    },
+    "size": "1cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "共生",
+      "擬態"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "奄美大島"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)WireCoralShrimp,underwater"
+  },
+  {
+    "id": "c_奄美大島_1764952644_4_9",
+    "name": "サラサウミウシ",
+    "imageKeyword": "Nudibranch",
+    "category": "ウミウシ",
+    "tags": [
+      "ウミウシ",
+      "ピンク",
+      "白",
+      "触覚",
+      "カラフル"
+    ],
+    "description": "鮮やかなピンク色と白いラインが美しいサラサウミウシ。背中の突起が特徴的です。写真映えする人気のウミウシ。",
+    "baseRarity": "Common",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "3cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "奄美大島"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)Nudibranch,underwater"
+  },
+  {
+    "id": "c_串本_1764952684_1_5",
+    "name": "アカエイ",
+    "imageKeyword": "Stingray",
+    "category": "大物",
+    "tags": [
+      "エイ",
+      "砂地",
+      "危険"
+    ],
+    "description": "砂地に潜む大型のエイ。尾に毒針を持つため注意が必要ですが、優雅に泳ぐ姿は魅力的です。刺激しなければ安全。",
+    "baseRarity": "Common",
+    "depthRange": {
+      "min": 5,
+      "max": 30
+    },
+    "size": "100cm",
+    "season": [
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [
+      "毒"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 30
+    },
+    "regions": [
+      "太平洋",
+      "串本"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)Stingray,underwater"
+  },
+  {
+    "id": "c_串本_1764952703_2_4",
+    "name": "ニシキエビ",
+    "imageKeyword": "Paintedspinylobster",
+    "category": "甲殻類",
+    "tags": [
+      "エビ",
+      "派手",
+      "高級",
+      "レア"
+    ],
+    "description": "非常に美しい色彩を持つエビ。食用としても珍重される。岩陰に隠れていることが多いので、じっくり探してみよう。",
+    "baseRarity": "Rare",
+    "depthRange": {
+      "min": 15,
+      "max": 30
+    },
+    "size": "30cm",
+    "season": [
+      "autumn",
+      "winter"
+    ],
+    "specialAttributes": [
+      "夜行性"
+    ],
+    "waterTempRange": {
+      "min": 20,
+      "max": 26
+    },
+    "regions": [
+      "西日本沿岸",
+      "串本"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)Paintedspinylobster,underwater"
+  },
+  {
+    "id": "c_串本_1764952703_2_6",
+    "name": "キホウボウ",
+    "imageKeyword": "Seamoth",
+    "category": "魚類",
+    "tags": [
+      "黄色",
+      "底生魚",
+      "珍しい",
+      "胸鰭"
+    ],
+    "description": "黄色い体と大きな胸鰭が特徴的な底生魚。海底をちょこちょこ歩く姿が可愛らしい。串本では比較的見やすい。",
+    "baseRarity": "Rare",
+    "depthRange": {
+      "min": 10,
+      "max": 25
+    },
+    "size": "10cm",
+    "season": [
+      "autumn",
+      "winter",
+      "spring"
+    ],
+    "specialAttributes": [
+      "擬態"
+    ],
+    "waterTempRange": {
+      "min": 20,
+      "max": 26
+    },
+    "regions": [
+      "太平洋",
+      "串本"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)Seamoth,underwater"
+  },
+  {
+    "id": "c_串本_1764952703_2_8",
+    "name": "ソフトコーラル",
+    "imageKeyword": "SoftCoral",
+    "category": "サンゴ",
+    "tags": [
+      "ピンク",
+      "紫",
+      "群生",
+      "美しい"
+    ],
+    "description": "串本の海を彩るソフトコーラル。特に内浦ビーチはソフトコーラルの群生が有名。色鮮やかな景色に癒されます。",
+    "baseRarity": "Common",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "1m",
+    "season": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [],
+    "waterTempRange": {
+      "min": 24,
+      "max": 30
+    },
+    "regions": [
+      "串本沿岸",
+      "串本"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)SoftCoral,underwater"
+  },
+  {
+    "id": "c_串本_1764952703_2_9",
+    "name": "ミツボシクロスズメダイ",
+    "imageKeyword": "ThreespotDamselfish",
+    "category": "魚類",
+    "tags": [
+      "黒",
+      "白点",
+      "縄張り",
+      "攻撃的"
+    ],
+    "description": "黒い体に白い点が3つあるスズメダイ。縄張り意識が強く、近づくと威嚇してくることも。小さくても勇敢な魚。",
+    "baseRarity": "Common",
+    "depthRange": {
+      "min": 3,
+      "max": 15
+    },
+    "size": "8cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [
+      "噛みつく"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 30
+    },
+    "regions": [
+      "西太平洋",
+      "串本"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)ThreespotDamselfish,underwater"
+  },
+  {
+    "id": "c_串本_1764952742_4_6",
+    "name": "タツノオトシゴ",
+    "imageKeyword": "Seahorse",
+    "category": "魚類",
+    "tags": [
+      "海馬",
+      "小さい",
+      "可愛い",
+      "レア"
+    ],
+    "description": "海藻などに掴まっている姿が愛らしいタツノオトシゴ。擬態上手なので、見つけるのは至難の業。見つけたらラッキー！",
+    "baseRarity": "Rare",
+    "depthRange": {
+      "min": 5,
+      "max": 20
+    },
+    "size": "10cm",
+    "season": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "specialAttributes": [
+      "擬態",
+      "被写体"
+    ],
+    "waterTempRange": {
+      "min": 22,
+      "max": 30
+    },
+    "regions": [
+      "日本沿岸",
+      "串本"
+    ],
+    "image": "[https://loremflickr.com/400/400/](https://loremflickr.com/400/400/)Seahorse,underwater"
+  }
+]

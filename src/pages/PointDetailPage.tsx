@@ -1,0 +1,393 @@
+import { useState, useMemo } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { useApp } from '../context/AppContext';
+import { MapPin, Droplets, Wind, Mountain, ArrowLeft, Plus, Search, X, Check, Anchor, AlertCircle, Bookmark, Star } from 'lucide-react';
+import clsx from 'clsx';
+import type { Creature } from '../types';
+
+export const PointDetailPage = () => {
+  const { id } = useParams<{ id: string }>();
+  const { points, creatures, currentUser, toggleBookmarkPoint, isAuthenticated } = useApp();
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  // Local state to track creatures added in this session (to show "Pending" status)
+  const [pendingCreatureIds, setPendingCreatureIds] = useState<string[]>([]);
+
+  const point = points.find(p => p.id === id);
+
+  // Inhabitants Logic
+  const inhabitants = useMemo(() => {
+    if (!point) return [];
+    return point.creatures
+      .map(cId => creatures.find(c => c.id === cId))
+      .filter((c): c is Creature => c !== undefined);
+  }, [point, creatures]);
+
+  if (!point) {
+    return <div className="p-8 text-center">Point not found</div>;
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 pb-20">
+      {/* Header with Large Image */}
+      <div className="relative h-[40vh] min-h-[300px]">
+        <img
+          src={point.imageUrl}
+          alt={point.name}
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+        <div className="absolute top-0 left-0 p-6">
+          <Link to="/points" className="inline-flex items-center gap-2 text-white/90 hover:text-white transition-colors bg-black/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-bold">
+            <ArrowLeft size={16} /> ポイント一覧に戻る
+          </Link>
+          {isAuthenticated && (
+            <Link to={`/edit-point/${point.id}`} className="ml-2 inline-flex items-center gap-2 text-white/90 hover:text-white transition-colors bg-black/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-bold">
+              編集
+            </Link>
+          )}
+        </div>
+
+        <div className="absolute top-0 right-0 p-6">
+          <button
+            onClick={() => {
+              toggleBookmarkPoint(point.id);
+            }}
+            className={clsx(
+              "flex items-center gap-2 px-4 py-2 rounded-full font-bold shadow-lg transition-all transform hover:scale-105",
+              currentUser.bookmarkedPointIds.includes(point.id)
+                ? "bg-white text-yellow-500"
+                : "bg-black/30 backdrop-blur-md text-white border border-white/30 hover:bg-black/40"
+            )}
+          >
+            <Bookmark size={20} className={clsx(currentUser.bookmarkedPointIds.includes(point.id) && "fill-current")} />
+            {currentUser.bookmarkedPointIds.includes(point.id) ? '保存済み' : '保存する'}
+          </button>
+        </div>
+
+        <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 text-white max-w-[1200px] mx-auto">
+          <div className="flex items-center gap-2 text-sm font-bold opacity-90 mb-3 text-cyan-300">
+            <MapPin size={16} />
+            {point.region} &gt; {point.zone} &gt; {point.area}
+          </div>
+          <h1 className="text-4xl md:text-6xl font-extrabold mb-4 tracking-tight shadow-sm">{point.name}</h1>
+          <div className="flex flex-wrap gap-2">
+            <span className={clsx(
+              "px-3 py-1 rounded-full text-sm font-bold backdrop-blur-md",
+              point.level === 'Beginner' ? "bg-green-500/80 text-white" :
+                point.level === 'Intermediate' ? "bg-blue-500/80 text-white" :
+                  "bg-red-500/80 text-white"
+            )}>
+              {point.level}
+            </span>
+            {point.features.map(f => (
+              <span key={f} className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-sm font-bold border border-white/30">
+                #{f}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-[1200px] mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* Left Column: Main Info & Inhabitants */}
+        <div className="md:col-span-2 space-y-8">
+
+          {/* Point Specs */}
+          <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <h2 className="text-xl font-bold text-deepBlue-900 mb-6 flex items-center gap-2">
+              <Anchor className="text-ocean" /> ポイント詳細
+            </h2>
+            <p className="text-gray-600 leading-relaxed mb-8 text-lg">
+              {point.description}
+            </p>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <SpecItem icon={<Droplets />} label="最大水深" value={`${point.maxDepth}m`} />
+              <SpecItem icon={<Wind />} label="流れ" value={point.current} />
+              <SpecItem icon={<Mountain />} label="地形" value={point.topography[0]} />
+              <SpecItem icon={<Anchor />} label="エントリー" value={point.entryType} />
+            </div>
+          </section>
+
+          {/* Inhabitants List (UGC Section) */}
+          <section>
+            <div className="flex justify-between items-end mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-deepBlue-900 flex items-center gap-2">
+                  <span>🐠</span> 生物図鑑
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">このポイントで見られる生物 ({inhabitants.length})</p>
+              </div>
+            </div>
+            {/* Creature Grid - Unified */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                className="aspect-square bg-gray-50 hover:bg-gray-100 text-gray-400 hover:text-ocean-500 rounded-3xl border-2 border-dashed border-gray-200 hover:border-ocean-300 transition-all duration-300 flex flex-col items-center justify-center gap-3 group"
+              >
+                <div className="p-3 bg-white rounded-full shadow-sm group-hover:scale-110 transition-transform">
+                  <Plus size={24} />
+                </div>
+                <span className="font-bold text-sm">発見した生物を追加</span>
+              </button>
+
+              {inhabitants.map(creature => {
+                const isPending = pendingCreatureIds.includes(creature.id);
+                return (
+                  <Link
+                    key={creature.id}
+                    to={`/creature/${creature.id}`}
+                    className="group relative aspect-square rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1"
+                  >
+                    <img
+                      src={creature.imageUrl}
+                      alt={creature.name}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-deepBlue-900 via-transparent to-transparent opacity-90" />
+
+                    {/* Rarity Badge */}
+                    <div className={clsx(
+                      "absolute top-2 right-2 px-3 py-1 rounded-full text-xs font-bold shadow-sm z-10",
+                      creature.rarity === 'Common' ? "bg-gray-100 text-gray-600 border border-gray-200" :
+                        creature.rarity === 'Rare' ? "bg-blue-100 text-blue-700 border border-blue-200" :
+                          creature.rarity === 'Epic' ? "bg-orange-100 text-orange-700 border border-orange-200" :
+                            "bg-purple-100 text-purple-700 border border-purple-200"
+                    )}>
+                      {creature.rarity}
+                    </div>
+
+                    {/* Pending Badge */}
+                    {isPending && (
+                      <div className="absolute top-2 left-2 bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg z-10">
+                        <AlertCircle size={12} /> 審査中
+                      </div>
+                    )}
+
+                    <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+                      <h3 className="font-bold text-white text-lg leading-tight drop-shadow-md mb-1 truncate">{creature.name}</h3>
+                      <div className="flex gap-0.5">
+                        {Array.from({ length: 4 }).map((_, i) => {
+                          const rarityLevel = creature.rarity === 'Legendary' ? 4 :
+                            creature.rarity === 'Epic' ? 3 :
+                              creature.rarity === 'Rare' ? 2 : 1;
+                          const isActive = i < rarityLevel;
+                          return (
+                            <Star
+                              key={i}
+                              size={12}
+                              className={isActive ? "text-yellow-400 fill-yellow-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.8)]" : "text-white/20"}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        </div>
+
+        {/* Right Column: Sidebar */}
+        <div className="space-y-6">
+          <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 sticky top-24">
+            <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2 border-b border-gray-100 pb-3">
+              <MapPin size={18} className="text-ocean" /> アクセス・地図
+            </h3>
+            <div className="aspect-video bg-gray-100 rounded-xl flex flex-col items-center justify-center text-gray-400 mb-4 overflow-hidden relative group cursor-pointer">
+              <MapPin size={32} className="mb-2 text-gray-300 group-hover:text-ocean transition-colors" />
+              <span className="text-xs font-bold">Google Map</span>
+            </div>
+            <div className="text-sm text-gray-600 space-y-4">
+              <div>
+                <p className="font-bold text-gray-900 mb-1">所在地</p>
+                <p>{point.region} {point.zone} {point.area}</p>
+              </div>
+              <div>
+                <p className="font-bold text-gray-900 mb-1">アクセス</p>
+                <p>車でのアクセスが便利です。近くにダイビングショップ「{point.area}ダイバーズ」があります。</p>
+              </div>
+            </div>
+            <button className="w-full mt-6 bg-gray-900 text-white py-3 rounded-xl font-bold text-sm hover:bg-gray-800 transition-colors">
+              Google Mapで開く
+            </button>
+          </div>
+        </div>
+      </div >
+
+      {/* Add Creature Modal */}
+      {
+        isAddModalOpen && (
+          <AddCreatureModal
+            pointId={point.id}
+            currentCreatureIds={point.creatures}
+            onClose={() => setIsAddModalOpen(false)}
+            onAdd={(id) => setPendingCreatureIds(prev => [...prev, id])}
+          />
+        )
+      }
+    </div >
+  );
+};
+
+const SpecItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) => (
+  <div className="bg-gray-50 p-4 rounded-xl flex flex-col items-center text-center">
+    <div className="text-gray-400 mb-2 [&>svg]:w-5 [&>svg]:h-5">{icon}</div>
+    <div className="text-xs text-gray-500 font-bold mb-1">{label}</div>
+    <div className="text-sm font-extrabold text-gray-900 capitalize">{value}</div>
+  </div>
+);
+
+// Add Creature Modal Component
+const AddCreatureModal = ({
+  pointId,
+  currentCreatureIds,
+  onClose,
+  onAdd
+}: {
+  pointId: string,
+  currentCreatureIds: string[],
+  onClose: () => void,
+  onAdd: (id: string) => void
+}) => {
+  const { creatures, points, updatePoint, currentUser, addPointProposal } = useApp();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [addedIds, setAddedIds] = useState<string[]>([]);
+
+  const filteredCreatures = useMemo(() => {
+    if (!searchTerm) return [];
+    return creatures
+      .filter(c =>
+        // Filter out creatures already in the point
+        !currentCreatureIds.includes(c.id) &&
+        (c.name.includes(searchTerm) || c.tags.some(t => t.includes(searchTerm)))
+      )
+      .slice(0, 20);
+  }, [searchTerm, creatures, currentCreatureIds]);
+
+  const handleAdd = async (creatureId: string) => {
+    const point = points.find(p => p.id === pointId);
+    if (!point || point.creatures.includes(creatureId)) return;
+
+    // Optimistic UI update (show as pending immediately)
+    setAddedIds(prev => [...prev, creatureId]);
+    onAdd(creatureId);
+
+    const updatedCreatures = [...point.creatures, creatureId];
+
+    if (currentUser.role === 'admin' || currentUser.role === 'moderator') {
+      // Direct Update
+      await updatePoint(pointId, { creatures: updatedCreatures });
+      alert('生物を追加しました！');
+    } else {
+      // Proposal Flow
+      const creatureName = creatures.find(c => c.id === creatureId)?.name || 'Unknown';
+      await addPointProposal({
+        targetId: pointId,
+        proposalType: 'update',
+        diffData: { creatures: updatedCreatures }, // NOTE: Arrays overwrite in merge. Ideally use arrayUnion logic in backend or keep this for now.
+        // Meta for UI context if needed
+        description: `生物追加提案: ${creatureName}`,
+        name: point.name,
+        imageUrl: point.imageUrl
+      } as any);
+      alert('生物の追加を提案しました！管理者の承認をお待ちください。');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-fade-in backdrop-blur-sm">
+      <div className="bg-white rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+        <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+          <div>
+            <h3 className="text-lg font-bold text-gray-900">生物の発見報告</h3>
+            <p className="text-xs text-gray-500">このポイントで見つけた生物を追加します</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
+            <X size={20} className="text-gray-500" />
+          </button>
+        </div>
+
+        <div className="p-4 border-b border-gray-100">
+          <div className="relative">
+            <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-ocean" />
+            <input
+              type="text"
+              placeholder="生物名で検索 (例: クマノミ)..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 bg-gray-100 border-2 border-transparent focus:bg-white focus:border-ocean rounded-xl focus:outline-none transition-all font-bold text-gray-900 placeholder-gray-400"
+              autoFocus
+            />
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-2 bg-gray-50/30">
+          {!searchTerm ? (
+            <div className="flex flex-col items-center justify-center h-48 text-gray-400">
+              <Search size={48} className="mb-4 opacity-20" />
+              <p className="font-bold">生物名を入力して検索</p>
+            </div>
+          ) : filteredCreatures.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-48 text-gray-400">
+              <p className="font-bold">見つかりませんでした</p>
+              <p className="text-sm mt-1">別のキーワードで試してください</p>
+            </div>
+          ) : (
+            <div className="space-y-2 p-2">
+              {filteredCreatures.map(creature => {
+                const isJustAdded = addedIds.includes(creature.id);
+                return (
+                  <button
+                    key={creature.id}
+                    onClick={() => !isJustAdded && handleAdd(creature.id)}
+                    disabled={isJustAdded}
+                    className={clsx(
+                      "w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left border",
+                      isJustAdded
+                        ? "bg-green-50 border-green-200"
+                        : "bg-white border-gray-100 hover:border-ocean hover:shadow-md"
+                    )}
+                  >
+                    <img src={creature.imageUrl} alt={creature.name} className="w-12 h-12 rounded-lg object-cover bg-gray-200" />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-gray-900 truncate">{creature.name}</div>
+                      <div className="text-xs text-gray-500 truncate">{creature.category}</div>
+                    </div>
+                    {isJustAdded ? (
+                      <div className="flex items-center gap-1 text-green-600 text-xs font-bold bg-white px-3 py-1.5 rounded-full shadow-sm border border-green-100">
+                        <Check size={12} /> 追加済
+                      </div>
+                    ) : (
+                      <div className="w-8 h-8 flex items-center justify-center bg-gray-100 text-gray-400 rounded-full group-hover:bg-ocean group-hover:text-white transition-colors">
+                        <Plus size={16} />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="p-4 border-t border-gray-100 bg-white flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="px-6 py-2.5 rounded-xl font-bold text-gray-500 hover:bg-gray-100 transition-colors"
+          >
+            閉じる
+          </button>
+          <button
+            onClick={onClose}
+            className="bg-gray-800 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-gray-900 transition-colors shadow-md hover:shadow-lg"
+          >
+            完了
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
