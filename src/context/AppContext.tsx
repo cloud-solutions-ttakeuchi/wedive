@@ -160,7 +160,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const addCreatureProposal = async (creatureData: any) => {
     if (!isAuthenticated) return;
     try {
-      const newId = `prop_c_${Date.now()} `;
+      const newId = `prop_c_${Date.now()}`;
       await setDoc(doc(firestore, 'creature_proposals', newId), {
         ...creatureData,
         status: 'pending',
@@ -176,7 +176,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const addPointProposal = async (pointData: any) => {
     if (!isAuthenticated) return;
     try {
-      const newId = `prop_p_${Date.now()} `;
+      const newId = `prop_p_${Date.now()}`;
       // areaId is required by Point type but proposals might not have it strictly linked yet?
       // Or we just provide a placeholder.
       const fullPointData = {
@@ -199,7 +199,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     if (proposalType === 'create') {
       // 1. Copy to main collection
-      const realId = type === 'creature' ? `c${Date.now()} ` : `p${Date.now()} `; // Generate real ID
+      const realId = type === 'creature' ? `c${Date.now()}` : `p${Date.now()}`; // Generate real ID
       const realData = { ...data, id: realId, status: 'approved' };
       // cleanup proposal meta fields if needed
       delete realData.proposalType;
@@ -437,7 +437,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const addLog = async (logData: Omit<Log, 'id' | 'userId'>) => {
     console.log("[CTX] addLog called with:", logData);
-    const newLogId = `l${Date.now()} `;
+    const newLogId = `l${Date.now()}`;
     const newLog: Log = {
       ...logData,
       id: newLogId,
@@ -468,7 +468,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const addCreature = async (creatureData: Omit<Creature, 'id'>) => {
     const newCreature: Creature = {
       ...creatureData,
-      id: `c${Date.now()} `,
+      id: `c${Date.now()}`,
     };
 
     // Firestore Persist
@@ -485,7 +485,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const addPoint = async (pointData: Omit<Point, 'id'>) => {
     const newPoint: Point = {
       ...pointData,
-      id: `p${Date.now()} `,
+      id: `p${Date.now()}`,
     };
 
     // Firestore Persist
@@ -504,7 +504,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (!isAuthenticated) return;
 
     // ID generation
-    const relId = `${pointId}_${creatureId} `;
+    const relId = `${pointId}_${creatureId}`;
     const pointCreatureData: PointCreature = {
       id: relId,
       pointId,

@@ -711,6 +711,46 @@ export const AdminAreaCleansingPage = () => {
               <Trash2 size={12} />
               HARD RESET DB
             </button>
+            <button
+              onClick={async () => {
+                if (!window.confirm('【警告】あなたの全てのログを削除しますか？\n\nこの操作は取り消せません。\nインポート失敗時のリセット用です。\n\n本当によろしいですか？')) return;
+
+                const code = window.prompt('確認のため "DELETE_LOGS" と入力してください。');
+                if (code !== 'DELETE_LOGS') return;
+
+                setProcessing(true);
+                try {
+                  // Fetch all logs for current user (or use loaded logs if context has them)
+                  // Considering logs context might be limited or filtered, fetching directly is safer for "ALL".
+                  const logsRef = collection(db, 'users', currentUser.id, 'logs');
+                  const snap = await getDocs(logsRef);
+                  const batchSize = 400;
+                  const chunks = [];
+                  let tempDocs = [...snap.docs];
+                  while (tempDocs.length > 0) chunks.push(tempDocs.splice(0, batchSize));
+
+                  let deletedCount = 0;
+                  for (const chunk of chunks) {
+                    const batch = writeBatch(db);
+                    chunk.forEach(d => batch.delete(d.ref));
+                    await batch.commit();
+                    deletedCount += chunk.length;
+                  }
+                  alert(`完了: ${deletedCount} 件のログを削除しました。`);
+                  window.location.reload();
+                } catch (e) {
+                  console.error(e);
+                  alert('削除中にエラーが発生しました: ' + e);
+                } finally {
+                  setProcessing(false);
+                }
+              }}
+              disabled={processing}
+              className="px-3 py-1 bg-red-800 text-white font-bold rounded hover:bg-black transition-colors flex items-center gap-2 text-xs ml-4 border border-red-900"
+            >
+              <Trash2 size={12} />
+              DELETE MY LOGS
+            </button>
           </div>
           <div className="text-sm text-gray-500">
             Total Points: {points.length}
