@@ -9,13 +9,11 @@ import {
   query,
   where,
   orderBy,
-  addDoc,
   updateDoc,
   deleteDoc,
   doc,
   setDoc,
-  getDoc, // Kept getDoc as it was in the original and not explicitly removed
-  getDocs,
+  getDoc,
   collectionGroup,
   limit,
   writeBatch
