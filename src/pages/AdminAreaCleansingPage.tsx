@@ -198,7 +198,7 @@ export const AdminAreaCleansingPage = () => {
 
             for (const loser of losers) {
               // 1. Move Points (Update ID)
-              const qField = field + 'Id'; // areaId, zoneId... wait. Point only has areaId.
+              // const qField = field + 'Id'; // areaId, zoneId... wait. Point only has areaId.
               // Point has: areaId.
               // Point does NOT have zoneId / regionId on document (only denormalized strings).
               // BUT we updated logic to maintain Area.zoneId etc.
@@ -658,6 +658,58 @@ export const AdminAreaCleansingPage = () => {
             >
               <AlertTriangle size={12} />
               重複修復
+            </button>
+            <button
+              onClick={async () => {
+                if (!window.confirm('【重要】Master Dataを完全にリセットしますか？\n\n1. Regions, Zones, Areas, Points, PointCreatures の全ドキュメントを物理削除します。\n2. JSON(mockData)から初期データを再生成します。\n\n※ユーザーログ(Logs)は残りますが、古いエリアIDを参照している場合は"Unknown"等になります。\n\n本当によろしいですか？')) return;
+
+                const code = window.prompt('確認のため "RESET" と入力してください。');
+                if (code !== 'RESET') return;
+
+                setProcessing(true);
+                try {
+                  const collections = ['regions', 'zones', 'areas', 'points', 'point_creatures'];
+
+                  // 1. Delete All Documents in Master Collections
+                  // Note: This is client-side iteration. If huge data, it might timeout or cost reads/writes.
+                  // For "Reset", we assume < 2000 items total, which is manageable.
+                  let deletedCount = 0;
+
+                  for (const colName of collections) {
+                    const snap = await getDocs(collection(db, colName));
+                    const batchSize = 400;
+                    const chunks = [];
+                    let tempDocs = [...snap.docs];
+                    while (tempDocs.length > 0) chunks.push(tempDocs.splice(0, batchSize));
+
+                    for (const chunk of chunks) {
+                      const batch = writeBatch(db);
+                      chunk.forEach(d => batch.delete(d.ref));
+                      await batch.commit();
+                      deletedCount += chunk.length;
+                    }
+                  }
+
+                  console.log(`Deleted ${deletedCount} documents.`);
+
+                  // 2. Re-Seed
+                  await seedFirestore(true); // Force run
+
+                  alert('リセット完了しました。画面をリロードします。');
+                  window.location.reload();
+
+                } catch (e) {
+                  console.error(e);
+                  alert('リセット中にエラーが発生しました: ' + e);
+                } finally {
+                  setProcessing(false);
+                }
+              }}
+              disabled={processing}
+              className="px-3 py-1 bg-red-600 text-white font-bold rounded hover:bg-red-700 transition-colors flex items-center gap-2 text-xs ml-4 border-2 border-red-800 animate-pulse"
+            >
+              <Trash2 size={12} />
+              HARD RESET DB
             </button>
           </div>
           <div className="text-sm text-gray-500">
