@@ -136,7 +136,6 @@ dist-ssr
 # Firebase
 .firebase/
 firebase-debug.log
-firebaserc
 
 # OS specific
 .DS_Store
