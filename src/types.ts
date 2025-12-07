@@ -197,6 +197,7 @@ export interface DiveLog {
     entry?: string;
     exit?: string;
     duration: number;
+    surfaceInterval?: number; // minutes
   };
 
   depth: {
@@ -226,6 +227,7 @@ export interface DiveLog {
       capacity?: number;
       pressureStart?: number;
       pressureEnd?: number;
+      gasType?: string; // e.g. "Air", "EANx32"
     };
   };
 
@@ -244,6 +246,10 @@ export interface DiveLog {
 
   // Legacy compatibility
   spotId: string; // Alias for location.pointId
+
+  // Import Metadata
+  title?: string; // Original title from import (e.g. Garmin activity name)
+
 }
 
 export type Log = DiveLog;

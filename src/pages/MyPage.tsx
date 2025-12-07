@@ -2,8 +2,10 @@ import { useApp } from '../context/AppContext';
 import { useLanguage } from '../context/LanguageContext';
 import type { Creature } from '../types';
 import { LogDetailModal } from '../components/LogDetailModal';
+import { LogImportModal } from '../components/LogImportModal';
 import { LogCard } from '../components/LogCard';
-import { Award, MapPin, Grid, List, BookOpen, Heart, Bookmark, Check, Star, PenTool, ChevronRight, Compass, Droplet, Map as MapIcon, Aperture, Crown, Shield, Info, Settings, X, Activity, Droplets, Camera, Image as ImageIcon } from 'lucide-react';
+import { Award, MapPin, Grid, List, BookOpen, Heart, Bookmark, Check, Star, PenTool, ChevronRight, Compass, Droplet, Map as MapIcon, Aperture, Crown, Shield, Info, Settings, X, Activity, Droplets, Camera, Image as ImageIcon, Upload } from 'lucide-react';
+
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
@@ -17,6 +19,7 @@ export const MyPage = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [activeTab, setActiveTab] = useState<'dashboard' | 'logbook' | 'collection' | 'favorites' | 'wanted' | 'bookmarks'>('dashboard');
   const [selectedLogId, setSelectedLogId] = useState<string | null>(null);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [showRankInfo, setShowRankInfo] = useState(false);
 
   // Refactor: Use logs from context
@@ -429,23 +432,35 @@ export const MyPage = () => {
         activeTab === 'logbook' && (
           <div className="space-y-6">
             {/* Entry Point */}
-            <Link
-              to="/add-log"
-              className="group relative w-full bg-gray-50 hover:bg-white text-gray-700 py-6 px-6 rounded-r-xl rounded-l-md border-l-8 border-ocean-400 shadow-sm hover:shadow-md transition-all duration-300 flex items-center justify-between"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-ocean-500 shadow-sm group-hover:scale-110 transition-transform">
-                  <PenTool size={20} />
+            <div className="flex gap-4">
+              <Link
+                to="/add-log"
+                className="flex-1 group relative bg-gray-50 hover:bg-white text-gray-700 py-6 px-6 rounded-r-xl rounded-l-md border-l-8 border-ocean-400 shadow-sm hover:shadow-md transition-all duration-300 flex items-center justify-between"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-ocean-500 shadow-sm group-hover:scale-110 transition-transform">
+                    <PenTool size={20} />
+                  </div>
+                  <div className="text-left">
+                    <div className="font-bold text-lg">新しいログを書く</div>
+                    <div className="text-xs text-gray-400 font-mono">My Diving Log</div>
+                  </div>
                 </div>
-                <div className="text-left">
-                  <div className="font-bold text-lg">新しいログを書く</div>
-                  <div className="text-xs text-gray-400 font-mono">My Diving Log</div>
+                <div className="text-gray-300 group-hover:text-ocean-400 transition-colors">
+                  <ChevronRight size={24} />
                 </div>
-              </div>
-              <div className="text-gray-300 group-hover:text-ocean-400 transition-colors">
-                <ChevronRight size={24} />
-              </div>
-            </Link>
+              </Link>
+
+              <button
+                onClick={() => setIsImportOpen(true)}
+                className="group relative bg-gray-50 hover:bg-white text-gray-700 py-6 px-6 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-center justify-center gap-2 min-w-[120px]"
+              >
+                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-500 shadow-sm group-hover:scale-110 transition-transform">
+                  <Upload size={20} />
+                </div>
+                <div className="font-bold text-sm">Import</div>
+              </button>
+            </div>
 
             {userLogs.length === 0 ? (
               <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-200">
@@ -486,6 +501,15 @@ export const MyPage = () => {
         isOpen={!!selectedLog}
         onClose={() => setSelectedLogId(null)}
         isOwner={true}
+      />
+
+      {/* Log Import Modal */}
+      <LogImportModal
+        isOpen={isImportOpen}
+        onClose={() => setIsImportOpen(false)}
+        onImportComplete={() => {
+          // Maybe a toast or just refresh (automatic via context)
+        }}
       />
 
       {/* 5. Collection Tab */}
