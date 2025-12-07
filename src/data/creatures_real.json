@@ -622,47 +622,6 @@
     "imageLicense": "CC BY-SA"
   },
   {
-    "name": "ミドリガイ",
-    "scientificName": "Costasiella kuroshimae",
-    "englishName": "Leaf Slug",
-    "family": "ウミコショウ科",
-    "imageKeyword": "Nudibranch",
-    "category": "ウミウシ",
-    "tags": [
-      "緑",
-      "葉",
-      "小型",
-      "かわいい"
-    ],
-    "description": "葉っぱのような見た目が可愛らしい。小型なので、マクロレンズでじっくり観察しよう。",
-    "baseRarity": "Rare",
-    "depthRange": {
-      "min": 5,
-      "max": 15
-    },
-    "size": "0.5cm",
-    "season": [
-      "summer",
-      "autumn"
-    ],
-    "specialAttributes": [
-      "かわいい",
-      "被写体"
-    ],
-    "waterTempRange": {
-      "min": 22,
-      "max": 30
-    },
-    "regions": [
-      "伊豆半島沿岸",
-      "東伊豆"
-    ],
-    "id": "c_9de9eb3427654a1e",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/1/14/Costasiella_sp_%2819797152176%29.jpg",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
     "name": "イセエビ",
     "scientificName": "Panulirus japonicus",
     "englishName": "Japanese Spiny Lobster",
@@ -1580,49 +1539,6 @@
     "imageLicense": "CC BY-SA"
   },
   {
-    "name": "サラサウミウシ",
-    "scientificName": "Hypselodoris festiva",
-    "englishName": "Festive Nudibranch",
-    "family": "イロウミウシ科",
-    "imageKeyword": "Nudibranch",
-    "category": "ウミウシ",
-    "tags": [
-      "ウミウシ",
-      "白",
-      "ピンク",
-      "触覚"
-    ],
-    "description": "白地にピンクの模様が可愛らしいウミウシ。ダイバーに人気の被写体です。",
-    "baseRarity": "Common",
-    "depthRange": {
-      "min": 5,
-      "max": 25
-    },
-    "size": "3cm",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [
-      "被写体",
-      "かわいい"
-    ],
-    "waterTempRange": {
-      "min": 20,
-      "max": 30
-    },
-    "regions": [
-      "西太平洋",
-      "西伊豆"
-    ],
-    "id": "c_7175d533ac151647",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/9/9e/Hypselodoris_festiva_aoumiusi01.jpg",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
     "name": "マダラエイ",
     "scientificName": "Aetobatus narinari",
     "englishName": "Spotted Eagle Ray",
@@ -1910,55 +1826,6 @@
     "imageLicense": "CC BY-SA"
   },
   {
-    "name": "ハナダイ",
-    "scientificName": "Anthias squamipinnis",
-    "englishName": "Sea Goldie",
-    "family": "ハタ科",
-    "imageKeyword": "Anthias",
-    "category": "魚類",
-    "tags": [
-      "ハナダイ",
-      "ピンク",
-      "群れ",
-      "華やか"
-    ],
-    "description": "サンゴ礁を華やかに彩るハナダイの仲間。オスはメスよりも色が鮮やか。群れで行動し、水中でキラキラと輝く姿は美しい。",
-    "baseRarity": "Common",
-    "depthRange": {
-      "min": 5,
-      "max": 30
-    },
-    "size": "10cm",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [
-      "美しい",
-      "被写体"
-    ],
-    "waterTempRange": {
-      "min": 22,
-      "max": 30
-    },
-    "regions": [
-      "沖縄本島",
-      "慶良間諸島",
-      "宮古島",
-      "石垣島",
-      "沖縄",
-      "小笠原諸島",
-      "モルディブ",
-      "フィジー"
-    ],
-    "id": "c_6b0931b246a5d515",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/7/75/Anthias_anthias_01.jpg",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
     "name": "モンツキカエルウオ",
     "scientificName": "Istiblennius lineatus",
     "englishName": "Lined Blenny",
@@ -2100,51 +1967,6 @@
     ],
     "id": "c_8d7ada569e893f5a",
     "image": "https://upload.wikimedia.org/wikipedia/commons/8/87/Berghia_coerulescens_%28Laurillard%2C_1830%29.jpg",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
-    "name": "リュウキュウイセエビ",
-    "scientificName": "Panulirus japonicus",
-    "englishName": "Japanese spiny lobster",
-    "family": "イセエビ科",
-    "imageKeyword": "Lobster",
-    "category": "甲殻類",
-    "tags": [
-      "エビ",
-      "イセエビ",
-      "赤",
-      "高級"
-    ],
-    "description": "高級食材として知られるイセエビ。夜行性で、昼間は岩陰に隠れていることが多い。大きなヒゲが特徴。",
-    "baseRarity": "Rare",
-    "depthRange": {
-      "min": 5,
-      "max": 40
-    },
-    "size": "30cm",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [
-      "夜行性"
-    ],
-    "waterTempRange": {
-      "min": 20,
-      "max": 30
-    },
-    "regions": [
-      "沖縄本島",
-      "慶良間諸島",
-      "宮古島",
-      "石垣島",
-      "沖縄"
-    ],
-    "id": "c_d57f26db04987eff",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/a/a3/Panulirus_japonicus3.jpg",
     "imageCredit": "Wikipedia (en)",
     "imageLicense": "CC BY-SA"
   },
@@ -2291,58 +2113,6 @@
     ],
     "id": "c_94f78e4e34cbbfcb",
     "image": "https://upload.wikimedia.org/wikipedia/commons/e/e3/Risbecia_tryoni.jpg",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
-    "name": "イソギンチャクモエビ",
-    "scientificName": "Thor amboinensis",
-    "englishName": "Sexy Shrimp",
-    "family": "モエビ科",
-    "imageKeyword": "Shrimp",
-    "category": "甲殻類",
-    "tags": [
-      "エビ",
-      "イソギンチャク",
-      "白",
-      "ダンス"
-    ],
-    "description": "イソギンチャクと共生する小さなエビ。お尻をフリフリと振る姿が特徴的で、その様子から「セクシーシュリンプ」と呼ばれる。小さくて可愛らしい。",
-    "baseRarity": "Common",
-    "depthRange": {
-      "min": 3,
-      "max": 15
-    },
-    "size": "2cm",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [
-      "かわいい",
-      "被写体"
-    ],
-    "waterTempRange": {
-      "min": 22,
-      "max": 30
-    },
-    "regions": [
-      "沖縄本島",
-      "慶良間諸島",
-      "宮古島",
-      "石垣島",
-      "沖縄",
-      "奄美大島",
-      "八丈島",
-      "パラオ",
-      "モルディブ",
-      "フレンチポリネシア",
-      "フィジー"
-    ],
-    "id": "c_1e7a5ae2ddfd65a8",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/7/78/Squat_shrimp_Nick_Hobgood.jpg",
     "imageCredit": "Wikipedia (en)",
     "imageLicense": "CC BY-SA"
   },
@@ -3121,51 +2891,6 @@
     "imageLicense": "CC BY-SA"
   },
   {
-    "name": "ハマクマノミ",
-    "scientificName": "Amphiprion frenatus",
-    "englishName": "Tomato Clownfish",
-    "family": "スズメダイ科",
-    "imageKeyword": "TomatoClownfish",
-    "category": "魚類",
-    "tags": [
-      "赤",
-      "オレンジ",
-      "白",
-      "クマノミ",
-      "イソギンチャク"
-    ],
-    "description": "鮮やかな赤色が特徴。気が強い個体もいる。イソギンチャクを守る。",
-    "baseRarity": "Common",
-    "depthRange": {
-      "min": 5,
-      "max": 20
-    },
-    "size": "14cm",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [
-      "かわいい",
-      "人気者",
-      "被写体"
-    ],
-    "waterTempRange": {
-      "min": 24,
-      "max": 30
-    },
-    "regions": [
-      "西太平洋",
-      "石垣島"
-    ],
-    "id": "c_5c46ae4d3da666ab",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/0/05/Tomato_clownfish_Amphiprion_frenatus.jpg",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
     "name": "ハナゴイ",
     "scientificName": "Pseudanthias squamipinnis",
     "englishName": "Sea Goldie",
@@ -3648,49 +3373,6 @@
     "imageLicense": "CC BY-SA"
   },
   {
-    "name": "テーブルサンゴ",
-    "scientificName": "Acropora",
-    "englishName": "Table Coral",
-    "family": "ミドリイシ科",
-    "imageKeyword": "Tablecoral",
-    "category": "サンゴ",
-    "tags": [
-      "サンゴ",
-      "平ら",
-      "テーブル",
-      "群生"
-    ],
-    "description": "テーブルのように平らな形をしたサンゴ。群生している様子は圧巻で、慶良間の海を代表する風景の一つ。サンゴ礁の生態系を支える重要な存在です。",
-    "baseRarity": "Common",
-    "depthRange": {
-      "min": 3,
-      "max": 20
-    },
-    "size": "100cm",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [
-      "美しい"
-    ],
-    "waterTempRange": {
-      "min": 23,
-      "max": 30
-    },
-    "regions": [
-      "インド太平洋",
-      "慶良間諸島",
-      "メキシコ"
-    ],
-    "id": "c_a11f6b4f566749fc",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/e/e9/Acropora_pulchra.jpg",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
     "name": "ミナミハコフグ",
     "scientificName": "Ostracion cubicus",
     "englishName": "Yellow Boxfish",
@@ -3945,54 +3627,6 @@
     "imageLicense": "CC BY-SA"
   },
   {
-    "name": "マダラトビエイ",
-    "scientificName": "Aetobatus narinari",
-    "englishName": "Spotted Eagle Ray",
-    "family": "トビエイ科",
-    "imageKeyword": "EagleRay",
-    "category": "大物",
-    "tags": [
-      "エイ",
-      "斑点",
-      "回遊"
-    ],
-    "description": "優雅に空を飛ぶように泳ぐ姿が印象的。全身の白い斑点が特徴。群れで現れることもあります。",
-    "baseRarity": "Common",
-    "depthRange": {
-      "min": 5,
-      "max": 40
-    },
-    "size": "最大全長3m",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [
-      "人気者",
-      "大物",
-      "美しい"
-    ],
-    "waterTempRange": {
-      "min": 24,
-      "max": 30
-    },
-    "regions": [
-      "太平洋",
-      "インド洋",
-      "小笠原諸島",
-      "パラオ",
-      "モルディブ",
-      "フレンチポリネシア",
-      "メキシコ"
-    ],
-    "id": "c_afbdc0d7c357a179",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/a/ad/Eagle_Ray_Turks_and_Caicos_Dec_15_2006.JPG",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
     "name": "ミナミハンドウイルカ",
     "scientificName": "Tursiops aduncus",
     "englishName": "Indo-Pacific Bottlenose Dolphin",
@@ -4077,93 +3711,6 @@
     ],
     "id": "c_5b40784d2e420761",
     "image": "https://upload.wikimedia.org/wikipedia/commons/c/c0/Hal_-_Hippocampus_kuda_-_4.jpg",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
-    "name": "オオテンハナゴイ",
-    "scientificName": "Pseudanthias pascalus",
-    "englishName": "Purple Queen",
-    "family": "ハナダイ科",
-    "imageKeyword": "Anthias",
-    "category": "魚類",
-    "tags": [
-      "ハナダイ",
-      "紫",
-      "群れ"
-    ],
-    "description": "鮮やかな紫色が美しいハナダイ。群れで泳ぐ姿は圧巻。水中でキラキラと輝く様子は必見です。",
-    "baseRarity": "Common",
-    "depthRange": {
-      "min": 10,
-      "max": 40
-    },
-    "size": "15cm",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [
-      "美しい",
-      "被写体"
-    ],
-    "waterTempRange": {
-      "min": 22,
-      "max": 30
-    },
-    "regions": [
-      "太平洋",
-      "インド洋",
-      "小笠原諸島",
-      "パラオ"
-    ],
-    "id": "c_8c03a5556a501920",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/7/75/Anthias_anthias_01.jpg",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
-    "name": "シロブチハナダイ",
-    "scientificName": "Odontanthias borbonius",
-    "englishName": "Checkerboard Wrasse",
-    "family": "ハナダイ科",
-    "imageKeyword": "Anthias",
-    "category": "魚類",
-    "tags": [
-      "ハナダイ",
-      "白",
-      "レア"
-    ],
-    "description": "ピンクと白のコントラストが美しいハナダイ。水深が深い場所に生息するため、出会えたらラッキー。",
-    "baseRarity": "Rare",
-    "depthRange": {
-      "min": 30,
-      "max": 60
-    },
-    "size": "20cm",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [
-      "美しい",
-      "被写体"
-    ],
-    "waterTempRange": {
-      "min": 22,
-      "max": 28
-    },
-    "regions": [
-      "太平洋",
-      "インド洋",
-      "小笠原諸島"
-    ],
-    "id": "c_d82f22e101e7a831",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/7/75/Anthias_anthias_01.jpg",
     "imageCredit": "Wikipedia (en)",
     "imageLicense": "CC BY-SA"
   },
@@ -5291,51 +4838,6 @@
     "imageLicense": "CC BY-SA"
   },
   {
-    "name": "ウミガメ",
-    "scientificName": "Chelonia mydas",
-    "englishName": "Green sea turtle",
-    "family": "ウミガメ科",
-    "imageKeyword": "Turtle",
-    "category": "大物",
-    "tags": [
-      "アオウミガメ",
-      "緑",
-      "甲羅",
-      "のんびり"
-    ],
-    "description": "癒やし系の代表。食事中や休憩中の姿をよく見かけます。近づきすぎず、そっと見守りましょう。",
-    "baseRarity": "Common",
-    "depthRange": {
-      "min": 2,
-      "max": 20
-    },
-    "size": "1m",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [
-      "人気者",
-      "かわいい"
-    ],
-    "waterTempRange": {
-      "min": 22,
-      "max": 30
-    },
-    "regions": [
-      "全世界",
-      "宮古島",
-      "モルディブ",
-      "メキシコ"
-    ],
-    "id": "c_f8e61b29b82caaae",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/a/a3/Green_sea_turtle_%28Chelonia_mydas%29_Moorea.jpg",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
     "name": "ナポレオンフィッシュ",
     "scientificName": "Cheilinus undulatus",
     "englishName": "Humphead Wrasse",
@@ -5380,141 +4882,6 @@
     ],
     "id": "c_8d5f324c954ce82c",
     "image": "https://upload.wikimedia.org/wikipedia/commons/4/49/Humphead_wrasse_melb_aquarium.jpg",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
-    "name": "ジンベエザメ",
-    "scientificName": "Rhincodon typus",
-    "englishName": "Whale Shark",
-    "family": "ジンベエザメ科",
-    "imageKeyword": "Whaleshark",
-    "category": "大物",
-    "tags": [
-      "サメ",
-      "大型",
-      "回遊魚",
-      "灰色",
-      "斑点"
-    ],
-    "description": "南アリ環礁などで見られる巨大なサメ。プランクトン食性でおとなしい性格。遭遇率は潮汐やプランクトンの発生に左右されます。",
-    "baseRarity": "Rare",
-    "depthRange": {
-      "min": 5,
-      "max": 20
-    },
-    "size": "5-12m",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [
-      "人気者",
-      "大物",
-      "美しい"
-    ],
-    "waterTempRange": {
-      "min": 26,
-      "max": 30
-    },
-    "regions": [
-      "南アリ環礁",
-      "バア環礁",
-      "モルディブ"
-    ],
-    "id": "c_09f190cc22de7add",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/f/f6/Similan_Dive_Center_-_great_whale_shark.jpg",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
-    "name": "インドオニヒトデ",
-    "scientificName": "Acanthaster planci",
-    "englishName": "Crown-of-thorns Starfish",
-    "family": "イトマキヒトデ科",
-    "imageKeyword": "Crownofthorns",
-    "category": "その他",
-    "tags": [
-      "ヒトデ",
-      "棘",
-      "有毒",
-      "サンゴ",
-      "捕食"
-    ],
-    "description": "サンゴを食べることで知られる。大発生するとサンゴ礁に大きな被害を与える。棘に毒があるので注意。",
-    "baseRarity": "Common",
-    "depthRange": {
-      "min": 1,
-      "max": 30
-    },
-    "size": "25-40cm",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [
-      "毒",
-      "危険"
-    ],
-    "waterTempRange": {
-      "min": 26,
-      "max": 30
-    },
-    "regions": [
-      "モルディブ全域",
-      "モルディブ"
-    ],
-    "id": "c_9064d780ce253d9d",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/8/8f/CrownofThornsStarfish_Fiji_2005-10-12.jpg",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
-    "name": "ホワイトチップリーフシャーク",
-    "scientificName": "Triaenodon obesus",
-    "englishName": "Whitetip Reef Shark",
-    "family": "メジロザメ科",
-    "imageKeyword": "Whitetip",
-    "category": "大物",
-    "tags": [
-      "サメ",
-      "白",
-      "リーフ",
-      "おとなしい",
-      "夜行性"
-    ],
-    "description": "浅瀬のサンゴ礁で見られる小型のサメ。おとなしい性格で、昼間は岩陰で休んでいることが多いです。夜行性。",
-    "baseRarity": "Common",
-    "depthRange": {
-      "min": 5,
-      "max": 30
-    },
-    "size": "1.5-2m",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [
-      "夜行性"
-    ],
-    "waterTempRange": {
-      "min": 26,
-      "max": 30
-    },
-    "regions": [
-      "モルディブ全域",
-      "モルディブ",
-      "フレンチポリネシア",
-      "フィジー"
-    ],
-    "id": "c_d70adf37f0a561fb",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/9/95/Carcharhinus_albimarginatus-shark.jpg",
     "imageCredit": "Wikipedia (en)",
     "imageLicense": "CC BY-SA"
   },
@@ -5599,90 +4966,6 @@
     ],
     "id": "c_7be6fb9ffe56610a",
     "image": "https://upload.wikimedia.org/wikipedia/commons/4/4d/Com%C3%A8te_saumon_%28Elagatis_bipinnulata%29_%28Ifremer_00756-86769%29.jpg",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
-    "name": "モルディブウミウシ",
-    "scientificName": "Goniobranchus kuniei",
-    "englishName": "Kunie's Chromodoris",
-    "family": "イロウミウシ科",
-    "imageKeyword": "Nudibranch",
-    "category": "ウミウシ",
-    "tags": [
-      "白",
-      "オレンジ",
-      "紫",
-      "触覚"
-    ],
-    "description": "鮮やかな色彩が美しいウミウシ。小さくて可愛らしい姿は、マクロ撮影の被写体として人気です。",
-    "baseRarity": "Common",
-    "depthRange": {
-      "min": 5,
-      "max": 20
-    },
-    "size": "3cm",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [
-      "かわいい",
-      "美しい",
-      "被写体"
-    ],
-    "waterTempRange": {
-      "min": 24,
-      "max": 30
-    },
-    "regions": [
-      "フレンチポリネシア"
-    ],
-    "id": "c_055af14c31873ae8",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/2/29/Kuni%27s_chromodoris%2C_fan_38_west%2C_wakatobi%2C_2018_%2845763962462%29_%28cropped%29.jpg",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
-    "name": "コモンカスミアジ",
-    "scientificName": "Caranx melampygus",
-    "englishName": "Bluefin Trevally",
-    "family": "アジ科",
-    "imageKeyword": "Trevally",
-    "category": "魚類",
-    "tags": [
-      "青",
-      "銀色",
-      "回遊",
-      "捕食"
-    ],
-    "description": "体側に青い斑点を持つアジ。高速で泳ぎ、小魚を捕食します。ダイナミックな泳ぎに注目。",
-    "baseRarity": "Common",
-    "depthRange": {
-      "min": 1,
-      "max": 40
-    },
-    "size": "70cm",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [
-      "大物"
-    ],
-    "waterTempRange": {
-      "min": 24,
-      "max": 30
-    },
-    "regions": [
-      "フレンチポリネシア"
-    ],
-    "id": "c_75a45908625495bf",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/c/cb/Bluefin_trevally_%28Caranx_melampygus%29.jpg",
     "imageCredit": "Wikipedia (en)",
     "imageLicense": "CC BY-SA"
   },
@@ -5775,50 +5058,6 @@
     "imageLicense": "CC BY-SA"
   },
   {
-    "name": "ナンヨウハギ",
-    "scientificName": "Paracanthurus hepatus",
-    "englishName": "Palette Tang",
-    "family": "ニザダイ科",
-    "imageKeyword": "Palettetang",
-    "category": "魚類",
-    "tags": [
-      "青",
-      "黒",
-      "黄色",
-      "模様"
-    ],
-    "description": "鮮やかな青色が特徴。幼魚は特に可愛らしい。映画「ファインディング・ドリー」のドリーのモデル。",
-    "baseRarity": "Common",
-    "depthRange": {
-      "min": 2,
-      "max": 40
-    },
-    "size": "30cm",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [
-      "人気者",
-      "美しい"
-    ],
-    "waterTempRange": {
-      "min": 24,
-      "max": 30
-    },
-    "regions": [
-      "太平洋",
-      "インド洋",
-      "フィジー"
-    ],
-    "id": "c_86930200f72cb33b",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/1/13/Paletten-Doktorfisch_M%C3%BCnster.JPG",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
     "name": "イエローテール・サージョンフィッシュ",
     "scientificName": "Zebrasoma xanthurum",
     "englishName": "Yellowtail Surgeonfish",
@@ -5903,50 +5142,6 @@
     ],
     "id": "c_0de4e0adc4e3d033",
     "image": "https://upload.wikimedia.org/wikipedia/commons/2/29/Dasyatis_americana_SI.jpg",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
-    "name": "オニイトマキエイ",
-    "scientificName": "Manta birostris",
-    "englishName": "Giant Manta Ray",
-    "family": "トビエイ科",
-    "imageKeyword": "GiantMantaRay",
-    "category": "大物",
-    "tags": [
-      "マンタ",
-      "エイ",
-      "巨大",
-      "回遊"
-    ],
-    "description": "ダイバー憧れの的。翼を広げたような姿で優雅に泳ぎます。プランクトンを食べるおとなしいエイです。",
-    "baseRarity": "Epic",
-    "depthRange": {
-      "min": 5,
-      "max": 30
-    },
-    "size": "7m",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [
-      "被写体",
-      "美しい",
-      "大物"
-    ],
-    "waterTempRange": {
-      "min": 22,
-      "max": 30
-    },
-    "regions": [
-      "全世界の熱帯・亜熱帯海域",
-      "メキシコ"
-    ],
-    "id": "c_d692db37be954ca4",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/d/df/Manta_birostris-Thailand4.jpg",
     "imageCredit": "Wikipedia (en)",
     "imageLicense": "CC BY-SA"
   },
@@ -6332,48 +5527,6 @@
     "imageLicense": "CC BY-SA"
   },
   {
-    "name": "カリビアンロブスター",
-    "scientificName": "Panulirus argus",
-    "englishName": "Caribbean Spiny Lobster",
-    "family": "イセエビ科",
-    "imageKeyword": "Lobster",
-    "category": "甲殻類",
-    "tags": [
-      "エビ",
-      "大型",
-      "食用",
-      "夜行性"
-    ],
-    "description": "カリブ海に生息する大型のイセエビ。夜行性で、昼間は岩陰に隠れている。食用としても人気が高い。",
-    "baseRarity": "Common",
-    "depthRange": {
-      "min": 1,
-      "max": 30
-    },
-    "size": "最大60cm",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [
-      "夜行性"
-    ],
-    "waterTempRange": {
-      "min": 24,
-      "max": 30
-    },
-    "regions": [
-      "カリブ海",
-      "メキシコ"
-    ],
-    "id": "c_eb20761f8ade27f9",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/e/ec/Panulirus_argus_NOAA.jpg",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
     "name": "カリブーバー",
     "scientificName": "Epinephelus itajara",
     "englishName": "Goliath Grouper",
@@ -6545,50 +5698,6 @@
     ],
     "id": "c_53f740a633d08fde",
     "image": "https://upload.wikimedia.org/wikipedia/commons/3/37/Hippocampus_barbouri_01.JPG",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
-    "name": "イバラカンザシ",
-    "scientificName": "Spirobranchus giganteus",
-    "englishName": "Christmas Tree Worm",
-    "family": "ケヤリムシ科",
-    "imageKeyword": "ChristmasTreeWorm",
-    "category": "その他",
-    "tags": [
-      "イバラカンザシ",
-      "クリスマスツリー",
-      "カラフル",
-      "可愛い"
-    ],
-    "description": "クリスマスツリーのような美しい鰓を持つ。刺激を受けると瞬時に引っ込む。様々な色がある。",
-    "baseRarity": "Common",
-    "depthRange": {
-      "min": 1,
-      "max": 30
-    },
-    "size": "5cm",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [
-      "かわいい",
-      "美しい"
-    ],
-    "waterTempRange": {
-      "min": 24,
-      "max": 30
-    },
-    "regions": [
-      "熱帯",
-      "亜熱帯",
-      "メキシコ"
-    ],
-    "id": "c_980b060f705eeb81",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/e/ef/Spirobranchus_giganteus_%28Red_and_white_christmas_tree_worm%29.jpg",
     "imageCredit": "Wikipedia (en)",
     "imageLicense": "CC BY-SA"
   },
@@ -6894,48 +6003,6 @@
     "imageLicense": "CC BY-SA"
   },
   {
-    "name": "シュモクザメ",
-    "scientificName": "Sphyrna lewini",
-    "englishName": "Scalloped Hammerhead",
-    "family": "シュモクザメ科",
-    "imageKeyword": "Hammerhead",
-    "category": "大物",
-    "tags": [
-      "サメ",
-      "シュモク",
-      "ハンマー",
-      "群れ"
-    ],
-    "description": "特徴的な頭部を持つサメ。ガラパゴスやココス島で群れを作ることがある。回遊性が高く、遭遇はやや難しい。",
-    "baseRarity": "Rare",
-    "depthRange": {
-      "min": 0,
-      "max": 500
-    },
-    "size": "3-4m",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [
-      "大物",
-      "群れ"
-    ],
-    "waterTempRange": {
-      "min": 22,
-      "max": 30
-    },
-    "regions": [
-      "熱帯・亜熱帯海域"
-    ],
-    "id": "c_4b4b652289cfa9da",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/b/bf/Scalloped_Hammerhead_Shark_Sphyrna_Lewini_%28226845659%29.jpeg",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
     "name": "カスザメ",
     "scientificName": "Squatina japonica",
     "englishName": "Japanese Angelshark",
@@ -7142,46 +6209,6 @@
     ],
     "id": "c_d3a809c2911591e6",
     "image": "https://upload.wikimedia.org/wikipedia/commons/0/0f/Atelomycterus_macleayi.gif",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
-    "name": "ツマジロ",
-    "scientificName": "Carcharhinus melanopterus",
-    "englishName": "Blacktip Reef Shark",
-    "family": "メジロザメ科",
-    "imageKeyword": "BlacktipShark",
-    "category": "魚類",
-    "tags": [
-      "サメ",
-      "小型",
-      "黒い",
-      "リーフ",
-      "臆病"
-    ],
-    "description": "全長1.6m程度。背鰭の先端が黒いのが特徴。浅瀬で見かけることが多い。警戒心が強い。",
-    "baseRarity": "Common",
-    "depthRange": {
-      "min": 0,
-      "max": 75
-    },
-    "size": "1-1.6m",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [],
-    "waterTempRange": {
-      "min": 20,
-      "max": 30
-    },
-    "regions": [
-      "インド太平洋"
-    ],
-    "id": "c_6c425685ce5076b4",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/7/76/Blacktip_reef_shark_%28Carcharhinus_melanopterus%29_Moorea_5.jpg",
     "imageCredit": "Wikipedia (en)",
     "imageLicense": "CC BY-SA"
   },
@@ -7431,48 +6458,6 @@
     "imageLicense": "CC BY-SA"
   },
   {
-    "name": "トウアカクマノミ",
-    "scientificName": "Amphiprion frenatus",
-    "englishName": "Tomato Clownfish",
-    "family": "スズメダイ科",
-    "imageKeyword": "Frenatus",
-    "category": "魚類",
-    "tags": [
-      "クマノミ",
-      "赤",
-      "オレンジ",
-      "イソギンチャク"
-    ],
-    "description": "鮮やかな赤色が目を引くクマノミ。メスは大きく、オスは小さいのが特徴です。イソギンチャクとの共生は必見。",
-    "baseRarity": "Common",
-    "depthRange": {
-      "min": 3,
-      "max": 12
-    },
-    "size": "14cm",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [
-      "人気者",
-      "被写体"
-    ],
-    "waterTempRange": {
-      "min": 22,
-      "max": 30
-    },
-    "regions": [
-      "西太平洋"
-    ],
-    "id": "c_5c46ae4d3da666ab",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/0/05/Tomato_clownfish_Amphiprion_frenatus.jpg",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
     "name": "ヨスジリュウキュウスズメダイ",
     "scientificName": "Labrodascyllus rimatarae",
     "englishName": "Rimatara Damsel",
@@ -7511,53 +6496,6 @@
     ],
     "id": "c_3f062e98fba96193",
     "image": ""
-  },
-  {
-    "name": "トゲチョウチョウウオ",
-    "scientificName": "Chaetodon auriga",
-    "englishName": "Threadfin butterflyfish",
-    "family": "チョウチョウウオ科",
-    "imageKeyword": "Auriga",
-    "category": "魚類",
-    "tags": [
-      "黄",
-      "黒",
-      "模様",
-      "チョウチョウウオ",
-      "ペア"
-    ],
-    "description": "背びれの棘が糸のように伸びているのが特徴。サンゴ礁を優雅に泳ぐ姿は、ダイバーに人気の被写体。",
-    "baseRarity": "Common",
-    "depthRange": {
-      "min": 1,
-      "max": 25
-    },
-    "size": "23cm",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [
-      "被写体",
-      "美しい"
-    ],
-    "waterTempRange": {
-      "min": 22,
-      "max": 30
-    },
-    "regions": [
-      "沖縄",
-      "伊豆",
-      "東南アジア",
-      "インド洋",
-      "紅海"
-    ],
-    "id": "c_12dd4be68ea38524",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/c/ca/Bep_chaetodon_auriga_pemba.jpg",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
   },
   {
     "name": "ミスジリュウキュウスズメダイ",
@@ -7599,93 +6537,6 @@
     ],
     "id": "c_e08e43ea9f8c78f7",
     "image": "https://upload.wikimedia.org/wikipedia/commons/f/f6/Pomacentrus_tripunctatus.png",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
-    "name": "チョウチョウウオ",
-    "scientificName": "Chaetodon auriga",
-    "englishName": "Threadfin Butterflyfish",
-    "family": "チョウチョウウオ科",
-    "imageKeyword": "auriga",
-    "category": "魚類",
-    "tags": [
-      "チョウチョウウオ",
-      "黄色",
-      "黒色",
-      "フィラメント"
-    ],
-    "description": "背鰭から伸びる糸状のフィラメントが特徴。水面近くから深場まで見られ、ダイバーに人気の被写体。サンゴポリプを食べるので、サンゴ礁の健康状態の指標にも。",
-    "baseRarity": "Common",
-    "depthRange": {
-      "min": 1,
-      "max": 30
-    },
-    "size": "20cm",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [
-      "美しい",
-      "人気者",
-      "被写体"
-    ],
-    "waterTempRange": {
-      "min": 24,
-      "max": 30
-    },
-    "regions": [
-      "西太平洋",
-      "インド洋"
-    ],
-    "id": "c_12dd4be68ea38524",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/c/ca/Bep_chaetodon_auriga_pemba.jpg",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
-    "name": "ミゾレチョウチョウウオ",
-    "scientificName": "Chaetodon trifascialis",
-    "englishName": "Chevron Butterflyfish",
-    "family": "チョウチョウウオ科",
-    "imageKeyword": "trifascialis",
-    "category": "魚類",
-    "tags": [
-      "チョウチョウウオ",
-      "茶色",
-      "V字模様",
-      "サンゴ"
-    ],
-    "description": "V字模様が特徴的なチョウチョウウオ。テーブルサンゴの周りでよく見られ、サンゴポリプを好んで食べます。縄張り意識が強いです。",
-    "baseRarity": "Common",
-    "depthRange": {
-      "min": 3,
-      "max": 20
-    },
-    "size": "18cm",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [
-      "美しい",
-      "被写体"
-    ],
-    "waterTempRange": {
-      "min": 24,
-      "max": 30
-    },
-    "regions": [
-      "インド洋",
-      "太平洋"
-    ],
-    "id": "c_7e24e48b6f93e6a6",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/f/ff/Pez_mariposa_Chevr%C3%B3n_%28Chaetodon_trifascialis%29%2C_parque_nacional_Ras_Muhammad%2C_Egipto%2C_2022-03-30%2C_DD_32.jpg",
     "imageCredit": "Wikipedia (en)",
     "imageLicense": "CC BY-SA"
   },
@@ -8753,47 +7604,6 @@
     "imageLicense": "CC BY-SA"
   },
   {
-    "name": "コミドリリュウグウウミウシ",
-    "scientificName": "Costasiella kuroshimae",
-    "englishName": "Leaf Sheep",
-    "family": "ボブサンウミウシ科",
-    "imageKeyword": "Costasiella",
-    "category": "ウミウシ",
-    "tags": [
-      "緑色",
-      "葉",
-      "かわいい"
-    ],
-    "description": "葉っぱのような形が特徴的なウミウシ。光合成をする能力を持つ。小さいので見つけるのが難しい。",
-    "baseRarity": "Epic",
-    "depthRange": {
-      "min": 3,
-      "max": 10
-    },
-    "size": "0.5cm",
-    "season": [
-      "spring",
-      "summer",
-      "autumn"
-    ],
-    "specialAttributes": [
-      "かわいい",
-      "被写体",
-      "擬態"
-    ],
-    "waterTempRange": {
-      "min": 25,
-      "max": 30
-    },
-    "regions": [
-      "西太平洋"
-    ],
-    "id": "c_9de9eb3427654a1e",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/1/14/Costasiella_sp_%2819797152176%29.jpg",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
     "name": "パンダツノウミウシ",
     "scientificName": "Thecacera pacifica",
     "englishName": "Pikachu Nudibranch",
@@ -8833,91 +7643,6 @@
     ],
     "id": "c_a63749305a7ae6a7",
     "image": "https://upload.wikimedia.org/wikipedia/commons/f/f1/Thecacera_pacifica_%28Polyceridae_Nudibranch%29.jpg",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
-    "name": "シロハナガサウミウシ",
-    "scientificName": "Pteraeolidia ianthina",
-    "englishName": "Blue Dragon Nudibranch",
-    "family": "ヒョウタンミミノウミウシ科",
-    "imageKeyword": "Pteraeolidia",
-    "category": "ウミウシ",
-    "tags": [
-      "紫色",
-      "ミノ",
-      "長い"
-    ],
-    "description": "長いミノが特徴的なウミウシ。刺胞動物を食べることで毒を蓄える。ミノは触ると危険なので注意。",
-    "baseRarity": "Rare",
-    "depthRange": {
-      "min": 5,
-      "max": 30
-    },
-    "size": "8cm",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [
-      "毒",
-      "被写体",
-      "危険"
-    ],
-    "waterTempRange": {
-      "min": 22,
-      "max": 30
-    },
-    "regions": [
-      "インド洋",
-      "西太平洋"
-    ],
-    "id": "c_8040dedc2b34d64e",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/d/df/Babosa_de_mar_%28Pteraeolidia_ianthina%29%2C_Anilao%2C_Filipinas%2C_2023-08-23%2C_DD_94.jpg",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
-    "name": "コンペイトウウミウシ",
-    "scientificName": "Costasiella kuroshimae",
-    "englishName": "Leaf Sheep Sea Slug",
-    "family": "ボブサンウミウシ科",
-    "imageKeyword": "Costasiella",
-    "category": "ウミウシ",
-    "tags": [
-      "緑色",
-      "かわいい",
-      "葉",
-      "ユニーク"
-    ],
-    "description": "緑色の葉のような突起が特徴の小型ウミウシ。光合成を行う珍しい種類。まるで小さな羊のようです。",
-    "baseRarity": "Rare",
-    "depthRange": {
-      "min": 1,
-      "max": 10
-    },
-    "size": "0.5-1cm",
-    "season": [
-      "spring",
-      "summer",
-      "autumn"
-    ],
-    "specialAttributes": [
-      "かわいい",
-      "被写体",
-      "擬態"
-    ],
-    "waterTempRange": {
-      "min": 25,
-      "max": 30
-    },
-    "regions": [
-      "西太平洋"
-    ],
-    "id": "c_9de9eb3427654a1e",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/1/14/Costasiella_sp_%2819797152176%29.jpg",
     "imageCredit": "Wikipedia (en)",
     "imageLicense": "CC BY-SA"
   },
@@ -9083,49 +7808,6 @@
     ],
     "id": "c_bf57f493a886d4a4",
     "image": "https://upload.wikimedia.org/wikipedia/commons/e/e6/Ibacus_ciliatus_-_National_Museum_of_Nature_and_Science%2C_Tokyo_-_DSC07560.JPG",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
-    "name": "オニダルマエビ",
-    "scientificName": "Hymenocera picta",
-    "englishName": "Harlequin shrimp",
-    "family": "ダルマエビ科",
-    "imageKeyword": "HarlequinShrimp",
-    "category": "甲殻類",
-    "tags": [
-      "エビ",
-      "白",
-      "模様",
-      "派手"
-    ],
-    "description": "白い体にカラフルな模様が美しいエビ。ヒトデを食べるちょっと変わった食性を持っています。ペアで行動することが多い。",
-    "baseRarity": "Rare",
-    "depthRange": {
-      "min": 5,
-      "max": 30
-    },
-    "size": "5cm",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [
-      "美しい",
-      "被写体"
-    ],
-    "waterTempRange": {
-      "min": 24,
-      "max": 30
-    },
-    "regions": [
-      "インド洋",
-      "太平洋"
-    ],
-    "id": "c_39c0c0ea24db287a",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/9/9c/Hymenocera_picta_en_train_de_retourner_Fromia_milleporella.JPG",
     "imageCredit": "Wikipedia (en)",
     "imageLicense": "CC BY-SA"
   },
@@ -9301,48 +7983,6 @@
     "imageLicense": "CC BY-SA"
   },
   {
-    "name": "ミドリコンペイトウガニ",
-    "scientificName": "Hoplophrys oatesi",
-    "englishName": "Soft Coral Crab",
-    "family": "オオシマコシオリエビ科",
-    "imageKeyword": "SoftCoralCrab",
-    "category": "甲殻類",
-    "tags": [
-      "カニ",
-      "緑",
-      "擬態",
-      "ソフトコーラル"
-    ],
-    "description": "ソフトコーラルに擬態するカニ。見つけるのが非常に難しい。ハサミもソフトコーラルのような形をしています。",
-    "baseRarity": "Rare",
-    "depthRange": {
-      "min": 10,
-      "max": 30
-    },
-    "size": "1cm",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [
-      "擬態"
-    ],
-    "waterTempRange": {
-      "min": 24,
-      "max": 30
-    },
-    "regions": [
-      "インド洋",
-      "太平洋"
-    ],
-    "id": "c_bf495bf1a9e7d155",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/2/20/Candy_crab.jpg",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
     "name": "ハナガサクラゲエビ",
     "scientificName": "Leander plumosus",
     "englishName": "Feather Star Shrimp",
@@ -9381,51 +8021,6 @@
     ],
     "id": "c_04f7ba94fc47f70d",
     "image": ""
-  },
-  {
-    "name": "アカシマモエビ",
-    "scientificName": "Thor amboinensis",
-    "englishName": "Sexy shrimp",
-    "family": "モエビ科",
-    "imageKeyword": "SexyShrimp",
-    "category": "甲殻類",
-    "tags": [
-      "エビ",
-      "小型",
-      "可愛い",
-      "ダンス",
-      "人気"
-    ],
-    "description": "小さくて可愛いエビ。体を揺らすように動く姿からセクシーシュリンプと呼ばれています。イソギンチャクに共生。",
-    "baseRarity": "Common",
-    "depthRange": {
-      "min": 3,
-      "max": 15
-    },
-    "size": "2cm",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [
-      "かわいい",
-      "被写体",
-      "人気者"
-    ],
-    "waterTempRange": {
-      "min": 24,
-      "max": 30
-    },
-    "regions": [
-      "インド洋",
-      "太平洋"
-    ],
-    "id": "c_1e7a5ae2ddfd65a8",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/7/78/Squat_shrimp_Nick_Hobgood.jpg",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
   },
   {
     "name": "コモンヤドカリ",
@@ -9552,49 +8147,6 @@
     "image": ""
   },
   {
-    "name": "コンゴウフグ",
-    "scientificName": "Ostracion cubicus",
-    "englishName": "Yellow boxfish",
-    "family": "ハコフグ科",
-    "imageKeyword": "Boxfish",
-    "category": "甲殻類",
-    "tags": [
-      "カニ",
-      "黄色",
-      "模様",
-      "幼魚"
-    ],
-    "description": "幼魚の頃は鮮やかな黄色い立方体で、成長とともに茶色くなります。フグ毒を持つので注意が必要です。",
-    "baseRarity": "Common",
-    "depthRange": {
-      "min": 1,
-      "max": 30
-    },
-    "size": "45cm",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [
-      "毒",
-      "かわいい",
-      "人気者"
-    ],
-    "waterTempRange": {
-      "min": 24,
-      "max": 30
-    },
-    "regions": [
-      "インド太平洋"
-    ],
-    "id": "c_7eccd201c6f6e068",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/c/cc/Ostracion_cubicum_400115646.jpg",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
     "name": "ベニカエルアンコウ",
     "scientificName": "Antennarius coccineus",
     "englishName": "Scarlet Frogfish",
@@ -9637,52 +8189,6 @@
     ],
     "id": "c_d28c86928dd51956",
     "image": "https://upload.wikimedia.org/wikipedia/commons/2/2f/Antennarius_coccineus_SI.jpg",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
-    "name": "クマドリカエルアンコウ",
-    "scientificName": "Antennarius maculatus",
-    "englishName": "Warty Frogfish",
-    "family": "カエルアンコウ科",
-    "imageKeyword": "WartyFrogfish",
-    "category": "魚類",
-    "tags": [
-      "カエルアンコウ",
-      "白色",
-      "黒色",
-      "いぼ",
-      "擬態",
-      "アンテナ"
-    ],
-    "description": "体表のイボ状突起が特徴的。白地に黒い斑点が入り、ユニークな外見をしています。環境に合わせて体色を変化させます。",
-    "baseRarity": "Common",
-    "depthRange": {
-      "min": 5,
-      "max": 30
-    },
-    "size": "14cm",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [
-      "擬態",
-      "被写体",
-      "人気者"
-    ],
-    "waterTempRange": {
-      "min": 25,
-      "max": 30
-    },
-    "regions": [
-      "インド洋",
-      "西太平洋"
-    ],
-    "id": "c_1761fc6c44962cf7",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/b/b5/Antennarius_maculatus_%28Desjardins%2C_1840%29_2283129219.jpg",
     "imageCredit": "Wikipedia (en)",
     "imageLicense": "CC BY-SA"
   },
@@ -9992,49 +8498,6 @@
     "image": ""
   },
   {
-    "name": "シマシマカエルアンコウ",
-    "scientificName": "Antennarius hispidus",
-    "englishName": "Shaggy Frogfish",
-    "family": "カエルアンコウ科",
-    "imageKeyword": "ShaggyFrogfish",
-    "category": "魚類",
-    "tags": [
-      "カエルアンコウ",
-      "縞",
-      "茶色",
-      "フサフサ"
-    ],
-    "description": "体表がフサフサとした突起で覆われている。縞模様が特徴的で、海藻に擬態している。",
-    "baseRarity": "Rare",
-    "depthRange": {
-      "min": 5,
-      "max": 20
-    },
-    "size": "10cm",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [
-      "擬態",
-      "被写体",
-      "かわいい"
-    ],
-    "waterTempRange": {
-      "min": 24,
-      "max": 30
-    },
-    "regions": [
-      "インド太平洋"
-    ],
-    "id": "c_02d04253f4a0e25b",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/6/6c/Antennarius-hispidus-2.jpg",
-    "imageCredit": "Wikipedia (en)",
-    "imageLicense": "CC BY-SA"
-  },
-  {
     "name": "オドリハダカオニアンコウ",
     "scientificName": "Histiophryne cryptacanthodes",
     "englishName": "Ocellated Frogfish",
@@ -10161,48 +8624,5 @@
     "image": "https://upload.wikimedia.org/wikipedia/commons/6/6e/Echinophrynereynoldsi.png",
     "imageCredit": "Wikipedia (en)",
     "imageLicense": "CC BY-SA"
-  },
-  {
-    "name": "クロオオモンカエルアンコウ",
-    "scientificName": "Antennarius commersonii",
-    "englishName": "Black Commerson's Frogfish",
-    "family": "イザリウオ科",
-    "imageKeyword": "BlackCommersonFrogfish",
-    "category": "魚類",
-    "tags": [
-      "カエルアンコウ",
-      "クロオオモンカエルアンコウ",
-      "黒",
-      "大型",
-      "擬態"
-    ],
-    "description": "オオモンカエルアンコウの黒色個体。他のカエルアンコウ同様、擬態能力が高く、獲物を待ち伏せ。",
-    "baseRarity": "Rare",
-    "depthRange": {
-      "min": 5,
-      "max": 40
-    },
-    "size": "30cm",
-    "season": [
-      "spring",
-      "summer",
-      "autumn",
-      "winter"
-    ],
-    "specialAttributes": [
-      "擬態",
-      "被写体",
-      "大物"
-    ],
-    "waterTempRange": {
-      "min": 22,
-      "max": 30
-    },
-    "regions": [
-      "インド洋",
-      "太平洋"
-    ],
-    "id": "c_3dbc238f20075a9f",
-    "image": ""
   }
 ]
