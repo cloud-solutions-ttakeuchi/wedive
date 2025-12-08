@@ -18,7 +18,7 @@ import {
   limit,
   writeBatch
 } from 'firebase/firestore';
-import { seedFirestore } from '../utils/seeder';
+
 
 // Helper to remove undefined values
 const sanitizePayload = (data: any): any => {
@@ -334,7 +334,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         // 1. Seed Data if needed (Check one collection?)
         // optimizing: only run if we suspect empty?
         // For safety, let's run it. seeder checks emptiness internally.
-        await seedFirestore();
+        // [Safety Switch] Disabled automatic seeding to prevent overwriting user edits.
+        // await seedFirestore();
 
         // 2. Listen to User Document
         const userDocRef = doc(firestore, 'users', user.uid);
