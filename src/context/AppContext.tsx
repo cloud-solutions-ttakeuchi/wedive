@@ -18,7 +18,7 @@ import {
   limit,
   writeBatch
 } from 'firebase/firestore';
-import { seedFirestore } from '../utils/seeder';
+
 
 // Helper to remove undefined values
 const sanitizePayload = (data: any): any => {
