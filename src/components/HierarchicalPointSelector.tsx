@@ -33,6 +33,7 @@ export const HierarchicalPointSelector: React.FC<HierarchicalPointSelectorProps>
     // Find Area
     const area = areas.find((a) => a.id === point.areaId);
     if (area) {
+      // eslint-disable-next-line
       setSelectedAreaId(area.id);
 
       // Find Zone

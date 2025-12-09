@@ -21,6 +21,7 @@ export const ImageWithFallback = ({
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line
     setImgSrc(src || effectiveFallback);
     setHasError(false);
   }, [src, effectiveFallback]);
