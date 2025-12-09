@@ -1397,7 +1397,7 @@ export const AdminAreaCleansingPage = () => {
                     const snap = await getDocs(collection(db, colName));
                     const batchSize = 400;
                     const chunks = [];
-                    let tempDocs = [...snap.docs];
+                    const tempDocs = [...snap.docs];
                     while (tempDocs.length > 0) chunks.push(tempDocs.splice(0, batchSize));
 
                     for (const chunk of chunks) {
@@ -1444,7 +1444,7 @@ export const AdminAreaCleansingPage = () => {
                   const snap = await getDocs(logsRef);
                   const batchSize = 400;
                   const chunks = [];
-                  let tempDocs = [...snap.docs];
+                  const tempDocs = [...snap.docs];
                   while (tempDocs.length > 0) chunks.push(tempDocs.splice(0, batchSize));
 
                   let deletedCount = 0;
