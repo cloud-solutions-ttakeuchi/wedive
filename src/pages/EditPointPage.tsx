@@ -31,7 +31,7 @@ export const EditPointPage = () => {
 
   useEffect(() => {
     if (existingPoint) {
-
+      // eslint-disable-next-line
       setFormData({
         name: existingPoint.name,
         region: existingPoint.region,

@@ -176,6 +176,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const addCreatureProposal = async (creatureData: any) => {
     if (!isAuthenticated) return;
     try {
+      // eslint-disable-next-line react-hooks/purity
       const newId = `prop_c_${Date.now()}`;
       await setDoc(doc(firestore, 'creature_proposals', newId), {
         ...creatureData,
@@ -192,6 +193,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const addPointProposal = async (pointData: any) => {
     if (!isAuthenticated) return;
     try {
+      // eslint-disable-next-line react-hooks/purity
       const newId = `prop_p_${Date.now()}`;
       // areaId is required by Point type but proposals might not have it strictly linked yet?
       // Or we just provide a placeholder.
@@ -215,6 +217,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     if (proposalType === 'create') {
       // 1. Copy to main collection
+      // eslint-disable-next-line react-hooks/purity
       const realId = type === 'creature' ? `c${Date.now()}` : `p${Date.now()}`; // Generate real ID
       const realData = { ...data, id: realId, status: 'approved' };
       // cleanup proposal meta fields if needed
