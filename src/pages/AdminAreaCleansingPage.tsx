@@ -331,7 +331,7 @@ export const AdminAreaCleansingPage = () => {
   const handleSyncMasterData = async () => {
     if (!window.confirm('Master Data (Regions/Zones/Areas) をFirestoreに同期します。\n※既にデータがある場合は上書き(Merge)されます。\n\n実行してよろしいですか？')) return;
     setProcessing(true);
-    const success = await seedFirestore(true, ['regions', 'zones', 'areas']); // Safe update: Only Master Data
+    const success = await seedFirestore(true, ['regions', 'zones', 'areas', 'points', 'creatures', 'point_creatures']); // Safe update: Master Data + Points
     setProcessing(false);
     if (success) alert('同期完了しました。');
     else alert('同期に失敗しました。');
