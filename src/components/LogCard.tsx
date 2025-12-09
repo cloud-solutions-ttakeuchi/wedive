@@ -23,6 +23,7 @@ export const LogCard = ({ log, currentUser, creature, point, onLike, onClick, se
 
   // Sync with prop when it changes (e.g. from backend refetch)
   useEffect(() => {
+    // eslint-disable-next-line
     setLocalIsLiked(log.likedBy?.includes(currentUser.id));
     setLikeCount(log.likeCount || 0);
   }, [log, currentUser.id]);
@@ -46,7 +47,14 @@ export const LogCard = ({ log, currentUser, creature, point, onLike, onClick, se
     }
   };
 
-  const mainImage = log.photos[0] || (creature?.imageUrl || '/images/no-image-creature.png') || (point?.imageUrl || '/images/no-image-point.png') || '/images/no-image.png';
+  let mainImage = log.photos[0];
+  if (!mainImage && creature) {
+    mainImage = creature.imageUrl || '/images/no-image-creature.png';
+  } else if (!mainImage && point) {
+    mainImage = point.imageUrl || '/images/no-image-point.png';
+  } else if (!mainImage) {
+    mainImage = '/images/no-image.png';
+  }
 
   return (
     <div

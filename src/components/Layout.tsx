@@ -12,7 +12,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="min-h-screen font-sans text-gray-900 flex flex-col relative">
       {/* Global Loading Overlay */}
-      {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
+
       {/* @ts-ignore */}
       {(() => {
         try {
@@ -27,7 +27,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
               </div>
             </div>
           );
-        } catch (e) {
+        } catch {
           return null;
         }
       })()}
@@ -109,7 +109,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
               </div>
             )}
             <button onClick={() => {
-              isAuthenticated ? logout() : login();
+              if (isAuthenticated) { logout(); } else { login(); }
               setIsMenuOpen(false);
             }} className="text-xl font-bold py-4 border-b border-gray-100 hover:text-red-500">
               {isAuthenticated ? t('nav.logout') : t('nav.login')}

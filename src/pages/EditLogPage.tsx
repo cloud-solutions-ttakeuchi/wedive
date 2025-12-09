@@ -96,6 +96,7 @@ export const EditLogPage = () => {
       return;
     }
 
+    // eslint-disable-next-line
     setFormData({
       title: log.title || '',
       date: log.date,

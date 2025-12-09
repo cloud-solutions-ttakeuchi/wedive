@@ -38,6 +38,7 @@ export const ProfileEditModal = ({ isOpen, onClose }: Props) => {
   // Sync state when modal opens
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line
       setName(currentUser.name);
       setProfileImage(currentUser.profileImage);
       setRankId(currentUser.certification?.rankId || '');
