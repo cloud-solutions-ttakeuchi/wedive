@@ -44,4 +44,4 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
 
       - name: Deploy Firestore Rules
-        run: npx firebase deploy --only firestore:rules --project dive-dex-app
+        run: npx firebase deploy --only firestore:rules --project ${{ vars.VITE_FIREBASE_PROJECT_ID }}
