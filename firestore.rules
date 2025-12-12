@@ -17,9 +17,15 @@ service cloud.firestore {
 
       // Logs Subcollection
       match /logs/{logId} {
-        // Allow read if (Public) OR (Owner)
-        allow read: if resource.data.isPrivate == false || isOwner(userId);
-        allow write: if isOwner(userId);
+        // 【読み取りルール】
+        // 1. 公開されている (isPrivate == false) - Query must match this constraint
+        //    OR
+        // 2. アクセスしている人が作者本人である (request.auth.uid == userId)
+        allow read: if resource.data.isPrivate == false || (request.auth != null && request.auth.uid == userId);
+
+        // 【書き込みルール】
+        // 作者本人のみ許可
+        allow write: if request.auth != null && request.auth.uid == userId;
       }
     }
 
