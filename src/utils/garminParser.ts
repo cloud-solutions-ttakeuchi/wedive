@@ -54,7 +54,7 @@ export const parseGarminZip = async (file: any, options: { skipFit?: boolean } =
   // 2. Find FIT files (Profile Data)
   // Usually in DI_CONNECT/DI-DIVE/Uploaded/ or just *.fit
   // Scan happens but extraction skipped if skipFit=true
-  let fitFiles = files.filter(path => path.match(/\.fit$/i));
+  const fitFiles = files.filter(path => path.match(/\.fit$/i));
 
   // Check for ANY nested ZIPs
   // Garmin exports often contain DI_CONNECT/DI-Connect-Uploaded-Files/UploadedFiles_*.zip
@@ -89,7 +89,7 @@ export const parseGarminZip = async (file: any, options: { skipFit?: boolean } =
               fitDataMap.set(startTs, records);
               // logDebug(`    -> FIT Parsed: ${innerPath} (Time: ${new Date(startTs).toISOString()})`);
             }
-          } catch (e) {
+          } catch {
             // logDebug(`Failed inner FIT: ${innerPath}`);
           }
         }

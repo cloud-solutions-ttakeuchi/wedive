@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { ImageWithFallback } from './common/ImageWithFallback';
-import { X, Calendar, Clock, MapPin, Heart, Activity, Sun, Settings, Users, Fish, FileText, Camera, Trash2, TrendingDown } from 'lucide-react';
+import { X, Calendar, Clock, MapPin, Heart, Activity, Sun, Settings, Users, Fish, FileText, Camera, Trash2 } from 'lucide-react';
 import clsx from 'clsx';
 import type { Log } from '../types';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -34,17 +34,14 @@ export const LogDetailModal = ({ log, isOpen, onClose, isOwner }: Props) => {
 
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!log) return;
     const newIsLiked = !isLiked;
     setIsLiked(newIsLiked);
     setLikeCount(prev => newIsLiked ? prev + 1 : Math.max(0, prev - 1));
     toggleLikeLog(log);
   };
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+
 
   const graphDomain: [number | 'auto', number | 'auto'] = React.useMemo(() => {
     if (!log?.profile || log.profile.length === 0) return ['auto', 'auto'];
