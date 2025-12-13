@@ -42,21 +42,24 @@ export const TermsAgreementModal = () => {
   };
 
   const handleDisagree = async () => {
+    let confirmed = false;
     if (isNewUser) {
-      // New User: Just logout (and effectively cancel registration)
-      // Ideally we'd delete the user doc we just created, but logout is safe enough as they can't log back in without agreeing.
-      // But requirement said "Delete member info".
-      // Since we added deleteAccount, let's use it BUT it deletes logs too (empty).
-      if (window.confirm('会員登録を中止し、ログアウトしますか？')) {
-        setIsLoading(true);
-        await deleteAccount();
-        // deleteAccount handles logout
-      }
+      if (window.confirm('会員登録を中止し、ログアウトしますか？')) confirmed = true;
     } else {
-      // Existing User: Withdraw
-      if (window.confirm('退会すると、すべてのデータ（ログ、お気に入り等）が削除され復元できません。\n本当によろしいですか？')) {
-        setIsLoading(true);
+      if (window.confirm('退会すると、すべてのデータ（ログ、お気に入り等）が削除され復元できません。\n本当によろしいですか？')) confirmed = true;
+    }
+
+    if (confirmed) {
+      setIsLoading(true);
+      try {
         await deleteAccount();
+      } catch (e) {
+        console.error("Disagree action failed", e);
+      } finally {
+        // Determine if we should really turn off loading.
+        // If logged out, this component unmounts.
+        // If not (e.g. error handled in AppContext but state didn't update yet), we MUST turn off loading to unfreeze UI.
+        setIsLoading(false);
       }
     }
   };
