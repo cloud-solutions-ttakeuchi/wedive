@@ -29,6 +29,12 @@
 - **Rendering Logic**:
     - 管理画面のリスト表示において、集計キーを「名前(Name)」から「ユニークキー(ID/Key)」に変更し、同名データの表示崩れを解消。
 
+### Security (セキュリティ対応)
+- **Dependency Update (React)**:
+    - React Server Components に関する脆弱性 (CVE-2025-55182) への対応として、React関連パッケージのバージョンを更新しました。
+    - **Changes**: `v19.2.0` -> `v19.2.3`
+    - **Packages**: `react`, `react-dom`
+
 ---
 
 ## v1.0.0 - Initial Release

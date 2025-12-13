@@ -1,73 +1,64 @@
-# React + TypeScript + Vite
+# Diving Dex App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+ダイビングログと生物図鑑を統合した「Diving Dex App」のソースコードリポジトリです。
+React (Vite) + Firebase を用いたモダンなシングルページアプリケーション (SPA) として構築されています。
 
-Currently, two official plugins are available:
+## Architecture & Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+本プロジェクトのアーキテクチャと採用技術、および主要なライブラリのバージョンは以下の通りです。
+（※2025年12月現在）
 
-## React Compiler
+### Core Framework
+- **Runtime**: Node.js (v20推奨)
+- **Framework**: [React](https://react.dev/) `v19.2.3` (Security Patched)
+- **Build Tool**: [Vite](https://vitejs.dev/) `v7.2.4`
+- **Language**: [TypeScript](https://www.typescriptlang.org/) `v5.9.3`
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Backend / Infrastructure (Serverless)
+- **Platform**: [Firebase](https://firebase.google.com/) `v12.6.0`
+  - **Hosting**: 静的サイトホスティング
+  - **Authentication**: Google認証
+  - **Firestore**: NoSQLデータベース (v2 Data Model)
+  - **Storage**: 写真画像ストレージ
+  - **Remote Config**: 機能フラグ管理 (Feature Toggles)
 
-## Expanding the ESLint configuration
+### Libraries & Tools
+- **UI/Styling**:
+  - [Tailwind CSS](https://tailwindcss.com/) `v4.1.17`
+  - [Lucide React](https://lucide.dev/) (Icons) `v0.555.0`
+  - [Framer Motion](https://www.framer.com/motion/) (Animations) `v12.23.24`
+- **Charts / Visualization**:
+  - [Recharts](https://recharts.org/) `v3.5.1` (Depth Profile)
+- **Data Processing**:
+  - [JSZip](https://stuk.github.io/jszip/) (Garmin ZIP handling)
+  - [fit-file-parser](https://github.com/jimmykane/fit-file-parser) (Garmin FIT handling)
+  - [PapaParse](https://www.papaparse.com/) (CSV Import)
+- **Routing**: [React Router](https://reactrouter.com/) `v7.9.6`
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Development
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Prerequisites
+- Node.js v20+
+- npm or yarn
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Setup
+```bash
+# Install dependencies
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Run Locally
+```bash
+# Start dev server
+npm run dev
 ```
+
+### Build
+```bash
+# Type check & Build
+npm run build
+```
+
+## Security & Vulnerability Management
+React等のコアライブラリに脆弱性が発見された場合、速やかに `package.json` のバージョンを更新し、検証を行ってください。
+現在の構成は **React v19** ベースです。
