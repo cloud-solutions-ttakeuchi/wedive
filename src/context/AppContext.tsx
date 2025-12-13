@@ -22,17 +22,18 @@ import {
 
 // Helper to remove undefined values
 const sanitizePayload = (data: any): any => {
-  return Object.entries(data).reduce((acc, [key, value]) => {
-    if (value !== undefined) {
-      // Recursively sanitize objects (optional, but good for nested fields like location)
-      if (value && typeof value === 'object' && !Array.isArray(value)) {
+  if (Array.isArray(data)) {
+    return data.map(item => sanitizePayload(item));
+  }
+  if (data !== null && typeof data === 'object') {
+    return Object.entries(data).reduce((acc, [key, value]) => {
+      if (value !== undefined) {
         acc[key] = sanitizePayload(value);
-      } else {
-        acc[key] = value;
       }
-    }
-    return acc;
-  }, {} as any);
+      return acc;
+    }, {} as any);
+  }
+  return data;
 };
 
 interface AppContextType {
@@ -457,7 +458,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const addLog = async (logData: Omit<Log, 'id' | 'userId'>) => {
     console.log("[CTX] addLog called with:", logData);
-    const newLogId = `l${Date.now()}`;
+    const newLogId = `l${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
 
     // Force Sync spotId with location.pointId
     const finalSpotId = logData.location?.pointId || logData.spotId || '';

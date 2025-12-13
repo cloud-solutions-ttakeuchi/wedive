@@ -7,6 +7,7 @@ export interface ParsedLog extends Partial<Log> {
   originalTime?: string;
   originalDepth?: string;
   originalPoint?: string;
+  hasProfileData?: boolean;
 }
 
 // Helper to parse duration string "HH:MM:SS" or "MM:SS" into minutes

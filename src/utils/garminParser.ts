@@ -13,13 +13,36 @@ export interface ParsedLog extends Partial<Log> {
   hasProfileData?: boolean;
 }
 
-export const parseGarminZip = async (file: any): Promise<ParsedLog[]> => {
+export interface ParseResult {
+  logs: ParsedLog[];
+  debugLogs: string[];
+}
+
+
+export const parseGarminZip = async (file: any, options: { skipFit?: boolean } = {}): Promise<ParseResult> => {
   const zip = new JSZip();
   const loadedZip = await zip.loadAsync(file);
   const logs: ParsedLog[] = [];
+  const debugLogs: string[] = [];
+  const { skipFit } = options;
+
+  const logDebug = (msg: string) => {
+    debugLogs.push(msg);
+    console.log(msg);
+  };
 
   // Iterate over files in the zip
   const files = Object.keys(loadedZip.files);
+
+  logDebug(`Total files in ZIP: ${files.length}`);
+  logDebug(`First 10 files: ${files.slice(0, 10).join(', ')}`);
+  logDebug(`Mode: ${skipFit ? 'Simple (No FIT)' : 'Detailed (With FIT)'}`);
+
+  // Debug: Check if any file looks like a FIT file but missed by regex
+  const potentialFit = files.filter(f => f.toLowerCase().includes('fit'));
+  if (potentialFit.length > 0) {
+    logDebug(`Files containing 'fit' (sample): ${potentialFit.slice(0, 5).join(', ')}`);
+  }
 
   // 1. Find JSON files (Metadata)
   // Structure based on analysis: DI_CONNECT/DI-DIVE/Dive-ACTIVITY*.json
@@ -30,24 +53,65 @@ export const parseGarminZip = async (file: any): Promise<ParsedLog[]> => {
 
   // 2. Find FIT files (Profile Data)
   // Usually in DI_CONNECT/DI-DIVE/Uploaded/ or just *.fit
-  const fitFiles = files.filter(path => path.match(/\.fit$/i));
+  // Scan happens but extraction skipped if skipFit=true
+  let fitFiles = files.filter(path => path.match(/\.fit$/i));
 
-  console.log(`Found ${diveJsonFiles.length} Garmin dive logs and ${fitFiles.length} FIT files.`);
+  // Check for ANY nested ZIPs
+  // Garmin exports often contain DI_CONNECT/DI-Connect-Uploaded-Files/UploadedFiles_*.zip
+  const nestedZips = files.filter(path => path.toLowerCase().endsWith('.zip'));
+
+  logDebug(`Initial scan: ${fitFiles.length} FIT files, ${nestedZips.length} nested ZIPs.`);
+  if (nestedZips.length > 0) {
+    logDebug(`Nested ZIPs found: ${nestedZips.join(', ')}`);
+  }
 
   // Parse all FIT files first to index them by startTime
   const fitDataMap = new Map<number, any[]>(); // startTime (ms) -> records
 
-  for (const path of fitFiles) {
-    try {
-      const arrayBuffer = await loadedZip.files[path].async('arraybuffer');
-      const records = await parseFitFileSimple(arrayBuffer);
-      if (records && records.length > 0) {
-        // Use the timestamp of the first record (or session start)
-        const startTs = records[0].timestamp.getTime(); // Approximate
-        fitDataMap.set(startTs, records);
+  if (!skipFit) {
+    // Unpack nested ZIPs if any
+    for (const zipPath of nestedZips) {
+      try {
+        logDebug(`Unpacking nested ZIP: ${zipPath}`);
+        const zipData = await loadedZip.files[zipPath].async('arraybuffer');
+        const innerZip = await new JSZip().loadAsync(zipData);
+
+        const innerFiles = Object.keys(innerZip.files);
+        const innerFits = innerFiles.filter(f => f.match(/\.fit$/i));
+        logDebug(`  -> Found ${innerFits.length} FIT files inside.`);
+
+        for (const innerPath of innerFits) {
+          try {
+            const fitBuf = await innerZip.files[innerPath].async('arraybuffer');
+            const records = await parseFitFileSimple(fitBuf);
+            if (records && records.length > 0) {
+              const startTs = records[0].timestamp.getTime();
+              fitDataMap.set(startTs, records);
+              // logDebug(`    -> FIT Parsed: ${innerPath} (Time: ${new Date(startTs).toISOString()})`);
+            }
+          } catch (e) {
+            // logDebug(`Failed inner FIT: ${innerPath}`);
+          }
+        }
+      } catch (err) {
+        logDebug(`Failed to unpack nested ZIP ${zipPath}: ${err}`);
       }
-    } catch (err) {
-      console.warn(`Failed to parse FIT file ${path}`, err);
+    }
+
+    // Parse top-level FIT files (if any existed)
+    for (const path of fitFiles) {
+      try {
+        const arrayBuffer = await loadedZip.files[path].async('arraybuffer');
+        const records = await parseFitFileSimple(arrayBuffer);
+        if (records && records.length > 0) {
+          // Use the timestamp of the first record (or session start)
+          const startTs = records[0].timestamp.getTime(); // Approximate
+          fitDataMap.set(startTs, records);
+          // logDebug(`Parsed FIT: ${path} Start=${new Date(startTs).toISOString()}`);
+        }
+      } catch (err) {
+        logDebug(`Failed to parse FIT file ${path}: ${err}`);
+      }
     }
   }
 
@@ -63,47 +127,61 @@ export const parseGarminZip = async (file: any): Promise<ParsedLog[]> => {
           const logDate = new Date(`${parsed.date}T${parsed.time.entry}`);
           const logTs = logDate.getTime();
 
-          // Find closest FIT start time within 5 minutes tolerance
+          logDebug(`--- Matching Log: ${parsed.date} ${parsed.time?.entry} (${logTs}) ---`);
+
+          // Find closest FIT start time within WIDER tolerance (e.g. 1 hour)
           let bestMatchTs = -1;
-          let minDiff = 5 * 60 * 1000; // 5 mins
+          let minDiff = 24 * 60 * 60 * 1000; // Init high
+          let closestDiffMin = 99999;
+
+          const MAX_TOLERANCE = 60 * 60 * 1000; // Increased to 60 mins
 
           for (const fitTs of fitDataMap.keys()) {
             const diff = Math.abs(fitTs - logTs);
+            const diffMin = Math.round(diff / 1000 / 60);
+
+            if (diffMin < closestDiffMin) closestDiffMin = diffMin;
+
             if (diff < minDiff) {
               minDiff = diff;
               bestMatchTs = fitTs;
             }
           }
 
-          if (bestMatchTs !== -1) {
+          logDebug(`Closest FIT file diff: ${closestDiffMin} min. (Tolerance: ${MAX_TOLERANCE / 60000} min)`);
+
+          if (minDiff <= MAX_TOLERANCE && bestMatchTs !== -1) {
+            logDebug(`MATCH FOUND! Linked FIT data (Diff: ${Math.round(minDiff / 1000 / 60)} min)`);
             const records = fitDataMap.get(bestMatchTs);
             if (records) {
               // Map FIT records to Log.profile
               parsed.profile = records.map((r: any) => ({
                 time: Math.round((r.timestamp.getTime() - bestMatchTs) / 1000), // seconds from start
-                depth: r.depth,
+                depth: (r.depth || 0) / 1000,
                 temp: r.temperature,
                 hr: r.heart_rate
               }));
               parsed.hasProfileData = true;
-              // Update max depth/avg if needed from FIT (often more accurate)
-              // But JSON summary is usually fine.
             }
+          } else {
+            logDebug(`NO MATCH. Closest fit was ${closestDiffMin} min away.`);
           }
         }
         logs.push(parsed);
       }
     } catch (err) {
-      console.warn(`Failed to parse ${path}`, err);
+      logDebug(`Failed to parse ${path}: ${err}`);
     }
   }
 
-  return logs.sort((a, b) => {
-    // Sort by date desc
-    const dateA = a.date ? new Date(a.date).getTime() : 0;
-    const dateB = b.date ? new Date(b.date).getTime() : 0;
-    return dateB - dateA;
-  });
+  return {
+    logs: logs.sort((a, b) => {
+      const dateA = a.date ? new Date(a.date).getTime() : 0;
+      const dateB = b.date ? new Date(b.date).getTime() : 0;
+      return dateB - dateA;
+    }),
+    debugLogs
+  };
 };
 
 const parseFitFileSimple = (buffer: ArrayBuffer): Promise<any[]> => {

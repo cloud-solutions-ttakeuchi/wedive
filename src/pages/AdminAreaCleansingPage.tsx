@@ -1070,10 +1070,20 @@ export const AdminAreaCleansingPage = () => {
         }
         alert(`Deleted selected points.`);
       } else {
-        const batch = writeBatch(db);
+        // Master Data / Orphan Delete with Batching
+        let batch = writeBatch(db);
+        let opCount = 0;
         let deletedMasterCount = 0;
         const itemsKey = Array.from(selectedItems);
         const masterCollection = targetField + 's';
+
+        const commitBatchIfNeeded = async () => {
+          if (opCount >= 400) {
+            await batch.commit();
+            batch = writeBatch(db);
+            opCount = 0;
+          }
+        };
 
         for (const key of itemsKey) {
           const item = fieldStats.find(s => s.key === key);
@@ -1082,37 +1092,43 @@ export const AdminAreaCleansingPage = () => {
           // 1. Delete Master Data if applicable
           if (item.isMaster && item.id) {
             batch.delete(doc(db, masterCollection, item.id));
+            opCount++;
             deletedMasterCount++;
+            await commitBatchIfNeeded();
           }
 
           // 2. Clear Fields in Points
-          // Master: ID. Orphan: Name.
-          // Actually usually we just clear by value... but wait.
-          // If we delete master "Futo" (ID:1) but keep "Futo" (ID:2), we must only clear points with ID:1
-          // So we must use ID for clearing if master.
-
           if (item.isMaster && item.id) {
             const idField = targetField + 'Id';
             const nameField = targetField;
             const q = query(collection(db, 'points'), where(idField, '==', item.id));
             const snap = await getDocs(q);
-            snap.forEach(d => {
+
+            for (const d of snap.docs) {
               batch.update(d.ref, {
                 [idField]: deleteField(),
                 [nameField]: deleteField()
               });
-            });
+              opCount++;
+              await commitBatchIfNeeded();
+            }
           } else {
             // Orphan: clear by Name
             const q = query(collection(db, 'points'), where(targetField, '==', item.name));
             const snap = await getDocs(q);
-            snap.forEach(d => {
+
+            for (const d of snap.docs) {
               batch.update(d.ref, { [targetField]: deleteField() });
-            });
+              opCount++;
+              await commitBatchIfNeeded();
+            }
           }
         }
 
-        await batch.commit();
+        // Commit remaining
+        if (opCount > 0) {
+          await batch.commit();
+        }
 
         alert(`Deleted ${deletedMasterCount} master records and cleared fields.`);
       }
@@ -1442,7 +1458,7 @@ export const AdminAreaCleansingPage = () => {
                   // Considering logs context might be limited or filtered, fetching directly is safer for "ALL".
                   const logsRef = collection(db, 'users', currentUser.id, 'logs');
                   const snap = await getDocs(logsRef);
-                  const batchSize = 400;
+                  const batchSize = 20;
                   const chunks = [];
                   const tempDocs = [...snap.docs];
                   while (tempDocs.length > 0) chunks.push(tempDocs.splice(0, batchSize));

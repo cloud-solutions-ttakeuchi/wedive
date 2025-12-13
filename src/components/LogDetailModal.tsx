@@ -21,6 +21,7 @@ export const LogDetailModal = ({ log, isOpen, onClose, isOwner }: Props) => {
   const [isLiked, setIsLiked] = React.useState(false);
   const [likeCount, setLikeCount] = React.useState(0);
   const showDepthGraph = useFeatureToggle('enable_garmin_graph');
+  const [activeGraph, setActiveGraph] = React.useState<'depth' | 'temp' | 'hr'>('depth');
 
   React.useEffect(() => {
     if (log) {
@@ -29,7 +30,7 @@ export const LogDetailModal = ({ log, isOpen, onClose, isOwner }: Props) => {
     }
   }, [log, currentUser.id]);
 
-  if (!isOpen || !log) return null;
+
 
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -44,6 +45,23 @@ export const LogDetailModal = ({ log, isOpen, onClose, isOwner }: Props) => {
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
+
+  const graphDomain: [number | 'auto', number | 'auto'] = React.useMemo(() => {
+    if (!log?.profile || log.profile.length === 0) return ['auto', 'auto'];
+
+    if (activeGraph === 'temp') {
+      const temps = log.profile.map(p => p.temp).filter((t): t is number => t !== undefined);
+      if (temps.length === 0) return ['auto', 'auto'];
+      const sum = temps.reduce((a, b) => a + b, 0);
+      const avg = sum / temps.length;
+      return [Math.floor(avg - 10), Math.ceil(avg + 10)];
+    }
+    if (activeGraph === 'depth') return [0, 'auto'];
+
+    return ['auto', 'auto'];
+  }, [log, activeGraph]);
+
+  if (!isOpen || !log) return null;
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-fade-in backdrop-blur-sm" onClick={onClose}>
@@ -158,13 +176,53 @@ export const LogDetailModal = ({ log, isOpen, onClose, isOwner }: Props) => {
             </div>
           </section>
 
-          {/* New Depth Profile Chart */}
-          {(showDepthGraph || import.meta.env.DEV) && log.profile && log.profile.length > 0 && (
+          {/* New 1.5 Detailed Graph */}
+          {showDepthGraph && log.profile && log.profile.length > 0 && (
             <section>
-              <h3 className="font-bold text-deepBlue-900 mb-3 flex items-center gap-2 border-b pb-2 border-gray-100">
-                <TrendingDown size={18} className="text-blue-600" /> 深度プロファイル
-              </h3>
-              <div className="h-64 w-full bg-slate-50 rounded-xl p-2 pt-4">
+              <div className="flex items-center justify-between mb-3 border-b pb-2 border-gray-100">
+                <h3 className="font-bold text-deepBlue-900 flex items-center gap-2">
+                  <Activity size={18} className="text-blue-500" /> 詳細データ
+                </h3>
+                {/* Graph Tabs */}
+                <div className="flex bg-gray-100 rounded-lg p-1 gap-1">
+                  <button
+                    onClick={() => setActiveGraph('depth')}
+                    className={clsx(
+                      "px-3 py-1 text-xs font-bold rounded-md transition-all",
+                      activeGraph === 'depth' ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                    )}
+                  >
+                    深度
+                  </button>
+                  <button
+                    onClick={() => setActiveGraph('temp')}
+                    className={clsx(
+                      "px-3 py-1 text-xs font-bold rounded-md transition-all",
+                      activeGraph === 'temp' ? "bg-white text-orange-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                    )}
+                  >
+                    水温
+                  </button>
+                  <button
+                    onClick={() => setActiveGraph('hr')}
+                    className={clsx(
+                      "px-3 py-1 text-xs font-bold rounded-md transition-all",
+                      activeGraph === 'hr' ? "bg-white text-red-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                    )}
+                  >
+                    心拍数
+                  </button>
+                </div>
+              </div>
+
+              <div className="w-full h-64 bg-slate-50 rounded-xl p-2 relative">
+                {/* Empty State for missing data type */}
+                {((activeGraph === 'hr' && !log.profile[0].hr) || (activeGraph === 'temp' && !log.profile[0].temp)) && (
+                  <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-sm z-10">
+                    データがありません
+                  </div>
+                )}
+
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
                     data={log.profile}
@@ -175,37 +233,60 @@ export const LogDetailModal = ({ log, isOpen, onClose, isOwner }: Props) => {
                         <stop offset="5%" stopColor="#0077BE" stopOpacity={0.8} />
                         <stop offset="95%" stopColor="#0077BE" stopOpacity={0.1} />
                       </linearGradient>
+                      <linearGradient id="colorTemp" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#f97316" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#f97316" stopOpacity={0.1} />
+                      </linearGradient>
+                      <linearGradient id="colorHr" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0.1} />
+                      </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                     <XAxis
                       dataKey="time"
-                      tickFormatter={formatTime}
-                      stroke="#9ca3af"
-                      fontSize={12}
-                      tickLine={false}
+                      tickFormatter={(val) => {
+                        const m = Math.floor(val / 60);
+                        const s = val % 60;
+                        return `${m}:${s.toString().padStart(2, '0')}`;
+                      }}
+                      tick={{ fontSize: 10, fill: '#94A3B8' }}
                       axisLine={false}
+                      tickLine={false}
                       minTickGap={30}
                     />
                     <YAxis
-                      stroke="#9ca3af"
-                      fontSize={12}
-                      tickLine={false}
+                      reversed={activeGraph === 'depth'}
+                      domain={graphDomain}
+                      tick={{ fontSize: 10, fill: '#94A3B8' }}
                       axisLine={false}
-                      reversed={true} // Inverted Depth
-                      label={{ value: 'm', position: 'insideLeft', offset: 10, fill: '#9ca3af', fontSize: 10 }}
+                      tickLine={false}
+                      width={40}
                     />
                     <Tooltip
                       contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                      labelFormatter={formatTime}
+                      labelFormatter={(val) => {
+                        const m = Math.floor(val / 60);
+                        const s = val % 60;
+                        return `${m}:${s.toString().padStart(2, '0')}`;
+                      }}
+                      formatter={(value: number) => [
+                        activeGraph === 'depth' ? `${value.toFixed(1)}m` :
+                          activeGraph === 'temp' ? `${value.toFixed(1)}℃` :
+                            `${Math.round(value)}bpm`,
+                        activeGraph === 'depth' ? '水深' :
+                          activeGraph === 'temp' ? '水温' : '心拍数'
+                      ]}
                     />
-                    <Area
-                      type="monotone"
-                      dataKey="depth"
-                      stroke="#0077BE"
-                      fillOpacity={1}
-                      fill="url(#colorDepth)"
-                      name="水深(m)"
-                    />
+                    {activeGraph === 'depth' && (
+                      <Area type="monotone" dataKey="depth" stroke="#0077BE" fillOpacity={1} fill="url(#colorDepth)" name="水深" />
+                    )}
+                    {activeGraph === 'temp' && (
+                      <Area type="monotone" dataKey="temp" stroke="#f97316" fillOpacity={1} fill="url(#colorTemp)" name="水温" />
+                    )}
+                    {activeGraph === 'hr' && (
+                      <Area type="monotone" dataKey="hr" stroke="#ef4444" fillOpacity={1} fill="url(#colorHr)" name="心拍数" />
+                    )}
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
