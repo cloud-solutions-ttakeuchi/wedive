@@ -2,9 +2,10 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { ImageWithFallback } from './common/ImageWithFallback';
-import { X, Calendar, Clock, MapPin, Heart, Activity, Sun, Settings, Users, Fish, FileText, Camera, Trash2 } from 'lucide-react';
+import { X, Calendar, Clock, MapPin, Heart, Activity, Sun, Settings, Users, Fish, FileText, Camera, Trash2, TrendingDown } from 'lucide-react';
 import clsx from 'clsx';
 import type { Log } from '../types';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 type Props = {
   log: Log | null;
@@ -33,6 +34,12 @@ export const LogDetailModal = ({ log, isOpen, onClose, isOwner }: Props) => {
     setIsLiked(newIsLiked);
     setLikeCount(prev => newIsLiked ? prev + 1 : Math.max(0, prev - 1));
     toggleLikeLog(log);
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   return (
@@ -147,6 +154,60 @@ export const LogDetailModal = ({ log, isOpen, onClose, isOwner }: Props) => {
               </div>
             </div>
           </section>
+
+          {/* New Depth Profile Chart */}
+          {log.profile && log.profile.length > 0 && (
+            <section>
+              <h3 className="font-bold text-deepBlue-900 mb-3 flex items-center gap-2 border-b pb-2 border-gray-100">
+                <TrendingDown size={18} className="text-blue-600" /> 深度プロファイル
+              </h3>
+              <div className="h-64 w-full bg-slate-50 rounded-xl p-2 pt-4">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={log.profile}
+                    margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                  >
+                    <defs>
+                      <linearGradient id="colorDepth" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#0077BE" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#0077BE" stopOpacity={0.1} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                    <XAxis
+                      dataKey="time"
+                      tickFormatter={formatTime}
+                      stroke="#9ca3af"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                      minTickGap={30}
+                    />
+                    <YAxis
+                      stroke="#9ca3af"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                      reversed={true} // Inverted Depth
+                      label={{ value: 'm', position: 'insideLeft', offset: 10, fill: '#9ca3af', fontSize: 10 }}
+                    />
+                    <Tooltip
+                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                      labelFormatter={formatTime}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="depth"
+                      stroke="#0077BE"
+                      fillOpacity={1}
+                      fill="url(#colorDepth)"
+                      name="水深(m)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </section>
+          )}
 
           {/* 2. Conditions */}
           <section>

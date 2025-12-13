@@ -1,5 +1,7 @@
 import JSZip from 'jszip';
 import type { Log } from '../types';
+// @ts-ignore
+import FitParser from 'fit-file-parser';
 
 export interface ParsedLog extends Partial<Log> {
   // Extra fields for UI mapping
@@ -19,21 +21,76 @@ export const parseGarminZip = async (file: any): Promise<ParsedLog[]> => {
   // Iterate over files in the zip
   const files = Object.keys(loadedZip.files);
 
-  // Filter for JSON files in the expected directory structure or root
+  // 1. Find JSON files (Metadata)
   // Structure based on analysis: DI_CONNECT/DI-DIVE/Dive-ACTIVITY*.json
-  const diveJsonFiles = Object.keys(loadedZip.files).filter(path =>
+  const diveJsonFiles = files.filter(path =>
     path.match(/DI_CONNECT\/DI-DIVE\/Dive-ACTIVITY\d+\.json$/i) ||
     path.match(/^Dive-ACTIVITY\d+\.json$/i) // Allow flat zip too
   );
 
-  console.log(`Found ${diveJsonFiles.length} Garmin dive logs.`);
+  // 2. Find FIT files (Profile Data)
+  // Usually in DI_CONNECT/DI-DIVE/Uploaded/ or just *.fit
+  const fitFiles = files.filter(path => path.match(/\.fit$/i));
+
+  console.log(`Found ${diveJsonFiles.length} Garmin dive logs and ${fitFiles.length} FIT files.`);
+
+  // Parse all FIT files first to index them by startTime
+  const fitDataMap = new Map<number, any[]>(); // startTime (ms) -> records
+
+  for (const path of fitFiles) {
+    try {
+      const arrayBuffer = await loadedZip.files[path].async('arraybuffer');
+      const records = await parseFitFileSimple(arrayBuffer);
+      if (records && records.length > 0) {
+        // Use the timestamp of the first record (or session start)
+        const startTs = records[0].timestamp.getTime(); // Approximate
+        fitDataMap.set(startTs, records);
+      }
+    } catch (err) {
+      console.warn(`Failed to parse FIT file ${path}`, err);
+    }
+  }
 
   for (const path of diveJsonFiles) {
     try {
       const content = await loadedZip.files[path].async('string');
       const json = JSON.parse(content);
-      const parsed = mapGarminJsonToLog(json);
+      let parsed = mapGarminJsonToLog(json);
+
       if (parsed) {
+        // Try to link FIT data
+        if (fitDataMap.size > 0 && parsed.date && parsed.time?.entry) {
+          const logDate = new Date(`${parsed.date}T${parsed.time.entry}`);
+          const logTs = logDate.getTime();
+
+          // Find closest FIT start time within 5 minutes tolerance
+          let bestMatchTs = -1;
+          let minDiff = 5 * 60 * 1000; // 5 mins
+
+          for (const fitTs of fitDataMap.keys()) {
+            const diff = Math.abs(fitTs - logTs);
+            if (diff < minDiff) {
+              minDiff = diff;
+              bestMatchTs = fitTs;
+            }
+          }
+
+          if (bestMatchTs !== -1) {
+            const records = fitDataMap.get(bestMatchTs);
+            if (records) {
+              // Map FIT records to Log.profile
+              parsed.profile = records.map((r: any) => ({
+                time: Math.round((r.timestamp.getTime() - bestMatchTs) / 1000), // seconds from start
+                depth: r.depth,
+                temp: r.temperature,
+                hr: r.heart_rate
+              }));
+              parsed.hasProfileData = true;
+              // Update max depth/avg if needed from FIT (often more accurate)
+              // But JSON summary is usually fine.
+            }
+          }
+        }
         logs.push(parsed);
       }
     } catch (err) {
@@ -46,6 +103,32 @@ export const parseGarminZip = async (file: any): Promise<ParsedLog[]> => {
     const dateA = a.date ? new Date(a.date).getTime() : 0;
     const dateB = b.date ? new Date(b.date).getTime() : 0;
     return dateB - dateA;
+  });
+};
+
+const parseFitFileSimple = (buffer: ArrayBuffer): Promise<any[]> => {
+  return new Promise((resolve, reject) => {
+    const parser = new FitParser({
+      force: true,
+      speedUnit: 'km/h',
+      lengthUnit: 'm',
+      temperatureUnit: 'celsius',
+      elapsedRecordField: true,
+      mode: 'list'
+    });
+
+    parser.parse(buffer, (error: any, data: any) => {
+      if (error) {
+        reject(error);
+      } else {
+        // Extract records
+        if (data && data.records) {
+          resolve(data.records);
+        } else {
+          resolve([]);
+        }
+      }
+    });
   });
 };
 
@@ -144,20 +227,8 @@ const mapGarminJsonToLog = (json: any): ParsedLog | null => {
     originalDepth: `${maxDepth}m`,
     originalPoint: activityName,
     originalActivityId: String(json.activityId || json.data?.id || ''),
-    hasProfileData: false // Future expansion for FIT
+    hasProfileData: false // Updated later if FIT found
   };
-
-  // If specific structure wrapping exists (some Garmin exports wrap in 'data' field)
-  // The provided sample had 'data' at root? No, sample was `{"version":"v1","type":"ACTIVITY","data":{...}}`
-  // Wait, the sample `Dive-ACTIVITY23955565.json` had content inside `data`.
-  // Let's re-check the sample structure. The previous `cat` output showed `{"version":"v1" ... "data":{ ... }}`.
-  // So we need to access `json.data` if it exists.
-
-  if (json.data && json.type === 'ACTIVITY') {
-    return mapGarminJsonDataToLog(json.data);
-  }
-
-  // Fallback for direct structure (if any)
   return log;
 };
 
