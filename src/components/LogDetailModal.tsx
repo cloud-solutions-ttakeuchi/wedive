@@ -7,6 +7,8 @@ import clsx from 'clsx';
 import type { Log } from '../types';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
+import { useFeatureToggle } from '../hooks/useFeatureToggle';
+
 type Props = {
   log: Log | null;
   isOpen: boolean;
@@ -18,6 +20,7 @@ export const LogDetailModal = ({ log, isOpen, onClose, isOwner }: Props) => {
   const { points, creatures, currentUser, toggleLikeLog, deleteLog } = useApp();
   const [isLiked, setIsLiked] = React.useState(false);
   const [likeCount, setLikeCount] = React.useState(0);
+  const showDepthGraph = useFeatureToggle('enable_garmin_graph');
 
   React.useEffect(() => {
     if (log) {
@@ -156,7 +159,7 @@ export const LogDetailModal = ({ log, isOpen, onClose, isOwner }: Props) => {
           </section>
 
           {/* New Depth Profile Chart */}
-          {log.profile && log.profile.length > 0 && (
+          {(showDepthGraph || import.meta.env.DEV) && log.profile && log.profile.length > 0 && (
             <section>
               <h3 className="font-bold text-deepBlue-900 mb-3 flex items-center gap-2 border-b pb-2 border-gray-100">
                 <TrendingDown size={18} className="text-blue-600" /> 深度プロファイル
