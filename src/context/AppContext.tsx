@@ -452,10 +452,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
       // State reset handled by onAuthStateChanged
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Delete Account failed:", error);
-      // If requires recent login, might fail.
-      alert("退会処理に失敗しました。再ログインしてから試してください。");
+
+      // Fallback: Ensure logout happens even if deletion fails (e.g. requires-recent-login)
+      if (error.code === 'auth/requires-recent-login') {
+        alert("セキュリティ保護のため、時間の経過したログインセッションでのアカウント削除はできません。\n一度ログアウトします。再ログイン後に再度お試しください。");
+      } else {
+        alert("退会処理中にエラーが発生しましたが、ログアウトします。");
+      }
+
+      await signOut(auth);
       setIsLoading(false);
     }
   };
