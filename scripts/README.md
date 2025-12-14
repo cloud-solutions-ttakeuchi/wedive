@@ -1,93 +1,82 @@
-# DiveDex マスタデータ管理手順書
+# Diving Dex Data Generation Scripts
 
-このドキュメントは、アプリの公開データ（生物、ポイント、紐付け）を生成・更新するための手順を定めたものです。すべてのデータ生成は、Firestoreへの投入を前提としています。
+Diving Dex Appのデータ生成・管理スクリプト群です。
+Google Gemini APIを使用して、ダイビングポイントや海洋生物のデータを自動生成します。
 
-### 1. 環境設定（初回のみ）
+## ⚙️ Setup
 
-1. Firebase API Key の設定
-    - `scripts/generate_creatures.py` などのファイルを開き、以下の部分をあなたの Gemini API キーに置き換えてください。
+実行には Google Gemini API Key が必要です。
 
-```
-API_KEY = os.environ.get("GOOGLE_API_KEY", "YOUR_API_KEY_HERE")
-```
-
-2. 必要なライブラリのインストール:
-    - ターミナルで以下を実行します。
-
-```
-pip install google-generativeai requests
+```bash
+export GOOGLE_API_KEY="your_api_key_here"
 ```
 
-### 2. データ生成フロー（3段階）
+## 📂 Directory Structure
 
-アプリが使用するマスタデータ（`Creature`, `Point`, `PointCreature`）は、以下の手順で段階的に生成します。
+- `scripts/locations/`: ポイントデータ生成（Region/Zone/Area/Point）
+- `scripts/creatures/`: 生物データ生成（List/Image/Map）
+- `scripts/config/`: 生成設定ファイル（Target Listなど）
+- `scripts/v1/`: 旧スクリプトアーカイブ
 
-**ステップ 1: ロケーション（場所）情報の生成（Hierarchy Seed）**
- 
- 階層構造とポイント情報を2段階で生成します。
- 
- |ファイル|役割|実行結果|
- |:--|:--|:--|
- |generate_structure.py|地域 > ゾーン > エリア の階層構造（骨組み）を生成します。|src/data/locations_structure.json|
- |fill_points.py|骨組みに対し、各エリアに具体的な「ダイビングポイント」を生成・充填します。|src/data/locations_seed.json|
- 
- 実行コマンド:
- 
- ```bash
- python scripts/generate_structure.py
- python scripts/fill_points.py --id {point_id} --count {count}
- ```
+## 📍 Location Generation Pipeline
 
-**ステップ 2: 生物マスタの生成とユニーク化（Creature Seed）
+ダイビングポイントの生成は、データの精度を高めるために階層ごとにステップが分かれています。
 
-新しい生物を追加し、既存の生物（例: クマノミ）との重複を避けてマージします。
+### Step 1: Zones Generation
+指定された国・地域（Region）内の主要なZone（地理的区分）を生成します。
 
-|ファイル|役割|実行結果|
-|:--|:--|:--|
-|generate_creatures.py|既存の生物名を除外し、新しい生物データをAIに生成させる。和名で一意化する。|src/data/creatures_seed.json|
+- **Script**: `scripts/locations/generate_zones.py`
+- **Config**: `scripts/config/target_regions.json`
+- **Output**: `src/data/locations_seed.json` / `scripts/config/target_zones.json` (Next Step Config)
 
-実行コマンド:
-
-```
-python scripts/generate_creatures.py
+```bash
+python scripts/locations/generate_zones.py
 ```
 
-**ステップ 3: 画像の収集と紐付けテーブルの生成**
+### Step 2: Areas Generation (WIP)
+Zoneごとの詳細エリアを生成します。
 
-① 画像の収集（品質向上）
+- **Script**: `scripts/locations/generate_areas.py`
+- **Config**: `scripts/config/target_zones.json`
 
-creatures_seed.json に含まれる英名キーワードを使い、Wikipediaから本物の画像URLとライセンス情報を取得します。
+### Step 3: Points Generation (WIP)
+Areaごとの具体的なダイビングポイントを生成します。重複チェックを含みます。
 
-|ファイル|役割|実行結果|
-|:--|:--|:--|
-|fetch_real_images.py|creatures_seed.json を読み込み、画像URLを取得して上書きする。|src/data/creatures_real.json|
+- **Script**: `scripts/locations/generate_points.py`
+- **Config**: `scripts/config/target_areas.json`
 
-実行コマンド:
 
-```
-python scripts/fetch_real_images.py
-```
+## 🐠 Creature Generation Pipeline
 
-② 紐付けテーブルの生成（出現率の設定）
+生物データは以下の3ステップで生成・完成させます。
 
-最終的な結合テーブルを生成します。ここで「ポイントごとのレアリティ」が確定します。
+### Step 1: Create Creature List
+科目（Family）単位で生物データを生成します。主キーは **学名 (scientificName)** です。
 
-|ファイル|役割|実行結果|
-|:--|:--|:--|
-|generate_point_creatures.py|creatures_real.json と locations_seed.json を結合し、PointCreature レコードを生成。localRarity を設定。|src/data/point_creatures_seed.json|
+- **Script**: `scripts/creatures/generate_creatures_by_family.py`
+- **Config**: `scripts/config/target_families.json`
+- **Output**: `src/data/creatures_seed.json`
 
-実行コマンド:
-
-```
-python scripts/generate_point_creatures.py
+```bash
+python scripts/creatures/generate_creatures_by_family.py
 ```
 
-### 3. アプリへの反映（開発・運用）
+### Step 2: Fetch Images
+Wikipedia APIを使用して実際の画像を検索・取得します。
 
-アプリコードは、以下の3つのシードファイルを参照するように設定されます。
+- **Script**: `scripts/creatures/fetch_creature_images.py`
+- **Output**: `src/data/creatures_seed.json` (Update)
 
-|参照先|役割|開発者が編集する場合|
-|:--|:--|:--|
-|locations_seed.json|地域・ポイントの構造（公式マスタ）|新エリアを追加したい時（generate_locations.pyを実行）|
-|creatures_real.json|生物情報マスタ（画像・解説の正）|生物の解説や属性を修正したい時|
-|point_creatures_seed.json|紐付けとポイントレアリティ|ポイントごとの出現率を微調整したい時|
+```bash
+python scripts/creatures/fetch_creature_images.py
+```
+
+### Step 3: Map to Regions
+各生物が生息するエリアを判定・マッピングします。
+
+- **Script**: `scripts/creatures/map_creatures_to_regions.py`
+- **Output**: `src/data/creatures_seed.json` (Update)
+
+```bash
+python scripts/creatures/map_creatures_to_regions.py
+```
