@@ -37,12 +37,14 @@ API制限の回避やデータ保護のため、以下の3つの実行モード�
 
 **Step 1: Zones Generation**
 `config/target_regions.json` に定義されたRegionについて、主要なZoneを生成します。
+アウトプット: `src/data/locations_seed.json` に追記されます。
 ```bash
 python scripts/locations/generate_zones.py --mode append
 ```
 
 **Step 2: Areas Generation**
 生成されたZoneリスト (`config/target_zones.json`) を元に、Areaを生成します。
+アウトプット: `src/data/locations_seed.json` に追記されます。
 ```bash
 python scripts/locations/generate_areas.py --mode append
 ```
@@ -50,6 +52,7 @@ python scripts/locations/generate_areas.py --mode append
 **Step 3: Points Generation**
 生成されたAreaリスト (`config/target_areas.json`) を元に、Pointを生成します。
 重複チェック (Levenshtein distance) が行われます。
+アウトプット: `src/data/locations_seed.json` に追記されます。
 ```bash
 python scripts/locations/generate_points.py --mode append
 ```
@@ -60,23 +63,34 @@ python scripts/locations/generate_points.py --mode append
 
 **Step 1: Generate List**
 `config/target_families.json` を元に生物リストを作成。
+アウトプット: `src/data/creatures_seed.json` に追記されます。
 ```bash
 python scripts/creatures/generate_creatures_by_family.py
 ```
 
 **Step 2: Fetch Images**
 Wikipedia APIから画像を正確に取得。
+アウトプット: `src/data/creatures_seed.json` に追記されます。
 ```bash
 python scripts/creatures/fetch_creature_images.py
 ```
 
 **Step 3: Map Regions**
-生物-生息域(Region/Zone)のマッピング。
+生成された生物データに対して、生息域（Region）情報をAIで付与します。
+アウトプット: `src/data/creatures_seed.json` に追記（更新）されます。
 ```bash
 python scripts/creatures/map_creatures_to_regions.py
 ```
 
+**Step 4: Generate Point-Creature Associations**
+各ポイントに、そのエリアに応じた生物を確率で割り振り、出現レアリティを決定します。
+アウトプット: `src/data/point_creatures_seed.json` が生成されます。
+```bash
+python scripts/creatures/generate_point_creatures.py
+```
+
+
 ## ⚙️ Configuration
 
-- **API Key**: 環境変数 `GOOGLE_API_KEY` を設定してください（**有料版推奨**）。
+- **API Key**: 環境変数 `GOOGLE_API_KEY` を設定してください。カンマ区切りで複数指定可能。（**有料版推奨**）。
 - **Model**: デフォルトで `gemini-2.5-flash` を使用します。

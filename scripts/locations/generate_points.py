@@ -3,10 +3,14 @@ import json
 import time
 import difflib
 import google.generativeai as genai
+import argparse
+import shutil
 from typing import List, Dict, Set
 
-# --- 設定 ---
-API_KEY = os.environ.get("GOOGLE_API_KEY", "YOUR_API_KEY_HERE")
+# --- 設定 ---　APIKEY　カンマ区切りで複数指定可
+API_KEYS = os.environ.get("GOOGLE_API_KEY", "").split(",")
+if not API_KEYS or not API_KEYS[0]:
+    raise ValueError("GOOGLE_API_KEY environment variable is not set.")
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 CONFIG_DIR = os.path.join(BASE_DIR, "scripts/config")
 DATA_DIR = os.path.join(BASE_DIR, "src/data")
@@ -52,23 +56,7 @@ def check_duplicate(new_point_name: str, existing_names: Set[str]) -> str:
             return existing
     return None
 
-# API Key Handling
-API_KEYS = os.environ.get("GOOGLE_API_KEY", "").split(",")
-if not API_KEYS or not API_KEYS[0]:
-    raise ValueError("GOOGLE_API_KEY environment variable is not set.")
-
-current_key_index = 0
-
-def get_current_key():
-    return API_KEYS[current_key_index]
-
-def rotate_key():
-    global current_key_index
-    if len(API_KEYS) > 1:
-        current_key_index = (current_key_index + 1) % len(API_KEYS)
-        print(f"    🔄 Switching to API Key #{current_key_index + 1}/{len(API_KEYS)}")
-        return True
-    return False
+    return None
 
 def get_existing_point_names(data: List[Dict]) -> Set[str]:
     names = set()
@@ -90,8 +78,20 @@ CANDIDATE_MODELS = [
     'gemma-3-1b-it',
 ]
 
+# Flattened Resource Pool: [(model, key), (model, key)...]
+RESOURCE_POOL = [(m, k) for m in CANDIDATE_MODELS for k in API_KEYS]
+current_resource_index = 0
+
+def get_current_resource():
+    return RESOURCE_POOL[current_resource_index]
+
+def rotate_resource():
+    global current_resource_index
+    current_resource_index = (current_resource_index + 1) % len(RESOURCE_POOL)
+    print(f"    🔄 Switching to Resource #{current_resource_index + 1}/{len(RESOURCE_POOL)}")
+
 def generate_points(region: str, zone: str, area: str) -> List[Dict]:
-    global current_key_index
+    global current_resource_index
 
     prompt = f"""
     あなたはベテランのダイビングガイドです。
@@ -118,45 +118,48 @@ def generate_points(region: str, zone: str, area: str) -> List[Dict]:
     - コードブロックは含めないでください。
     """
 
-    for model_name in CANDIDATE_MODELS:
-        for attempt in range(len(API_KEYS) * 2): # Allow multiple attempts per model, cycling keys
-            try:
-                # Configure with current key
-                genai.configure(api_key=get_current_key())
-                model = genai.GenerativeModel(model_name)
+    max_attempts = len(RESOURCE_POOL)
+    attempts = 0
 
-                response = model.generate_content(prompt)
-                text = response.text.strip()
-                # Remove markdown if present
-                if text.startswith("```json"):
-                    text = text[7:]
-                if text.endswith("```"):
-                    text = text[:-3]
+    while attempts < max_attempts:
+        model_name, api_key = get_current_resource()
 
-                result = json.loads(text)
-                if result:
-                    print(f"    ✅ Success with {model_name}")
-                    return result
+        try:
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel(model_name)
 
-            except Exception as e:
-                error_str = str(e)
-                if "429" in error_str:
-                    print(f"    ⚠️ Quota exceeded: {model_name} (Key #{current_key_index + 1})")
-                    if rotate_key():
-                        # If key rotated, immediately retry with the new key for the same model
-                        continue
-                    else:
-                        # No more keys, wait before next attempt (or model)
-                        time.sleep(1)
-                elif "404" in error_str or "not found" in error_str.lower():
-                    # Fallback for models that might not include -it suffix or differ in naming
-                    print(f"    ℹ️ Model {model_name} not found/supported. Skipping.")
-                    break # Break from key attempts for this model, try next model
-                else:
-                    print(f"    ❌ Error with {model_name}: {e}")
-                    break # Break from key attempts for this model, try next model
+            response = model.generate_content(prompt)
+            text = response.text.strip()
+            # Remove markdown if present
+            if text.startswith("```json"):
+                text = text[7:]
+            if text.endswith("```"):
+                text = text[:-3]
 
-    print(f"    💀 All models failed for {area}")
+            result = json.loads(text)
+            if result:
+                # Success! Keep the current index as is (it's working).
+                # Identify which key index this matches for display (just for info)
+                key_display_idx = API_KEYS.index(api_key) + 1
+                print(f"    ✅ Success with {model_name} (Key #{key_display_idx})")
+                return result
+
+        except Exception as e:
+            error_str = str(e)
+            if "429" in error_str:
+                print(f"    ⚠️ Quota exceeded: {model_name} (Key index in pool: {current_resource_index})")
+                rotate_resource()
+                time.sleep(1)
+            elif "404" in error_str or "not found" in error_str.lower():
+                print(f"    ℹ️ Model {model_name} not found/supported. Skipping.")
+                rotate_resource()
+            else:
+                print(f"    ❌ Error with {model_name}: {e}")
+                rotate_resource()
+
+        attempts += 1
+
+    print(f"    💀 All resources failed for {area}")
     return []
 
 def main():

@@ -5,23 +5,10 @@ import google.generativeai as genai
 from typing import List, Dict
 
 # --- 設定 ---
-# API Key Handling
+# API Key Handling　　APIKEY　カンマ区切りで複数指定可
 API_KEYS = os.environ.get("GOOGLE_API_KEY", "").split(",")
 if not API_KEYS or not API_KEYS[0]:
     raise ValueError("GOOGLE_API_KEY environment variable is not set.")
-
-current_key_index = 0
-
-def get_current_key():
-    return API_KEYS[current_key_index]
-
-def rotate_key():
-    global current_key_index
-    if len(API_KEYS) > 1:
-        current_key_index = (current_key_index + 1) % len(API_KEYS)
-        print(f"    🔄 Switching to API Key #{current_key_index + 1}/{len(API_KEYS)}")
-        return True
-    return False
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 CONFIG_DIR = os.path.join(BASE_DIR, "scripts/config")
@@ -29,26 +16,6 @@ DATA_DIR = os.path.join(BASE_DIR, "src/data")
 INPUT_FILE = os.path.join(CONFIG_DIR, "target_regions.json")
 OUTPUT_FILE = os.path.join(DATA_DIR, "locations_seed.json")
 PRODUCED_ZONES_FILE = os.path.join(CONFIG_DIR, "target_zones.json")
-
-SCHEMA_PROMPT = """
-出力フォーマットは以下のJSON配列（Array of Objects）のみにしてください。
-Markdownのバッククォートは不要です。
-
-Object Schema:
-[
-  {
-    "name": "Region Name (e.g. 日本)",
-    "type": "Region",
-    "children": [
-      {
-        "name": "Zone Name (e.g. 沖縄本島)",
-        "type": "Zone",
-        "description": "Zone description"
-      }
-    ]
-  }
-]
-"""
 
 # Models to cycle through
 CANDIDATE_MODELS = [
@@ -61,8 +28,20 @@ CANDIDATE_MODELS = [
     'gemma-3-1b-it',
 ]
 
+# Flattened Resource Pool: [(model, key), (model, key)...]
+RESOURCE_POOL = [(m, k) for m in CANDIDATE_MODELS for k in API_KEYS]
+current_resource_index = 0
+
+def get_current_resource():
+    return RESOURCE_POOL[current_resource_index]
+
+def rotate_resource():
+    global current_resource_index
+    current_resource_index = (current_resource_index + 1) % len(RESOURCE_POOL)
+    print(f"    🔄 Switching to Resource #{current_resource_index + 1}/{len(RESOURCE_POOL)}")
+
 def generate_zones(region: str) -> List[Dict]:
-    global current_key_index
+    global current_resource_index
 
     prompt = f"""
     あなたはダイビング旅行プランナーです。
@@ -84,49 +63,48 @@ def generate_zones(region: str) -> List[Dict]:
     - 決してMarkdownのコードブロック(```json ... ```)を含めないでください。純粋なJSON文字列のみを返してください。
     """
 
-    for model_name in CANDIDATE_MODELS:
-        # Retry loop for keys within each model
-        for attempt in range(len(API_KEYS) * 2): # Try all keys twice per model
-            try:
-                # Configure with current key
-                genai.configure(api_key=get_current_key())
-                model = genai.GenerativeModel(model_name)
+    max_attempts = len(RESOURCE_POOL)
+    attempts = 0
 
-                # print(f"    🤖 Using Model: {model_name} | Key #{current_key_index+1}")
+    while attempts < max_attempts:
+        model_name, api_key = get_current_resource()
 
-                response = model.generate_content(prompt)
-                text = response.text.strip()
-                # Remove markdown if present
-                if text.startswith("```json"):
-                    text = text[7:]
-                if text.endswith("```"):
-                    text = text[:-3]
+        try:
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel(model_name)
 
-                result = json.loads(text)
-                if result:
-                    print(f"    ✅ Success with {model_name}")
-                    return result
+            response = model.generate_content(prompt)
+            text = response.text.strip()
+            # Remove markdown if present
+            if text.startswith("```json"):
+                text = text[7:]
+            if text.endswith("```"):
+                text = text[:-3]
 
-            except Exception as e:
-                error_str = str(e)
-                if "429" in error_str:
-                    print(f"    ⚠️ Quota exceeded: {model_name} (Key #{current_key_index + 1})")
+            result = json.loads(text)
+            if result:
+                # Success! Keep the current index as is (it's working).
+                # Identify which key index this matches for display (just for info)
+                key_display_idx = API_KEYS.index(api_key) + 1
+                print(f"    ✅ Success with {model_name} (Key #{key_display_idx})")
+                return result
 
-                    if rotate_key():
-                        continue # Try next key same model
-                    else:
-                        # All keys failed for this model context?
-                        # Actually rotate_key just switches index.
-                        # We continue loop to try next key.
-                        time.sleep(1)
-                elif "404" in error_str or "not found" in error_str.lower():
-                    print(f"    ℹ️ Model {model_name} not found/supported. Skipping.")
-                    break # Skip to next model
-                else:
-                    print(f"    ❌ Error with {model_name}: {e}")
-                    break # Try next model if non-quota error
+        except Exception as e:
+            error_str = str(e)
+            if "429" in error_str:
+                print(f"    ⚠️ Quota exceeded: {model_name} (Key index in pool: {current_resource_index})")
+                rotate_resource()
+                time.sleep(1)
+            elif "404" in error_str or "not found" in error_str.lower():
+                print(f"    ℹ️ Model {model_name} not found/supported. Skipping.")
+                rotate_resource()
+            else:
+                print(f"    ❌ Error with {model_name}: {e}")
+                rotate_resource()
 
-    print(f"    💀 All models and keys failed for {region}")
+        attempts += 1
+
+    print(f"    💀 All resources failed for {region}")
     return []
 
 import argparse
@@ -201,6 +179,7 @@ def main():
             for new_z in new_region_data.get("children", []):
                 if new_z["name"] not in existing_zone_names:
                     new_z["id"] = f"z_{int(time.time())}_{new_z['name']}"
+                    new_z["displayOrder"] = 0
                     existing_zones.append(new_z)
                     print(f"    + Added Zone: {new_z['name']}")
                 else:
@@ -213,6 +192,7 @@ def main():
             new_region_data["id"] = f"r_{int(time.time())}"
             for i, z in enumerate(new_region_data.get("children", [])):
                 z["id"] = f"z_{int(time.time())}_{i}"
+                z["displayOrder"] = 0
                 produced_zones_list.append({"region": region_name, "zone": z["name"]})
 
             all_locations.append(new_region_data)
