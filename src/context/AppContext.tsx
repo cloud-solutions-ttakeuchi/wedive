@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react';
 import type { User, Log, Rarity, Creature, Point, PointCreature } from '../types';
-import { INITIAL_DATA, TRUST_RANKS } from '../data/mockData';
+import { INITIAL_DATA } from '../data/initialData';
+import { TRUST_RANKS } from '../constants/masterData';
 import { auth, googleProvider, db as firestore } from '../lib/firebase';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import {
@@ -191,7 +192,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const addCreatureProposal = async (creatureData: any) => {
     if (!isAuthenticated) return;
     try {
-      // eslint-disable-next-line react-hooks/purity
       const newId = `prop_c_${Date.now()}`;
       await setDoc(doc(firestore, 'creature_proposals', newId), {
         ...creatureData,
@@ -208,7 +208,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const addPointProposal = async (pointData: any) => {
     if (!isAuthenticated) return;
     try {
-      // eslint-disable-next-line react-hooks/purity
       const newId = `prop_p_${Date.now()}`;
       // areaId is required by Point type but proposals might not have it strictly linked yet?
       // Or we just provide a placeholder.
@@ -232,7 +231,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     if (proposalType === 'create') {
       // 1. Copy to main collection
-      // eslint-disable-next-line react-hooks/purity
       const realId = type === 'creature' ? `c${Date.now()}` : `p${Date.now()}`; // Generate real ID
       const realData = { ...data, id: realId, status: 'approved' };
       // cleanup proposal meta fields if needed
@@ -448,7 +446,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       // 1. Delete all logs
-      const logsRef = collection(firestore, 'users', uid, 'logs');
       const batch = writeBatch(firestore);
       let count = 0;
       allLogs.forEach(log => {
