@@ -1,4 +1,4 @@
-import { RankMaster, CertificationMaster, BadgeMaster } from '../types';
+import type { RankMaster, CertificationMaster, BadgeMaster } from '../types';
 
 export const TRUST_RANKS: RankMaster[] = [
   { id: 'apprentice', name: '見習いダイバー', minScore: 0, roleUpgrade: false, designColor: 'gray-400', icon: 'Droplet' },

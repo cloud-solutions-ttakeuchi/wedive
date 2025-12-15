@@ -7,27 +7,6 @@ import locationsSeed from './locations_seed.json';
 
 // --- Helper Types for JSON Import ---
 // JSONファイルの構造に合わせて型を定義
-type SeedCreature = {
-  id: string;
-  name: string;
-  category: string;
-  scientificName?: string;
-  englishName?: string;
-  family?: string;
-  tags: string[];
-  description: string;
-  rarity: string;
-  imageUrl: string;
-  depthRange: { min: number; max: number };
-  waterTempRange: { min: number; max: number };
-  specialAttributes?: string[];
-  size?: string;
-  season?: string[];
-  imageCredit?: string;
-  imageLicense?: string;
-  imageKeyword?: string;
-};
-
 type SeedLocationNode = {
   id: string;
   name: string;
