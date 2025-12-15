@@ -34,6 +34,16 @@ Diving Dex App のリリーススケジュールとロードマップです。
 - [x] **利用規約（同意書）の作成**: 初回利用時等の同意フロー実装
     - **Status**: Completed (v1.3.0) - Issue #12
 
+### v1.4.0 (Data Auto-Generation Optimization) - In Progress
+**目的: データベース品質の向上（重複排除・網羅性）**
+- [ ] **ダイビングポイント自動追加の最適化 (Point Generation Opt)**
+    - Levenshtein距離による重複名寄せ
+    - 階層構造（Region > Zone > Area > Point）の整理
+- [ ] **海洋生物図鑑の充実 (Creature Dex Expansion)**
+    - 科目（Family）単位でのデータ生成
+    - 画像取得プロセスの分離（Wiki API等）
+
+
 ### v1.3.0 (Community Features) - Planning
 **目的: コミュニティ形成とリアルタイム交流**
 
