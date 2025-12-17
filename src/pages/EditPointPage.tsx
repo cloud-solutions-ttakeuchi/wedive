@@ -3,7 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { ChevronLeft, MapPin, Camera, Info, Anchor, Mountain } from 'lucide-react';
 import { compressImage } from '../utils/imageUtils';
-/* import type { Point } from '../types'; removed */
+import { MapPickerModal } from '../components/MapPickerModal';
 
 export const EditPointPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -12,6 +12,7 @@ export const EditPointPage = () => {
 
   const existingPoint = points.find(p => p.id === id);
 
+  const [isMapOpen, setIsMapOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     region: '',
@@ -26,6 +27,8 @@ export const EditPointPage = () => {
     features: '',
     lat: '',
     lng: '',
+    googlePlaceId: undefined as string | undefined, // New
+    formattedAddress: undefined as string | undefined, // New
     images: [] as string[],
   });
 
@@ -46,6 +49,8 @@ export const EditPointPage = () => {
         features: existingPoint.features.join(', '),
         lat: existingPoint.coordinates?.lat.toString() || '',
         lng: existingPoint.coordinates?.lng.toString() || '',
+        googlePlaceId: existingPoint.googlePlaceId,
+        formattedAddress: existingPoint.formattedAddress,
         images: existingPoint.images || [],
       });
     }
@@ -128,8 +133,10 @@ export const EditPointPage = () => {
           lat: Number(formData.lat),
           lng: Number(formData.lng)
         } : undefined,
+        googlePlaceId: formData.googlePlaceId,
+        formattedAddress: formData.formattedAddress,
         images: formData.images,
-        imageUrl: formData.images.length > 0 ? formData.images[0] : (existingPoint.imageUrl || '/images/seascape.png'),
+        imageUrl: formData.images.length > 0 ? formData.images[0] : (existingPoint.imageUrl || '/images/seascape.png'), // Fallback updated
       };
 
       if (currentUser.role === 'admin' || currentUser.role === 'moderator') {
@@ -166,6 +173,25 @@ export const EditPointPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
+      {isMapOpen && (
+        <MapPickerModal
+          initialLat={formData.lat}
+          initialLng={formData.lng}
+          initialSearchQuery={formData.name || existingPoint.name} // Use point name as initial query
+          onConfirm={(lat, lng, placeId, address) => {
+            setFormData(prev => ({
+              ...prev,
+              lat,
+              lng,
+              googlePlaceId: placeId,
+              formattedAddress: address
+            }));
+            setIsMapOpen(false);
+          }}
+          onClose={() => setIsMapOpen(false)}
+        />
+      )}
+
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -230,6 +256,39 @@ export const EditPointPage = () => {
                   className="w-full px-4 py-2 rounded-lg border border-gray-300 outline-none"
                 />
               </div>
+            </div>
+
+            {/* Location Picker */}
+            <div className="pt-4 border-t border-gray-100">
+              <label className="block text-sm font-medium text-gray-700 mb-2">正確な位置 (Google Maps)</label>
+              {formData.lat && formData.lng ? (
+                <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-3 flex items-start gap-3">
+                  <div className="bg-white p-2 rounded-full text-blue-500 shadow-sm shrink-0">
+                    <MapPin size={20} />
+                  </div>
+                  <div>
+                    <div className="font-bold text-gray-900 text-sm mb-1">位置情報が設定されています</div>
+                    <div className="text-xs text-gray-500 font-mono mb-1">{formData.lat}, {formData.lng}</div>
+                    {formData.formattedAddress && (
+                      <div className="text-xs text-gray-600 flex items-center gap-1">
+                        {formData.formattedAddress}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-3 text-center text-sm text-gray-500">
+                  位置情報が未設定です
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => setIsMapOpen(true)}
+                className="w-full py-3 bg-white border-2 border-dashed border-blue-300 text-blue-600 font-bold rounded-xl hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
+              >
+                <MapPin size={18} />
+                地図から位置を編集する
+              </button>
             </div>
           </section>
 
@@ -326,31 +385,6 @@ export const EditPointPage = () => {
                 placeholder="例: カメが見れる, 光が綺麗, マクロ派向け"
               />
             </div>
-
-            {/*
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">緯度 (Latitude)</label>
-                <input
-                  type="number"
-                  step="any"
-                  name="lat"
-                  value={formData.lat}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">経度 (Longitude)</label>
-                <input
-                  type="number"
-                  step="any"
-                  name="lng"
-                  value={formData.lng}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 outline-none"
-                />
-              </div>
-              */}
           </section>
 
           {/* Photos */}
