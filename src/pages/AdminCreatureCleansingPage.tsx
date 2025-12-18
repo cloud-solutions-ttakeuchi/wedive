@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { ArrowLeft, Edit2, Trash2, Save, X, Search, Plus, Filter, Fish, CheckSquare, Square, MapPin, Link2 } from 'lucide-react';
+import { ArrowLeft, Edit2, Trash2, Save, X, Search, Plus, Fish, CheckSquare, Square, MapPin, Link2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { writeBatch, collection, getDocs, query, where, doc, updateDoc, deleteDoc, addDoc, arrayRemove } from 'firebase/firestore';
+import { writeBatch, collection, getDocs, query, where, doc, updateDoc, deleteDoc, arrayRemove } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import type { Creature, Rarity } from '../types';
 

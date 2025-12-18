@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { ChevronRight, MapPin, Droplets, Anchor, Wind, Mountain, ArrowRight, Bookmark, Image as ImageIcon } from 'lucide-react';
@@ -7,56 +6,37 @@ import type { Region, Zone, Area } from '../types';
 
 export const PointSearchPage = () => {
   const { points: allPoints, regions: allRegions, zones: allZones, areas: allAreas, currentUser, toggleBookmarkPoint } = useApp();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Navigation State
-  const [selectedRegion, setSelectedRegion] = useState<Region | null>(null);
-  const [selectedZone, setSelectedZone] = useState<Zone | null>(null);
-  const [selectedArea, setSelectedArea] = useState<Area | null>(null);
+  // Derived Selection State from URL
+  const selectedRegion = allRegions.find(r => r.name === searchParams.get('region')) || null;
+  const selectedZone = selectedRegion ? allZones.find(z => z.name === searchParams.get('zone') && z.regionId === selectedRegion.id) : null;
+  const selectedArea = selectedZone ? allAreas.find(a => a.name === searchParams.get('area') && a.zoneId === selectedZone.id) : null;
 
-  // Handle Query Parameters
-  useEffect(() => {
-    const regionName = searchParams.get('region');
-    const zoneName = searchParams.get('zone');
-    const areaName = searchParams.get('area');
-
-    if (regionName) {
-      const region = allRegions.find(r => r.name === regionName);
-      if (region) {
-        setSelectedRegion(region);
-        if (zoneName) {
-          const zone = allZones.find(z => z.name === zoneName && z.regionId === region.id);
-          if (zone) {
-            setSelectedZone(zone);
-            if (areaName) {
-              const area = allAreas.find(a => a.name === areaName && a.zoneId === zone.id);
-              if (area) {
-                setSelectedArea(area);
-              } else {
-                setSelectedArea(null);
-              }
-            } else {
-              setSelectedArea(null);
-            }
-          } else {
-            setSelectedZone(null);
-            setSelectedArea(null);
-          }
-        } else {
-          setSelectedZone(null);
-          setSelectedArea(null);
-        }
-      } else {
-        setSelectedRegion(null);
-        setSelectedZone(null);
-        setSelectedArea(null);
-      }
+  // Navigation handlers
+  const setSelectedRegion = (region: Region | null) => {
+    if (region) {
+      setSearchParams({ region: region.name });
     } else {
-      setSelectedRegion(null);
-      setSelectedZone(null);
-      setSelectedArea(null);
+      setSearchParams({});
     }
-  }, [searchParams, allRegions, allZones, allAreas]);
+  };
+
+  const setSelectedZone = (zone: Zone | null) => {
+    if (selectedRegion && zone) {
+      setSearchParams({ region: selectedRegion.name, zone: zone.name });
+    } else if (selectedRegion) {
+      setSearchParams({ region: selectedRegion.name });
+    }
+  };
+
+  const setSelectedArea = (area: Area | null) => {
+    if (selectedRegion && selectedZone && area) {
+      setSearchParams({ region: selectedRegion.name, zone: selectedZone.name, area: area.name });
+    } else if (selectedRegion && selectedZone) {
+      setSearchParams({ region: selectedRegion.name, zone: selectedZone.name });
+    }
+  };
 
   // Data Helpers
   const regions = allRegions;
@@ -65,20 +45,9 @@ export const PointSearchPage = () => {
   const points = selectedArea ? allPoints.filter(p => p.areaId === selectedArea.id) : [];
 
   // Reset handlers
-  const resetToTop = () => {
-    setSelectedRegion(null);
-    setSelectedZone(null);
-    setSelectedArea(null);
-  };
-
-  const resetToRegion = () => {
-    setSelectedZone(null);
-    setSelectedArea(null);
-  };
-
-  const resetToZone = () => {
-    setSelectedArea(null);
-  };
+  const resetToTop = () => setSelectedRegion(null);
+  const resetToRegion = () => setSelectedZone(null);
+  const resetToZone = () => setSelectedArea(null);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -242,7 +211,6 @@ export const PointSearchPage = () => {
                       ) : (
                         <div className="text-gray-300 flex flex-col items-center gap-2">
                           <ImageIcon size={32} />
-                          {/* <span className="text-[10px] uppercase font-bold tracking-widest">No Image</span> */}
                         </div>
                       )}
                       <div className="absolute top-2 left-2 bg-black/50 backdrop-blur-sm text-white text-xs font-bold px-2 py-1 rounded">
@@ -301,14 +269,13 @@ export const PointSearchPage = () => {
                       </div>
                     </div>
                   </Link>
-                ))
-                }
-              </div >
+                ))}
+              </div>
             )}
-          </div >
+          </div>
         )}
-      </div >
-    </div >
+      </div>
+    </div>
   );
 };
 
