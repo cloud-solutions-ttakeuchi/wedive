@@ -9,7 +9,10 @@ const db = getFirestore();
  * Diving Concierge (RAG)
  * Recommends diving spots based on user query and Firestore data.
  */
-export const getConciergeResponse = onCall({ region: "asia-northeast1" }, async (request) => {
+export const getConciergeResponse = onCall({
+  region: "us-central1",
+  cors: ["https://wedive.app", "https://we-dive.web.app", "http://localhost:5173"]
+}, async (request) => {
   const { auth, data } = request;
   if (!auth) throw new Error("unauthenticated");
 
