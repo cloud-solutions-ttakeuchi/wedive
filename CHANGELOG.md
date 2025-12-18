@@ -1,6 +1,33 @@
 # Changelog
 
 プロジェクトの変更履歴を記録します。
+## [v2.1.1] - 2025-12-19
+
+### Added (追加)
+- **AI Concierge (Beta)**:
+    - **Interactive Chat**: ユーザーの質問に対し、WeDiveデータベース内の情報を検索して最適なスポットを提案する対話型AIコンシェルジュ機能をリリース。
+    - **Real-time Suggestion**: 会話の中で特定のスポットが提案されると、直感的なリンクボタン（チップ）を自動生成し、詳細ページへスムーズに誘導。
+    - **Google Gemini 2.0 Flash Integration**: AIモデルに最新の `gemini-2.0-flash-exp` を採用し、高速かつ自然な日本語対話を実現。
+- **AI Auto-fill (Spot & Creature)**:
+    - **Draft Generation**: ポイントや生物の新規登録時に、名前を入力するだけでGemini AIが説明文（Description）を自動生成する機能を追加。
+    - **Google Search Grounding**: AIが自信のない情報についてはGoogle検索を実行し、最新かつ正確な情報（出典付き）を補完する「グラウンディング」機能を実装。
+- **Auto-Translation**:
+    - **Multilingual Support**: ポイント情報の更新トリガーにより、日本語の説明文を自動的に英語・韓国語・中国語（繁体字）に翻訳して保存するバックグラウンド処理を追加。
+
+### Improved (改善)
+- **UI Visibility**:
+    - **High Contrast Chat**: コンシェルジュ画面のチャット吹き出し（特にユーザー側）の配色を調整し、白背景＋グレー枠の高コントラストなデザインに変更して視認性を向上。
+    - **Loading States**: AI生成中のローディング表示（アニメーション）を調整し、処理中であることが明確に伝わるように改善。
+
+### Technical (技術的変更)
+- **Cloud Functions Restructuring**:
+    - AI関連の処理を独立したモジュール (`src/ai/`) に分離し、保守性を向上。
+    - **Verification Logic**: 画像生成やテキスト生成の結果に対し、空文字や不正な値をフィルタリングする厳密な検証ロジックを導入。
+
+### Fixed (修正)
+- **500/404 Errors**: Vertex AIのモデル名指定ミスおよびプロジェクトID設定の不備によるAPIエラーを修正。
+- **Deployment**: GitHub Actions（自動デプロイ）用のサービスアカウントに必要な権限（`Cloud Functions Developer`, `Firebase Extensions Developer`）を追加し、デプロイフローを安定化。
+
 ## [v2.0.2] - 2025-12-18
 
 ### Fixed (修正)
