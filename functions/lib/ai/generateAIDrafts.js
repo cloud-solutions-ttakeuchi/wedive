@@ -64,7 +64,7 @@ const CREATURE_KEYWORDS = ["固有種", "絶滅危惧", "新種", "猛毒", "危
 /**
  * AI Spot Registration Assistant (with 2-Step Optimized Grounding)
  */
-exports.generateSpotDraft = (0, https_1.onCall)({ region: "asia-northeast1" }, async (request) => {
+exports.generateSpotDraft = (0, https_1.onCall)({ region: "us-central1" }, async (request) => {
     const { auth, data } = request;
     if (!auth)
         throw new Error("unauthenticated");
@@ -179,7 +179,7 @@ exports.generateSpotDraft = (0, https_1.onCall)({ region: "asia-northeast1" }, a
 /**
  * AI Creature Registration Assistant (with 2-Step Optimized Grounding)
  */
-exports.generateCreatureDraft = (0, https_1.onCall)({ region: "asia-northeast1" }, async (request) => {
+exports.generateCreatureDraft = (0, https_1.onCall)({ region: "us-central1" }, async (request) => {
     const { auth, data } = request;
     if (!auth)
         throw new Error("unauthenticated");
