@@ -20,36 +20,56 @@ export const runDataCleansing = onCall({ region: "asia-northeast1", memory: "1Gi
     throw new HttpsError("permission-denied", "Admin role required");
   }
 
-  const { mode, pointId, creatureId } = data;
+  const { mode, pointId, creatureId, regionId, zoneId, areaId } = data;
   const engine = new CleansingEngine(process.env.GCLOUD_PROJECT || "wedive-app");
 
-  logger.info(`Starting Cleansing Job: Mode=${mode}, PointID=${pointId}, CreatureID=${creatureId}`);
-
-  // 2. Fetch Target Data based on Mode
-  // For simplicity in this serverless implementation, we handle small batches.
-  // Full re-cleansing should ideally be handled by the Python script or a background task.
+  logger.info(`Starting Cleansing Job: Mode=${mode}, PointID=${pointId}, RegionID=${regionId}, ZoneID=${zoneId}, AreaID=${areaId}, CreatureID=${creatureId}`);
 
   try {
     let points: any[] = [];
     let creatures: any[] = [];
 
-    if (mode === 'specific' && pointId) {
+    // 2. Fetch Points based on Hierarchy
+    if (pointId) {
       const p = await db.collection('points').doc(pointId).get();
       if (p.exists) points.push({ ...p.data(), id: p.id });
-
-      if (creatureId) {
-        const c = await db.collection('creatures').doc(creatureId).get();
-        if (c.exists) creatures.push({ ...c.data(), id: c.id });
-      } else {
-        // Default to a small subset for demonstration/testing in specific mode if no creature specified
-        const cSnap = await db.collection('creatures').limit(20).get();
-        creatures = cSnap.docs.map(d => ({ ...d.data(), id: d.id }));
-      }
-    } else if (mode === 'new') {
-      // Find points with no associations? (simplified logic)
-      const pSnap = await db.collection('points').limit(5).get();
+    } else if (areaId) {
+      const pSnap = await db.collection('points').where('areaId', '==', areaId).get();
       points = pSnap.docs.map(d => ({ ...d.data(), id: d.id }));
-      const cSnap = await db.collection('creatures').limit(10).get();
+    } else if (zoneId) {
+      const aSnap = await db.collection('areas').where('zoneId', '==', zoneId).get();
+      const aIds = aSnap.docs.map(d => d.id);
+      if (aIds.length > 0) {
+        const pSnap = await db.collection('points').where('areaId', 'in', aIds).get();
+        points = pSnap.docs.map(d => ({ ...d.data(), id: d.id }));
+      }
+    } else if (regionId) {
+      const zSnap = await db.collection('zones').where('regionId', '==', regionId).get();
+      const zIds = zSnap.docs.map(d => d.id);
+      if (zIds.length > 0) {
+        const aSnap = await db.collection('areas').where('zoneId', 'in', zIds).get();
+        const aIds = aSnap.docs.map(d => d.id);
+        if (aIds.length > 0) {
+          // Chunk areaIds if more than 10 (Firestore 'in' limit)
+          for (let i = 0; i < aIds.length; i += 10) {
+            const chunk = aIds.slice(i, i + 10);
+            const pSnap = await db.collection('points').where('areaId', 'in', chunk).get();
+            points.push(...pSnap.docs.map(d => ({ ...d.data(), id: d.id })));
+          }
+        }
+      }
+    } else if (mode === 'new' || mode === 'all') {
+      const pSnap = await db.collection('points').limit(20).get();
+      points = pSnap.docs.map(d => ({ ...d.data(), id: d.id }));
+    }
+
+    // 2b. Fetch Creatures
+    if (creatureId) {
+      const c = await db.collection('creatures').doc(creatureId).get();
+      if (c.exists) creatures.push({ ...c.data(), id: c.id });
+    } else {
+      // Default to common subset or as needed
+      const cSnap = await db.collection('creatures').limit(mode === 'all' ? 100 : 20).get();
       creatures = cSnap.docs.map(d => ({ ...d.data(), id: d.id }));
     }
 

@@ -2,24 +2,15 @@ import React, { useState, useMemo } from 'react';
 import { useApp } from '../../../context/AppContext';
 import {
   Play,
-  RefreshCw,
-  CheckCircle,
-  XCircle,
   Search,
   MapPin,
   Fish,
   Loader2,
   AlertTriangle,
   Database,
-  ChevronRight,
-  Filter,
-  Trash2,
-  Check
+  Info
 } from 'lucide-react';
 import clsx from 'clsx';
-import { collection, writeBatch, doc } from 'firebase/firestore';
-import { db } from '../../../lib/firebase';
-import type { PointCreature } from '../../../types';
 
 interface DashboardStats {
   total: number;
@@ -30,40 +21,101 @@ interface DashboardStats {
 }
 
 export const CleansingDashboard = () => {
-  const { points, creatures, pointCreatures } = useApp();
+  const { points: allPoints, creatures: allCreatures, pointCreatures, regions, zones, areas } = useApp();
+
   const [isRunning, setIsRunning] = useState(false);
   const [mode, setMode] = useState<'all' | 'new' | 'specific' | 'replace'>('new');
+
+  // Scoping State
+  const [targetRegionId, setTargetRegionId] = useState('');
+  const [targetZoneId, setTargetZoneId] = useState('');
+  const [targetAreaId, setTargetAreaId] = useState('');
   const [targetPointId, setTargetPointId] = useState('');
   const [targetCreatureId, setTargetCreatureId] = useState('');
+
+  // Search State
+  const [pointSearch, setPointSearch] = useState('');
+  const [creatureSearch, setCreatureSearch] = useState('');
+
   const [progress, setProgress] = useState(0);
 
+  // Stats calculation
   const stats = useMemo<DashboardStats>(() => {
     return {
       total: pointCreatures.length,
       approved: pointCreatures.filter(pc => pc.status === 'approved').length,
       pending: pointCreatures.filter(pc => pc.status === 'pending').length,
-      byPoint: points.length,
-      byCreature: creatures.length
+      byPoint: allPoints.length,
+      byCreature: allCreatures.length
     };
-  }, [pointCreatures, points, creatures]);
+  }, [pointCreatures, allPoints, allCreatures]);
+
+  // Filtered Options Logic
+  const filteredZones = useMemo(() =>
+    targetRegionId ? zones.filter(z => z.regionId === targetRegionId) : zones
+    , [zones, targetRegionId]);
+
+  const filteredAreas = useMemo(() => {
+    if (targetZoneId) return areas.filter(a => a.zoneId === targetZoneId);
+    if (targetRegionId) {
+      const zIds = zones.filter(z => z.regionId === targetRegionId).map(z => z.id);
+      return areas.filter(a => zIds.includes(a.zoneId));
+    }
+    return areas;
+  }, [areas, targetZoneId, targetRegionId, zones]);
+
+  const filteredPoints = useMemo(() => {
+    let list = allPoints;
+    if (targetAreaId) list = list.filter(p => p.areaId === targetAreaId);
+    else if (targetZoneId) {
+      const aIds = areas.filter(a => a.zoneId === targetZoneId).map(a => a.id);
+      list = list.filter(p => aIds.includes(p.areaId));
+    }
+    else if (targetRegionId) {
+      const zIds = zones.filter(z => z.regionId === targetRegionId).map(z => z.id);
+      const aIds = areas.filter(a => zIds.includes(a.zoneId)).map(a => a.id);
+      list = list.filter(p => aIds.includes(p.areaId));
+    }
+
+    if (pointSearch) {
+      const s = pointSearch.toLowerCase();
+      list = list.filter(p => p.name.toLowerCase().includes(s) || (p.area || '').toLowerCase().includes(s));
+    }
+    return list;
+  }, [allPoints, targetAreaId, targetZoneId, targetRegionId, areas, zones, pointSearch]);
+
+  const filteredCreatures = useMemo(() => {
+    if (!creatureSearch) return allCreatures;
+    const s = creatureSearch.toLowerCase();
+    return allCreatures.filter(c =>
+      c.name.toLowerCase().includes(s) ||
+      (c.scientificName || '').toLowerCase().includes(s) ||
+      (c.family || '').toLowerCase().includes(s)
+    );
+  }, [allCreatures, creatureSearch]);
 
   const handleRunCleansing = async () => {
-    const confirmMsg = mode === 'all'
-      ? '【警告】全データを再計算します。既存の紐付けは一度全て削除され、AIによって再生成されます。よろしいですか？'
-      : '未紐付けのデータに対してAIクレンジングを実行します。続行しますか？';
+    const scopeName = targetPointId ? '特定ポイント'
+      : targetAreaId ? '指定エリア全件'
+        : targetZoneId ? '指定ゾーン全件'
+          : targetRegionId ? '指定リージョン全件'
+            : '設定されたフィルタ条件';
+
+    const confirmMsg = `【実行確認】
+モード: ${mode === 'new' ? '新規追加' : mode === 'all' ? 'リセット' : mode === 'replace' ? '入れ替え' : '範囲指定'}
+対象範囲: ${scopeName}
+AIによるクレンジングを開始します。よろしいですか？`;
 
     if (!window.confirm(confirmMsg)) return;
 
     setIsRunning(true);
-    setProgress(10);
+    setProgress(5);
 
     try {
-      // Get auth token
       const { auth } = await import('../../../lib/firebase');
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error("Unauthenticated");
 
-      // 実際には Cloud Function を呼び出す
       const response = await fetch('/api/cleansing/run', {
         method: 'POST',
         headers: {
@@ -73,8 +125,11 @@ export const CleansingDashboard = () => {
         body: JSON.stringify({
           data: {
             mode,
-            pointId: mode === 'specific' ? targetPointId : undefined,
-            creatureId: mode === 'specific' ? targetCreatureId : undefined
+            regionId: targetRegionId || undefined,
+            zoneId: targetZoneId || undefined,
+            areaId: targetAreaId || undefined,
+            pointId: targetPointId || undefined,
+            creatureId: targetCreatureId || undefined
           }
         })
       });
@@ -95,28 +150,37 @@ export const CleansingDashboard = () => {
     <div className="space-y-8">
       {/* 1. Header Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm relative group text-left">
           <div className="flex items-center gap-3 text-gray-500 mb-2 font-bold text-sm">
             <Database size={18} /> TOTAL MAPPINGS
+            <div className="relative group/tooltip">
+              <Info size={14} className="text-gray-300 hover:text-ocean-500 cursor-help transition-colors" />
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-900 text-white text-[10px] rounded-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all z-20 font-medium">
+                システムに登録されている「ポイント」と「生物」の紐付けの総数です。承認済みと保留中の両方を含みます。
+              </div>
+            </div>
           </div>
           <div className="text-3xl font-black text-gray-900">{stats.total.toLocaleString()}</div>
           <div className="mt-2 text-xs text-gray-400">Approved: {stats.approved} / Pending: {stats.pending}</div>
         </div>
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+
+        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm text-left">
           <div className="flex items-center gap-3 text-ocean-500 mb-2 font-bold text-sm">
             <MapPin size={18} /> POINTS
           </div>
           <div className="text-3xl font-black text-gray-900">{stats.byPoint}</div>
           <div className="mt-2 text-xs text-gray-400">Location Master Data</div>
         </div>
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+
+        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm text-left">
           <div className="flex items-center gap-3 text-indigo-500 mb-2 font-bold text-sm">
             <Fish size={18} /> CREATURES
           </div>
           <div className="text-3xl font-black text-gray-900">{stats.byCreature}</div>
           <div className="mt-2 text-xs text-gray-400">Biological Dictionary</div>
         </div>
-        <div className="bg-amber-50 p-6 rounded-3xl border border-amber-100 shadow-sm">
+
+        <div className="bg-amber-50 p-6 rounded-3xl border border-amber-100 shadow-sm text-left">
           <div className="flex items-center gap-3 text-amber-600 mb-2 font-bold text-sm">
             <AlertTriangle size={18} /> NEEDS REVIEW
           </div>
@@ -127,16 +191,16 @@ export const CleansingDashboard = () => {
 
       {/* 2. Controls */}
       <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="flex-1 space-y-2">
-            <h3 className="text-xl font-black text-gray-900">クレンジング実行コントロール</h3>
-            <p className="text-gray-500 font-medium">
-              Vertex AIを使用して、生物とポイントの紐付けを最新化・最適化します。<br />
-              地形・水域条件に基づきフィルタリングした後、Google検索で事実確認を行います。
+        <div className="flex flex-col md:flex-row items-start justify-between gap-10">
+          <div className="flex-1 min-w-0 md:max-w-md lg:max-w-lg space-y-3 text-left">
+            <h3 className="text-2xl font-black text-gray-900 leading-tight">クレンジング実行コントロール</h3>
+            <p className="text-gray-500 font-medium leading-relaxed">
+              Vertex AIを使用して、生物とポイントの紐付けを最新化・最適化します。<br className="hidden lg:block" />
+              地形・水域条件に基づきフィルタリングした後、Google検索で事実確認（グラウンディング）を行います。
             </p>
           </div>
 
-          <div className="w-full md:w-auto flex flex-col gap-4">
+          <div className="w-full md:w-[420px] shrink-0 flex flex-col gap-4 text-left">
             <div className="flex p-1 bg-gray-100 rounded-2xl">
               {(['new', 'all', 'specific', 'replace'] as const).map((m) => (
                 <button
@@ -152,28 +216,111 @@ export const CleansingDashboard = () => {
               ))}
             </div>
 
-            {mode === 'specific' && (
-              <div className="flex flex-col gap-3 p-4 bg-gray-50 rounded-2xl animate-in slide-in-from-top-2">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Target Point</label>
-                  <select
-                    value={targetPointId}
-                    onChange={(e) => setTargetPointId(e.target.value)}
-                    className="w-full p-2 bg-white border border-gray-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-ocean-500 outline-none"
-                  >
-                    <option value="">Select a point...</option>
-                    {points.map(p => <option key={p.id} value={p.id}>{p.name} ({p.area})</option>)}
-                  </select>
+            {(mode === 'specific' || mode === 'replace') && (
+              <div className="flex flex-col gap-4 p-5 bg-gray-50 rounded-[2rem] animate-in slide-in-from-top-4 duration-300">
+                {/* Hierarchical Point Selector */}
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Region</label>
+                      <select
+                        value={targetRegionId}
+                        onChange={(e) => {
+                          setTargetRegionId(e.target.value);
+                          setTargetZoneId('');
+                          setTargetAreaId('');
+                          setTargetPointId('');
+                        }}
+                        className="w-full p-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-ocean-500 outline-none"
+                      >
+                        <option value="">全地域 (All Regions)</option>
+                        {regions.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Zone</label>
+                      <select
+                        value={targetZoneId}
+                        onChange={(e) => {
+                          setTargetZoneId(e.target.value);
+                          setTargetAreaId('');
+                          setTargetPointId('');
+                        }}
+                        className="w-full p-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-ocean-500 outline-none"
+                      >
+                        <option value="">全ゾーン (All Zones)</option>
+                        {filteredZones.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Area</label>
+                    <select
+                      value={targetAreaId}
+                      onChange={(e) => {
+                        setTargetAreaId(e.target.value);
+                        setTargetPointId('');
+                      }}
+                      className="w-full p-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-ocean-500 outline-none"
+                    >
+                      <option value="">全エリア (All Areas)</option>
+                      {filteredAreas.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 flex justify-between">
+                      Point Selection
+                      {filteredPoints.length > 0 && <span className="text-ocean-600 lowercase">{filteredPoints.length} hits</span>}
+                    </label>
+                    <div className="relative mb-2">
+                      <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="ポイント名で絞り込み..."
+                        value={pointSearch}
+                        onChange={(e) => setPointSearch(e.target.value)}
+                        className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-[11px] font-medium focus:ring-2 focus:ring-ocean-500 outline-none"
+                      />
+                    </div>
+                    <select
+                      value={targetPointId}
+                      onChange={(e) => setTargetPointId(e.target.value)}
+                      className="w-full p-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-ocean-500 outline-none"
+                    >
+                      <option value="">{targetAreaId ? '指定エリア内の全ポイント' : 'ポイントを選択 (任意)'}</option>
+                      {filteredPoints.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Target Creature (Optional)</label>
+
+                <div className="h-px bg-gray-200 my-1" />
+
+                {/* Creature Selector with Search */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 flex justify-between">
+                    Target Creature (Optional)
+                    {creatureSearch && <span className="text-indigo-600 lowercase">{filteredCreatures.length} matches</span>}
+                  </label>
+                  <div className="relative">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="生物名、科名で検索..."
+                      value={creatureSearch}
+                      onChange={(e) => setCreatureSearch(e.target.value)}
+                      className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-[11px] font-medium focus:ring-2 focus:ring-indigo-500 outline-none"
+                    />
+                  </div>
                   <select
                     value={targetCreatureId}
                     onChange={(e) => setTargetCreatureId(e.target.value)}
-                    className="w-full p-2 bg-white border border-gray-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-ocean-500 outline-none"
+                    className="w-full p-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
                   >
-                    <option value="">All creatures</option>
-                    {creatures.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    <option value="">全生物を検証対象にする</option>
+                    {filteredCreatures.slice(0, 100).map(c => <option key={c.id} value={c.id}>{c.name} ({c.scientificName || c.family})</option>)}
+                    {filteredCreatures.length > 100 && <option disabled>... results truncated, please use search</option>}
                   </select>
                 </div>
               </div>
@@ -181,18 +328,18 @@ export const CleansingDashboard = () => {
 
             <button
               onClick={handleRunCleansing}
-              disabled={isRunning || (mode === 'specific' && !targetPointId)}
+              disabled={isRunning || ((mode === 'specific' || mode === 'replace') && !targetRegionId && !targetPointId)}
               className={clsx(
-                "flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-black transition-all shadow-xl",
-                isRunning || (mode === 'specific' && !targetPointId)
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                "flex items-center justify-center gap-3 px-8 py-5 rounded-2xl font-black transition-all shadow-xl",
+                isRunning || ((mode === 'specific' || mode === 'replace') && !targetRegionId && !targetPointId)
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed shadow-none"
                   : "bg-slate-900 text-white hover:bg-slate-800 hover:scale-[1.02] active:scale-[0.98] shadow-slate-200"
               )}
             >
               {isRunning ? (
                 <>
                   <Loader2 className="animate-spin" />
-                  CLEANSING IN PROGRESS... {progress}%
+                  CLEANSING IN PROGRESS...
                 </>
               ) : (
                 <>
