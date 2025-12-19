@@ -1,0 +1,5 @@
+google-cloud-aiplatform>=1.10.0
+vertexai
+jinja2
+pandas
+requests

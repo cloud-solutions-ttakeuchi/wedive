@@ -31,7 +31,10 @@ Diving Dex App のリリーススケジュールとロードマップです。
 - [x] **AI Auto-fill (Spot & Creature)**: 登録時の説明文自動生成とGoogle検索グラウンディング
 - [x] **Auto-Translation**: マルチランゲージ対応（日・英・韓・中）
 - [x] **AI Concierge (Beta)**: 対話型スポット提案機能の実装
-- [ ] **AI Concierge Grounding**: コンシェルジュ検索精度の向上（管理者限定検証中）
+- [x] **AI Combined Management (Issue #49)**: 高精度生物マッピングの実装
+    - **Dual-Track Ops**: 画面からの即時更新 (Cloud Functions) と 全件バッチ (Cloud Run Jobs) の併用。
+    - **Cost Engineering**: Context Caching によるトークンコスト 75% 削減。
+    - **CI/CD Integration**: GitHub Actions によるパイプライン Docker イメージの自動デプロイ。
 
 
 ### v1.3.0 (Community Features) - Planning

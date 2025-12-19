@@ -132,3 +132,35 @@ python scripts/creatures/generate_point_creatures.py --mode append
   - 429エラー時は65秒間のクールダウンをインテリジェントに管理します。
 - **Resume Capability**:
   - 生物生成 (`generate_creatures_by_family.py`) は `processed_families_log.json` を使用して進捗を管理しており、中断しても途中から再開可能です。
+
+---
+
+## 🧼 AI Data Cleansing Pipeline (Issue #49)
+
+高精度なAI検証エンジンを使用して、ポイントと生物の生息情報をクレンジング・拡充します。
+
+### 🚀 Usage (Local Execution)
+
+**Prerequisites:**
+- Python 3.11+
+- Google Cloud 認証済み (gcloud auth application-default login)
+- `GOOGLE_CLOUD_PROJECT` 環境変数の設定
+
+**Step 1: Install Dependencies**
+```bash
+pip install -r scripts/requirements.txt
+```
+
+**Step 2: Run Cleansing**
+```bash
+# 新規データのみを対象に、5件検証（テスト実行推奨）
+python scripts/cleansing_pipeline.py --mode new --limit 5
+
+# 全件リセットして再構築（注意: シードファイルが大幅に更新されます）
+python scripts/cleansing_pipeline.py --mode all --limit 100
+```
+
+### 💡 Features
+- **Context Caching**: 実行時に生物辞書を Vertex AI にキャッシュし、トークンコストを 75% 削減します。
+- **Auto Backup**: 実行前に `src/data/point_creatures_seed.json.bak` が自動生成されます。
+- **2-Stage Validation**: 物理的な生息可能判定 (Flash) と、Google検索による目撃実績の確認を組み合わせています。

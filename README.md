@@ -1,4 +1,4 @@
-# Diving Dex App
+# WeDive
 
 ダイビングログと生物図鑑を統合した「Diving Dex App」のソースコードリポジトリです。
 React (Vite) + Firebase を用いたモダンなシングルページアプリケーション (SPA) として構築されています。
@@ -34,6 +34,14 @@ React (Vite) + Firebase を用いたモダンなシングルページアプリ�
   - [fit-file-parser](https://github.com/jimmykane/fit-file-parser) (Garmin FIT handling)
   - [PapaParse](https://www.papaparse.com/) (CSV Import)
 - **Routing**: [React Router](https://reactrouter.com/) `v7.9.6`
+
+### Special Features (AI & Data Engineering)
+- **AI Engine**: Google Vertex AI (Gemini 1.5 Flash / 2.0 Flash)
+  - **High-Precision Biological Mapping**: 2段階検証（物理フィルタリング + Google Search Grounding）による生物生息データのクレンジング。
+  - **Context Caching**: 大規模データ処理時のAPIコストを約75%削減するキャッシュ機構。
+  - **Batch Ops**: Cloud Run Jobs を用いた大規模バッチ処理エンジン。
+  - **AI Concierge**: 自然言語によるダイビングスポット検索・提案。
+  - **Auto Content Generation**: ポイント・生物の登録情報をAIが自動生成。
 
 ## Development
 
