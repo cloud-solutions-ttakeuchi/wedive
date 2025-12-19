@@ -36,12 +36,12 @@ React (Vite) + Firebase を用いたモダンなシングルページアプリ�
 - **Routing**: [React Router](https://reactrouter.com/) `v7.9.6`
 
 ### Special Features (AI & Data Engineering)
-- **AI Engine**: Google Vertex AI (Gemini 1.5 Flash / 2.0 Flash)
-  - **High-Precision Biological Mapping**: 2段階検証（物理フィルタリング + Google Search Grounding）による生物生息データのクレンジング。
-  - **Context Caching**: 大規模データ処理時のAPIコストを約75%削減するキャッシュ機構。
+- **AI Engine**: **Google Vertex AI (Gemini 2.0 Flash)**
+  - **High-Precision Biological Mapping**: 2段階検証（物理フィルタリング + Google Search Grounding）による生物生息データの高度なクレンジング。
+  - **Context Caching**: 最新の GenAI SDK を活用し、大規模データ処理時のAPIコストを大幅に削減。
   - **Batch Ops**: Cloud Run Jobs を用いた大規模バッチ処理エンジン。
   - **AI Concierge**: 自然言語によるダイビングスポット検索・提案。
-  - **Auto Content Generation**: ポイント・生物の登録情報をAIが自動生成。
+  - **Auto Content Generation**: 最新の検索結果に基づき登録情報を自動生成。
 
 ## Development
 
@@ -59,6 +59,11 @@ npm install
 フロントエンドとバックエンド（AIエンジン）を手元で連携させてテストする手順です。
 
 #### 1. フルローカル検証（エミュレータ利用）
+
+##### エミュレータ概要
+
+- https://firebase.google.com/docs/emulator-suite?hl=ja
+
 本番環境に影響を与えず、全ての機能を自分のPC内で完結させます。
 1. **バックエンド起動**:
    ```bash

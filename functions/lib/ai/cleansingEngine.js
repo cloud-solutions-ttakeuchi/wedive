@@ -7,11 +7,11 @@ const logger = require("firebase-functions/logger");
  * High-Precision Biological Mapping Engine (Issue #49)
  */
 class CleansingEngine {
-    constructor(projectId = "wedive-app", location = "us-central1") {
+    constructor(projectId = process.env.GCLOUD_PROJECT, location = process.env.LOCATION || "us-central1") {
         this.vertexAI = new vertexai_1.VertexAI({ project: projectId, location });
-        // Stage 1 Model: Gemini 1.5 Flash (Fast & Cheap for Filtering)
+        // Stage 1 Model: Gemini 2.0 Flash (Fast & Cheap for Filtering)
         this.modelFlash = this.vertexAI.getGenerativeModel({
-            model: "gemini-1.5-flash-002",
+            model: "gemini-2.0-flash-001",
             generationConfig: {
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -26,24 +26,36 @@ class CleansingEngine {
                 }
             }
         });
-        // Stage 2 Model: Gemini 1.5 Flash (with Grounding)
-        // Using Flash for grounding is cost-effective compared to Pro.
+        // Stage 2 Model: Gemini 2.0 Flash (with Grounding)
         this.modelGrounding = this.vertexAI.getGenerativeModel({
-            model: "gemini-1.5-flash-002",
+            model: "gemini-2.0-flash-001",
             tools: [
-                { googleSearchRetrieval: {} }
-            ]
+                { googleSearch: {} }
+            ],
+            generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: vertexai_1.SchemaType.OBJECT,
+                    properties: {
+                        actual_existence: { type: vertexai_1.SchemaType.BOOLEAN },
+                        evidence: { type: vertexai_1.SchemaType.STRING },
+                        rarity: { type: vertexai_1.SchemaType.STRING, enum: ["Common", "Rare", "Epic", "Legendary"] }
+                    },
+                    required: ["actual_existence", "evidence", "rarity"]
+                }
+            }
         });
     }
     /**
      * Batch Point-Creature Mapping Verification (Optimized with System Instructions)
      */
     async verifyBatch(point, creatures) {
+        const isDev = process.env.GCLOUD_PROJECT === 'dive-dex-app-dev';
         try {
-            // 生物リストをモデルの "知識" として System Instruction に載せることで
-            // Vertex AI の Implicit Caching が効きやすくなり、コストが大幅に削減されます。
+            if (isDev)
+                logger.info(`[Cleansing] verifyBatch started for ${point.name} with ${creatures.length} creatures.`);
             const modelWithContext = this.vertexAI.getGenerativeModel({
-                model: "gemini-1.5-flash-002",
+                model: "gemini-2.0-flash-001",
                 systemInstruction: `
           あなたは海洋生物学者およびダイビングガイドの専門家です。
           提供された生物リストの生態に基づき、特定のダイビングポイントに生息可能か、または実際に目撃例があるかを判断します。
@@ -74,24 +86,48 @@ class CleansingEngine {
           { "creatureId": "string", "is_possible": boolean, "rarity": "Common"|"Rare"|"Epic"|"Legendary", "confidence": float, "reasoning": "string" }
         ]
       `;
+            if (isDev)
+                logger.info(`[Cleansing] Calling Stage 1 (Batch) AI for ${point.name}...`);
             const result = await modelWithContext.generateContent(batchPrompt);
             const candidates = result.response.candidates || [];
-            if (candidates.length === 0)
+            if (candidates.length === 0) {
+                if (isDev)
+                    logger.warn(`[Cleansing] No AI candidates returned for ${point.name}`);
                 return [];
+            }
             const outputText = candidates[0].content.parts[0].text || "[]";
+            if (isDev)
+                logger.info(`[Cleansing] Stage 1 Raw Response: ${outputText}`);
             const jsonMatch = outputText.match(/\[[\s\S]*\]/);
             const results1 = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+            if (isDev)
+                logger.info(`[Cleansing] Stage 1 Parsed: ${results1.length} candidates found.`);
             const finalResults = [];
             for (const res of results1) {
-                if (!res.is_possible || res.confidence < 0.4)
+                if (!res.is_possible || res.confidence < 0.4) {
+                    if (isDev)
+                        logger.debug(`[Cleansing] Skipping ${res.creatureId}: is_possible=${res.is_possible}, confidence=${res.confidence}`);
                     continue;
+                }
                 const creature = creatures.find(c => c.id === res.creatureId);
-                if (!creature)
+                if (!creature) {
+                    if (isDev)
+                        logger.warn(`[Cleansing] Creature ID ${res.creatureId} not found in provided batch.`);
                     continue;
-                // --- Stage 2: Fact Verification ---
+                }
+                if (isDev)
+                    logger.info(`[Cleansing] Starting Stage 2 (Grounding) for ${creature.name}...`);
                 const groundedMapping = await this.verifyMapping(point, creature, res);
-                if (groundedMapping)
+                if (groundedMapping) {
+                    const checkStatus = groundedMapping.status === 'pending' ? '✅ Approved' : '❌ Disapproved';
+                    if (isDev)
+                        logger.info(`[Cleansing] Result: ${checkStatus}: ${creature.name} at ${point.name} (Status: ${groundedMapping.status})`);
                     finalResults.push(groundedMapping);
+                }
+                else {
+                    if (isDev)
+                        logger.info(`[Cleansing] ❌ Rejected during Stage 2: ${creature.name}`);
+                }
             }
             return finalResults;
         }
@@ -104,11 +140,14 @@ class CleansingEngine {
      * Single Point-Creature Mapping Verification (Internal Stage 2)
      */
     async verifyMapping(point, creature, stage1Result) {
+        const isDev = process.env.GCLOUD_PROJECT === 'dive-dex-app-dev';
         try {
             // Stage 1 validation if not provided
             let s1 = stage1Result;
             if (!s1) {
-                const stage1Prompt = `ポイント ${point.name} に生物 ${creature.name} は生息可能か？`; // Simplified for brevity
+                if (isDev)
+                    logger.info(`[Cleansing] Stage 1 not provided for ${creature.name}. Running single validation.`);
+                const stage1Prompt = `ポイント ${point.name} に生物 ${creature.name} は生息可能か？`;
                 const r1 = await this.modelFlash.generateContent(stage1Prompt);
                 s1 = JSON.parse(r1.response.candidates[0].content.parts[0].text || '{"is_possible": false}');
             }
@@ -121,12 +160,19 @@ class CleansingEngine {
         回答は必ず以下のJSON形式で。
         {"actual_existence": boolean, "evidence": "string", "rarity": "Common"|"Rare"|"Epic"|"Legendary"}
       `;
+            if (isDev)
+                logger.info(`[Cleansing] Calling Stage 2 (Grounding) AI for ${creature.name}...`);
             const result2 = await this.modelGrounding.generateContent(groundingPrompt);
             const text2 = result2.response.candidates[0].content.parts[0].text;
+            if (isDev)
+                logger.info(`[Cleansing] Stage 2 Raw Response: ${text2}`);
             const jsonMatch = text2?.match(/\{[\s\S]*\}/);
             const response2 = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
-            if (!response2.actual_existence && s1.confidence < 0.8)
+            if (!response2.actual_existence && s1.confidence < 0.8) {
+                if (isDev)
+                    logger.info(`[Cleansing] ${creature.name} rejected: No actual existence found and confidence too low.`);
                 return null;
+            }
             return {
                 pointId: point.id,
                 creatureId: creature.id,
@@ -138,6 +184,8 @@ class CleansingEngine {
             };
         }
         catch (error) {
+            if (isDev)
+                logger.error(`[Cleansing] FATAL in verifyMapping for ${creature.name}:`, error);
             return null;
         }
     }

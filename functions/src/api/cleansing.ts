@@ -11,17 +11,27 @@ const db = getFirestore();
 export const runDataCleansing = onCall({ region: "asia-northeast1", memory: "1GiB", timeoutSeconds: 300 }, async (request) => {
   const { auth, data } = request;
 
-  // 1. Auth Check (Admin Only)
-  if (!auth) throw new HttpsError("unauthenticated", "Auth required");
+  // 1. Auth Check (Admin or Emulator)
+  if (!auth) {
+    logger.error("No auth context found in request");
+    throw new HttpsError("unauthenticated", "Auth required");
+  }
+
+  const isEmulator = process.env.FUNCTIONS_EMULATOR === "true";
+  logger.info(`Checking permissions for UID: ${auth.uid} (isEmulator: ${isEmulator})`);
 
   const userDoc = await db.collection("users").doc(auth.uid).get();
   const userData = userDoc.data();
-  if (!userData || userData.role !== 'admin') {
+
+  if (isEmulator) {
+    logger.info("Local emulator detected. Bypassing admin check.");
+  } else if (!userData || userData.role !== 'admin') {
+    logger.warn(`Permission Denied: User ${auth.uid} has role: ${userData?.role || 'none'}`);
     throw new HttpsError("permission-denied", "Admin role required");
   }
 
   const { mode, pointId, creatureId, regionId, zoneId, areaId } = data;
-  const engine = new CleansingEngine(process.env.GCLOUD_PROJECT || "wedive-app");
+  const engine = new CleansingEngine();
 
   logger.info(`Starting Cleansing Job: Mode=${mode}, PointID=${pointId}, RegionID=${regionId}, ZoneID=${zoneId}, AreaID=${areaId}, CreatureID=${creatureId}`);
 
@@ -40,8 +50,12 @@ export const runDataCleansing = onCall({ region: "asia-northeast1", memory: "1Gi
       const aSnap = await db.collection('areas').where('zoneId', '==', zoneId).get();
       const aIds = aSnap.docs.map(d => d.id);
       if (aIds.length > 0) {
-        const pSnap = await db.collection('points').where('areaId', 'in', aIds).get();
-        points = pSnap.docs.map(d => ({ ...d.data(), id: d.id }));
+        // Firestore 'in' limit is 10, so chunking just in case
+        for (let i = 0; i < aIds.length; i += 10) {
+          const chunk = aIds.slice(i, i + 10);
+          const pSnap = await db.collection('points').where('areaId', 'in', chunk).get();
+          points.push(...pSnap.docs.map(d => ({ ...d.data(), id: d.id })));
+        }
       }
     } else if (regionId) {
       const zSnap = await db.collection('zones').where('regionId', '==', regionId).get();
@@ -63,14 +77,37 @@ export const runDataCleansing = onCall({ region: "asia-northeast1", memory: "1Gi
       points = pSnap.docs.map(d => ({ ...d.data(), id: d.id }));
     }
 
-    // 2b. Fetch Creatures
+    // 2b. Fetch Creatures with strict safety guard
     if (creatureId) {
+      // Pinpoint search: Only this specific creature
       const c = await db.collection('creatures').doc(creatureId).get();
-      if (c.exists) creatures.push({ ...c.data(), id: c.id });
+      if (c.exists) {
+        creatures = [{ ...c.data(), id: c.id }];
+      } else {
+        throw new HttpsError("not-found", "Specified creature not found");
+      }
     } else {
-      // Default to common subset or as needed
-      const cSnap = await db.collection('creatures').limit(mode === 'all' ? 100 : 20).get();
+      // SAFETY GUARD: If pointId is NOT specified (meaning it's an area/zone/region wide search),
+      // we REQUIRE a creatureId to be specified to avoid massive cross-product costs.
+      if (!pointId) {
+        logger.error(`Aborted: Massive cleansing attempted on area without specific creatureId.`);
+        throw new HttpsError("invalid-argument", "Area-wide cleansing requires a specific creatureId to prevent excessive costs.");
+      }
+
+      // Single point search without specific creature: Limit to a very small subset (Top 5)
+      const cSnap = await db.collection('creatures').limit(5).get();
       creatures = cSnap.docs.map(d => ({ ...d.data(), id: d.id }));
+      logger.info(`Point-only search: defaulting to top ${creatures.length} creatures.`);
+    }
+
+    logger.info(`Target Scoped: Found ${points.length} points and ${creatures.length} creatures to check.`);
+    if (points.length === 0) {
+      logger.warn(`No points found in Firestore for ID: ${pointId}. This might happen if the DB was reset and IDs changed.`);
+    }
+
+    if (points.length === 0) {
+      logger.warn("No points found for the given criteria. Finishing early.");
+      return { success: true, processedCount: 0, newMappingsCount: 0, results: [] };
     }
 
     // 3. Clear existing if mode is 'replace' or 'all'

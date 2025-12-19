@@ -65,45 +65,65 @@ export const CleansingDashboard = () => {
   }, [areas, targetZoneId, targetRegionId, zones]);
 
   const filteredPoints = useMemo(() => {
+    // 1. First, define the scope based on hierarchy
     let list = allPoints;
-    if (targetAreaId) list = list.filter(p => p.areaId === targetAreaId);
-    else if (targetZoneId) {
+    if (targetAreaId) {
+      list = list.filter(p => p.areaId === targetAreaId);
+    } else if (targetZoneId) {
       const aIds = areas.filter(a => a.zoneId === targetZoneId).map(a => a.id);
       list = list.filter(p => aIds.includes(p.areaId));
-    }
-    else if (targetRegionId) {
+    } else if (targetRegionId) {
       const zIds = zones.filter(z => z.regionId === targetRegionId).map(z => z.id);
       const aIds = areas.filter(a => zIds.includes(a.zoneId)).map(a => a.id);
       list = list.filter(p => aIds.includes(p.areaId));
     }
 
+    // 2. Then, filter WITHIN that scope using the search keyword
     if (pointSearch) {
       const s = pointSearch.toLowerCase();
-      list = list.filter(p => p.name.toLowerCase().includes(s) || (p.area || '').toLowerCase().includes(s));
+      list = list.filter(p => {
+        const name = (p.name || '').toLowerCase();
+        const area = (p.area || '').toLowerCase();
+        const zone = (p.zone || '').toLowerCase();
+        return name.includes(s) || area.includes(s) || zone.includes(s);
+      });
     }
     return list;
   }, [allPoints, targetAreaId, targetZoneId, targetRegionId, areas, zones, pointSearch]);
 
   const filteredCreatures = useMemo(() => {
-    if (!creatureSearch) return allCreatures;
-    const s = creatureSearch.toLowerCase();
-    return allCreatures.filter(c =>
-      c.name.toLowerCase().includes(s) ||
-      (c.scientificName || '').toLowerCase().includes(s) ||
-      (c.family || '').toLowerCase().includes(s)
-    );
+    let list = allCreatures;
+    if (creatureSearch) {
+      const s = creatureSearch.toLowerCase();
+      list = list.filter(c =>
+        c.name.toLowerCase().includes(s) ||
+        (c.scientificName || '').toLowerCase().includes(s) ||
+        (c.family || '').toLowerCase().includes(s)
+      );
+    }
+    return list;
   }, [allCreatures, creatureSearch]);
 
   const handleRunCleansing = async () => {
-    const scopeName = targetPointId ? '特定ポイント'
-      : targetAreaId ? '指定エリア全件'
-        : targetZoneId ? '指定ゾーン全件'
-          : targetRegionId ? '指定リージョン全件'
-            : '設定されたフィルタ条件';
+    const targetPoint = allPoints.find(p => p.id === targetPointId);
+    const targetArea = areas.find(a => a.id === targetAreaId);
+    const targetZone = zones.find(z => z.id === targetZoneId);
+    const targetRegion = regions.find(r => r.id === targetRegionId);
+    const targetCreature = allCreatures.find(c => c.id === targetCreatureId);
+
+    const locationName = targetPoint ? `ポイント: ${targetPoint.name}`
+      : targetArea ? `エリア: ${targetArea.name}`
+        : targetZone ? `ゾーン: ${targetZone.name}`
+          : targetRegion ? `リージョン: ${targetRegion.name}`
+            : '全地域';
+
+    const creatureName = targetCreature ? `生物: ${targetCreature.name}` : '対象: 主要生物 (上位5種)';
 
     const confirmMsg = `【実行確認】
 モード: ${mode === 'new' ? '新規追加' : mode === 'all' ? 'リセット' : mode === 'replace' ? '入れ替え' : '範囲指定'}
-対象範囲: ${scopeName}
+対象範囲: ${locationName}
+対象生物: ${creatureName}
+
 AIによるクレンジングを開始します。よろしいですか？`;
 
     if (!window.confirm(confirmMsg)) return;
@@ -116,7 +136,7 @@ AIによるクレンジングを開始します。よろしいですか？`;
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error("Unauthenticated");
 
-      const response = await fetch('/api/cleansing/run', {
+      const response = await fetch('/api/runDataCleansing', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -328,10 +348,10 @@ AIによるクレンジングを開始します。よろしいですか？`;
 
             <button
               onClick={handleRunCleansing}
-              disabled={isRunning || ((mode === 'specific' || mode === 'replace') && !targetRegionId && !targetPointId)}
+              disabled={isRunning || ((mode === 'specific' || mode === 'replace') && !targetRegionId && !targetZoneId && !targetAreaId && !targetPointId)}
               className={clsx(
                 "flex items-center justify-center gap-3 px-8 py-5 rounded-2xl font-black transition-all shadow-xl",
-                isRunning || ((mode === 'specific' || mode === 'replace') && !targetRegionId && !targetPointId)
+                isRunning || ((mode === 'specific' || mode === 'replace') && !targetRegionId && !targetZoneId && !targetAreaId && !targetPointId)
                   ? "bg-gray-100 text-gray-400 cursor-not-allowed shadow-none"
                   : "bg-slate-900 text-white hover:bg-slate-800 hover:scale-[1.02] active:scale-[0.98] shadow-slate-200"
               )}

@@ -1,5 +1,4 @@
-google-cloud-aiplatform>=1.10.0
-vertexai
+google-genai>=0.2.0
 jinja2
 pandas
 requests

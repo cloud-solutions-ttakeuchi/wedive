@@ -1,6 +1,19 @@
 # Changelog
 
 プロジェクトの変更履歴を記録します。
+## [2.1.4] - 2025-12-20
+### Updated
+- **Gemini 2.0 Flash Migration**:
+    - 全てのAIクレンジングエンジン（Python & Node.js）を **Gemini 2.0 Flash (`gemini-2.0-flash-001`)** にアップグレード。
+    - Python版パイプラインを最新の `google-genai` SDKへ移行し、安定性と保守性を向上。
+    - **Google Search Grounding (Web Search)**: 旧モデルの `googleSearchRetrieval` から、Gemini 2.0 対応の最新 `googleSearch` ツールへ刷新。
+- **Reliability & Performance**:
+    - **Explicit JSON Schema**: AI回答に対して強固なJSONスキーマを適用。Markdownコードブロックや不要な説明文の混入を排除し、解析エラーをゼロに。
+    - **Context Caching Support**: `google-genai` SDKによる Context Cache API の正式サポートを実装。
+- **Safety Guards (Cost Control)**:
+    - **Smart Throttling**: Cloud Functionsからの実行時、エリア・ゾーン単位のクレンジングには特定の「生物ID」の指定を必須化。不用意な全件検索によるコスト急増を防止。
+    - **Refined Default Scope**: 特定生物無指定時の検索範囲を上位5種に制限。
+
 ## [2.1.3] - 2025-12-19
 ### Added
 - **AI Data Cleansing System (Issue #49)**: 高精度な生物マッピング・管理システムの実装
