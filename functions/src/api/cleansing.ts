@@ -31,9 +31,8 @@ export const runDataCleansing = onCall({ region: "asia-northeast1", memory: "512
   const projectId = process.env.GCLOUD_PROJECT || process.env.VITE_FIREBASE_PROJECT_ID;
   const region = process.env.GCP_REGION || "asia-northeast1";
 
-  // Job name depends on the environment
-  const isStaging = projectId?.includes("-stg") || projectId?.includes("-dev");
-  const jobName = isStaging ? "cleansing-job-stg" : "cleansing-job-prod";
+  // Get Job name from environment variable (default: cleansing-job)
+  const jobName = process.env.CLEANSING_JOB_NAME || "cleansing-job";
 
   logger.info(`Triggering Cloud Run Job: ${jobName} in ${region} for Project: ${projectId}`);
 

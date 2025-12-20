@@ -152,11 +152,12 @@ gcloud auth configure-docker ${REGION}-docker.pkg.dev --project=${GOOGLE_CLOUD_P
 docker build -t ${REGION}-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/wedive-repo/cleansing-pipeline:latest -f docker/cleansing/Dockerfile .
 docker push ${REGION}-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/wedive-repo/cleansing-pipeline:latest
 
-# 3. ジョブの作成/更新
+# 4. ジョブの作成/更新
 gcloud run jobs deploy cleansing-job \
     --image ${REGION}-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/wedive-repo/cleansing-pipeline:latest \
     --project ${GOOGLE_CLOUD_PROJECT} \
-    --region ${REGION}
+    --region ${REGION} \
+    --set-env-vars "GCLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT},LOCATION=${REGION},LOG_LEVEL=debug"
 ```
 
 ## Security & Vulnerability Management
