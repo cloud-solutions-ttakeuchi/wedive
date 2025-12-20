@@ -27,6 +27,22 @@ React (Vite) + Firebase を用いたモダンなシングルページアプリ�
   - [Tailwind CSS](https://tailwindcss.com/) `v4.1.17`
   - [Lucide React](https://lucide.dev/) (Icons) `v0.555.0`
   - [Framer Motion](https://www.framer.com/motion/) (Animations) `v12.23.24`
+
+## Configuration & Feature Flags
+
+### Environment Variables (Functions)
+The following variables can be set in GitHub Actions Variables or Firebase Config to control application behavior:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `LOG_LEVEL` | アプリ全体のログ出力レベル制御。`debug` に設定すると、Vertex AI とのやり取りに関する詳細なログを出力します。 | `info` |
+| `LOCATION` | Vertex AI execution location (e.g. `us-central1`). | REQUIRED |
+| `AI_AGENT_LOCATION` | Specific location for the AI Agent (e.g. `us-central1`). | REQUIRED |
+| `GCP_REGION` | Infrastructure deployment region (e.g. `asia-northeast1`). | `asia-northeast1` |
+
+---
+
+## 🛠 Admin Operations
 - **Charts / Visualization**:
   - [Recharts](https://recharts.org/) `v3.5.1` (Depth Profile)
 - **Data Processing**:
