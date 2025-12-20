@@ -38,7 +38,7 @@ export const runDataCleansing = onCall({ region: "asia-northeast1", memory: "1Gi
   try {
     let points: any[] = [];
     let creatures: any[] = [];
-
+    //　Point/Area/Zone/Regionのいずれか指定
     // 2. Fetch Points based on Hierarchy
     if (pointId) {
       const p = await db.collection('points').doc(pointId).get();
@@ -78,6 +78,7 @@ export const runDataCleansing = onCall({ region: "asia-northeast1", memory: "1Gi
     }
 
     // 2b. Fetch Creatures with strict safety guard
+    // 生物を指定
     if (creatureId) {
       // Pinpoint search: Only this specific creature
       const c = await db.collection('creatures').doc(creatureId).get();
@@ -86,9 +87,10 @@ export const runDataCleansing = onCall({ region: "asia-northeast1", memory: "1Gi
       } else {
         throw new HttpsError("not-found", "Specified creature not found");
       }
-    } else {
+    } else { // 生物未指定
       // SAFETY GUARD: If pointId is NOT specified (meaning it's an area/zone/region wide search),
       // we REQUIRE a creatureId to be specified to avoid massive cross-product costs.
+      // 生物未指定　且つポイント未指定は許容しない
       if (!pointId) {
         logger.error(`Aborted: Massive cleansing attempted on area without specific creatureId.`);
         throw new HttpsError("invalid-argument", "Area-wide cleansing requires a specific creatureId to prevent excessive costs.");

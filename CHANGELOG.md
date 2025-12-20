@@ -2,6 +2,15 @@
 
 プロジェクトの変更履歴を記録します。
 ## [2.1.4] - 2025-12-20
+### Added
+- **Feature Flag System Enhancement**:
+    - AIクレンジングエンジンの詳細ログ出力を制御する `ENABLE_CLEANSING_DEBUG` フラグを導入。
+    - 環境変数による管理に移行し、ハードコードされたプロジェクトID判定を完全に排除。
+- **Testing & Documentation**:
+    - `tests/TEST_SCENARIOS_v2.1.4.md` シナリオテストを策定。
+    - `README.md` に各環境変数と Feature Flag の詳細仕様を追記。
+    - `.agent/rules.md` によるAgentの行動指針（憲法）を策定。
+
 ### Updated
 - **Gemini 2.0 Flash Migration**:
     - 全てのAIクレンジングエンジン（Python & Node.js）を **Gemini 2.0 Flash (`gemini-2.0-flash-001`)** にアップグレード。
