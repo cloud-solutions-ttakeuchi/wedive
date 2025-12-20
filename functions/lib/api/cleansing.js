@@ -26,9 +26,8 @@ exports.runDataCleansing = (0, https_1.onCall)({ region: "asia-northeast1", memo
     const { mode, pointId, creatureId, regionId, zoneId, areaId, limit } = data;
     const projectId = process.env.GCLOUD_PROJECT || process.env.VITE_FIREBASE_PROJECT_ID;
     const region = process.env.GCP_REGION || "asia-northeast1";
-    // Job name depends on the environment
-    const isStaging = projectId?.includes("-stg") || projectId?.includes("-dev");
-    const jobName = isStaging ? "cleansing-job-stg" : "cleansing-job-prod";
+    // Get Job name from environment variable (default: cleansing-job)
+    const jobName = process.env.CLEANSING_JOB_NAME || "cleansing-job";
     logger_1.logger.info(`Triggering Cloud Run Job: ${jobName} in ${region} for Project: ${projectId}`);
     // 2. Prepare Arguments for Python Script
     const args = [];
