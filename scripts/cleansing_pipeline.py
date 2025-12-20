@@ -1,3 +1,6 @@
+# Immediate startup log (bypassing logging config to ensure it's seen)
+print("🚀 Starting Cleansing Pipeline Script...", flush=True)
+
 import json
 import os
 import argparse
@@ -9,6 +12,7 @@ from google import genai
 from google.genai import types
 import firebase_admin
 from firebase_admin import credentials, firestore
+import sys
 
 # --- Logging Configuration ---
 log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
@@ -27,27 +31,34 @@ PROJECT_ID = (
 LOCATION = os.environ.get("LOCATION") or os.environ.get("AI_AGENT_LOCATION")
 
 if not PROJECT_ID:
-    logger.error("PROJECT_ID is not set. Please set VITE_FIREBASE_PROJECT_ID environment variable.")
-    exit(1)
+    print("❌ FATAL: PROJECT_ID is not set. Checked: GOOGLE_CLOUD_PROJECT, GCLOUD_PROJECT, VITE_FIREBASE_PROJECT_ID", flush=True)
+    sys.exit(1)
 
 if not LOCATION:
-    logger.error("LOCATION is not set. Please set LOCATION environment variable (e.g. us-central1).")
-    exit(1)
+    print("❌ FATAL: LOCATION is not set. Checked: LOCATION, AI_AGENT_LOCATION", flush=True)
+    sys.exit(1)
+
+print(f"ℹ️ Configured with PROJECT_ID={PROJECT_ID}, LOCATION={LOCATION}, LOG_LEVEL={log_level}", flush=True)
 
 class CleansingPipeline:
     def __init__(self):
         self.model_name = "gemini-2.0-flash-001"
+        # Use us-central1 as default for AI if not specified,
+        # as gemini-2.0-flash and caching are more likely to be available there.
+        self.ai_location = os.environ.get("AI_LOCATION") or "us-central1"
+        self.project_id = PROJECT_ID
+
+        logger.info(f"🤖 Initializing GenAI Client (AI_LOCATION={self.ai_location})")
         self.client = genai.Client(
             vertexai=True,
-            project=PROJECT_ID,
-            location=LOCATION
+            project=self.project_id,
+            location=self.ai_location
         )
         self.cache = None
 
         # Initialize Firestore
         if not firebase_admin._apps:
-            cred = credentials.ApplicationDefault()
-            firebase_admin.initialize_app(cred, {'projectId': PROJECT_ID})
+            firebase_admin.initialize_app(options={'projectId': PROJECT_ID})
         self.db = firestore.client()
 
     def load_data(self, filters: Dict[str, Any]):
@@ -97,8 +108,25 @@ class CleansingPipeline:
             )
             logger.info(f"✅ Context Cache created: {self.cache.name}")
         except Exception as e:
-            logger.error(f"❌ Failed to create cache: {e}")
-            raise
+            logger.warning(f"⚠️ Context Caching not available or failed: {e}. Proceeding without cache (higher token cost).")
+            self.cache = None
+
+    def _safe_json_parse(self, text: str):
+        """Clean and parse JSON from AI response."""
+        try:
+            # Remove Markdown code blocks if present
+            clean_text = text.strip()
+            if clean_text.startswith("```"):
+                lines = clean_text.splitlines()
+                if lines[0].startswith("```json"):
+                    clean_text = "\n".join(lines[1:-1])
+                else:
+                    clean_text = "\n".join(lines[1:-1])
+
+            return json.loads(clean_text)
+        except Exception as e:
+            logger.error(f"Failed to parse JSON: {e}\nRaw Text: {text}")
+            return None
 
     def run_stage1_batch(self, point) -> List[Dict[str, Any]]:
         """Stage 1: Batch physical constraint filtering via Cache."""
@@ -117,6 +145,11 @@ class CleansingPipeline:
             }
         }
 
+        # Incorporate filters into instructions to focus the AI
+        filter_instr = ""
+        if point.get('specific_creature_name'):
+             filter_instr = f"- 特に「{point['specific_creature_name']}」に注目して重点的に判定してください。"
+
         prompt = f"""
         ダイビングポイント「{point['name']}」の条件に基づき、生息可能な生物をキャッシュ内の辞書から抽出してください。
         ポイント水深: {point.get('maxDepth', 40)}m
@@ -124,24 +157,29 @@ class CleansingPipeline:
 
         【指示】
         - 生息の可能性がある生物（is_possible=true）を抽出してください。
+        {filter_instr}
         - 期待される希少度(rarity)、確信度(confidence: 0.0-1.0)、理由(reasoning)を含めてください。
-        - 出力は必ず定義されたスキーマに従ったJSON配列形式で行ってください。
+        - 出力形式は純粋なJSON配列のみとし、説明文などは一切含めないでください。
         """
 
         logger.debug(f"Stage 1 Prompt for {point['name']}: {prompt}")
         try:
+            config = types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=response_schema,
+            )
+            # Use cache only if available
+            if self.cache:
+                config.cached_content = self.cache.name
+
             response = self.client.models.generate_content(
                 model=self.model_name,
                 contents=prompt,
-                config=types.GenerateContentConfig(
-                    cached_content=self.cache.name,
-                    response_mime_type="application/json",
-                    response_schema=response_schema,
-                )
+                config=config
             )
             text = getattr(response, 'text', '') or response.candidates[0].content.parts[0].text
-            logger.debug(f"Stage 1 Raw Response: {text}")
-            return json.loads(text)
+            result = self._safe_json_parse(text)
+            return result if isinstance(result, list) else []
         except Exception as e:
             logger.warning(f"⚠️ Stage 1 Error for {point['name']}: {e}")
             return []
@@ -176,8 +214,8 @@ class CleansingPipeline:
                 )
             )
             text = getattr(response, 'text', '') or response.candidates[0].content.parts[0].text
-            logger.debug(f"Stage 2 Raw Response: {text}")
-            return json.loads(text)
+            result = self._safe_json_parse(text)
+            return result if isinstance(result, dict) else {"actual_existence": False, "evidence": "Parse Error", "rarity": "Unknown"}
         except Exception as e:
             logger.warning(f"⚠️ Stage 2 Error for {creature['name']}: {e}")
             return {"actual_existence": False, "evidence": str(e), "rarity": "Unknown"}
@@ -190,6 +228,13 @@ class CleansingPipeline:
         for p in self.points:
             if processed_count >= limit: break
             logger.info(f"🔎 Processing Point: {p['name']} ({p['id']})")
+
+            # Add target creature name to point info for Stage 1 focus
+            p['specific_creature_name'] = None
+            if filters.get('creatureId'):
+                creature = next((c for c in self.creatures if c['id'] == filters['creatureId']), None)
+                if creature:
+                    p['specific_creature_name'] = creature['name']
 
             s1_results = self.run_stage1_batch(p)
 
@@ -247,7 +292,7 @@ class CleansingPipeline:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="WeDive AI Cleansing Pipeline (Bulk / Specific)")
-    parser.add_argument("--mode", choices=["all", "new"], default="new", help="all: full scan, new: skip existing")
+    parser.add_argument("--mode", choices=["all", "new", "specific", "replace"], default="new", help="all: full scan, new: skip existing, specific: targeted scan, replace: overwrite specific")
     parser.add_argument("--limit", type=int, default=100000, help="Maximum number of mappings to process")
     parser.add_argument("--pointId", help="Target a specific point")
     parser.add_argument("--creatureId", help="Target a specific creature")
