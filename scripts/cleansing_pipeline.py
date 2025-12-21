@@ -188,15 +188,29 @@ class CleansingPipeline:
              filter_instr = "- ポイントの環境に合致する生物をリストから漏れなく抽出してください。"
 
         prompt = f"""
-        ダイビングポイント「{point['name']}」の条件に基づき、対象生物が生息可能か、キャッシュ内の辞書から抽出してください。
-        ポイント水深: {point.get('maxDepth', 40)}m
-        地形: {json.dumps(point.get('topography', []))}
+        あなたは海洋生物学者です。ダイビングポイント「{point['name']}」の環境条件に基づき、提供された生物リストの中から生息可能なものを【IDを正確に保持したまま】抽出してください。
+
+        【ポイント情報】
+        - 名前: {point['name']}
+        - 最大水深: {point.get('maxDepth', 40)}m
+        - 地形: {json.dumps(point.get('topography', []))}
 
         【指示】
         {filter_instr}
-        - 生息可能（is_possible=true）な場合にJSONに含めてください。
+        - キャッシュされた生物リストにある「ID」を一切変更せず、そのまま使用してください（例：c12345）。
+        - 生息可能（is_possible=true）な生物のみをリストアップしてください。
         - 期待される希少度(rarity)、確信度(confidence: 0.0-1.0)、理由(reasoning)を含めてください。
-        - 出力形式は純粋なJSON配列のみとし、説明文などは一切含めないでください。
+        - 出力形式は以下のJSON配列のみとし、それ以外のテキスト（Markdownの装飾等）は含めないでください。
+
+        [
+          {{
+            "creature_id": "c12345",
+            "is_possible": true,
+            "rarity": "Common",
+            "confidence": 0.9,
+            "reasoning": "〇〇は浅瀬の岩場に生息するため、このポイントに適しています。"
+          }}
+        ]
         """
 
         logger.debug(f"Stage 1 Prompt for {point['name']}: {prompt}")
@@ -283,11 +297,23 @@ class CleansingPipeline:
                         p['specific_creature_name'] = creature['name']
 
                 s1_results = self.run_stage1_batch(p)
+                if not s1_results:
+                    logger.warning(f"  ⚠️ Stage 1 returned 0 results for {p['name']}.")
+                    continue
+
+                possible_count = sum(1 for r in s1_results if r.get("is_possible"))
+                logger.info(f"  ✅ Stage 1: {len(s1_results)} checked, {possible_count} potentially possible.")
 
                 for res in s1_results:
                     if processed_count >= limit: break
                     creature_id = res.get("creature_id")
-                    if not res.get("is_possible") or not creature_id: continue
+
+                    if not res.get("is_possible"):
+                        logger.debug(f"  ❌ Skipping: {creature_id} (not possible according to AI)")
+                        continue
+
+                    if not creature_id:
+                        raise ValueError(f"AI returned an empty creature_id for point {p['name']}")
 
                     # Optional: pinpoint creature filter
                     if filters.get('creatureId') and creature_id != filters['creatureId']:
@@ -303,11 +329,12 @@ class CleansingPipeline:
                             continue
 
                     creature = next((c for c in self.creatures if c['id'] == creature_id), None)
-                    if not creature: continue
+                    if not creature:
+                        raise ValueError(f"Creature ID '{creature_id}' returned by AI was NOT found in the biological dictionary. AI may be hallucinating IDs.")
 
                     # Stage 2: Fact-check with Grounding (Only if Stage 1 is unsure)
                     if res.get("confidence", 0) >= 0.85:
-                        logger.info(f"  ✨ AI is confident ({res.get('confidence')}). Saving without search.")
+                        logger.info(f"  ✨ AI is confident ({res.get('confidence')}) for {creature['name']}. Saving without search.")
                         s2 = {
                             "actual_existence": True,
                             "evidence": res.get("reasoning"),
@@ -337,7 +364,7 @@ class CleansingPipeline:
                     }
 
                     self.db.collection('point_creatures').document(key).set(new_entry)
-                    logger.info(f"  🚀 Saved: {creature['name']} -> {status}")
+                    logger.info(f"  🚀 [STORED] key={key} | {creature['name']} ({creature_id}) -> status:{status}")
                     processed_count += 1
 
                     # Small sleep to be nice to API quotas (adjust as needed)

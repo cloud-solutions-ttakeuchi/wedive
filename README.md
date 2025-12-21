@@ -3,7 +3,17 @@
 ダイビングログと生物図鑑を統合した「Diving Dex App」のソースコードリポジトリです。
 React (Vite) + Firebase を用いたモダンなシングルページアプリケーション (SPA) として構築されています。
 
-## Architecture & Tech Stack
+## Technical Documentation
+
+プロジェクトの技術仕様および運用ルールに関するドキュメントです。開発・修正前に必ず一読してください。
+
+- **[DATABASE_DESIGN.md](./DATABASE_DESIGN.md)**: Firestoreデータ構造・ID命名規則（**最重要**）
+- **[INFRASTRUCTURE.md](./INFRASTRUCTURE.md)**: システム構成・インフラ・CI/CD
+- **[FUNCTIONALITY.md](./FUNCTIONALITY.md)**: 主要機能一覧・ユーザー体験・AIフロー
+- **[admin_manual.md](./admin_manual.md)**: 管理者向け操作マニュアル（AIパイプライン詳細）
+- **[design_and_specs.md](./design_and_specs.md)**: 全体設計書・UI/UX仕様
+
+## 1. Architecture & Tech Stack
 
 本プロジェクトのアーキテクチャと採用技術、および主要なライブラリのバージョンは以下の通りです。
 （※2025年12月現在）
