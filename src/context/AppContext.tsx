@@ -408,18 +408,26 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const addCreatureProposal = async (data: any) => {
     if (!isAuthenticated) return;
-    await setDoc(doc(firestore, 'creature_proposals', `prop_c_${Date.now()}`), { ...data, status: 'pending', submitterId: currentUser.id, createdAt: new Date().toISOString() });
+    await setDoc(doc(firestore, 'creature_proposals', `propc${Date.now()}`), { ...data, status: 'pending', submitterId: currentUser.id, createdAt: new Date().toISOString() });
   };
 
   const addPointProposal = async (data: any) => {
     if (!isAuthenticated) return;
-    await setDoc(doc(firestore, 'point_proposals', `prop_p_${Date.now()}`), { ...data, status: 'pending', submitterId: currentUser.id, createdAt: new Date().toISOString() });
+    await setDoc(doc(firestore, 'point_proposals', `propp${Date.now()}`), { ...data, status: 'pending', submitterId: currentUser.id, createdAt: new Date().toISOString() });
   };
 
   const approveProposal = async (type: 'creature' | 'point', id: string, data: any, submitterId: string) => {
     const targetCol = type === 'creature' ? 'creatures' : 'points';
-    const realId = `${type === 'creature' ? 'c' : 'p'}${Date.now()}`;
-    await setDoc(doc(firestore, targetCol, realId), { ...data, id: realId, status: 'approved' });
+
+    // If it's an update, data may have targetId. If new, generate realId.
+    const realId = data.targetId || (data.id && !data.id.startsWith('prop') ? data.id : `${type === 'creature' ? 'c' : 'p'}${Date.now()}`);
+
+    // For Point, ensure we are not losing hierarchy IDs during approval
+    const finalData = { ...data, id: realId, status: 'approved' };
+    delete finalData.targetId;
+    delete finalData.proposalType;
+
+    await setDoc(doc(firestore, targetCol, realId), sanitizePayload(finalData));
     await updateDoc(doc(firestore, type === 'creature' ? 'creature_proposals' : 'point_proposals', id), { status: 'approved' });
   };
 

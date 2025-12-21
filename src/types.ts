@@ -15,13 +15,16 @@ export interface Area {
   id: string;
   name: string;
   zoneId: string;
+  regionId: string;
   description?: string;
 }
 
 export interface Point {
   id: string;
   name: string;
-  areaId: string; // Keep for existing logic
+  areaId: string;
+  zoneId: string;
+  regionId: string;
 
   // Hierarchy (Search/Filter)
   region: string;

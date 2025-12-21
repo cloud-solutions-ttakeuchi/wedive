@@ -111,7 +111,6 @@ export const HierarchicalPointSelector: React.FC<HierarchicalPointSelectorProps>
   };
 
   // Filtered Options Logic
-  // If parent is selected, filter children. If not, show ALL options to allow reverse selection.
   const visibleZones = useMemo(
     () => selectedRegionId
       ? zones.filter((z: { regionId: string }) => z.regionId === selectedRegionId)
@@ -120,15 +119,14 @@ export const HierarchicalPointSelector: React.FC<HierarchicalPointSelectorProps>
   );
 
   const visibleAreas = useMemo(
-    () => selectedZoneId
-      ? areas.filter((a: { zoneId: string }) => a.zoneId === selectedZoneId)
-      : selectedRegionId // If only region selected, show all areas in that region? Or all areas?
-        ? areas.filter((a: { zoneId: string }) => {
-          const z = zones.find((zone: { id: string }) => zone.id === a.zoneId);
-          return z?.regionId === selectedRegionId;
-        })
-        : areas,
-    [areas, selectedZoneId, selectedRegionId, zones]
+    () => selectedAreaId && !selectedZoneId // Fallback for reverse lookup if needed
+      ? areas
+      : selectedZoneId
+        ? areas.filter((a: { zoneId: string }) => a.zoneId === selectedZoneId)
+        : selectedRegionId
+          ? areas.filter((a: { regionId: string }) => a.regionId === selectedRegionId)
+          : areas,
+    [areas, selectedZoneId, selectedRegionId]
   );
 
   const visiblePoints = useMemo(() => {
@@ -136,16 +134,13 @@ export const HierarchicalPointSelector: React.FC<HierarchicalPointSelectorProps>
       return points.filter((p: { areaId: string }) => p.areaId === selectedAreaId);
     }
     if (selectedZoneId) {
-      const areaIdsInZone = areas.filter((a: { zoneId: string }) => a.zoneId === selectedZoneId).map((a: { id: string }) => a.id);
-      return points.filter((p: { areaId: string }) => areaIdsInZone.includes(p.areaId));
+      return points.filter((p: { zoneId: string }) => p.zoneId === selectedZoneId);
     }
     if (selectedRegionId) {
-      const zoneIdsInRegion = zones.filter((z: { regionId: string }) => z.regionId === selectedRegionId).map((z: { id: string }) => z.id);
-      const areaIdsInRegion = areas.filter((a: { zoneId: string }) => zoneIdsInRegion.includes(a.zoneId)).map((a: { id: string }) => a.id);
-      return points.filter((p: { areaId: string }) => areaIdsInRegion.includes(p.areaId));
+      return points.filter((p: { regionId: string }) => p.regionId === selectedRegionId);
     }
-    return points; // Return all points if nothing selected (Reverse Lookup)
-  }, [points, selectedAreaId, selectedZoneId, selectedRegionId, areas, zones]);
+    return points;
+  }, [points, selectedAreaId, selectedZoneId, selectedRegionId]);
 
   return (
     <div className={clsx("space-y-3", className)}>

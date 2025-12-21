@@ -85,23 +85,13 @@ class CleansingPipeline:
 
         self.points = []
         for p in raw_points:
-            # Higher-level filters check
+            # Direct hierarchy filters check
             if filters.get('area') and p.get('areaId') != filters['area']:
                 continue
-
-            if filters.get('zone'):
-                area = areas_dict.get(p.get('areaId'))
-                if not area or area.get('zoneId') != filters['zone']:
-                    continue
-
-            if filters.get('region'):
-                area = areas_dict.get(p.get('areaId'))
-                if area:
-                    zone = zones_dict.get(area.get('zoneId'))
-                    if not zone or zone.get('regionId') != filters['region']:
-                        continue
-                else:
-                    continue
+            if filters.get('zone') and p.get('zoneId') != filters['zone']:
+                continue
+            if filters.get('region') and p.get('regionId') != filters['region']:
+                continue
 
             self.points.append(p)
 
