@@ -87,7 +87,43 @@
 
 ---
 
-## 4. システム仕様・UX
+## 4. 開発者・管理者向けのメンテナンスツール (CLI)
+
+システムの整合性維持とデータ拡充のため、以下の CLI ツール群が提供されています。これらは主に `scripts/` ディレクトリに配置されています。
+
+### 4.1 データ拡充・クレンジング (AI/外部連携)
+- **AI クレンジングパイプライン (`scripts/cleansing_pipeline.py`)**:
+    - **ふるまい**: 指定された範囲（地域・地点・生物）に対して Vertex AI (Gemini) を呼び出し、生態学的妥当性と目撃実績（Google Search）を検証します。
+    - **使い方**: `python scripts/cleansing_pipeline.py --region "沖縄"`
+    - **コレクションへの影響**: Firestore の `point_creatures` に新たな紐付け案（`status: 'pending'`）を作成、または既存の不正確なデータを `rejected` に変更します。
+- **生物画像取得スクリプト (`scripts/creatures/fetch_creature_images.py`)**:
+    - **ふるまい**: Wikipedia API を使用して、生物名（和名・英名・学名）に合致する画像URLとクレジットを取得します。
+    - **使い方**: `python scripts/creatures/fetch_creature_images.py`
+    - **コレクションへの影響**: **ローカル**の `src/data/creatures_seed.json` を更新します。画像未設定の生物に `imageUrl`, `imageCredit`, `imageLicense` が付与されます。
+- **生物データ自動補完 (`scripts/creatures/fill_prepare_data.py`)**:
+    - **ふるまい**: AI を使用して、生物の平均サイズ、水温範囲、タグ、ステータス（Stats）などの欠落情報を補完します。
+    - **使い方**: `python scripts/creatures/fill_prepare_data.py`
+    - **コレクションへの影響**: **ローカル**の `creatures_prepare.json` または `creatures_seed.json` を更新します。
+
+### 4.2 階層データ生成・管理
+- **場所データ階層生成 (`scripts/locations/generate_*.py`)**:
+    - **ふるまい**: `generate_zones`, `generate_areas`, `generate_points` の順に実行し、Gemini を用いて特定の地域のダイビングスポット階層を自動生成します。
+    - **使い方**: `python scripts/locations/generate_zones.py --mode append`
+    - **コレクションへの影響**: **ローカル**の `locations_seed.json` を更新します。
+- **ID規則正規化ツール (`scripts/reformat_point_creatures.py`)**:
+    - **ふるまい**: 既存のシードデータ内にある ID からアンダースコアを除去し、システム全体の新しい ID 命名規則に適合させます。
+    - **使い方**: `python scripts/reformat_point_creatures.py`
+    - **コレクションへの影響**: **ローカル**の `point_creatures_seed.json` の `pointId`, `creatureId`, `id` をリフォーマットします。
+
+### 4.3 データベース・メンテナンス
+- **DBメンテナスクリーアップ (`scripts/cleanup_old_mappings.py`)**:
+    - **ふるまい**: ID 規則に違反したゴミデータや、古いロジックで作成された重複・不要な紐付けデータを一括削除します。
+    - **使い方**: `python scripts/cleanup_old_mappings.py --project [PROJECT_ID] --trash-only --execute`
+    - **コレクションへの影響**: Firestore の `point_creatures` コレクションから、条件に合致するドキュメントを**物理削除**します。
+
+---
+
+## 5. システム仕様・UX
 - **利用規約・プライバシー (`/terms`, `/privacy`)** (参照: `users`): バージョン管理された同意フロー。
 - **イメージ・フォールバック** (参照: なし): 画像未登録時にカテゴリ（魚、ウミウシ等）別のデフォルト画像を表示。
 - **データ整合性** (参照: 全コレクション): `DATABASE_DESIGN.md` に定義された厳格な ID 規則の適用。

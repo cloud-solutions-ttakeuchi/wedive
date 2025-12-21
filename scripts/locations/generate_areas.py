@@ -225,7 +225,7 @@ def main():
         for i, new_a in enumerate(new_areas):
             if new_a["name"] not in existing_area_names:
                 name_hash = hashlib.md5(new_a['name'].encode()).hexdigest()[:6]
-                new_a["id"] = f"a_{int(time.time())}_{name_hash}"
+                new_a["id"] = f"a{int(time.time())}{name_hash}"
                 existing_areas.append(new_a)
                 print(f"    + Added Area: {new_a['name']}")
                 produced_areas_list.append({"region": region_name, "zone": zone_name, "area": new_a["name"]})
