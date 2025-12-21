@@ -37,7 +37,6 @@ export const CleansingDashboard = () => {
   const [pointSearch, setPointSearch] = useState('');
   const [creatureSearch, setCreatureSearch] = useState('');
 
-  const [progress, setProgress] = useState(0);
 
   // Stats calculation
   const stats = useMemo<DashboardStats>(() => {
@@ -129,7 +128,6 @@ AIによるクレンジングを開始します。よろしいですか？`;
     if (!window.confirm(confirmMsg)) return;
 
     setIsRunning(true);
-    setProgress(5);
 
     try {
       const { auth } = await import('../../../lib/firebase');
@@ -162,7 +160,6 @@ AIによるクレンジングを開始します。よろしいですか？`;
       alert('エラーが発生しました。');
     } finally {
       setIsRunning(false);
-      setProgress(0);
     }
   };
 

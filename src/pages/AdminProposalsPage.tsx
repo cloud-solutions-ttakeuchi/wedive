@@ -80,7 +80,7 @@ export const AdminProposalsPage = () => {
     const action = item.proposalType === 'update' ? '変更を承認' : '新規登録を承認';
     if (!window.confirm(`${action}してもよろしいですか？`)) return;
     setProcessingId(item.id);
-    await approveProposal(type, item.id, item, item.submitterId);
+    await approveProposal(type, item.id, item);
     setProcessingId(null);
   };
 

@@ -71,7 +71,7 @@ export class CleansingEngine {
           提供された生物リストの生態に基づき、特定のダイビングポイントに生息可能か、または実際に目撃例があるかを判断します。
 
           【生物辞書データ】
-          ${creatures.map((c, i) => `ID:${c.id} - ${c.name}: ${c.description} (生息水深:${JSON.stringify(c.depthRange)})`).join('\n')}
+          ${creatures.map((c) => `ID:${c.id} - ${c.name}: ${c.description} (生息水深:${JSON.stringify(c.depthRange)})`).join('\n')}
 
           指示:
           1. 地形・水深・潮流の物理的制約を最優先に考慮してください。

@@ -2,8 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, Send, Bot, User, Loader2, MapPin, Anchor, Sparkles } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { httpsCallable } from 'firebase/functions';
-import { functions, auth, remoteConfig } from '../lib/firebase';
+import { auth, remoteConfig } from '../lib/firebase';
 import { getBoolean } from 'firebase/remote-config';
 import clsx from 'clsx';
 
@@ -19,7 +18,7 @@ interface Message {
 }
 
 export const ConciergePage = () => {
-  const { points, isAuthenticated, currentUser } = useApp();
+  const { isAuthenticated, currentUser } = useApp();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',

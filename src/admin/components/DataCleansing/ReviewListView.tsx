@@ -1,26 +1,17 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../../../context/AppContext';
 import {
-  CheckCircle,
-  XCircle,
-  ArrowRight,
   Fish,
   MapPin,
   ChevronDown,
-  ChevronUp,
-  ExternalLink,
   ShieldCheck,
-  AlertCircle,
-  ThumbsUp,
-  ThumbsDown,
-  MoreVertical,
   Check,
   X,
   Layers,
   Trash2
 } from 'lucide-react';
 import clsx from 'clsx';
-import { collection, writeBatch, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { writeBatch, doc } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
 import type { PointCreature, Point, Creature } from '../../../types';
 

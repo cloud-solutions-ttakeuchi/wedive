@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { ArrowLeft, Camera, Info } from 'lucide-react';
+import { ArrowLeft, Camera, Info, Sparkles } from 'lucide-react';
 import { compressImage } from '../utils/imageUtils';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../lib/firebase';
 
 const initialState = {
   name: '',
@@ -55,6 +57,39 @@ export const ProposeCreaturePage = () => {
     }
   };
 
+  const handleAutoFillImage = async () => {
+    if (!formData.name && !formData.scientificName) {
+      alert('生物名または学名を入力してください。');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const searchFn = httpsCallable(functions, 'searchCreatureImage');
+      // Try scientific name first, then common name
+      const query = formData.scientificName || formData.name;
+      const result = await searchFn({ query, lang: 'ja' });
+      const data = result.data as any;
+
+      if (data.imageUrl) {
+        setImagePreview(data.imageUrl);
+        setFormData(prev => ({
+          ...prev,
+          imageUrl: data.imageUrl,
+          imageCredit: data.imageCredit,
+          imageLicense: data.imageLicense
+        }));
+      } else {
+        alert('Wikipediaで画像が見つかりませんでした。');
+      }
+    } catch (error) {
+      console.error('Search failed:', error);
+      alert('検索に失敗しました。');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -71,7 +106,7 @@ export const ProposeCreaturePage = () => {
         category: formData.category,
         description: formData.description,
         rarity: formData.rarity as any,
-        imageUrl: base64Image || '/images/no-image.png',
+        imageUrl: base64Image || formData.imageUrl || '/images/no-image-creature.png',
         tags: formData.tagsInput ? formData.tagsInput.split(',').map((t: string) => t.trim()).filter(Boolean) : [],
         depthRange: {
           min: Number(formData.depthMin),
@@ -149,6 +184,18 @@ export const ProposeCreaturePage = () => {
               />
             </div>
 
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleAutoFillImage}
+                disabled={loading || (!formData.name && !formData.scientificName)}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all disabled:opacity-50"
+              >
+                <Sparkles size={16} />
+                Wikipediaから画像を探す
+              </button>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">カテゴリー</label>
@@ -210,6 +257,33 @@ export const ProposeCreaturePage = () => {
                 <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
               </label>
             </div>
+
+            {(formData.imageUrl || imagePreview) && (
+              <div className="grid grid-cols-2 gap-4 mt-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">画像クレジット</label>
+                  <input
+                    type="text"
+                    name="imageCredit"
+                    value={formData.imageCredit}
+                    onChange={handleChange}
+                    className="w-full px-3 py-1.5 text-xs rounded border border-gray-200 outline-none"
+                    placeholder="例: Wikipedia"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">ライセンス</label>
+                  <input
+                    type="text"
+                    name="imageLicense"
+                    value={formData.imageLicense}
+                    onChange={handleChange}
+                    className="w-full px-3 py-1.5 text-xs rounded border border-gray-200 outline-none"
+                    placeholder="例: CC BY-SA"
+                  />
+                </div>
+              </div>
+            )}
           </section>
 
           <button

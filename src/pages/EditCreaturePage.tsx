@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { ChevronLeft, Upload, Info, MapPin, Thermometer, Ruler } from 'lucide-react';
+import { ChevronLeft, Upload, Info, MapPin, Thermometer, Ruler, Sparkles } from 'lucide-react';
 import clsx from 'clsx';
 import type { Creature } from '../types';
 import { compressImage } from '../utils/imageUtils';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../lib/firebase';
 
 export const EditCreaturePage = () => {
   const { id } = useParams<{ id: string }>();
@@ -186,6 +188,30 @@ export const EditCreaturePage = () => {
     }
   };
 
+  const handleAutoFillImage = async () => {
+    if (!formData.name?.trim() && !formData.scientificName?.trim()) return;
+    try {
+      const searchFn = httpsCallable(functions, 'searchCreatureImage');
+      const query = formData.scientificName || formData.name;
+      const result = await searchFn({ query, lang: 'ja' });
+      const data = result.data as any;
+
+      if (data.imageUrl) {
+        setFormData(prev => ({
+          ...prev,
+          imageUrl: data.imageUrl,
+          imageCredit: data.imageCredit,
+          imageLicense: data.imageLicense
+        }));
+      } else {
+        alert('Wikipediaで画像が見つかりませんでした。');
+      }
+    } catch (error) {
+      console.error("Image search failed:", error);
+      alert("画像の自動取得に失敗しました。");
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -238,6 +264,18 @@ export const EditCreaturePage = () => {
                     placeholder="例: Amphiprioninae"
                   />
                 </div>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleAutoFillImage}
+                  disabled={!formData.name?.trim() && !formData.scientificName?.trim()}
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all disabled:opacity-50"
+                >
+                  <Sparkles size={16} />
+                  Wikipediaから画像を探す
+                </button>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -511,6 +549,35 @@ export const EditCreaturePage = () => {
                     </div>
                   )}
                 </div>
+
+                {formData.imageUrl && !formData.imageUrl.startsWith('/images/') && (
+                  <div className="mt-4 space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">画像クレジット</label>
+                        <input
+                          type="text"
+                          name="imageCredit"
+                          value={formData.imageCredit || ''}
+                          onChange={handleChange}
+                          className="w-full px-3 py-1.5 text-xs rounded border border-gray-200 outline-none"
+                          placeholder="例: Wikipedia"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">ライセンス</label>
+                        <input
+                          type="text"
+                          name="imageLicense"
+                          value={formData.imageLicense || ''}
+                          onChange={handleChange}
+                          className="w-full px-3 py-1.5 text-xs rounded border border-gray-200 outline-none"
+                          placeholder="例: CC BY-SA"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </section>
