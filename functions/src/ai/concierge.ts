@@ -49,7 +49,7 @@ export const getConciergeResponse = onCall({
   // --- History Normalization (Important for Context) ---
   const normalizedHistory = historyInput.map((m: any) => {
     // Normalize roles to 'user' or 'model' (Vertex AI requirement)
-    let role = m.role?.toLowerCase() === "assistant" || m.role?.toLowerCase() === "ai" ? "model" : "user";
+    const role = m.role?.toLowerCase() === "assistant" || m.role?.toLowerCase() === "ai" ? "model" : "user";
     if (m.role?.toLowerCase() === "system") return null; // System should be in systemInstruction
 
     // Ensure parts are in the correct format
