@@ -21,9 +21,6 @@ export const getConciergeResponse = onCall({
   const query = data.query;
   if (!query) throw new Error("missing-query");
 
-  const sessionId = data.sessionId;
-  let historyInput = data.history || [];
-
   // --- Feature Flags and Configuration ---
   const useVertexSearch = process.env.USE_VERTEX_AI_SEARCH === "true";
   const dataStoreIds = process.env.VERTEX_AI_CONCIERGE_DATA_STORE_IDS;
@@ -34,16 +31,25 @@ export const getConciergeResponse = onCall({
     location: "us-central1"
   });
 
-  // --- Session Management (Restore History if sessionId provided) ---
-  if (sessionId && historyInput.length === 0) {
-    try {
-      const sessionDoc = await db.collection("concierge_sessions").doc(sessionId).get();
-      if (sessionDoc.exists) {
-        historyInput = sessionDoc.data()?.messages || [];
+  let sessionId = data.sessionId;
+  let historyInput = data.history || [];
+
+  // --- Session Management (Restore or Initialize) ---
+  if (sessionId) {
+    if (historyInput.length === 0) {
+      try {
+        const sessionDoc = await db.collection("concierge_sessions").doc(sessionId).get();
+        if (sessionDoc.exists) {
+          historyInput = sessionDoc.data()?.messages || [];
+        }
+      } catch (e) {
+        logger.warn(`[Concierge] Failed to restore session ${sessionId}:`, e);
       }
-    } catch (e) {
-      logger.warn(`[Concierge] Failed to restore session ${sessionId}:`, e);
     }
+  } else {
+    // Generate a new session ID if none provided
+    sessionId = db.collection("concierge_sessions").doc().id;
+    logger.info(`[Concierge] Starting new session: ${sessionId}`);
   }
 
   // --- History Normalization (Important for Context) ---
