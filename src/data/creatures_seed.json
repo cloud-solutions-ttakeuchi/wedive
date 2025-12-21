@@ -10,7 +10,7 @@
       "p1765982467666"
     ],
     "scientificName": "Carangoides gymnostethus",
-    "imageUrl": "/images/reef_fish.png",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/2/26/Bludger_trevally_Darwin.jpg",
     "id": "c1766118630864",
     "stats": {
       "danger": 10,
@@ -41,7 +41,9 @@
       "体側の暗色斑は不明瞭",
       "体は銀色で光沢がある"
     ],
-    "rarity": "Common"
+    "rarity": "Common",
+    "imageCredit": "Wikipedia (en)",
+    "imageLicense": "CC BY-SA"
   },
   {
     "stats": {
@@ -68,7 +70,7 @@
       "autumn",
       "winter"
     ],
-    "imageUrl": "/images/reef_fish.png",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/9/91/Heterodontus_japonicus_port_of_nagoya.jpg",
     "specialAttributes": [
       "螺旋状の卵殻",
       "猫のような顔つき",
@@ -80,11 +82,13 @@
     "rarity": "Common",
     "scientificName": "Heterodontus japonicus",
     "description": "ネコザメは、日本沿岸を含む西太平洋に生息する小型のサメです。名前の由来は、猫のような愛らしい顔つきをしているため。ダイビング中には、岩陰や海底でじっとしている姿をよく見かけられます。夜行性のため、昼間はあまり活発ではありません。見分けるポイントは、体全体に散らばる茶褐色の斑点模様と、背びれにある太い棘。おとなしい性格なので、近づいても危害を加えることはほとんどありませんが、驚かせないように注意しましょう。海底で甲殻類や貝類などを捕食する様子も観察できます。特徴的な螺旋状の卵殻は、海藻などに産み付けられ、やがて可愛い赤ちゃんザメが生まれます。全長約1m。",
-    "submitterId": "current_user"
+    "submitterId": "current_user",
+    "imageCredit": "Wikipedia (en)",
+    "imageLicense": "CC BY-SA"
   },
   {
     "size": "最大2メートル",
-    "imageUrl": "/images/reef_fish.png",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/e/eb/Barracuda_laban.jpg",
     "status": "pending",
     "waterTempRange": {
       "min": 20,
@@ -118,7 +122,9 @@
       "鋭い歯",
       "高速遊泳"
     ],
-    "scientificName": "Sphyraena barracuda"
+    "scientificName": "Sphyraena barracuda",
+    "imageCredit": "Wikipedia (en)",
+    "imageLicense": "CC BY-SA"
   },
   {
     "imageCredit": "Wikipedia (en)",
@@ -200,7 +206,8 @@
       "min": 3
     },
     "imageLicense": "CC BY-SA",
-    "imageCredit": "Wikipedia (en)"
+    "imageCredit": "Wikipedia (en)",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/d/dd/PtereleotrisEvidesRLS.jpg"
   },
   {
     "imageLicense": "CC BY-SA",
@@ -286,7 +293,8 @@
       "lifespan": 58,
       "danger": 10,
       "size": 50
-    }
+    },
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/7/71/Hippocampus_hystrix_%28Spiny_seahorse%29.jpg"
   },
   {
     "status": "approved",
@@ -327,7 +335,8 @@
     "depthRange": {
       "min": 3,
       "max": 30
-    }
+    },
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/2/21/Bep_chaetodon_ornatissimus.jpg"
   },
   {
     "stats": {
@@ -413,7 +422,8 @@
     ],
     "scientificName": "Balistapus undulatus",
     "englishName": "Orange-lined Triggerfish",
-    "imageCredit": "Wikipedia (en)"
+    "imageCredit": "Wikipedia (en)",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/7/7a/Pez_ballesta_ondulado_%28Balistapus_undulatus%29%2C_mar_Rojo%2C_Egipto%2C_2023-04-15%2C_DD_45.jpg"
   },
   {
     "waterTempRange": {
@@ -454,7 +464,8 @@
       "小型"
     ],
     "imageCredit": "Wikipedia (en)",
-    "scientificName": "Meiacanthus grammistes"
+    "scientificName": "Meiacanthus grammistes",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a6/Meiacanthus_grammistes.JPG"
   },
   {
     "imageKeyword": "FeatherStarShrimp",
@@ -619,7 +630,8 @@
       "背びれ",
       "砂泥地"
     ],
-    "category": "魚類"
+    "category": "魚類",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/e/e1/Pez_cofre_jorobado_%28Tetrosomus_gibbosus%29%2C_parque_nacional_Ras_Muhammad%2C_Egipto%2C_2022-03-27%2C_DD_146.jpg"
   },
   {
     "status": "approved",
@@ -661,7 +673,8 @@
       "min": 20
     },
     "rarity": "Rare",
-    "size": "40cm"
+    "size": "40cm",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f2/Bigfin_reef_squid_%2811760%29.jpg"
   },
   {
     "imageKeyword": "Cuttlefish",
@@ -744,7 +757,8 @@
       "min": 23
     },
     "size": "20cm",
-    "imageLicense": "CC BY-SA"
+    "imageLicense": "CC BY-SA",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/6/60/NishikiBR.jpg"
   },
   {
     "depthRange": {
@@ -786,7 +800,8 @@
     "size": "25cm",
     "imageLicense": "CC BY-SA",
     "id": "c088cf77fa9edb948",
-    "englishName": "Moon Wrasse"
+    "englishName": "Moon Wrasse",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/d/d3/Thalassoma_lunare.jpg"
   },
   {
     "scientificName": "Ecsenius bicolor",
@@ -829,7 +844,8 @@
       "小型",
       "縄張り"
     ],
-    "englishName": "Bicolor Blenny"
+    "englishName": "Bicolor Blenny",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/7/70/Bicolor_blenny_Ecsenius_bicolor.jpg"
   },
   {
     "status": "approved",
@@ -913,7 +929,8 @@
       "min": 2
     },
     "englishName": "Dumbo Octopus",
-    "category": "その他"
+    "category": "その他",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b0/Dumbo-hires_%28cropped%29.jpg"
   },
   {
     "depthRange": {
@@ -955,7 +972,8 @@
     "name": "アオスジテンジクダイ",
     "category": "魚類",
     "imageLicense": "CC BY-SA",
-    "status": "approved"
+    "status": "approved",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a7/Apogon_cf._cyanosoma.JPG"
   },
   {
     "description": "最強の捕食者として知られる。南アフリカやオーストラリアでケージダイビングが人気。遭遇率は低いが、その迫力は圧巻。",
@@ -1041,7 +1059,8 @@
     "depthRange": {
       "max": 50,
       "min": 3
-    }
+    },
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/e/e4/Leafy_Seadragon_on_Kangaroo_Island.jpg"
   },
   {
     "imageLicense": "CC BY-SA",
@@ -1171,7 +1190,8 @@
       "speed": 50,
       "rarity": 50,
       "size": 30
-    }
+    },
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/e/e9/Exallias_brevis.jpg"
   },
   {
     "imageCredit": "Wikipedia (en)",
@@ -1255,7 +1275,8 @@
     "depthRange": {
       "max": 30,
       "min": 1
-    }
+    },
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/c/ca/Bep_chaetodon_auriga_pemba.jpg"
   },
   {
     "description": "蛍光色の触手が特徴的なサンゴ。水流に乗ってゆらゆらと揺れる姿は、まるで水中のお花畑のよう。",
@@ -1380,7 +1401,8 @@
     "size": "8cm",
     "description": "オレンジ色の体に3本の白い帯が特徴。映画で有名になり、世界で最も人気のあるクマノミです。",
     "imageCredit": "Wikipedia (en)",
-    "category": "魚類"
+    "category": "魚類",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f6/Clown_fish_in_the_Andaman_Coral_Reef.jpg"
   },
   {
     "size": "14cm",
@@ -1421,7 +1443,8 @@
       "popularity": 76,
       "lifespan": 46,
       "speed": 50
-    }
+    },
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b3/Pez_payaso_de_cola_amarilla_%28Amphiprion_clarkii%29_en_una_an%C3%A9mona_magn%C3%ADfica_%28Heteractis_magnifica%29%2C_islas_Ad_Dimaniyat%2C_Om%C3%A1n%2C_2024-08-16%2C_DD_76.jpg"
   },
   {
     "englishName": "Pom-pom crab",
@@ -1589,7 +1612,8 @@
       "speed": 50,
       "lifespan": 44
     },
-    "scientificName": "Canthigaster valentini"
+    "scientificName": "Canthigaster valentini",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a1/Canthigaster_valentini_prg1.jpg"
   },
   {
     "depthRange": {
@@ -1631,7 +1655,8 @@
     "description": "白と黒の鮮やかな縞模様が特徴。岩の隙間やサンゴの陰によく隠れており、ダイバーに人気。",
     "rarity": "Rare",
     "size": "20cm",
-    "status": "approved"
+    "status": "approved",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a3/Broadbanded_Pipefish.jpg"
   },
   {
     "englishName": "Orangespine Unicornfish",
@@ -1756,7 +1781,8 @@
       "danger": 10
     },
     "description": "白い斑点とオレンジ色の縁取りが非常に美しい人気の種。サンゴ礁の外縁やドロップオフで見られます。",
-    "name": "クマドリモンガラ"
+    "name": "クマドリモンガラ",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a4/Balistoides_conspicillum_2607.jpg"
   },
   {
     "description": "成魚は鮮やかな黄色と青の縞模様、幼魚は全く異なる同心円模様。サンゴ礁の象徴的な存在です。",
@@ -1798,7 +1824,8 @@
       "青と黄色の縞模様",
       "大型ヤッコ",
       "サンゴ礁"
-    ]
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/2/29/Emperor_Angelfish%2C_Western_form_-_Pomacanthus_imperator_1.jpg"
   },
   {
     "imageLicense": "CC BY-SA",
@@ -1841,7 +1868,8 @@
     "waterTempRange": {
       "max": 30,
       "min": 22
-    }
+    },
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a3/Green_sea_turtle_%28Chelonia_mydas%29_Moorea.jpg"
   },
   {
     "specialAttributes": [
@@ -1884,7 +1912,8 @@
     "waterTempRange": {
       "min": 24,
       "max": 30
-    }
+    },
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/7/78/Squat_shrimp_Nick_Hobgood.jpg"
   },
   {
     "scientificName": "Omobranchus punctatus",
@@ -1925,7 +1954,8 @@
     "status": "approved",
     "description": "高く発達した背鰭が特徴的なギンポ。岩礁の隙間に潜み、縄張りを守りながら生活する。",
     "imageLicense": "CC BY-SA",
-    "imageKeyword": "Highfin Blenny Omobranchus punctatus"
+    "imageKeyword": "Highfin Blenny Omobranchus punctatus",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/5/52/Omobranchus_punctatus.png"
   },
   {
     "imageCredit": "Wikipedia (en)",
@@ -1967,7 +1997,8 @@
     "id": "c2095e4c1dc24a749",
     "description": "長く伸びた尾びれが特徴的。その尾を使い獲物を捕食する。特定のクリーニングステーションで観察される。",
     "category": "サメ",
-    "scientificName": "Alopias pelagicus"
+    "scientificName": "Alopias pelagicus",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a2/Alopias_pelagicus.jpg"
   },
   {
     "imageKeyword": "Ember Parrotfish Scarus rubroviolaceus",
@@ -2008,7 +2039,8 @@
     "specialAttributes": [
       "美しい",
       "色彩豊か"
-    ]
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/6/6b/Ember_parrotfish%2C_Scarus_rubroviolaceus_-_terminal_phase_%286073675545%29.jpg"
   },
   {
     "status": "approved",
@@ -2092,7 +2124,8 @@
     },
     "imageKeyword": "クロウミガメ ダイビング",
     "id": "c22829a532f63472a",
-    "description": "アオウミガメの近縁種で、主に太平洋東部に生息。体色が黒っぽく、甲羅の形状がアオウミガメと異なります。"
+    "description": "アオウミガメの近縁種で、主に太平洋東部に生息。体色が黒っぽく、甲羅の形状がアオウミガメと異なります。",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a3/Green_sea_turtle_%28Chelonia_mydas%29_Moorea.jpg"
   },
   {
     "imageKeyword": "Sweetlips",
@@ -2299,7 +2332,8 @@
       "群れ",
       "日本近海",
       "小型"
-    ]
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a7/Apogon_notatus.jpg"
   },
   {
     "tags": [
@@ -2380,7 +2414,8 @@
     "imageKeyword": "オオモンハタ ダイビング",
     "description": "縞模様が特徴的なハタの仲間。岩礁域に生息し、ダイバーに人気。",
     "imageLicense": "CC BY-SA",
-    "id": "c2a148a77148ac5df"
+    "id": "c2a148a77148ac5df",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/6/68/Squaretail_coral_grouper_%28Plectropomus_areolatus%29_%2831785651247%29.jpg"
   },
   {
     "size": "3cm",
@@ -2421,7 +2456,8 @@
     "status": "approved",
     "englishName": "Blue Dragon",
     "imageLicense": "CC BY-SA",
-    "description": "美しい青色をしたナメクジの仲間。漂流して獲物を捕食する。"
+    "description": "美しい青色をしたナメクジの仲間。漂流して獲物を捕食する。",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/2/21/Glaucus_atlanticus_1_cropped.jpg"
   },
   {
     "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/c/c2/%E3%82%AF%E3%83%AD%E3%83%80%E3%82%A4.jpg",
@@ -2629,7 +2665,8 @@
       "max": 30
     },
     "size": "6cm",
-    "category": "魚類"
+    "category": "魚類",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/1/12/Blue-green_Chromis%2C_Kiribati_imported_from_iNaturalist_photo_345755248.jpg"
   },
   {
     "scientificName": "Nembrotha lineolata",
@@ -2797,7 +2834,8 @@
       "popularity": 78
     },
     "id": "c33bb588fa695cf48",
-    "name": "オグロメジロザメ"
+    "name": "オグロメジロザメ",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/0/08/Corl0207_%2828225976491%29.jpg"
   },
   {
     "imageUrl": "https://loremflickr.com/400/400/Amblyeleotrislatifasciata,underwater",
@@ -3042,7 +3080,8 @@
     ],
     "description": "紅白の派手な模様が特徴的なエビ。ヒトデを捕食するユニークな生態で知られ、ダイバーに人気。",
     "imageLicense": "CC BY-SA",
-    "id": "c39c0c0ea24db287a"
+    "id": "c39c0c0ea24db287a",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/9/9c/Hymenocera_picta_en_train_de_retourner_Fromia_milleporella.JPG"
   },
   {
     "stats": {
@@ -3123,7 +3162,8 @@
     "imageKeyword": "ハナゴンベ Pseudanthias squamipinnis",
     "category": "魚類",
     "rarity": "Rare",
-    "description": "最も一般的なハナダイの一つで、オレンジ色の体。サンゴ礁の広範囲に大規模な群れを形成します。"
+    "description": "最も一般的なハナダイの一つで、オレンジ色の体。サンゴ礁の広範囲に大規模な群れを形成します。",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f0/Anthias_cola_de_lira_%28Pseudanthias_squamipinnis%29%2C_parque_nacional_Ras_Muhammad%2C_Egipto%2C_2022-03-28%2C_DD_98.jpg"
   },
   {
     "name": "キイロサンゴハゼ",
@@ -3206,7 +3246,8 @@
       "美しい",
       "被写体"
     ],
-    "rarity": "Rare"
+    "rarity": "Rare",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/0/02/Chrysiptera_cyanea_Gratwicke.jpg"
   },
   {
     "imageKeyword": "BlackCommersonFrogfish",
@@ -3291,7 +3332,8 @@
       "max": 29
     },
     "imageCredit": "Wikipedia (en)",
-    "description": "体に地図のような複雑な模様を持つ大型フグ。サンゴ礁の岩陰に潜むことが多いです。"
+    "description": "体に地図のような複雑な模様を持つ大型フグ。サンゴ礁の岩陰に潜むことが多いです。",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/e/ed/Arothron_mappa.JPG"
   },
   {
     "scientificName": "Sphoeroides testudineus",
@@ -3374,7 +3416,8 @@
       "min": 1,
       "max": 30
     },
-    "imageKeyword": "Longfin Bannerfish Heniochus acuminatus"
+    "imageKeyword": "Longfin Bannerfish Heniochus acuminatus",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/1/15/Pennant_coralfish_melb_aquarium_edit2.jpg"
   },
   {
     "imageLicense": "CC BY-SA",
@@ -3541,7 +3584,8 @@
     "scientificName": "Coris gaimard",
     "englishName": "Red Coris",
     "category": "魚類",
-    "imageCredit": "Wikipedia (en)"
+    "imageCredit": "Wikipedia (en)",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/e/eb/Coris_gaimard_real.jpg"
   },
   {
     "size": "20cm",
@@ -3627,7 +3671,8 @@
       "max": 29,
       "min": 22
     },
-    "family": "イザリウオ科"
+    "family": "イザリウオ科",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/b/bc/Ranisapo_de_Commerson_%28Antennarius_commerson%29%2C_Zanz%C3%ADbar%2C_Tanzania%2C_2024-05-31%2C_DD_10.jpg"
   },
   {
     "englishName": "Giant trevally",
@@ -3755,7 +3800,8 @@
       "lifespan": 54
     },
     "id": "c425cc5b7978ed9cc",
-    "englishName": "Bargibant's Pygmy Seahorse"
+    "englishName": "Bargibant's Pygmy Seahorse",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/c/cd/Hippocampus_bargibanti3.JPG"
   },
   {
     "waterTempRange": {
@@ -3797,7 +3843,8 @@
     "depthRange": {
       "max": 300,
       "min": 0
-    }
+    },
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/6/6e/Taeniura_grabata_tenerife.jpg"
   },
   {
     "rarity": "Rare",
@@ -3877,7 +3924,8 @@
     "rarity": "Rare",
     "size": "18cm",
     "name": "クビアカハゼ",
-    "description": "黄色い頭部と首元の赤い帯が特徴。砂地でペアで生活し、砂を濾過して餌を探す。"
+    "description": "黄色い頭部と首元の赤い帯が特徴。砂地でペアで生活し、砂を濾過して餌を探す。",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/f/fe/Valenciennea_strigata.jpg"
   },
   {
     "scientificName": "Lepidochelys olivacea",
@@ -3919,7 +3967,8 @@
       "danger": 10,
       "rarity": 20,
       "lifespan": 50
-    }
+    },
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b5/Lepidochelys-olivacea-K%C3%A9lonia-1.JPG"
   },
   {
     "category": "その他",
@@ -4045,7 +4094,8 @@
     "englishName": "Painted frogfish",
     "name": "イロカエルアンコウ",
     "size": "15cm",
-    "imageKeyword": "Antennarius pictus"
+    "imageKeyword": "Antennarius pictus",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f4/Antennarius_pictus_-_Painted_FrogFish.jpg"
   },
   {
     "rarity": "Rare",
@@ -4129,7 +4179,8 @@
       "rarity": 50,
       "speed": 50,
       "size": 100
-    }
+    },
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/3/30/Dharavandhoo_Thila_-_Manata_Black_Pearl.JPG"
   },
   {
     "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/d/de/Anemones5.jpg",
@@ -4212,7 +4263,8 @@
     },
     "rarity": "Common",
     "imageLicense": "CC BY-SA",
-    "size": "100cm"
+    "size": "100cm",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/d/d6/Raya_de_arrecife_%28Taeniura_lymma%29%2C_mar_Rojo%2C_Egipto%2C_2023-04-14%2C_DD_64.jpg"
   },
   {
     "englishName": "Rainbow Parrotfish",
@@ -4377,7 +4429,8 @@
     "rarity": "Rare",
     "description": "体側にある6本の黒い縦縞が特徴的なベラ。インド太平洋のサンゴ礁域に広く生息し、活発に泳ぎ回る姿をよく観察できる。",
     "size": "20cm",
-    "status": "approved"
+    "status": "approved",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/7/7c/Thalassoma_hardwicke_R%C3%A9union.jpg"
   },
   {
     "rarity": "Common",
@@ -4418,7 +4471,8 @@
       "毒",
       "被写体",
       "美しい"
-    ]
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/e/e8/Pez_cofre_rayado_%28Ostracion_solorensis%29%2C_Anilao%2C_Filipinas%2C_2023-08-25%2C_DD_183.jpg"
   },
   {
     "specialAttributes": [
@@ -4459,7 +4513,8 @@
       "popularity": 71,
       "lifespan": 12
     },
-    "imageKeyword": "Lysmata amboinensis, スカンクシュリンプ, White-banded cleaner shrimp"
+    "imageKeyword": "Lysmata amboinensis, スカンクシュリンプ, White-banded cleaner shrimp",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/a/af/Lysmata_amboinensis_in_Tropicarium-Oceanarium_Budapest.JPG"
   },
   {
     "status": "approved",
@@ -4502,7 +4557,8 @@
     "id": "c590338d184a0f071",
     "imageCredit": "Wikipedia (en)",
     "description": "体前半が紫、後半が黄色と美しいツートンカラーが特徴。サンゴ礁の壁際でよく見られます。",
-    "category": "魚類"
+    "category": "魚類",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/2/22/HutairoHGmaido.jpg"
   },
   {
     "tags": [
@@ -4628,7 +4684,8 @@
       "イソギンチャク"
     ],
     "imageLicense": "CC BY-SA",
-    "scientificName": "Amphiprion frenatus"
+    "scientificName": "Amphiprion frenatus",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/0/05/Tomato_clownfish_Amphiprion_frenatus.jpg"
   },
   {
     "depthRange": {
@@ -4670,7 +4727,8 @@
     "size": "17cm",
     "imageLicense": "CC BY-SA",
     "id": "c5e3e7569e6b56207",
-    "englishName": "Reidi Seahorse"
+    "englishName": "Reidi Seahorse",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b8/Hippocampus_reidi%2C_pareja.jpg"
   },
   {
     "tags": [
@@ -4713,7 +4771,8 @@
     "imageCredit": "Wikipedia (en)",
     "id": "c5f32f25e027e2fca",
     "englishName": "Tiger Tail Seahorse",
-    "description": "尾に縞模様があり、その名が示す通り虎の尾を思わせる美しいタツノオトシゴ。熱帯域で見られる。"
+    "description": "尾に縞模様があり、その名が示す通り虎の尾を思わせる美しいタツノオトシゴ。熱帯域で見られる。",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/8a/Hippocampus-comes-1.jpg"
   },
   {
     "category": "魚類",
@@ -4754,7 +4813,8 @@
       "かわいい",
       "被写体"
     ],
-    "imageLicense": "CC BY-SA"
+    "imageLicense": "CC BY-SA",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/5/5c/Starry_Blenny.png"
   },
   {
     "specialAttributes": [
@@ -4836,7 +4896,8 @@
       "popularity": 65,
       "rarity": 20,
       "lifespan": 25
-    }
+    },
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/c/c3/Boxer_shrimp_at_Batu_Moncho.JPG"
   },
   {
     "status": "approved",
@@ -4878,7 +4939,8 @@
     ],
     "imageKeyword": "Bicolor Parrotfish",
     "size": "90cm",
-    "rarity": "Rare"
+    "rarity": "Rare",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f1/Cetoscarus_bicolor_by_Jacek_Madejski.jpg"
   },
   {
     "imageCredit": "Wikipedia (en)",
@@ -4962,7 +5024,8 @@
       "ユニークな頭部",
       "温和"
     ],
-    "status": "approved"
+    "status": "approved",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a0/Bumphead_parrotfish_%28Bolbometopon_muricatum%29_%2849509140173%29.jpg"
   },
   {
     "scientificName": "Zoramia leptacantha",
@@ -5005,7 +5068,8 @@
     "imageKeyword": "Tiger Cardinalfish",
     "imageCredit": "Wikipedia (en)",
     "category": "魚類",
-    "name": "トラフテンジクダイ"
+    "name": "トラフテンジクダイ",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/4/4c/Apogon_leptacanthus.JPG"
   },
   {
     "stats": {
@@ -5215,7 +5279,8 @@
       "popularity": 82,
       "lifespan": 51
     },
-    "status": "approved"
+    "status": "approved",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/8c/Amblyeleotris_guttata-Orange_Spotted_Goby.jpg"
   },
   {
     "imageLicense": "CC BY-SA",
@@ -5341,7 +5406,8 @@
       "min": 24,
       "max": 29
     },
-    "id": "c729cb83a7f0a9f73"
+    "id": "c729cb83a7f0a9f73",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/1/1c/Pomacanthus_semicirculatus_1.jpg"
   },
   {
     "depthRange": {
@@ -5382,7 +5448,8 @@
     "imageLicense": "CC BY-SA",
     "name": "コブブダイ",
     "rarity": "Rare",
-    "imageKeyword": "Bullethead Parrotfish"
+    "imageKeyword": "Bullethead Parrotfish",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/9/91/Chlorurus_sordidus%2C_Anantara_Kihavah-huravalhi%2C_house_reef%2C_Baa_Atoll%2C_Maldives_imported_from_iNaturalist_photo_296761479.jpg"
   },
   {
     "imageCredit": "Wikipedia (en)",
@@ -5468,7 +5535,8 @@
       "好戦的",
       "鮮やか"
     ],
-    "id": "c73d668557955916e"
+    "id": "c73d668557955916e",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/1/1e/Odontodactylus_scyllarus_R%C3%A9union.jpg"
   },
   {
     "englishName": "Baroness Butterflyfish",
@@ -5552,7 +5620,8 @@
     },
     "imageCredit": "Wikipedia (en)",
     "size": "10cm",
-    "category": "魚類"
+    "category": "魚類",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/3/39/Skunk_anemonefish.jpg"
   },
   {
     "family": "アジ科",
@@ -5634,7 +5703,8 @@
       "max": 30,
       "min": 24
     },
-    "englishName": "Pacific Double-saddle Butterflyfish"
+    "englishName": "Pacific Double-saddle Butterflyfish",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/a/ab/Pacific_double-saddle_butterfly_fish_%28Chaetodon_ulietensis%29_Moorea.jpg"
   },
   {
     "family": "イボウミウシ科",
@@ -5717,7 +5787,8 @@
       "サンゴ礁",
       "単独行動"
     ],
-    "scientificName": "Forcipiger flavissimus"
+    "scientificName": "Forcipiger flavissimus",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/0/0e/Forcipiger_flavissimus_Yellow_Longnose_Butterflyfish_Papua_New_Guinea_by_Nick_Hobgood.jpg"
   },
   {
     "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b8/Picasso.triggerfish.arp.jpg",
@@ -5883,7 +5954,8 @@
     "depthRange": {
       "min": 5,
       "max": 30
-    }
+    },
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/7/7d/Orang_Utan_Crab-Achaeus_japonicus_%2833048430982%29.jpg"
   },
   {
     "scientificName": "Elagatis bipinnulata",
@@ -5968,7 +6040,8 @@
       "被写体",
       "希少種",
       "環境指標"
-    ]
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f3/Hippocampus_denise_on_Annella_reticulata_-_ZooKeys-103-001-g002b.jpeg"
   },
   {
     "tags": [
@@ -6260,7 +6333,8 @@
       "鮮やか"
     ],
     "scientificName": "Trimma nasa",
-    "id": "c84b9e300c977515f"
+    "id": "c84b9e300c977515f",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/7/7f/Trimma_nasa_female_22.6_mm%2C_New_Caledonia.jpg"
   },
   {
     "englishName": "Saddleback Clownfish",
@@ -6301,7 +6375,8 @@
       "size": 50,
       "lifespan": 44,
       "popularity": 82
-    }
+    },
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/5/57/Amphiprion_Species.JPG"
   },
   {
     "scientificName": "Histiophryne cryptacanthodes",
@@ -6504,7 +6579,8 @@
     "description": "巨大な体と額のコブが特徴のベラの最大種。サンゴ礁の健全さを示す指標ともされる。温和な性格でダイバーに人気。",
     "rarity": "Rare",
     "imageKeyword": "カンムリベラ Napoleon Wrasse",
-    "category": "魚類"
+    "category": "魚類",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/4/49/Humphead_wrasse_melb_aquarium.jpg"
   },
   {
     "depthRange": {
@@ -6673,7 +6749,8 @@
       "popularity": 89,
       "lifespan": 82,
       "rarity": 80
-    }
+    },
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/d/df/Manta_birostris-Thailand4.jpg"
   },
   {
     "specialAttributes": [
@@ -6802,7 +6879,8 @@
       "ペア"
     ],
     "description": "長く伸長する背びれが特徴的な共生ハゼ。優雅な姿がダイバーを魅了します。",
-    "englishName": "Filament-finned Shrimpgoby"
+    "englishName": "Filament-finned Shrimpgoby",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/e/ef/Black-ray_goby.jpg"
   },
   {
     "depthRange": {
@@ -7010,7 +7088,8 @@
       "popularity": 74
     },
     "imageLicense": "CC BY-SA",
-    "id": "c96c047f3ef093eee"
+    "id": "c96c047f3ef093eee",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/9/9f/Queen_Angelfish.jpg"
   },
   {
     "rarity": "Rare",
@@ -7052,7 +7131,8 @@
       "max": 30,
       "min": 1
     },
-    "scientificName": "Lactoria cornuta"
+    "scientificName": "Lactoria cornuta",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/5/5a/Lactoria_cornuta.004_-_Aquarium_Finisterrae.JPG"
   },
   {
     "rarity": "Common",
@@ -7221,7 +7301,8 @@
     "id": "c991a58fa2d8224eb",
     "rarity": "Rare",
     "status": "approved",
-    "imageLicense": "CC BY-SA"
+    "imageLicense": "CC BY-SA",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f4/L%C3%A1brido_tablero_a_cuadros_%28Halichoeres_hortulanus%29%2C_mar_Rojo%2C_Egipto%2C_2023-04-19%2C_DD_43.jpg"
   },
   {
     "rarity": "Common",
@@ -7263,7 +7344,8 @@
       "毒棘"
     ],
     "imageKeyword": "Blotched Fantail Ray",
-    "status": "approved"
+    "status": "approved",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/6/6c/Taeniura_meyeni_makunudhoo.jpg"
   },
   {
     "englishName": "Yano's Shrimpgoby",
@@ -7347,7 +7429,8 @@
       "被写体",
       "色彩豊か",
       "独特の模様"
-    ]
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/5/59/Mexichromis_multituberculata.jpg"
   },
   {
     "category": "甲殻類",
@@ -7388,7 +7471,8 @@
     "size": "3cm",
     "imageCredit": "Wikipedia (en)",
     "imageLicense": "CC BY-SA",
-    "status": "approved"
+    "status": "approved",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/6/66/Camar%C3%B3n_%28Ancylocaris_brevicarpalis%29%2C_Zanz%C3%ADbar%2C_Tanzania%2C_2024-05-30%2C_DD_32.jpg"
   },
   {
     "tags": [
@@ -7640,7 +7724,8 @@
     "imageCredit": "Wikipedia (en)",
     "rarity": "Rare",
     "status": "approved",
-    "category": "魚類"
+    "category": "魚類",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a0/Botete_negro_%28Arothron_meleagris%29%2C_Cabo_Pulmo%2C_Baja_California%2C_M%C3%A9xico%2C_2024-12-19%2C_DD_54.jpg"
   },
   {
     "description": "青みがかった体に黒帯が特徴の美しいヤッコ。オスとメスで体色が異なり、やや深場の岩礁域に生息します。",
@@ -7682,7 +7767,8 @@
     "waterTempRange": {
       "max": 26,
       "min": 20
-    }
+    },
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/a/ac/Female_Genicanthus_watanabei.jpg"
   },
   {
     "size": "3cm",
@@ -7890,7 +7976,8 @@
       "min": 1,
       "max": 100
     },
-    "status": "approved"
+    "status": "approved",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/1/18/Pez_erizo_de_espinas_largas_%28Diodon_holocanthus%29%2C_islas_Ad_Dimaniyat%2C_Om%C3%A1n%2C_2024-08-13%2C_DD_45.jpg"
   },
   {
     "id": "caad2db0ff449676b",
@@ -7973,7 +8060,8 @@
     "specialAttributes": [
       "かわいい",
       "被写体"
-    ]
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/9/97/EcseniusYaeyamaensisMaleRLS.jpg"
   },
   {
     "scientificName": "Chaetodon kleinii",
@@ -8014,7 +8102,8 @@
     },
     "englishName": "Sunset Butterflyfish",
     "imageLicense": "CC BY-SA",
-    "rarity": "Rare"
+    "rarity": "Rare",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/6/62/Bep_chaetodon_kleinii_pemba.jpg"
   },
   {
     "englishName": "Purple Queen Anthias",
@@ -8096,7 +8185,8 @@
     "englishName": "Spotted Eagle Ray",
     "status": "approved",
     "rarity": "Rare",
-    "size": "最大全長3m"
+    "size": "最大全長3m",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/a/ad/Eagle_Ray_Turks_and_Caicos_Dec_15_2006.JPG"
   },
   {
     "name": "ニシキヤッコ",
@@ -8138,7 +8228,8 @@
     },
     "englishName": "Regal Angelfish",
     "imageCredit": "Wikipedia (en)",
-    "category": "魚類"
+    "category": "魚類",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/0/0a/Pez_%C3%A1ngel_real_%28Pygoplites_diacanthus%29%2C_parque_nacional_Ras_Muhammad%2C_Egipto%2C_2022-03-26%2C_DD_155.jpg"
   },
   {
     "englishName": "Sea Bunny Nudibranch",
@@ -8180,7 +8271,8 @@
       "lifespan": 12,
       "size": 30,
       "speed": 18
-    }
+    },
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/5/5c/Jorunna_parva%2C_Osezaki.jpg"
   },
   {
     "imageCredit": "Wikipedia (en)",
@@ -8305,7 +8397,8 @@
       "max": 30
     },
     "englishName": "Ornate Ghost Pipefish",
-    "rarity": "Common"
+    "rarity": "Common",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/d/d1/Solenostomus_paradoxus_black_on_pink.jpg"
   },
   {
     "specialAttributes": [
@@ -8346,7 +8439,8 @@
     "waterTempRange": {
       "min": 4,
       "max": 15
-    }
+    },
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/0/0e/Vampyroteuthis_illustration.jpg"
   },
   {
     "imageLicense": "CC BY-SA",
@@ -8390,7 +8484,8 @@
       "擬態",
       "アンテナ"
     ],
-    "englishName": "Sargassum Frogfish"
+    "englishName": "Sargassum Frogfish",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/5/53/Histrio_histrio.jpg"
   },
   {
     "specialAttributes": [
@@ -8431,7 +8526,8 @@
       "斑点",
       "サンゴ礁"
     ],
-    "rarity": "Common"
+    "rarity": "Common",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/5/53/Pez_cofre_moteado_%28Ostracion_meleagris%29%2C_Zanz%C3%ADbar%2C_Tanzania%2C_2024-05-30%2C_DD_83.jpg"
   },
   {
     "specialAttributes": [
@@ -8473,7 +8569,8 @@
     "scientificName": "Dascyllus trimaculatus",
     "status": "approved",
     "imageKeyword": "Three Spot Damselfish",
-    "id": "cb89d20e6bd0a7fdc"
+    "id": "cb89d20e6bd0a7fdc",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/82/Three-spot_Dascyllus%2C_No_Name%2C_Ko_Tao%2C_Surat_Thani%2C_Thailand_imported_from_iNaturalist_photo_332636408.jpg"
   },
   {
     "imageCredit": "Wikipedia (en)",
@@ -8516,7 +8613,8 @@
     "size": "18cm",
     "scientificName": "Dunckerocampus multiannulatus",
     "status": "approved",
-    "imageLicense": "CC BY-SA"
+    "imageLicense": "CC BY-SA",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/d/da/Doryrhamphus_multiannulatus.jpg"
   },
   {
     "tags": [
@@ -8559,7 +8657,8 @@
     "size": "8cm",
     "imageLicense": "CC BY-SA",
     "name": "バンダナカーディナルフィッシュ",
-    "status": "approved"
+    "status": "approved",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/b/bd/Banggai_cardinalfish_%28Pterapogon_kauderni%29_%2843875107345%29.jpg"
   },
   {
     "status": "approved",
@@ -8601,7 +8700,8 @@
       "毒",
       "被写体",
       "ユニークな形状"
-    ]
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/c/cc/Ostracion_cubicum_400115646.jpg"
   },
   {
     "depthRange": {
@@ -8642,7 +8742,8 @@
       "毒",
       "斑点模様",
       "色彩変異"
-    ]
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a0/Botete_negro_%28Arothron_meleagris%29%2C_Cabo_Pulmo%2C_Baja_California%2C_M%C3%A9xico%2C_2024-12-19%2C_DD_54.jpg"
   },
   {
     "description": "鮮やかなオレンジ色で、サンゴ礁の斜面を彩る大規模な群れが魅力的。雄は背鰭が伸びます。",
@@ -8725,7 +8826,8 @@
       "min": 1
     },
     "imageLicense": "CC BY-SA",
-    "category": "魚類"
+    "category": "魚類",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/7/7a/Chaetodon_lunula_is_feeding_on_sea_urchin.jpg"
   },
   {
     "description": "日本近海で比較的よく見られる大型のブダイ。鮮やかな青緑色の体色と、頭部の丸い隆起が特徴的。",
@@ -8766,7 +8868,8 @@
       "rarity": 50,
       "size": 80
     },
-    "imageCredit": "Wikipedia (en)"
+    "imageCredit": "Wikipedia (en)",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/0/04/AoBD_scarus_ovifrons.jpg"
   },
   {
     "description": "尾びれの付け根に黒い環状斑がある。岩礁域やサンゴ礁で群れをなす。",
@@ -8848,7 +8951,8 @@
     "waterTempRange": {
       "min": 22,
       "max": 30
-    }
+    },
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/2/23/Titan_Triggerfish_imported_from_iNaturalist_photo_324702096_on_3_November_2024_%28edit%29.jpg"
   },
   {
     "waterTempRange": {
@@ -8890,7 +8994,8 @@
       "danger": 10,
       "popularity": 89,
       "lifespan": 42
-    }
+    },
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/88/EM_DSC_2212_%282877792781%29.jpg"
   },
   {
     "englishName": "Fathead Anthias",
@@ -8933,7 +9038,8 @@
       "max": 50
     },
     "imageCredit": "Wikipedia (en)",
-    "description": "鮮やかなオレンジと黄色の体色が特徴。深場の岩礁域で単独または少数で泳ぐ美しいハナダイです。"
+    "description": "鮮やかなオレンジと黄色の体色が特徴。深場の岩礁域で単独または少数で泳ぐ美しいハナダイです。",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b7/Serranocirrhitus_latus.jpg"
   },
   {
     "size": "40cm",
@@ -8974,7 +9080,8 @@
       "黄色い尾",
       "中型"
     ],
-    "name": "メアブダイ"
+    "name": "メアブダイ",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/6/68/Loro_barbazul_%28Scarus_ghobban%29%2C_La_Paz%2C_Baja_California%2C_M%C3%A9xico%2C_2024-12-20%2C_DD_43.jpg"
   },
   {
     "status": "approved",
@@ -9015,7 +9122,8 @@
       "size": 50,
       "rarity": 20,
       "popularity": 71
-    }
+    },
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/e/e8/Pez_cofre_rayado_%28Ostracion_solorensis%29%2C_Anilao%2C_Filipinas%2C_2023-08-25%2C_DD_183.jpg"
   },
   {
     "depthRange": {
@@ -9057,7 +9165,8 @@
       "size": 80,
       "rarity": 50,
       "popularity": 71
-    }
+    },
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/5/57/Octopus2.jpg"
   },
   {
     "rarity": "Rare",
@@ -9100,7 +9209,8 @@
     "imageCredit": "Wikipedia (en)",
     "category": "魚類",
     "status": "approved",
-    "imageLicense": "CC BY-SA"
+    "imageLicense": "CC BY-SA",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/9/9f/Botete_cara_de_perro_%28Arothron_nigropunctatus%29%2C_Anilao%2C_Filipinas%2C_2023-08-25%2C_DD_64.jpg"
   },
   {
     "imageCredit": "Wikipedia (en)",
@@ -9142,7 +9252,8 @@
     "waterTempRange": {
       "min": 23,
       "max": 28
-    }
+    },
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/88/Steephead_parrotfish_%28Chlorurus_microrhinos%29_%2846727238075%29.jpg"
   },
   {
     "size": "13cm",
@@ -9186,7 +9297,8 @@
       "小型",
       "擬態",
       "アンテナ"
-    ]
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/2/2f/Antennarius_coccineus_SI.jpg"
   },
   {
     "id": "cd3bf1b6e8b591add",
@@ -9267,7 +9379,8 @@
       "min": 0,
       "max": 80
     },
-    "scientificName": "Natator depressus"
+    "scientificName": "Natator depressus",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/e/e0/Natator_depressus00.jpg"
   },
   {
     "englishName": "Hawksbill Sea Turtle",
@@ -9308,7 +9421,8 @@
       "min": 1
     },
     "family": "ウミガメ科",
-    "imageKeyword": "タイマイ ダイビング"
+    "imageKeyword": "タイマイ ダイビング",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b0/Eretmochelys-imbricata-K%C3%A9lonia-2.JPG"
   },
   {
     "englishName": "Oceanic Manta Ray",
@@ -9350,7 +9464,8 @@
       "美しい",
       "大物"
     ],
-    "name": "マンタ"
+    "name": "マンタ",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/d/df/Manta_birostris-Thailand4.jpg"
   },
   {
     "imageKeyword": "ホワイトチップリーフシャーク ダイビング",
@@ -9391,7 +9506,8 @@
     },
     "description": "鰭の先端の白い模様が特徴。昼間はサンゴ礁の洞窟などで休息し、比較的観察しやすい小型サメ。",
     "scientificName": "Triaenodon obesus",
-    "name": "ホワイトチップリーフシャーク"
+    "name": "ホワイトチップリーフシャーク",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/9/95/Carcharhinus_albimarginatus-shark.jpg"
   },
   {
     "scientificName": "Sphaeramia nematoptera",
@@ -9434,7 +9550,8 @@
     "rarity": "Rare",
     "imageKeyword": "Sphaeramia nematoptera Pajama Cardinalfish",
     "id": "cd82ceeef50df2e07",
-    "imageLicense": "CC BY-SA"
+    "imageLicense": "CC BY-SA",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/e/e4/Pajama_cardinal_fish_Sphaeramia_nematoptera.jpg"
   },
   {
     "family": "チョウチョウウオ科",
@@ -9476,7 +9593,8 @@
       "模様",
       "ハタ"
     ],
-    "category": "魚類"
+    "category": "魚類",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/f/fe/Chelmon_rostratus_Luc_Viatour.jpg"
   },
   {
     "waterTempRange": {
@@ -9640,7 +9758,8 @@
       "min": 24,
       "max": 30
     },
-    "englishName": "Midas Blenny"
+    "englishName": "Midas Blenny",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/87/Ecsenius_midas_%28Starck%2C_1969%29.jpg"
   },
   {
     "category": "ウミウシ",
@@ -9682,7 +9801,8 @@
       "max": 30
     },
     "size": "6cm",
-    "scientificName": "Chromodoris annae"
+    "scientificName": "Chromodoris annae",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/6/6c/Babosas_de_mar_%28Chromodoris_strigata%29%2C_Anilao%2C_Filipinas%2C_2023-08-22%2C_DD_172.jpg"
   },
   {
     "englishName": "Ringed Pipefish",
@@ -9724,7 +9844,8 @@
     "rarity": "Common",
     "name": "リングドパイプフィッシュ",
     "imageLicense": "CC BY-SA",
-    "size": "19cm"
+    "size": "19cm",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a3/Broadbanded_Pipefish.jpg"
   },
   {
     "name": "セグロチョウチョウウオ",
@@ -9765,7 +9886,8 @@
       "max": 25,
       "min": 2
     },
-    "id": "ce060eabfa9252076"
+    "id": "ce060eabfa9252076",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/1/17/Chaetodon_melannotus_edit4.jpg"
   },
   {
     "waterTempRange": {
@@ -9849,7 +9971,8 @@
       "サンゴ礁",
       "擬態"
     ],
-    "category": "魚類"
+    "category": "魚類",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/0/06/L%C3%A1brido_limpiador_com%C3%BAn_%28Labroides_dimidiatus%29%2C_mar_Rojo%2C_Egipto%2C_2023-04-17%2C_DD_90.jpg"
   },
   {
     "depthRange": {
@@ -9891,7 +10014,8 @@
       "縞模様",
       "擬態",
       "アンテナ"
-    ]
+    ],
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/3/3d/Antennarius_striatus.jpg"
   },
   {
     "imageKeyword": "sebreei",
@@ -10059,7 +10183,8 @@
     "status": "approved",
     "name": "サメハダホウズキイカ",
     "scientificName": "Nautilus pompilius",
-    "description": "美しい螺旋状の殻を持つ、生きた化石とも言われるオウムガイの仲間。"
+    "description": "美しい螺旋状の殻を持つ、生きた化石とも言われるオウムガイの仲間。",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/4/4a/Nautilus_pompilius_%28detail%29.jpg"
   },
   {
     "category": "魚類",
@@ -10101,7 +10226,8 @@
       "lifespan": 49,
       "danger": 10
     },
-    "status": "approved"
+    "status": "approved",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/2/2f/Doryrhamphus_excisus.jpg"
   },
   {
     "size": "15cm",
@@ -10270,7 +10396,8 @@
       "min": 24
     },
     "englishName": "Magnificent Goby",
-    "description": "鮮やかな色彩と優雅な泳ぎが魅力のハゼ。水底近くを漂い、ダイバーに人気が高い。"
+    "description": "鮮やかな色彩と優雅な泳ぎが魅力のハゼ。水底近くを漂い、ダイバーに人気が高い。",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/e/e1/Fire_dartfish_%28Nemateleotris_magnifica%29_%2843372442502%29.jpg"
   },
   {
     "size": "10cm",
@@ -10311,7 +10438,8 @@
     "specialAttributes": [
       "かわいい"
     ],
-    "imageCredit": "Wikipedia (en)"
+    "imageCredit": "Wikipedia (en)",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/6/6a/Humbug_dascyllus_%28Dascyllus_aruanus%29_%2848652156722%29.jpg"
   },
   {
     "id": "cf48eba5f55fe41d4",
@@ -10396,7 +10524,8 @@
       "min": 24
     },
     "description": "他の魚に擬態し、近づいてウロコや皮膚を噛み取るユニークな捕食行動が特徴。",
-    "imageCredit": "Wikipedia (en)"
+    "imageCredit": "Wikipedia (en)",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/0/02/Plagiotremus_rhinorhynchos.jpg"
   },
   {
     "tags": [
@@ -10483,7 +10612,8 @@
       "danger": 10,
       "lifespan": 86,
       "size": 100
-    }
+    },
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/3/39/Tiger_shark.jpg"
   },
   {
     "status": "approved",
@@ -10525,7 +10655,8 @@
       "max": 29
     },
     "size": "16cm",
-    "name": "ハナヨウジ"
+    "name": "ハナヨウジ",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/81/Dunckerocampus_pessuliferus.jpg"
   },
   {
     "status": "approved",
@@ -10608,7 +10739,8 @@
       "speed": 100
     },
     "scientificName": "Negaprion brevirostris",
-    "imageKeyword": "レモンシャーク ダイビング"
+    "imageKeyword": "レモンシャーク ダイビング",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/5/55/Lemonshark.JPG"
   },
   {
     "description": "ウニに共生するカニで、白と黒の縞模様が特徴。宿主のウニに擬態し、見つける楽しみがある。",
@@ -10650,6 +10782,7 @@
     "depthRange": {
       "max": 40,
       "min": 5
-    }
+    },
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/5/54/Lembeh_Dec1809.jpg"
   }
 ]
