@@ -17,6 +17,7 @@
 - **外部データ連携 (`MyPage` > `LogImportModal`)**:
   - Garmin Connect (CSV) インポートによる一括ログ生成。
   - 秒単位の水深・温度データの保存とプロファイルグラフ表示。
+- **参照コレクション**: `users/logs`, `points`, `creatures`
 
 ### 1.2 高度な生物図鑑 (Pokedex)
 - **検索・フィルター (`/pokedex`)**:
@@ -27,6 +28,7 @@
   - **分布データ**: その生物が見られるポイントの一覧。
   - **パラメータ評価**: 人気、サイズ、危険、寿命、逃げ足、レア度の 5 段階表示。
 - **コレクション管理 (`/mypage`)**: Wanted（会いたい）および Favorites（お気に入り）への保存。
+- **参照コレクション**: `creatures`, `point_creatures`, `points`, `users`
 
 ### 1.3 ポイント探索 (Diving Spot Discovery)
 - **検索・フィルター (`/points`)**:
@@ -36,6 +38,7 @@
   - **出現生物リスト**: AI およびユーザーログに基づいた生息生物一覧。
   - **周辺ショップ**: 登録されているダイビングショップの表示。
 - **お気に入り機能 (`/mypage`)**: ポイントのブックマーク保存と訪問履歴管理。
+- **参照コレクション**: `regions`, `zones`, `areas`, `points`, `point_creatures`, `users`
 
 ### 1.4 ホーム画面 (`/`)
 - **特集 (Featured Points)**: カルーセル形式のスポット紹介。
@@ -48,16 +51,19 @@
 ### 2.1 AI コンシェルジュ (`/concierge`)
 - **対話型検索**: 自然言語によるスポット・生物の質問・提案。
 - **Vertex AI 連携**: Gemini 2.0 Flash を使用したパーソナライズ提案。
+- **参照コレクション**: `points`, `creatures`, `ai_grounding_cache`
 
 ### 2.2 トラストランク・システム
 - **トラストポイント (TP)**: データの提供・クレンジングへの貢献で獲得。
 - **ランクアイコン**: 「しずく(Droplet)」から「王冠(Crown)」までのランク進化。
 - **権限**: ランクに応じて提案の承認権限（モデレーター）が付与。
+- **参照コレクション**: `users`
 
 ### 2.3 パーソナル・アナリティクス (`/mypage`)
 - **統計**: 累計ダイブ数、発見種数、エリア分布（円グラフ）。
 - **ポイント・マスタリー**: 特定ポイントの生息生物の発見進捗率。
 - **シルエット表示**: 未発見生物をシルエットで表示し収集を促進。
+- **参照コレクション**: `users/logs`, `users`, `creatures`, `point_creatures`
 
 ---
 
@@ -66,6 +72,7 @@
 ### 3.1 申請・承認システム
 - **ユーザー提案 (`/propose-creature`, `/propose-point`)**: 生物やポイントの新規・修正申請。
 - **承認・却下 (`/admin/proposals`)**: 管理者・モデレーターによる申請の精査。
+- **参照コレクション**: `creature_proposals`, `point_proposals`, `creatures`, `points`
 
 ### 3.2 管理者向け管理ページ (Admin Only)
 - **ユーザー管理 (`/admin/users`)**: ユーザーロール (User/Moderator/Admin) の変更。
@@ -83,6 +90,7 @@
 - **AI データクレンジング (`/admin/cleansing`)**:
   - **Dashboard**: クレンジングパイプラインの実行条件設定（範囲/モード）。
   - **Review Engine**: AI が生成した「地点×生物」の紐付け案の承認・却下。
+  - **参照コレクション**: `users`, `creatures`, `point_creatures`, `points`, `regions`, `zones`, `areas`
   - **エクスポート**: `EXPORT SEED` ボタン（※現在は UI プレースホルダー、ロジックは `/admin/areas` に実装済み）。
 
 ---

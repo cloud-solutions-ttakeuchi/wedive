@@ -26,7 +26,10 @@
 ```mermaid
 erDiagram
     REGION ||--o{ ZONE : "contains"
+    REGION ||--o{ AREA : "contains (direct link)"
+    REGION ||--o{ POINT : "contains (direct link)"
     ZONE ||--o{ AREA : "contains"
+    ZONE ||--o{ POINT : "contains (direct link)"
     AREA ||--o{ POINT : "contains"
     
     POINT ||--o{ POINT_CREATURE : "has sightings"
