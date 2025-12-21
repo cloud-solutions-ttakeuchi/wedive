@@ -30,7 +30,7 @@
 
 ### 1.3 ポイント探索 (Diving Spot Discovery)
 - **検索・フィルター (`/points`)**:
-  - **Region > Zone > Area > Point** の 4 階層ドリルダウン検索。
+  - **Region > Zone > Area > Point** の 4 階層 ID 連携ドリルダウン検索。
 - **ポイント詳細 (`/point/:id`, `/spot/:id`)**:
   - 地形、難易度、最大水深の閲覧。
   - **出現生物リスト**: AI およびユーザーログに基づいた生息生物一覧。

@@ -47,18 +47,20 @@ erDiagram
 ### 3.1 `regions`, `zones`, `areas` (場所マスタ階層)
 | フィールド | 型 | 説明 |
 | :--- | :--- | :--- |
-| `id` | string | 規約に準拠したID |
+| `id` | string | `r` / `z` / `a` + 文字列（アンダースコアなし） |
 | `name` | string | 名称 |
 | `description` | string | (Option) 説明文 |
-| `regionId` | string | (Zoneのみ) 親RegionのID |
-| `zoneId` | string | (Areaのみ) 親ZoneのID |
+| `regionId` | string | (Zone, Areaのみ) 所属RegionのID |
+| `zoneId` | string | (Areaのみ) 所属ZoneのID |
 
 ### 3.2 `points` (ダイビングポイント)
 | フィールド | 型 | 説明 |
 | :--- | :--- | :--- |
-| `id` | string | `p` + 数字 |
+| `id` | string | `p` + 文字列（アンダースコアなし） |
 | `name` | string | ポイント名 |
 | `areaId` | string | 親AreaのID |
+| `zoneId` | string | 親ZoneのID |
+| `regionId` | string | 親RegionのID |
 | `region` | string | 地域名 (冗長化) |
 | `zone` | string | ゾーン名 (冗長化) |
 | `area` | string | エリア名 (冗長化) |
@@ -83,7 +85,7 @@ erDiagram
 ### 3.3 `creatures` (生物マスタ)
 | フィールド | 型 | 説明 |
 | :--- | :--- | :--- |
-| `id` | string | `c` + 数字 |
+| `id` | string | `c` + 文字列（アンダースコアなし） |
 | `name` | string | 和名 |
 | `scientificName`| string | 学名 |
 | `englishName` | string | 英名 |
