@@ -1,6 +1,21 @@
 # Changelog
 
 プロジェクトの変更履歴を記録します。
+
+## [2.2.9] - 2025-12-21
+### Added
+- **DB Schema Redesign (ID Normalization & Hierarchy)**:
+    - **ID Naming Rules**: コレクション内すべてのIDからアンダースコアを排除（例: `p_123` → `p123`）。
+    - **Hierarchical IDs**: `points` コレクションに `regionId`, `zoneId` を、`areas` コレクションに `regionId` を追加。Firestore での直接的な階層クエリを最適化。
+- **UI/UX Improvements**:
+    - **ID-Based Filtering**: `HierarchicalPointSelector` を文字列ベースからIDベースのフィルタリングへ全面刷新。不整合の発生を抑制し、パフォーマンスを向上。
+    - **Advanced Edit Point UI**: 地点編集画面 (`EditPointPage`) で地域・エリア・地区をマスタデータからのドロップダウン選択に変更。
+- **AI & Data Engineering**:
+    - **Optimized AI Pipeline**: `cleansing_pipeline.py` において、非正規化された階層IDを直接使用するようにロジックを最適化。
+    - **Seed Data Normalization**: シードデータのIDおよび `point_creatures` のリレーションIDを新規則（アンダースコアなし）に一括変換。
+
+### Fixed
+- **Proposal Data Integrity**: 修正提案（Proposal）において、承認時に階層IDが消失したり、ID規則に違反するプレフィックスが生成されたりする不具合を修正。
 ## [2.1.5] - 2025-12-20
 ### Added
 - **AI Data Cleansing Pipeline v2.1.5 (Advanced Optimization)**:

@@ -32,12 +32,12 @@ def cleanup_old_mappings(project_id, dry_run=True, trash_only=False):
 
     # Step 2: Define what to delete
     if trash_only:
-        # 正解パターン: p[数字のみ]_c[数字のみ]
-        # 例: p12345_c67890 はOK
+        # 正解パターン: p[英数字]_c[英数字]
+        # 例: p12345_c67890 はOK, p1734768hash123_c1734768hash456 もOK
         # ゴミ: p_123_c456 や p123_c_abc などはNG
-        valid_pattern = re.compile(r"^p\d+_c\d+$")
+        valid_pattern = re.compile(r"^p[a-z0-9]+_c[a-z0-9]+$")
         to_delete = sorted([doc_id for doc_id in all_mapping_ids if not valid_pattern.match(doc_id)])
-        reason = "Malformed Trash IDs (not matching ^p\\d+_c\\d+$)"
+        reason = "Malformed Trash IDs (not matching ^p[a-z0-9]+_c[a-z0-9]+$)"
     else:
         print(f"📡 Identifying new AI mappings (python-batch-v1)...")
         new_mapping_ids = {doc.id for doc in pc_ref.where('method', '==', 'python-batch-v1').select([]).stream()}

@@ -215,7 +215,7 @@ def main():
             for new_z in zones_data:
                 if new_z["name"] not in existing_zone_names:
                     name_hash = hashlib.md5(new_z['name'].encode()).hexdigest()[:6]
-                    new_z["id"] = f"z_{int(time.time())}_{name_hash}"
+                    new_z["id"] = f"z{int(time.time())}{name_hash}"
                     new_z["displayOrder"] = 0
                     existing_zones.append(new_z)
                     print(f"    + Added Zone: {new_z['name']}")
@@ -230,12 +230,12 @@ def main():
                 "name": region_name,
                 "description": f"{region_name}のダイビングスポット一覧", # Placeholder description
                 "children": zones_data,
-                "id": f"r_{int(time.time())}_{hashlib.md5(region_name.encode()).hexdigest()[:6]}"
+                "id": f"r{int(time.time())}{hashlib.md5(region_name.encode()).hexdigest()[:6]}"
             }
 
             for i, z in enumerate(new_region_data.get("children", [])):
                 name_hash = hashlib.md5(z['name'].encode()).hexdigest()[:6]
-                z["id"] = f"z_{int(time.time())}_{name_hash}"
+                z["id"] = f"z{int(time.time())}{name_hash}"
                 z["displayOrder"] = 0
                 produced_zones_list.append({"region": region_name, "zone": z["name"]})
 

@@ -40,6 +40,10 @@ React (Vite) + Firebase を用いたモダンなシングルページアプリ�
 
 ## Configuration & Feature Flags
 
+機能のON/OFFや挙動の制御は以下の設定ファイルおよび環境変数で行います。
+- **[src/config/features.ts](./src/config/features.ts)**: アプリケーション内機能フラグの定義
+- **Firebase Remote Config**: (運用環境) 動的な機能切り替え
+
 ### Environment Variables (Functions)
 The following variables can be set in GitHub Actions Variables or Firebase Config to control application behavior:
 

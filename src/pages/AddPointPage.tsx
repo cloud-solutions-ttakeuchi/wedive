@@ -215,6 +215,8 @@ export const AddPointPage = () => {
       const pointData: Omit<Point, 'id'> = {
         name: formData.name,
         areaId: selectedAreaId,
+        zoneId: selectedZoneId,
+        regionId: selectedRegionId,
         region: region.name,
         zone: zone.name,
         area: area.name,

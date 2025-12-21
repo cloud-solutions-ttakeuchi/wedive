@@ -8,7 +8,7 @@ import { MapPickerModal } from '../components/MapPickerModal';
 export const EditPointPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { points, updatePoint, isAuthenticated, currentUser, addPointProposal } = useApp();
+  const { points, updatePoint, isAuthenticated, currentUser, addPointProposal, regions, zones, areas } = useApp();
 
   const existingPoint = points.find(p => p.id === id);
 
@@ -18,6 +18,9 @@ export const EditPointPage = () => {
     region: '',
     zone: '',
     area: '',
+    regionId: '',
+    zoneId: '',
+    areaId: '',
     level: 'Beginner',
     maxDepth: '',
     entryType: 'boat',
@@ -27,8 +30,8 @@ export const EditPointPage = () => {
     features: '',
     lat: '',
     lng: '',
-    googlePlaceId: undefined as string | undefined, // New
-    formattedAddress: undefined as string | undefined, // New
+    googlePlaceId: undefined as string | undefined,
+    formattedAddress: undefined as string | undefined,
     images: [] as string[],
   });
 
@@ -40,6 +43,9 @@ export const EditPointPage = () => {
         region: existingPoint.region,
         zone: existingPoint.zone,
         area: existingPoint.area,
+        regionId: existingPoint.regionId || '',
+        zoneId: existingPoint.zoneId || '',
+        areaId: existingPoint.areaId || '',
         level: existingPoint.level,
         maxDepth: existingPoint.maxDepth.toString(),
         entryType: existingPoint.entryType,
@@ -122,6 +128,9 @@ export const EditPointPage = () => {
         region: formData.region,
         zone: formData.zone,
         area: formData.area,
+        regionId: formData.regionId,
+        zoneId: formData.zoneId,
+        areaId: formData.areaId,
         level: formData.level as any,
         maxDepth: Number(formData.maxDepth),
         entryType: formData.entryType as any,
@@ -228,33 +237,71 @@ export const EditPointPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">国・地域 (Region)</label>
-                <input
-                  type="text"
-                  name="region"
-                  value={formData.region}
-                  onChange={handleChange}
+                <select
+                  value={formData.regionId}
+                  onChange={(e) => {
+                    const r = regions.find(reg => reg.id === e.target.value);
+                    setFormData(prev => ({
+                      ...prev,
+                      regionId: e.target.value,
+                      region: r?.name || '',
+                      zoneId: '',
+                      zone: '',
+                      areaId: '',
+                      area: ''
+                    }));
+                  }}
                   className="w-full px-4 py-2 rounded-lg border border-gray-300 outline-none"
-                />
+                >
+                  <option value="">地域を選択</option>
+                  {regions.map(r => (
+                    <option key={r.id} value={r.id}>{r.name}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">エリア (Zone)</label>
-                <input
-                  type="text"
-                  name="zone"
-                  value={formData.zone}
-                  onChange={handleChange}
+                <select
+                  value={formData.zoneId}
+                  onChange={(e) => {
+                    const z = zones.find(zn => zn.id === e.target.value);
+                    setFormData(prev => ({
+                      ...prev,
+                      zoneId: e.target.value,
+                      zone: z?.name || '',
+                      areaId: '',
+                      area: ''
+                    }));
+                  }}
+                  disabled={!formData.regionId}
                   className="w-full px-4 py-2 rounded-lg border border-gray-300 outline-none"
-                />
+                >
+                  <option value="">エリアを選択</option>
+                  {zones.filter(z => z.regionId === formData.regionId).map(z => (
+                    <option key={z.id} value={z.id}>{z.name}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">地区 (Area)</label>
-                <input
-                  type="text"
-                  name="area"
-                  value={formData.area}
-                  onChange={handleChange}
+                <select
+                  value={formData.areaId}
+                  onChange={(e) => {
+                    const a = areas.find(ar => ar.id === e.target.value);
+                    setFormData(prev => ({
+                      ...prev,
+                      areaId: e.target.value,
+                      area: a?.name || ''
+                    }));
+                  }}
+                  disabled={!formData.zoneId}
                   className="w-full px-4 py-2 rounded-lg border border-gray-300 outline-none"
-                />
+                >
+                  <option value="">地区を選択</option>
+                  {areas.filter(a => a.zoneId === formData.zoneId).map(a => (
+                    <option key={a.id} value={a.id}>{a.name}</option>
+                  ))}
+                </select>
               </div>
             </div>
 

@@ -43,9 +43,7 @@ const getHash = (str: string) => {
 };
 
 rawLocations.forEach(regionNode => {
-  // Region slug is unique enough at top level
-  const regionSlug = regionNode.name === '日本' ? 'japan' : getHash(regionNode.name);
-  const regionId = regionNode.id || `reg_${regionSlug}`;
+  const regionId = regionNode.id;
 
   REGIONS.push({
     id: regionId,
@@ -54,8 +52,7 @@ rawLocations.forEach(regionNode => {
   });
 
   regionNode.children?.forEach(zoneNode => {
-    // Include Region in Zone hash for scope
-    const zoneId = zoneNode.id || `zone_${getHash(regionNode.name + zoneNode.name)}`;
+    const zoneId = zoneNode.id;
     ZONES.push({
       id: zoneId,
       name: zoneNode.name,
@@ -64,21 +61,22 @@ rawLocations.forEach(regionNode => {
     });
 
     zoneNode.children?.forEach(areaNode => {
-      // Include Zone in Area hash for scope
-      const areaId = areaNode.id || `area_${getHash(zoneNode.name + areaNode.name)}`;
+      const areaId = areaNode.id;
       AREAS.push({
         id: areaId,
         name: areaNode.name,
-        zoneId: zoneId
+        zoneId: zoneId,
+        regionId: regionId
       });
 
       areaNode.children?.forEach(pointNode => {
-        // Scoped Point ID to prevent same-name collisions (e.g. "Main Spot")
-        const pointId = pointNode.id || `p_${getHash(areaNode.name + pointNode.name)}`;
+        const pointId = pointNode.id;
         POINTS.push({
           id: pointId,
           name: pointNode.name,
           areaId: areaId,
+          zoneId: zoneId,
+          regionId: regionId,
           region: regionNode.name,
           zone: zoneNode.name,
           area: areaNode.name,

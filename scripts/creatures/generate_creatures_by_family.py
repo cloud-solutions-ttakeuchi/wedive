@@ -203,8 +203,8 @@ def generate_creatures_by_group(target: str, total_count: int) -> List[Dict]:
                 # ID生成 (学名を優先キーとする)
                 seed_str = item.get("scientificName") or item.get("name")
                 unique_hash = hashlib.sha256(seed_str.encode()).hexdigest()[:16]
-                item["id"] = f"c_{unique_hash}"
-                item["image"] = "" # 画像は別途取得
+                item["id"] = f"c{unique_hash}"
+                item["imageUrl"] = "" # 画像は別途取得
 
             combined_data.extend(batch_data)
             print(f"    -> Batch {i+1}/{num_batches}: Got {len(batch_data)} items.")
@@ -325,8 +325,7 @@ def main():
                     # CRITICAL FIX: Do NOT overwrite ID or Image if they exist
                     safe_update_item = item.copy()
                     if "id" in safe_update_item: del safe_update_item["id"]
-                    if "image" in safe_update_item: del safe_update_item["image"]
-                    if "imageUrl" in safe_update_item: del safe_update_item["imageUrl"] # Just in case
+                    if "imageUrl" in safe_update_item: del safe_update_item["imageUrl"]
 
                     existing.update(safe_update_item) # item has new data (description, etc)
 

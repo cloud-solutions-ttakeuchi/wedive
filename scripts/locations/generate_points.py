@@ -320,8 +320,8 @@ def main():
             else:
                 # ID generation: standardized to ASCII (timestamp + hash)
                 name_hash = hashlib.md5(new_p['name'].encode()).hexdigest()[:6]
-                new_p["id"] = f"p_{int(time.time())}_{name_hash}"
-                new_p["image"] = ""
+                new_p["id"] = f"p{int(time.time())}{name_hash}"
+                new_p["imageUrl"] = ""
                 existing_points.append(new_p)
                 global_existing_points.add(new_p["name"])
                 print(f"    + Added Point: {new_p['name']}")

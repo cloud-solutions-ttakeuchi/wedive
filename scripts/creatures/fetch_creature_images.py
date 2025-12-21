@@ -54,10 +54,10 @@ def main():
 
     for i, creature in enumerate(creatures):
         name = creature.get("name", "Unknown")
-        current_image = creature.get("image", "")
+        current_image = creature.get("imageUrl", "")
 
-        # 既に有効な画像URL（httpで始まり、loremflickr等ダミーでない）があればスキップ
-        if current_image and current_image.startswith("http") and "loremflickr" not in current_image:
+        # 既に有効な画像URL（httpで始まり、ダミーでない、または内部パスでない）があればスキップ
+        if current_image and current_image.startswith("http") and "loremflickr" not in current_image and "reef_fish.png" not in current_image:
              skipped_count += 1
              continue
 
@@ -87,7 +87,7 @@ def main():
              image_data = fetch_wiki_image(keyword, 'en')
 
         if image_data:
-            creature["image"] = image_data["url"]
+            creature["imageUrl"] = image_data["url"]
             creature["imageCredit"] = image_data["credit"]
             creature["imageLicense"] = image_data["license"]
             print(" ✅ Found!")
