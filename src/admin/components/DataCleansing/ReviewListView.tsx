@@ -1,16 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../../../context/AppContext';
 import {
-  CheckCircle,
-  XCircle,
-  ArrowRight,
   Fish,
   MapPin,
   ChevronDown,
-  ChevronUp,
-  ExternalLink,
   ShieldCheck,
-  AlertCircle,
   ThumbsUp,
   ThumbsDown,
   MoreVertical,

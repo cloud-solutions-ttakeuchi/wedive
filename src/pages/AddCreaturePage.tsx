@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { ChevronLeft, Upload, Info, MapPin, Thermometer, Ruler, Sparkles, Loader2 } from 'lucide-react';
+import { ChevronLeft, Upload, Info, MapPin, Thermometer, Ruler, Sparkles, Loader2, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import type { Creature } from '../types';
@@ -197,6 +197,34 @@ export const AddCreaturePage = () => {
     }
   };
 
+  const handleAutoFillImage = async () => {
+    if (!formData.name?.trim() && !formData.scientificName?.trim()) return;
+    setIsLoadingAI(true);
+    try {
+      const searchFn = httpsCallable(functions, 'searchCreatureImage');
+      const query = formData.scientificName || formData.name;
+      const result = await searchFn({ query, lang: 'ja' });
+      const data = result.data as any;
+
+      if (data.imageUrl) {
+        setFormData(prev => ({
+          ...prev,
+          imageUrl: data.imageUrl,
+          imageCredit: data.imageCredit,
+          imageLicense: data.imageLicense
+        }));
+      } else {
+        alert('Wikipediaで画像が見つかりませんでした。');
+      }
+    } catch (error) {
+      console.error("Image search failed:", error);
+      alert("画像の自動取得に失敗しました。");
+    } finally {
+      setIsLoadingAI(false);
+    }
+  };
+
+
   const VerifiedBadge = () => (
     <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-green-50 text-[10px] font-bold text-green-700 border border-green-200 animate-fade-in shadow-sm">
       <Sparkles size={10} className="text-green-600" />
@@ -253,21 +281,32 @@ export const AddCreaturePage = () => {
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5 md:col-span-2">
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-between items-center gap-2">
                     <label className="block text-sm font-bold text-gray-700">名前 <span className="text-red-500">*</span></label>
-                    <button
-                      type="button"
-                      onClick={handleAIAutoFill}
-                      disabled={!formData.name?.trim() || isLoadingAI}
-                      className="flex items-center gap-1.5 text-xs font-bold text-slate-900 transition-all bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-full hover:bg-slate-100 hover:border-slate-300 disabled:opacity-40 active:scale-95"
-                    >
-                      {isLoadingAI ? (
-                        <Loader2 size={13} className="animate-spin" />
-                      ) : (
-                        <Sparkles size={13} />
-                      )}
-                      AIで自動入力
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={handleAIAutoFill}
+                        disabled={!formData.name?.trim() || isLoadingAI}
+                        className="flex items-center gap-1.5 text-xs font-bold text-slate-900 transition-all bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-full hover:bg-slate-100 hover:border-slate-300 disabled:opacity-40 active:scale-95"
+                      >
+                        {isLoadingAI ? (
+                          <Loader2 size={13} className="animate-spin" />
+                        ) : (
+                          <Sparkles size={13} />
+                        )}
+                        AIで自動入力
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleAutoFillImage}
+                        disabled={(!formData.name?.trim() && !formData.scientificName?.trim()) || isLoadingAI}
+                        className="flex items-center gap-1.5 text-xs font-bold text-purple-700 transition-all bg-purple-50 border border-purple-200 px-3 py-1.5 rounded-full hover:bg-purple-100 hover:border-purple-300 disabled:opacity-40 active:scale-95"
+                      >
+                        <Search size={13} />
+                        画像を検索
+                      </button>
+                    </div>
                   </div>
                   <input
                     type="text"
@@ -558,16 +597,43 @@ export const AddCreaturePage = () => {
                   />
                 </div>
                 {formData.imageUrl && !formData.imageUrl.startsWith('/images/') && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setFormData(prev => ({ ...prev, imageUrl: '/images/reef_fish.png' }));
-                    }}
-                    className="text-xs text-red-500 mt-2 hover:underline"
-                  >
-                    画像を削除
-                  </button>
+                  <div className="space-y-4">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFormData(prev => ({ ...prev, imageUrl: '/images/reef_fish.png', imageCredit: '', imageLicense: '' }));
+                      }}
+                      className="text-xs text-red-500 mt-2 hover:underline"
+                    >
+                      画像を削除
+                    </button>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">画像クレジット</label>
+                        <input
+                          type="text"
+                          name="imageCredit"
+                          value={formData.imageCredit || ''}
+                          onChange={handleChange}
+                          className="w-full px-3 py-1.5 text-xs rounded border border-gray-200 outline-none"
+                          placeholder="例: Wikipedia"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">ライセンス</label>
+                        <input
+                          type="text"
+                          name="imageLicense"
+                          value={formData.imageLicense || ''}
+                          onChange={handleChange}
+                          className="w-full px-3 py-1.5 text-xs rounded border border-gray-200 outline-none"
+                          placeholder="例: CC BY-SA"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
