@@ -73,27 +73,23 @@ class CleansingPipeline:
         areas_dict = {doc.id: doc.to_dict() for doc in self.db.collection('areas').stream()}
         zones_dict = {doc.id: doc.to_dict() for doc in self.db.collection('zones').stream()}
 
-        # 3. Load Points and filter in-memory for robustness
+        # 3. Load Points: Use Firestore queries for better performance
         points_ref = self.db.collection('points')
         if filters.get('pointId'):
-            # Specific point: direct access
+            # 3.1 Specific point: direct access
             doc = points_ref.document(filters['pointId']).get()
-            raw_points = [doc.to_dict() | {"id": doc.id}] if doc.exists else []
+            self.points = [doc.to_dict() | {"id": doc.id}] if doc.exists else []
         else:
-            # Load all and filter hierarchically
-            raw_points = [doc.to_dict() | {"id": doc.id} for doc in points_ref.stream()]
+            # 3.2 Hierarchical query (Optimized)
+            query = points_ref
+            if filters.get('area'):
+                query = query.where('areaId', '==', filters['area'])
+            if filters.get('zone'):
+                query = query.where('zoneId', '==', filters['zone'])
+            if filters.get('region'):
+                query = query.where('regionId', '==', filters['region'])
 
-        self.points = []
-        for p in raw_points:
-            # Direct hierarchy filters check
-            if filters.get('area') and p.get('areaId') != filters['area']:
-                continue
-            if filters.get('zone') and p.get('zoneId') != filters['zone']:
-                continue
-            if filters.get('region') and p.get('regionId') != filters['region']:
-                continue
-
-            self.points.append(p)
+            self.points = [doc.to_dict() | {"id": doc.id} for doc in query.stream()]
 
         logger.info(f"📊 Loaded {len(self.creatures)} creatures and {len(self.points)} target points.")
         logger.info(f"🔎 Applied Filters: {json.dumps(filters, indent=2)}")
