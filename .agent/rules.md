@@ -18,3 +18,13 @@
 - 作業が終わったらCHANGELOG.md, RELEASE_NOTES.mdを更新すること。
 - 実装が終わったらtests/ディレクトリにユニットテストを追加すること。
 - feature flagを実装すること。feature flagは、必ずREADME.mdに説明を記載すること。
+- データベースの管理は、必ずDATABASE_DESIGN.mdを参考にすること。
+- データベースとIOが発生する場合は、必ずDATABASE_DESIGN.mdの仕様を確認すること。
+- スキーマの更新が発生する作業は、必ずDATABASE_DESIGN.mdを更新すること。
+- 新規にDBやテーブル（コレクション、ドキュメント含む）を追加する作業は、必ずDATABASE_DESIGN.mdを更新すること。
+- インフラ設計は、必ずINFRASTRUCTURE.mdを参考にすること。
+- インフラ設計の変更が発生する作業は、必ずINFRASTRUCTURE.mdを更新すること。
+- 機能一覧は、必ずFUNCTIONALITY.mdを参考にすること。
+- 機能一覧の変更が発生する作業は、必ずFUNCTIONALITY.mdを更新すること。
+- DATABASE_DESIGN.md, INFRASTRUCTURE.md, FUNCTIONALITY.mdは日本語で事実のみを記載すること。
+- 機能実装、改修に取り掛かる際はDATABASE_DESIGN.md, INFRASTRUCTURE.md, FUNCTIONALITY.mdを参照し仕様通りにすすめると。仕様通りに進められない場合（仕様変更が発生する作業）はユーザーに確認をし、ユーザーの許可を得た後に行いDATABASE_DESIGN.md, INFRASTRUCTURE.md, FUNCTIONALITY.mdを更新すること。
