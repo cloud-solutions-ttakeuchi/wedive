@@ -209,12 +209,22 @@ export const ReviewListView: React.FC<ReviewListViewProps> = ({ initialViewMode 
                       onClick={(e) => {
                         e.stopPropagation();
                         const newSet = new Set(selectedIds);
-                        group.items.forEach(i => newSet.add(i.id));
+                        const groupIds = group.items.map(i => i.id);
+                        const allSelected = groupIds.every(id => newSet.has(id));
+
+                        if (allSelected) {
+                          groupIds.forEach(id => newSet.delete(id));
+                        } else {
+                          groupIds.forEach(id => newSet.add(id));
+                        }
                         setSelectedIds(newSet);
                       }}
-                      className="ml-2 text-[10px] text-ocean-600 hover:text-ocean-700 font-bold underline bg-transparent"
+                      className={clsx(
+                        "ml-2 text-[10px] font-bold underline bg-transparent transition-colors",
+                        group.items.every(i => selectedIds.has(i.id)) ? "text-red-500 hover:text-red-600" : "text-ocean-600 hover:text-ocean-700"
+                      )}
                     >
-                      Check Group
+                      {group.items.every(i => selectedIds.has(i.id)) ? 'Uncheck Group' : 'Check Group'}
                     </button>
                   </div>
                   <p className="text-sm text-gray-400 font-medium tracking-wide">
