@@ -1,0 +1,433 @@
+import React, { useState } from 'react';
+import { StyleSheet, TextInput, TouchableOpacity, FlatList, Image, Dimensions, ScrollView } from 'react-native';
+import { Text, View } from '@/components/Themed';
+import { Search as SearchIcon, MapPin, Filter, Star, ChevronRight, Anchor, BookOpen, Clock, Droplets } from 'lucide-react-native';
+import { MOCK_CREATURES, MOCK_POINTS, MOCK_LOGS } from '../../src/data/mockData';
+import { calculateRarity } from '../../src/utils/logic';
+import { useRouter } from 'expo-router';
+
+const { width } = Dimensions.get('window');
+
+type SearchMode = 'spots' | 'creatures' | 'logs';
+
+export default function SearchScreen() {
+  const router = useRouter();
+  const [mode, setMode] = useState<SearchMode>('spots');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredSpots = MOCK_POINTS.filter(p =>
+    p.name.includes(searchTerm) || p.area.includes(searchTerm) || p.region.includes(searchTerm)
+  );
+
+  const filteredCreatures = MOCK_CREATURES.filter(c =>
+    c.name.includes(searchTerm) || c.category.includes(searchTerm)
+  ).map(c => ({
+    ...c,
+    calculatedRarity: calculateRarity(c.id, MOCK_CREATURES as any)
+  }));
+
+  const renderSpotItem = ({ item }: { item: typeof MOCK_POINTS[0] }) => (
+    <TouchableOpacity
+      style={styles.spotCard}
+      onPress={() => router.push(`/details/spot/${item.id}`)}
+    >
+      <Image source={{ uri: item.imageUrl }} style={styles.spotImage} />
+      <View style={styles.spotInfo}>
+        <View style={styles.row}>
+          <Text style={styles.spotName}>{item.name}</Text>
+          <View style={styles.levelBadge}>
+            <Text style={styles.levelText}>{item.level}</Text>
+          </View>
+        </View>
+        <View style={styles.locationRow}>
+          <MapPin size={12} color="#64748b" />
+          <Text style={styles.locationText}>{item.region} • {item.area}</Text>
+        </View>
+        <View style={styles.featuresRow}>
+          {item.features.map(f => (
+            <View key={f} style={styles.featureTag}>
+              <Text style={styles.featureText}>#{f}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
+  const renderCreatureItem = ({ item }: { item: any }) => (
+    <TouchableOpacity
+      style={styles.creatureCard}
+      onPress={() => router.push(`/details/creature/${item.id}`)}
+    >
+      <Image source={{ uri: item.imageUrl }} style={styles.creatureImage} />
+      <View style={styles.creatureContent}>
+        <View style={styles.creatureInfo}>
+          <Text style={styles.creatureCategory}>{item.category}</Text>
+          <Text style={styles.creatureName}>{item.name}</Text>
+        </View>
+        <View style={styles.rarityBadge}>
+          <Star size={10} color="#fbbf24" fill="#fbbf24" />
+          <Text style={styles.rarityValue}>{item.calculatedRarity}</Text>
+        </View>
+      </View>
+      <ChevronRight size={16} color="#cbd5e1" />
+    </TouchableOpacity>
+  );
+
+  const renderLogItem = ({ item }: { item: typeof MOCK_LOGS[0] }) => (
+    <TouchableOpacity style={styles.logCard}>
+      <View style={styles.logHeader}>
+        <Image source={{ uri: item.userAvatar }} style={styles.userAvatar} />
+        <View style={styles.userInfo}>
+          <Text style={styles.userName}>{item.userName}</Text>
+          <Text style={styles.logDate}>{item.date}</Text>
+        </View>
+      </View>
+      <Image source={{ uri: item.imageUrl }} style={styles.logImage} />
+      <View style={styles.logContent}>
+        <Text style={styles.logPointName}>{item.pointName}</Text>
+        <Text style={styles.logCreatureName}>観察: {item.creatureName}</Text>
+        <View style={styles.logStats}>
+          <View style={styles.logStat}>
+            <Clock size={12} color="#94a3b8" />
+            <Text style={styles.logStatText}>{item.depth}m</Text>
+          </View>
+          <View style={styles.logStat}>
+            <Droplets size={12} color="#94a3b8" />
+            <Text style={styles.logStatText}>{item.temp}℃</Text>
+          </View>
+        </View>
+        <Text style={styles.logComment} numberOfLines={2}>"{item.comment}"</Text>
+      </View>
+    </TouchableOpacity>
+  );
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>探す</Text>
+        <View style={styles.searchBox}>
+          <SearchIcon size={20} color="#94a3b8" />
+          <TextInput
+            style={styles.input}
+            placeholder={mode === 'spots' ? "スポットを検索..." : "生物を検索..."}
+            value={searchTerm}
+            onChangeText={setSearchTerm}
+            placeholderTextColor="#94a3b8"
+          />
+        </View>
+        <View style={styles.modeToggle}>
+          <TouchableOpacity
+            style={[styles.modeBtn, mode === 'spots' && styles.activeModeBtn]}
+            onPress={() => setMode('spots')}
+          >
+            <MapPin size={16} color={mode === 'spots' ? '#fff' : '#64748b'} />
+            <Text style={[styles.modeText, mode === 'spots' && styles.activeModeText]}>スポット</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.modeBtn, mode === 'creatures' && styles.activeModeBtn]}
+            onPress={() => setMode('creatures')}
+          >
+            <Anchor size={16} color={mode === 'creatures' ? '#fff' : '#64748b'} />
+            <Text style={[styles.modeText, mode === 'creatures' && styles.activeModeText]}>生物</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.modeBtn, mode === 'logs' && styles.activeModeBtn]}
+            onPress={() => setMode('logs')}
+          >
+            <BookOpen size={16} color={mode === 'logs' ? '#fff' : '#64748b'} />
+            <Text style={[styles.modeText, mode === 'logs' && styles.activeModeText]}>ログ</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <FlatList
+        data={(mode === 'spots' ? filteredSpots : mode === 'creatures' ? filteredCreatures : MOCK_LOGS) as any}
+        renderItem={(mode === 'spots' ? renderSpotItem : mode === 'creatures' ? renderCreatureItem : renderLogItem) as any}
+        keyExtractor={item => item.id}
+        contentContainerStyle={styles.listContent}
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyText}>見つかりませんでした</Text>
+          </View>
+        }
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  header: {
+    paddingTop: 60,
+    paddingHorizontal: 20,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#0f172a',
+    marginBottom: 20,
+  },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+  },
+  input: {
+    flex: 1,
+    marginLeft: 11,
+    fontSize: 16,
+    color: '#1e293b',
+  },
+  modeToggle: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+    backgroundColor: 'transparent',
+  },
+  modeBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: '#f1f5f9',
+  },
+  activeModeBtn: {
+    backgroundColor: '#0ea5e9',
+  },
+  modeText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#64748b',
+  },
+  activeModeText: {
+    color: '#fff',
+  },
+  listContent: {
+    padding: 20,
+  },
+  spotCard: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    marginBottom: 20,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  spotImage: {
+    width: '100%',
+    height: 180,
+    backgroundColor: '#f1f5f9',
+  },
+  spotInfo: {
+    padding: 16,
+    backgroundColor: 'transparent',
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+    backgroundColor: 'transparent',
+  },
+  spotName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1e293b',
+  },
+  levelBadge: {
+    backgroundColor: '#f0f9ff',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  levelText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#0ea5e9',
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 12,
+    backgroundColor: 'transparent',
+  },
+  locationText: {
+    fontSize: 13,
+    color: '#64748b',
+  },
+  featuresRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    backgroundColor: 'transparent',
+  },
+  featureTag: {
+    backgroundColor: '#f8fafc',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  featureText: {
+    fontSize: 11,
+    color: '#94a3b8',
+    fontWeight: 'bold',
+  },
+  creatureCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 12,
+    borderRadius: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+  },
+  creatureImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 12,
+    backgroundColor: '#f1f5f9',
+  },
+  creatureContent: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginHorizontal: 12,
+    backgroundColor: 'transparent',
+  },
+  creatureInfo: {
+    backgroundColor: 'transparent',
+  },
+  creatureCategory: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#94a3b8',
+    marginBottom: 2,
+  },
+  creatureName: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#334155',
+  },
+  rarityBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#fffbeb',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  rarityValue: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#fbbf24',
+  },
+  emptyState: {
+    padding: 40,
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+  emptyText: {
+    color: '#94a3b8',
+    fontWeight: '500',
+  },
+  logCard: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    marginBottom: 20,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+  },
+  logHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    gap: 10,
+    backgroundColor: 'transparent',
+  },
+  userAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
+  userInfo: {
+    backgroundColor: 'transparent',
+  },
+  userName: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#1e293b',
+  },
+  logDate: {
+    fontSize: 11,
+    color: '#94a3b8',
+  },
+  logImage: {
+    width: '100%',
+    height: 200,
+    backgroundColor: '#f1f5f9',
+  },
+  logContent: {
+    padding: 16,
+    backgroundColor: 'transparent',
+  },
+  logPointName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1e293b',
+    marginBottom: 4,
+  },
+  logCreatureName: {
+    fontSize: 13,
+    color: '#0ea5e9',
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  logStats: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 12,
+    backgroundColor: 'transparent',
+  },
+  logStat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'transparent',
+  },
+  logStatText: {
+    fontSize: 12,
+    color: '#64748b',
+    fontWeight: '500',
+  },
+  logComment: {
+    fontSize: 13,
+    color: '#475569',
+    fontStyle: 'italic',
+  },
+});
