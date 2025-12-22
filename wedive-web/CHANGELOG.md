@@ -2,7 +2,19 @@
 
 プロジェクトの変更履歴を記録します。
 
-## [2.2.10] - 2025-12-21
+## [2.3.0] - 2025-12-23
+### Added
+- **Mobile App Initial Feature Set (Expo/React Native)**:
+    - **Home Screen**: Web版と共通のデザインシステムを採用。AIコンシェルジュへの誘導、注目スポット、人気生物のカルーセル表示を実装。
+    - **Global Search**: スポット、生物、みんなのログを横断検索・閲覧できる3タブ構成の検索機能を実装。
+    - **Detail Pages**: スポットおよび生物の詳細情報を閲覧できるリッチな詳細画面を構築。
+    - **My Page**: ユーザーの統計、ログブック、コレクション、お気に入りを管理するマイページ・タブを追加。
+    - **Log Recording**: FAB（フローティングアクションボタン）からのクイックログ登録機能を実装（ログイン後専用）。
+- **Branding Integration**:
+    - Web版のシンボルロゴをモバイルアプリにも適用。
+    - ヘッダーレイアウトを調整し、モバイルの画面サイズに最適化。
+- **Compliance Preparation**:
+    - 会員登録時の同意書（規約・プライバシーポリシー）必須化に向けたフロー検討を開始。
 ### Added
 - **AI Data Cleansing Pipeline Enhancements**:
     - **Rarity Normalization**: `cleansing_pipeline.py` に `localRarity` の自動正規化ロジックを追加。AIが解説文をレア度フィールドに出力するのを防止。

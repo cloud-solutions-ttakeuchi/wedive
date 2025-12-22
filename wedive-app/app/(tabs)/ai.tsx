@@ -1,0 +1,222 @@
+import React, { useState, useRef } from 'react';
+import { StyleSheet, FlatList, Image, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ScrollView, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import { Text, View } from '@/components/Themed';
+import { Bot, Send, User, Sparkles } from 'lucide-react-native';
+import { aiService } from '../../src/api/aiService';
+
+export default function AIScreen() {
+  const [messages, setMessages] = useState<{ role: 'user' | 'assistant', content: string }[]>([
+    { role: 'assistant', content: 'こんにちは！WeDiveコンシェルジュです。ダイビングのスポットや生物について何でも聞いてくださいね。' }
+  ]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  const handleSend = async () => {
+    if (!input.trim() || isLoading) return;
+
+    const userMessage = { role: 'user' as const, content: input.trim() };
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
+    Keyboard.dismiss(); // 送信時にキーボードを閉じる
+
+    try {
+      const history = messages.map(m => ({
+        role: m.role === 'user' ? 'user' as const : 'model' as const,
+        parts: [{ text: m.content }]
+      }));
+
+      const response = await aiService.sendMessage(userMessage.content, history);
+      setMessages(prev => [...prev, { role: 'assistant', content: response.content }]);
+    } catch (error) {
+      console.error(error);
+      setMessages(prev => [...prev, { role: 'assistant', content: '申し訳ありません、エラーが発生しました。' }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      >
+        <View style={styles.header}>
+          <View style={styles.botIconContainer}>
+            <Bot size={24} color="#0284c7" />
+          </View>
+          <View style={{ backgroundColor: 'transparent' }}>
+            <Text style={styles.title}>AIコンシェルジュ</Text>
+            <Text style={styles.status}>Online • Powered by Gemini</Text>
+          </View>
+        </View>
+
+        <ScrollView
+          style={styles.chatContainer}
+          contentContainerStyle={styles.scrollContent}
+          ref={scrollViewRef}
+          onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+        >
+          {messages.map((message, index) => (
+            <View
+              key={index}
+              style={[
+                styles.messageWrapper,
+                message.role === 'user' ? styles.userMessageWrapper : styles.botMessageWrapper
+              ]}
+            >
+              <View
+                style={[
+                  styles.messageBubble,
+                  message.role === 'user' ? styles.userBubble : styles.botBubble
+                ]}
+              >
+                <Text style={[
+                  styles.messageText,
+                  message.role === 'user' ? styles.userMessageText : styles.botMessageText
+                ]}>
+                  {message.content}
+                </Text>
+              </View>
+            </View>
+          ))}
+          {isLoading && (
+            <View style={styles.botMessageWrapper}>
+              <View style={[styles.messageBubble, styles.botBubble]}>
+                <Text style={styles.botMessageText}>考え中...</Text>
+              </View>
+            </View>
+          )}
+        </ScrollView>
+
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="AIに相談する..."
+            value={input}
+            onChangeText={setInput}
+            multiline
+            autoFocus={false} // ← 自動フォーカスを確実にオフ
+            blurOnSubmit={true}
+          />
+          <TouchableOpacity
+            style={[styles.sendButton, !input.trim() && styles.sendButtonDisabled]}
+            onPress={handleSend}
+            disabled={!input.trim() || isLoading}
+          >
+            <Send size={20} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    paddingTop: Platform.OS === 'ios' ? 60 : 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+    backgroundColor: '#fff',
+  },
+  botIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f0f9ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#0f172a',
+  },
+  status: {
+    fontSize: 12,
+    color: '#0ea5e9',
+    fontWeight: '600',
+  },
+  chatContainer: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#fff',
+  },
+  scrollContent: {
+    paddingBottom: 20,
+    backgroundColor: '#fff',
+  },
+  messageWrapper: {
+    marginBottom: 16,
+    maxWidth: '80%',
+    backgroundColor: 'transparent',
+  },
+  userMessageWrapper: {
+    alignSelf: 'flex-end',
+  },
+  botMessageWrapper: {
+    alignSelf: 'flex-start',
+  },
+  messageBubble: {
+    padding: 12,
+    borderRadius: 20,
+  },
+  userBubble: {
+    backgroundColor: '#0284c7',
+    borderBottomRightRadius: 4,
+  },
+  botBubble: {
+    backgroundColor: '#f1f5f9',
+    borderBottomLeftRadius: 4,
+  },
+  messageText: {
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  userMessageText: {
+    color: '#fff',
+  },
+  botMessageText: {
+    color: '#334155',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#f1f5f9',
+    backgroundColor: '#fff',
+  },
+  input: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+    borderRadius: 24,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    marginRight: 12,
+    fontSize: 15,
+    maxHeight: 100,
+  },
+  sendButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#0284c7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sendButtonDisabled: {
+    backgroundColor: '#cbd5e1',
+  },
+});
