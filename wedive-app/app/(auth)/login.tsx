@@ -15,8 +15,13 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const redirectUri = makeRedirectUri({ scheme: 'wediveapp' });
-  console.log("Redirect URI:", redirectUri); // Debug用: このURIをGoogle Consoleに登録する
+  const redirectUri = makeRedirectUri({
+    scheme: 'wediveapp',
+    // @ts-ignore - プロキシ経由で戻すためのフラグ（最新の型定義でエラーが出る場合があるため）
+    useProxy: true,
+    projectNameForProxy: 'wedive-app',
+  });
+  console.log("Redirect URI (Proxy):", redirectUri);
 
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     clientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,

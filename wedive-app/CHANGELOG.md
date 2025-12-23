@@ -2,6 +2,19 @@
 
 すべての変更は本ファイルに記録されます。
 
+## [2.5.0] - 2025-12-24
+
+### Changed
+- **Database & Architecture**:
+    - **Design Synchronization**: Web版の設計書 (`DATABASE_DESIGN.md` 等) を完全移植し、データ構造の整合性を確保。
+    - **Log Service**: ログ保存ロジックを `LogService` に集約。Web版仕様（ID: `l{timestamp}`, Path: `users/{uid}/logs`）への完全準拠と、`undefined` データ除去の実装。
+- **UI/UX**:
+    - **Log Registration**: ブランドカラー (Ocean Blue) への統一、ローディングオーバーレイによるUX向上、および時刻入力バリデーションの強化。
+
+### Fixed
+- **Google Authentication**: `useProxy: true` オプションの追加により、認証後のリダイレクトエラーを解消。
+- **Data Integrity**: ログ保存時に不正な形式のデータがFirestoreに混入する問題を修正。
+
 ## [2.4.0] - 2025-12-23
 
 ### Added

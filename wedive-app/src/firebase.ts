@@ -1,7 +1,7 @@
 import { initializeApp } from "firebase/app";
 // @ts-ignore
-import { initializeAuth, getReactNativePersistence, GoogleAuthProvider, getAuth } from 'firebase/auth';
-import { initializeFirestore, persistentLocalCache, persistentSingleTabManager, getFirestore } from "firebase/firestore";
+import { Auth, initializeAuth, getReactNativePersistence, GoogleAuthProvider, getAuth } from 'firebase/auth';
+import { Firestore, initializeFirestore, persistentLocalCache, persistentSingleTabManager, getFirestore } from "firebase/firestore";
 import { getFunctions } from "firebase/functions";
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -21,7 +21,7 @@ const app = initializeApp(firebaseConfig);
 
 // 2. Auth with Persistence (AsyncStorage)
 // getReactNativePersistence が関数として存在するかチェック
-let auth;
+let auth: Auth;
 try {
   auth = initializeAuth(app, {
     persistence: getReactNativePersistence(ReactNativeAsyncStorage)
@@ -36,7 +36,7 @@ export const googleProvider = new GoogleAuthProvider();
 
 // 3. Firestore
 // React Native does not support multiple tab manager (it is single process mostly)
-let db;
+let db: Firestore;
 try {
   db = initializeFirestore(app, {
     localCache: persistentLocalCache({
@@ -49,7 +49,11 @@ try {
 }
 export { db };
 
-// 4. Functions
+// 4. Storage
+import { getStorage } from "firebase/storage";
+export const storage = getStorage(app);
+
+// 5. Functions
 export const functions = getFunctions(app, "asia-northeast1");
 
 // エミュレータ接続などは必要に応じて追加してくだい。

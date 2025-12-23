@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { StyleSheet, Pressable, ScrollView, Image, Dimensions, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Text, View } from '@/components/Themed';
-import { LogOut, ChevronRight, Bookmark, Heart, Settings, Activity, BookOpen, Grid, User as UserIcon, Award, Star, MapPin, Plus } from 'lucide-react-native';
+import { LogOut, ChevronRight, Bookmark, Heart, Settings, Activity, BookOpen, Grid, User as UserIcon, Award, Star, MapPin, Plus, Clock } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
+import { DiveLog } from '../../src/types';
 
 const { width } = Dimensions.get('window');
 
@@ -11,7 +12,7 @@ type TabType = 'dashboard' | 'logbook' | 'collection' | 'favorites';
 
 export default function MyPageScreen() {
   const router = useRouter();
-  const { user, isLoading, signOut } = useAuth();
+  const { user, logs, isLoading, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
 
   const handleSignOut = async () => {
@@ -83,17 +84,55 @@ export default function MyPageScreen() {
       case 'logbook':
         return (
           <View style={styles.tabContent}>
-            <View style={styles.emptyState}>
-              <BookOpen size={48} color="#cbd5e1" />
-              <Text style={styles.emptyText}>No logs yet. Go dive!</Text>
-              <TouchableOpacity
-                style={styles.addLogBtnInline}
-                onPress={() => router.push('/log/add')}
-              >
-                <Plus size={20} color="#fff" />
-                <Text style={styles.addLogBtnInlineText}>Add Your First Log</Text>
-              </TouchableOpacity>
-            </View>
+            {logs.length > 0 ? (
+              <View style={{ gap: 12 }}>
+                {logs.map((log: DiveLog) => (
+                  <TouchableOpacity
+                    key={log.id}
+                    style={styles.logCard}
+                    onPress={() => router.push(`/log/${log.id}` as any)}
+                  >
+                    <View style={styles.logCardHeader}>
+                      <View>
+                        <Text style={styles.logDate}>{log.date}</Text>
+                        <Text style={styles.logTitle}>{log.title}</Text>
+                      </View>
+                      <View style={styles.diveNumBadge}>
+                        <Text style={styles.diveNumText}>#{log.diveNumber}</Text>
+                      </View>
+                    </View>
+                    <View style={styles.logCardFooter}>
+                      <View style={styles.logMeta}>
+                        <MapPin size={12} color="#64748b" />
+                        <Text style={styles.logMetaText}>{log.location.pointName}</Text>
+                      </View>
+                      <View style={styles.logMeta}>
+                        <Clock size={12} color="#64748b" />
+                        <Text style={styles.logMetaText}>{log.time.duration} min</Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+                <TouchableOpacity
+                  style={styles.addLogBtnFab}
+                  onPress={() => router.push('/log/add')}
+                >
+                  <Plus size={24} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.emptyState}>
+                <BookOpen size={48} color="#cbd5e1" />
+                <Text style={styles.emptyText}>まだログがありません。ダイビングを記録しましょう！</Text>
+                <TouchableOpacity
+                  style={styles.addLogBtnInline}
+                  onPress={() => router.push('/log/add')}
+                >
+                  <Plus size={20} color="#fff" />
+                  <Text style={styles.addLogBtnInlineText}>最初のログを追加</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         );
       case 'collection':
@@ -431,6 +470,78 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  logCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  logCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  logDate: {
+    fontSize: 12,
+    color: '#94a3b8',
+    fontWeight: '500',
+  },
+  logTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1e293b',
+    marginTop: 2,
+  },
+  diveNumBadge: {
+    backgroundColor: '#f1f5f9',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  diveNumText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#64748b',
+  },
+  logCardFooter: {
+    flexDirection: 'row',
+    gap: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#f8fafc',
+    paddingTop: 12,
+  },
+  logMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  logMetaText: {
+    fontSize: 12,
+    color: '#64748b',
+  },
+  addLogBtnFab: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#0ea5e9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#0ea5e9',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   guestIconBg: {
     width: 100,
