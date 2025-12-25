@@ -295,9 +295,8 @@ export default function EditSpotProposalScreen() {
         setMarkerCoords({ latitude: lat, longitude: lng });
         mapRef.current?.animateToRegion(newRegion, 1000);
       } else {
-        const maskedKey = apiKey ? `${apiKey.substring(0, 3)}...${apiKey.substring(apiKey.length - 3)}` : '未設定';
         const msg = data.status === 'REQUEST_DENIED'
-          ? `APIキーが拒絶されました。\nKey: ${maskedKey}\nGoogle Cloudでこのキーに対して「Geocoding API」が許可されているか確認してください。`
+          ? 'APIキーの設定エラーが発生しました。管理者にお問い合わせください。'
           : `場所が見つかりませんでした (Status: ${data.status})`;
         Alert.alert('検索失敗', msg);
       }
