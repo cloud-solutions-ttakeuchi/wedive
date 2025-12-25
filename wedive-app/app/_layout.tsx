@@ -45,15 +45,37 @@ export default function RootLayout() {
   return <RootLayoutNav />;
 }
 
+import { AuthProvider } from '../src/context/AuthContext';
+import { TermsAgreementModal } from '../components/TermsAgreementModal';
+
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      </Stack>
+      <AuthProvider>
+        <TermsAgreementModal />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen
+            name="log/[id]"
+            options={{
+              headerShown: true,
+              title: 'ログ詳細',
+              headerBackTitle: '戻る'
+            }}
+          />
+          <Stack.Screen
+            name="log/edit/[id]"
+            options={{
+              headerShown: false,
+              title: 'ログ編集',
+            }}
+          />
+          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+        </Stack>
+      </AuthProvider>
     </ThemeProvider>
   );
 }
