@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Platform,
   Dimensions,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -33,7 +34,10 @@ import {
   Minimize2,
   Trash2,
   ChevronLeft,
-  Info
+  Info,
+  Heart,
+  Grid,
+  Plus
 } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../src/context/AuthContext';
@@ -788,6 +792,104 @@ export default function AddLogScreen() {
           )}
         </View>
 
+        {/* Creatures Section */}
+        <View style={styles.sectionCard}>
+          <SectionHeader title="目撃した生物" icon={Heart} section="creatures" color="#ec4899" />
+          {openSections.creatures && (
+            <View style={styles.sectionBody}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>生物を検索（図鑑から追加）</Text>
+                <View style={styles.searchWrapper}>
+                  <Search size={16} color="#94a3b8" style={styles.searchIcon} />
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="生物名で検索..."
+                    value={creatureSearchTerm}
+                    onChangeText={setCreatureSearchTerm}
+                  />
+                </View>
+
+                {creatureSearchTerm.length > 0 && (
+                  <View style={styles.searchResults}>
+                    {filteredCreatures.map(c => (
+                      <TouchableOpacity
+                        key={c.id}
+                        style={styles.searchResultItem}
+                        onPress={() => {
+                          const current = formData.sightedCreatures || [];
+                          if (!current.includes(c.id)) {
+                            setFormData(prev => ({ ...prev, sightedCreatures: [...current, c.id] }));
+                          }
+                          setCreatureSearchTerm('');
+                        }}
+                      >
+                        <Text style={styles.searchResultName}>{c.name}</Text>
+                        <Text style={styles.searchResultSub}>{c.category}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+
+                <View style={styles.tagGrid}>
+                  {formData.sightedCreatures.map(id => {
+                    const creature = masterCreatures.find(c => c.id === id);
+                    return (
+                      <View key={id} style={styles.tag}>
+                        <Text style={styles.tagText}>{creature?.name || '不明'}</Text>
+                        <TouchableOpacity onPress={() => {
+                          setFormData(prev => ({ ...prev, sightedCreatures: prev.sightedCreatures.filter(cid => cid !== id) }));
+                        }}>
+                          <X size={14} color="#3b82f6" />
+                        </TouchableOpacity>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>メインの生物</Text>
+                <View style={styles.searchWrapper}>
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="メインで見つけた生物名..."
+                    value={masterCreatures.find(c => c.id === formData.creatureId)?.name || ''}
+                    editable={false}
+                  />
+                  {formData.creatureId ? (
+                    <TouchableOpacity onPress={() => setFormData(prev => ({ ...prev, creatureId: '' }))}>
+                      <X size={18} color="#94a3b8" />
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+              </View>
+            </View>
+          )}
+        </View>
+
+        {/* Photos Section */}
+        <View style={styles.sectionCard}>
+          <SectionHeader title="写真" icon={ImageIcon} section="photos" color="#8b5cf6" />
+          {openSections.photos && (
+            <View style={styles.sectionBody}>
+              <View style={styles.photoGrid}>
+                {formData.photos.map((uri, index) => (
+                  <View key={index} style={styles.photoCard}>
+                    <Image source={{ uri }} style={styles.photo} />
+                    <TouchableOpacity style={styles.removePhotoBtn} onPress={() => removePhoto(index)}>
+                      <X size={12} color="#fff" />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+                <TouchableOpacity style={styles.addPhotoBtn} onPress={handlePickImage} disabled={isLoading}>
+                  <Plus size={24} color="#94a3b8" />
+                  <Text style={styles.addPhotoText}>追加</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </View>
+
         {/* Comment Section */}
         <View style={styles.sectionCard}>
           <SectionHeader title="コメント・メモ" icon={Save} section="comment" color="#8b5cf6" />
@@ -1193,4 +1295,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#475569',
   },
+  tagGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+  tag: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f1f5f9', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, gap: 6 },
+  tagText: { fontSize: 13, color: '#334155', fontWeight: '500' },
+  photoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  photoCard: { width: (width - 64 - 24) / 3, aspectRatio: 1, borderRadius: 12, overflow: 'hidden', backgroundColor: '#f1f5f9' },
+  photo: { width: '100%', height: '100%' },
+  removePhotoBtn: { position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 10, width: 20, height: 20, justifyContent: 'center', alignItems: 'center' },
+  addPhotoBtn: { width: (width - 64 - 24) / 3, aspectRatio: 1, borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0', borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8fafc' },
+  addPhotoText: { fontSize: 12, color: '#94a3b8', marginTop: 4, fontWeight: '500' },
 });

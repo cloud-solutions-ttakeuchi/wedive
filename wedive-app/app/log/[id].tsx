@@ -14,16 +14,20 @@ import {
   Wind,
   Droplets,
   Waves,
+  ImageIcon,
+  Heart,
+  ChevronRight,
   Share2,
   Info,
-  User,
   Settings,
   Activity,
-  Trash2,
-  Edit3,
-  Image as ImageIcon
+  Edit3
 } from 'lucide-react-native';
 import Svg, { Polyline, G, Text as SvgText, Line } from 'react-native-svg';
+import { useApp } from '../../src/context/AppContext';
+import { ImageWithFallback } from '../../src/components/ImageWithFallback';
+
+const NO_IMAGE_CREATURE = require('../../assets/images/no-image-creature.png');
 
 const { width } = Dimensions.get('window');
 
@@ -31,8 +35,28 @@ export default function LogDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const { logs, user } = useAuth();
+  const { creatures } = useApp();
 
   const log = useMemo(() => logs.find(l => l.id === id), [logs, id]);
+
+  const sightedCreatureDetails = useMemo(() => {
+    if (!log) return [];
+
+    // Convert to IDs and ensure uniqueness
+    const ids = new Set<string>();
+    if (log.creatureId) ids.add(log.creatureId);
+    if (log.sightedCreatures) {
+      log.sightedCreatures.forEach(cid => ids.add(cid));
+    }
+
+    // Normalize IDs (handling potential prefixes if inconsistent)
+    const normalizeId = (id: string) => id.replace(/^[cp]/, '');
+
+    return creatures.filter(c => {
+      const nid = normalizeId(c.id);
+      return Array.from(ids).some(id => normalizeId(id) === nid);
+    });
+  }, [log, creatures]);
 
   if (!log) {
     return (
@@ -226,6 +250,35 @@ export default function LogDetailScreen() {
               <Text style={styles.sectionTitle}>Notes</Text>
             </View>
             <Text style={styles.comment}>{log.comment}</Text>
+          </View>
+        )}
+
+        {/* Sighted Creatures Section */}
+        {sightedCreatureDetails.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Heart size={18} color="#ec4899" fill="#ec4899" />
+              <Text style={styles.sectionTitle}>Encountered Species</Text>
+            </View>
+            <View style={styles.creatureGrid}>
+              {sightedCreatureDetails.map(creature => (
+                <TouchableOpacity
+                  key={creature.id}
+                  style={styles.creatureCard}
+                  onPress={() => router.push(`/details/creature/${creature.id}`)}
+                >
+                  <ImageWithFallback
+                    source={{ uri: creature.imageUrl }}
+                    style={styles.creatureImage}
+                    fallbackSource={NO_IMAGE_CREATURE}
+                  />
+                  <View style={styles.creatureInfo}>
+                    <Text style={styles.creatureName} numberOfLines={1}>{creature.name}</Text>
+                    <ChevronRight size={14} color="#94a3b8" />
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
         )}
 
@@ -497,5 +550,34 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  creatureGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  creatureCard: {
+    width: (width - 40 - 40 - 24) / 3, // 3 columns inside section
+    backgroundColor: '#f8fafc',
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+  },
+  creatureImage: {
+    width: '100%',
+    aspectRatio: 1.2,
+  },
+  creatureInfo: {
+    padding: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  creatureName: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1e293b',
+    flex: 1,
   }
 });

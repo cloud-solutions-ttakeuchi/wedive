@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { StyleSheet, Pressable, ScrollView, Image, Dimensions, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { LogOut, ChevronRight, Bookmark, Heart, Settings, Activity, BookOpen, Grid, User as UserIcon, Award, Star, MapPin, Plus, Clock, Sparkles } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
 import { useApp } from '../../src/context/AppContext';
-import { DiveLog, Creature, Point } from '../../src/types';
+import { DiveLog, Creature, Point, Rarity } from '../../src/types';
 import { ImageWithFallback } from '../../src/components/ImageWithFallback';
 
 const { width } = Dimensions.get('window');
@@ -17,7 +17,7 @@ type TabType = 'dashboard' | 'logbook' | 'collection' | 'favorites' | 'wanted' |
 export default function MyPageScreen() {
   const router = useRouter();
   const { user, logs, isLoading: authLoading, signOut } = useAuth();
-  const { creatures, points, isLoading: appLoading } = useApp();
+  const { creatures, points, pointCreatures, isLoading: appLoading } = useApp();
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
 
   const isLoading = authLoading || appLoading;
@@ -26,6 +26,76 @@ export default function MyPageScreen() {
     await signOut();
     router.replace('/(auth)/login');
   };
+
+  // Derived Data
+  // Derived Data
+  const normalizeId = (id?: string) => id?.replace(/^[cp]/, '') || id || '';
+
+  const uniqueCreatureIds = useMemo(() =>
+    Array.from(new Set((logs || []).flatMap(l => [l.creatureId, ...(l.sightedCreatures || [])]).filter((id): id is string => !!id))),
+    [logs]);
+
+  const discoveredCreatures = useMemo(() =>
+    uniqueCreatureIds.map(id => creatures.find(c => normalizeId(c.id) === normalizeId(id))).filter((c): c is Creature => c !== undefined),
+    [uniqueCreatureIds, creatures]);
+
+  const favoriteCreatures = useMemo(() =>
+    (user?.favoriteCreatureIds || []).map(id => creatures.find(c => normalizeId(c.id) === normalizeId(id))).filter((c): c is Creature => c !== undefined),
+    [user?.favoriteCreatureIds, creatures]);
+
+  const wantedCreatures = useMemo(() =>
+    (user?.wanted || []).map(id => creatures.find(c => normalizeId(c.id) === normalizeId(id))).filter((c): c is Creature => c !== undefined),
+    [user?.wanted, creatures]);
+
+  const bookmarkedPoints = useMemo(() =>
+    (user?.bookmarkedPointIds || []).map(id => points.find(p => normalizeId(p.id) === normalizeId(id))).filter((p): p is Point => p !== undefined),
+    [user?.bookmarkedPointIds, points]);
+
+
+
+  // Refactor: Align with Web version logic (simple map + filter)
+  const pointMastery = useMemo(() => {
+    if (isLoading) return [];
+
+    return points.map(point => {
+      // Direct comparison like Web version (assuming IDs are consistent)
+      const pointLogs = (logs || []).filter(l => l.location.pointId === point.id || l.spotId === point.id);
+      if (pointLogs.length === 0) return null;
+
+      const validPointCreatures = pointCreatures.filter(pc => pc.pointId === point.id && (pc.status === 'approved' || pc.status === undefined));
+
+      const creaturesInPoint = validPointCreatures.map(pc => {
+        const creature = creatures.find(c => c.id === pc.creatureId);
+        return creature ? { ...creature, localRarity: pc.localRarity as Rarity } : null;
+      }).filter((c): c is Creature & { localRarity: Rarity } => c !== null)
+        .sort((a, b) => {
+          const rarityOrder: Record<string, number> = { 'Legendary': 4, 'Epic': 3, 'Rare': 2, 'Common': 1 };
+          return (rarityOrder[b.localRarity] || 0) - (rarityOrder[a.localRarity] || 0);
+        });
+
+      const pointLogCreatureIds = new Set(
+        pointLogs.flatMap(l => [l.creatureId, ...(l.sightedCreatures || [])]).filter(Boolean)
+      );
+
+      const discoveredCount = creaturesInPoint.filter(c => pointLogCreatureIds.has(c.id)).length;
+      const totalCount = creaturesInPoint.length;
+      const masteryRate = totalCount > 0 ? Math.round((discoveredCount / totalCount) * 100) : 0;
+
+      return {
+        point,
+        diveCount: pointLogs.length,
+        masteryRate,
+        discoveredCount,
+        totalCount,
+        creaturesAtPoint: creaturesInPoint,
+        discoveredIds: pointLogCreatureIds
+      };
+    })
+      .filter((pm): pm is NonNullable<typeof pm> => pm !== null)
+      .sort((a, b) => b.diveCount - a.diveCount);
+  }, [points, logs, pointCreatures, creatures, isLoading]);
+
+  const completionRate = creatures.length > 0 ? Math.round((uniqueCreatureIds.length / creatures.length) * 100) : 0;
 
   if (isLoading) {
     return (
@@ -55,56 +125,129 @@ export default function MyPageScreen() {
     );
   }
 
-  // Derived Data
-  const uniqueCreatureIds = Array.from(new Set(logs.flatMap(l => [l.creatureId, ...(l.sightedCreatures || [])]).filter(Boolean)));
-  const discoveredCreatures = uniqueCreatureIds.map(id => creatures.find(c => c.id === id)).filter((c): c is Creature => c !== undefined);
-  const favoriteCreatures = (user?.favoriteCreatureIds || []).map(id => creatures.find(c => c.id === id)).filter((c): c is Creature => c !== undefined);
-  const wantedCreatures = (user?.wanted || []).map(id => creatures.find(c => c.id === id)).filter((c): c is Creature => c !== undefined);
-  const bookmarkedPoints = (user?.bookmarkedPointIds || []).map(id => points.find(p => p.id === id)).filter((p): p is Point => p !== undefined);
-
-  const completionRate = creatures.length > 0 ? Math.round((uniqueCreatureIds.length / creatures.length) * 100) : 0;
-
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
+        const trustScore = user.trustScore || 0;
+        const currentRankProgress = Math.min(100, (trustScore % 100)); // Sample logic: every 100 TP is a major level/progress
+
         return (
           <View style={styles.tabContent}>
+            {/* Rank Card */}
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>STATS</Text>
-              <View style={styles.statsGrid}>
-                <View style={styles.statItem}>
-                  <Text style={styles.statNumber}>{logs.length || 0}</Text>
-                  <Text style={styles.statLabel}>Dives</Text>
+              <View style={styles.cardHeader}>
+                <View style={[styles.iconBg, { backgroundColor: '#f0f9ff' }]}>
+                  <Award size={20} color="#0ea5e9" />
                 </View>
-                <View style={styles.statItem}>
-                  <Text style={styles.statNumber}>{uniqueCreatureIds.length}</Text>
-                  <Text style={styles.statLabel}>Found</Text>
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={styles.cardInfoLabel}>CURRENT RANK</Text>
+                  <Text style={styles.cardInfoValue}>Explorer Level {Math.floor(trustScore / 100) + 1}</Text>
                 </View>
-                <View style={styles.statItem}>
-                  <Text style={[styles.statNumber, { color: '#0ea5e9' }]}>{completionRate}%</Text>
-                  <Text style={styles.statLabel}>Comp.</Text>
+                <View style={styles.tpBadge}>
+                  <Text style={styles.tpText}>{trustScore} TP</Text>
                 </View>
+              </View>
+
+              <View style={styles.progressContainer}>
+                <View style={[styles.progressBar, { width: `${currentRankProgress}%` }]} />
+              </View>
+              <View style={styles.rankFooter}>
+                <Text style={styles.rankFooterText}>Next Rank: {100 - (trustScore % 100)} TP remaining</Text>
               </View>
             </View>
 
+            {/* Stats Grid */}
+            <View style={styles.statsRow}>
+              <View style={[styles.statCard, { backgroundColor: '#eff6ff' }]}>
+                <Activity size={20} color="#3b82f6" />
+                <Text style={styles.statCardNumber}>{logs.length || 0}</Text>
+                <Text style={styles.statCardLabel}>Dives</Text>
+              </View>
+              <View style={[styles.statCard, { backgroundColor: '#f0fdf4' }]}>
+                <Grid size={20} color="#22c55e" />
+                <Text style={styles.statCardNumber}>{uniqueCreatureIds.length}</Text>
+                <Text style={styles.statCardLabel}>Collection</Text>
+              </View>
+              <View style={[styles.statCard, { backgroundColor: '#fff7ed' }]}>
+                <MapPin size={20} color="#f97316" />
+                <Text style={styles.statCardNumber}>{user.bookmarkedPointIds?.length || 0}</Text>
+                <Text style={styles.statCardLabel}>Points</Text>
+              </View>
+            </View>
+
+            {/* Mastery Section */}
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>MASTERY</Text>
-              {/* Simplified Point Mastery for mobile */}
-              {bookmarkedPoints.slice(0, 3).map(point => (
-                <TouchableOpacity
-                  key={point.id}
-                  style={styles.masteryRow}
-                  onPress={() => router.push(`/details/spot/${point.id}`)}
-                >
-                  <View style={styles.masteryInfo}>
-                    <Text style={styles.masteryPointName}>{point.name}</Text>
-                    <Text style={styles.masteryPointArea}>{point.area || point.region}</Text>
-                  </View>
-                  <ChevronRight size={16} color="#cbd5e1" />
-                </TouchableOpacity>
-              ))}
-              {bookmarkedPoints.length === 0 && (
-                <Text style={styles.emptyMasteryText}>ブックマークしたポイントの進捗が表示されます。</Text>
+              <View style={styles.cardHeader}>
+                <View style={[styles.iconBg, { backgroundColor: '#fdf2f8' }]}>
+                  <Sparkles size={20} color="#ec4899" />
+                </View>
+                <Text style={styles.cardTitleCompact}>Creature Discovery</Text>
+                <Text style={styles.masteryPercentage}>{completionRate}%</Text>
+              </View>
+              <View style={[styles.progressContainer, { backgroundColor: '#fce7f3' }]}>
+                <View style={[styles.progressBar, { width: `${completionRate}%`, backgroundColor: '#ec4899' }]} />
+              </View>
+              <Text style={styles.masterySubtext}>
+                {uniqueCreatureIds.length} / {creatures.length} species found
+              </Text>
+            </View>
+
+
+            {/* Point Mastery Section */}
+            <View style={styles.masterySection}>
+              <Text style={styles.sectionTitleMain}>Point Mastery</Text>
+              {pointMastery.length > 0 ? (
+                pointMastery.map(pm => (
+                  <TouchableOpacity
+                    key={pm.point.id}
+                    style={styles.masteryCard}
+                    onPress={() => router.push(`/details/spot/${pm.point.id}`)}
+                  >
+                    <View style={styles.masteryHeader}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.masteryPointName}>{pm.point.name}</Text>
+                        <Text style={styles.masterySubInfo}>{pm.diveCount} dives · {pm.discoveredCount} / {pm.totalCount} species</Text>
+                      </View>
+                      <View style={styles.masteryRateContainer}>
+                        <Text style={[styles.masteryRateText, { color: pm.masteryRate === 100 ? '#10b981' : '#0ea5e9' }]}>
+                          {pm.masteryRate}%
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.masteryProgressBg}>
+                      <View style={[
+                        styles.masteryProgressBar,
+                        { width: `${pm.masteryRate}%`, backgroundColor: pm.masteryRate === 100 ? '#10b981' : '#0ea5e9' }
+                      ]} />
+                    </View>
+
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      style={styles.masteryCreatureRow}
+                      contentContainerStyle={{ paddingRight: 16 }} // Add padding to end of scroll
+                    >
+                      {pm.creaturesAtPoint.map(creature => {
+                        const isDiscovered = pm.discoveredIds.has(normalizeId(creature.id));
+                        return (
+                          <View key={creature.id} style={styles.masteryIconWrapper}>
+                            {isDiscovered ? (
+                              <Image source={{ uri: creature.imageUrl }} style={styles.masteryIcon} />
+                            ) : (
+                              <View style={styles.masteryIconLocked}>
+                                <Text style={styles.masteryIconLockedText}>?</Text>
+                              </View>
+                            )}
+                          </View>
+                        );
+                      })}
+                    </ScrollView>
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <View style={styles.card}>
+                  <Text style={styles.emptyMasteryText}>ログを記録すると、スポットごとの攻略率が表示されます。</Text>
+                </View>
               )}
             </View>
           </View>
@@ -189,27 +332,56 @@ export default function MyPageScreen() {
       case 'favorites':
         return (
           <View style={styles.tabContent}>
-            <View style={styles.creatureGrid}>
-              {favoriteCreatures.map(creature => (
-                <TouchableOpacity
-                  key={creature.id}
-                  style={styles.creatureSmallCard}
-                  onPress={() => router.push(`/details/creature/${creature.id}`)}
-                >
-                  <ImageWithFallback
-                    source={creature.imageUrl ? { uri: creature.imageUrl } : null}
-                    fallbackSource={NO_IMAGE_CREATURE}
-                    style={styles.creatureSmallThumb}
-                  />
-                  <View style={styles.creatureSmallInfo}>
-                    <Text style={styles.creatureSmallName} numberOfLines={1}>{creature.name}</Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
-              {favoriteCreatures.length === 0 && (
+            {bookmarkedPoints.length > 0 && (
+              <View style={{ marginBottom: 24 }}>
+                <Text style={styles.sectionTitle}>お気に入りのスポット</Text>
+                <View style={{ gap: 12 }}>
+                  {bookmarkedPoints.map(point => (
+                    <TouchableOpacity
+                      key={point.id}
+                      style={styles.pointRowCard}
+                      onPress={() => router.push(`/details/spot/${point.id}`)}
+                    >
+                      <ImageWithFallback
+                        source={point.imageUrl ? { uri: point.imageUrl } : null}
+                        fallbackSource={NO_IMAGE_POINT}
+                        style={styles.pointRowThumb}
+                      />
+                      <View style={styles.pointRowInfo}>
+                        <Text style={styles.pointRowName}>{point.name}</Text>
+                        <Text style={styles.pointRowArea}>{point.area || point.region}</Text>
+                      </View>
+                      <ChevronRight size={20} color="#cbd5e1" />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            <View>
+              <Text style={styles.sectionTitle}>お気に入りの生物</Text>
+              <View style={styles.creatureGrid}>
+                {favoriteCreatures.map(creature => (
+                  <TouchableOpacity
+                    key={creature.id}
+                    style={styles.creatureSmallCard}
+                    onPress={() => router.push(`/details/creature/${creature.id}`)}
+                  >
+                    <ImageWithFallback
+                      source={creature.imageUrl ? { uri: creature.imageUrl } : null}
+                      fallbackSource={NO_IMAGE_CREATURE}
+                      style={styles.creatureSmallThumb}
+                    />
+                    <View style={styles.creatureSmallInfo}>
+                      <Text style={styles.creatureSmallName} numberOfLines={1}>{creature.name}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              {favoriteCreatures.length === 0 && bookmarkedPoints.length === 0 && (
                 <View style={styles.emptyState}>
                   <Heart size={48} color="#cbd5e1" />
-                  <Text style={styles.emptyText}>お気に入りの生物がありません。</Text>
+                  <Text style={styles.emptyText}>お気に入りがありません。</Text>
                 </View>
               )}
             </View>
@@ -298,96 +470,42 @@ export default function MyPageScreen() {
               <Text style={styles.name}>{user.name || 'Diver'}</Text>
               <Text style={styles.role}>{user.role === 'admin' ? 'Admin' : 'Diver'}</Text>
               <View style={styles.rankBadge}>
-                <Sparkles size={10} color="#0ea5e9" fill="#0ea5e9" />
-                <Text style={styles.rankText}>{user.trustScore || 0} TP</Text>
+                <Star size={10} color="#0ea5e9" fill="#0ea5e9" />
+                <Text style={styles.rankText}>Explorer Rank</Text>
               </View>
             </View>
             <TouchableOpacity
               style={[styles.settingsBtn, { marginRight: 8 }]}
               onPress={() => router.push('/log/add')}
             >
-              <Plus size={20} color="#0ea5e9" />
+              <Plus size={24} color="#0ea5e9" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.settingsBtn}>
-              <Settings size={20} color="#64748b" />
+              <Settings size={24} color="#64748b" />
             </TouchableOpacity>
           </View>
         </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.tabBarScroll}
-          contentContainerStyle={styles.tabBar}
-        >
+        <View style={styles.tabBar}>
           {[
-            { id: 'dashboard', icon: Activity, label: 'ダッシュボード' },
-            { id: 'logbook', icon: BookOpen, label: 'ログブック' },
-            { id: 'collection', icon: Grid, label: 'コレクション' },
-            { id: 'favorites', icon: Heart, label: 'Favorites' },
-            { id: 'wanted', icon: Bookmark, label: 'Wanted' },
-            { id: 'plan', icon: MapPin, label: 'Plan' },
+            { id: 'dashboard', icon: Activity, label: '概況' },
+            { id: 'logbook', icon: BookOpen, label: 'ログ' },
+            { id: 'collection', icon: Grid, label: '図鑑' },
+            { id: 'favorites', icon: Heart, label: '推し' },
           ].map((tab) => (
             <TouchableOpacity
               key={tab.id}
               style={[styles.tabItem, activeTab === tab.id && styles.activeTabItem]}
               onPress={() => setActiveTab(tab.id as TabType)}
             >
-              <tab.icon size={20} color={activeTab === tab.id ? '#0ea5e9' : '#94a3b8'} />
+              <tab.icon size={24} color={activeTab === tab.id ? '#0ea5e9' : '#94a3b8'} />
               <Text style={[styles.tabLabel, activeTab === tab.id && styles.activeTabLabel]}>{tab.label}</Text>
             </TouchableOpacity>
           ))}
-        </ScrollView>
+        </View>
 
         {renderContent()}
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>CONTRIBUTION</Text>
-          <Pressable
-            style={styles.menuItem}
-            onPress={() => router.push('/details/spot/add')}
-          >
-            <View style={styles.menuLeft}>
-              <MapPin size={20} color="#0ea5e9" />
-              <Text style={styles.menuLabel}>Propose a Spot</Text>
-            </View>
-            <ChevronRight size={20} color="#cbd5e1" />
-          </Pressable>
-          <Pressable
-            style={styles.menuItem}
-            onPress={() => router.push('/details/creature/add')}
-          >
-            <View style={styles.menuLeft}>
-              <Sparkles size={20} color="#8b5cf6" />
-              <Text style={styles.menuLabel}>Propose a Creature</Text>
-            </View>
-            <ChevronRight size={20} color="#cbd5e1" />
-          </Pressable>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>ACTIVITY</Text>
-          <Pressable
-            style={styles.menuItem}
-            onPress={() => router.push('/(tabs)/search?tab=spots')}
-          >
-            <View style={styles.menuLeft}>
-              <Bookmark size={20} color="#0ea5e9" />
-              <Text style={styles.menuLabel}>Bookmarked Spots</Text>
-            </View>
-            <ChevronRight size={20} color="#cbd5e1" />
-          </Pressable>
-          <Pressable
-            style={styles.menuItem}
-            onPress={() => router.push('/(tabs)/search?tab=creatures')}
-          >
-            <View style={styles.menuLeft}>
-              <Heart size={20} color="#ef4444" />
-              <Text style={styles.menuLabel}>Favorite Creatures</Text>
-            </View>
-            <ChevronRight size={20} color="#cbd5e1" />
-          </Pressable>
-        </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>ACCOUNT</Text>
@@ -438,6 +556,253 @@ const styles = StyleSheet.create({
     padding: 24,
     paddingTop: 60,
   },
+  tabContent: {
+    padding: 16,
+  },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  iconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cardInfoLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#94a3b8',
+    letterSpacing: 1,
+  },
+  cardInfoValue: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#1e293b',
+    marginTop: 2,
+  },
+  tpBadge: {
+    backgroundColor: '#0ea5e9',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  tpText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  progressContainer: {
+    height: 8,
+    backgroundColor: '#f1f5f9',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: '#0ea5e9',
+    borderRadius: 4,
+  },
+  rankFooter: {
+    marginTop: 10,
+    alignItems: 'flex-end',
+  },
+  rankFooterText: {
+    fontSize: 11,
+    color: '#64748b',
+    fontWeight: '600',
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  statCard: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 24,
+    alignItems: 'center',
+  },
+  statCardNumber: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#1e293b',
+    marginTop: 8,
+  },
+  statCardLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748b',
+    marginTop: 2,
+  },
+  cardTitleCompact: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#1e293b',
+    marginLeft: 12,
+    flex: 1,
+  },
+  masteryPercentage: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#ec4899',
+  },
+  masterySubtext: {
+    fontSize: 12,
+    color: '#94a3b8',
+    fontWeight: '600',
+    marginTop: 10,
+    textAlign: 'center',
+  },
+  contributionSection: {
+    marginTop: 8,
+  },
+  sectionTitleMain: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#1e293b',
+    marginBottom: 16,
+    marginLeft: 4,
+  },
+  contributionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 20,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  iconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  contributionBtnText: {
+    flex: 1,
+    marginLeft: 12,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  masterySection: {
+    marginTop: 8,
+  },
+  masteryCard: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  masteryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  masteryPointName: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#1e293b',
+  },
+  masterySubInfo: {
+    fontSize: 11,
+    color: '#94a3b8',
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  masteryRateContainer: {
+    backgroundColor: '#f8fafc',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  masteryRateText: {
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  masteryProgressBg: {
+    height: 6,
+    backgroundColor: '#f1f5f9',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  masteryProgressBar: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  emptyMasteryText: {
+    fontSize: 13,
+    color: '#94a3b8',
+    textAlign: 'center',
+    padding: 12,
+    fontWeight: '500',
+  },
+  masteryCreatureRow: {
+    flexDirection: 'row',
+    marginTop: 16,
+    paddingRight: 8,
+  },
+  masteryIconWrapper: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    marginRight: 8,
+    overflow: 'hidden',
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: '#e2e8f0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  masteryIcon: {
+    width: '100%',
+    height: '100%',
+  },
+  masteryIconLocked: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#bfd8ea', // Game coin-like color for locked
+  },
+  masteryIconLockedText: {
+    fontSize: 20,
+    color: '#fff',
+    fontWeight: '900',
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
   profileRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -473,15 +838,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f0f9ff',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 6,
     alignSelf: 'flex-start',
     marginTop: 8,
     gap: 4,
   },
   rankText: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: 'bold',
     color: '#0ea5e9',
   },
@@ -495,7 +860,8 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
+    width: '100%',
+    paddingHorizontal: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#f1f5f9',
     backgroundColor: '#fff',
@@ -505,7 +871,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   tabItem: {
-    minWidth: 80,
+    flex: 1,
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 2,
@@ -515,56 +881,13 @@ const styles = StyleSheet.create({
     borderBottomColor: '#0ea5e9',
   },
   tabLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: 'bold',
     color: '#94a3b8',
     marginTop: 4,
   },
   activeTabLabel: {
     color: '#0ea5e9',
-  },
-  tabContent: {
-    padding: 20,
-    backgroundColor: '#f8fafc',
-    minHeight: 200,
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
-  },
-  cardTitle: {
-    fontSize: 14,
-    fontWeight: '900',
-    color: '#94a3b8',
-    marginBottom: 16,
-    letterSpacing: 0.5,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: 'transparent',
-  },
-  statItem: {
-    alignItems: 'center',
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1e293b',
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#94a3b8',
-    marginTop: 4,
   },
   badgeRow: {
     flexDirection: 'row',
@@ -597,10 +920,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   sectionTitle: {
-    fontSize: 10,
-    fontWeight: '900',
-    color: '#94a3b8',
-    letterSpacing: 1,
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#64748b',
     marginBottom: 12,
     marginLeft: 4,
   },
@@ -778,9 +1100,9 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   creatureSmallCard: {
-    width: (width - 40 - 12) / 2,
+    width: (width - 40 - 24) / 3,
     backgroundColor: '#fff',
-    borderRadius: 16,
+    borderRadius: 12,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#f1f5f9',
@@ -808,21 +1130,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'transparent',
   },
-  masteryPointName: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#1e293b',
-  },
   masteryPointArea: {
     fontSize: 11,
     color: '#94a3b8',
     marginTop: 2,
-  },
-  emptyMasteryText: {
-    fontSize: 12,
-    color: '#94a3b8',
-    textAlign: 'center',
-    paddingVertical: 20,
   },
   checkBadge: {
     position: 'absolute',
@@ -864,5 +1175,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#64748b',
     marginTop: 2,
+  },
+  contributionText: {
+    fontSize: 14,
+    color: '#475569',
+    flex: 1,
+    marginLeft: 12,
+    fontWeight: '700',
   },
 });

@@ -25,7 +25,7 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
-  Image as ImageIcon,
+  ImageIcon,
   Wind,
   Droplets,
   Waves,
@@ -33,9 +33,14 @@ import {
   Minimize2,
   Trash2,
   ChevronLeft,
-  Info
+  Info,
+  Heart,
+  Grid,
+  Plus
 } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { Image } from 'react-native';
+import { ImageWithFallback } from '../../../src/components/ImageWithFallback';
 import { useAuth } from '../../../src/context/AuthContext';
 import { db, storage } from '../../../src/firebase';
 import { LogService } from '../../../src/services/LogService';
@@ -198,13 +203,93 @@ export default function EditLogScreen() {
     if (spotSearchTerm) {
       const s = spotSearchTerm.toLowerCase();
       results = results.filter(p =>
-        p.name.toLowerCase().includes(s) ||
-        p.area.toLowerCase().includes(s) ||
-        p.zone.toLowerCase().includes(s)
+        (p.name && p.name.toLowerCase().includes(s)) ||
+        (p.area && p.area.toLowerCase().includes(s)) ||
+        (p.zone && p.zone.toLowerCase().includes(s))
       );
     }
     return results.slice(0, 50);
   }, [masterPoints, spotSearchTerm, selectedRegion]);
+
+  const filteredCreatures = useMemo(() => {
+    if (!creatureSearchTerm) return [];
+    const s = creatureSearchTerm.toLowerCase();
+    return masterCreatures.filter(c =>
+      c.name.includes(s) ||
+      c.category?.includes(s)
+    ).slice(0, 50);
+  }, [masterCreatures, creatureSearchTerm]);
+
+  const handlePickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('許可が必要', '写真を選択するにはライブラリへのアクセス許可が必要です');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 0.7,
+    });
+
+    if (!result.canceled && result.assets && result.assets[0].uri) {
+      uploadImage(result.assets[0].uri);
+    }
+  };
+
+  const uriToBlob = (uri: string): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.onload = function () { resolve(xhr.response); };
+      xhr.onerror = function (e) { reject(new TypeError("Network request failed")); };
+      xhr.responseType = "blob";
+      xhr.open("GET", uri, true);
+      xhr.send(null);
+    });
+  };
+
+  const uploadImage = async (uri: string) => {
+    setIsLoading(true);
+    setSaveStatus('画像をアップロード中...');
+    try {
+      const blob = await uriToBlob(uri);
+      const filename = `logs/${user?.id || 'unknown'}_${Date.now()}.jpg`;
+      const storageRef = ref(storage, filename);
+      const metadata = { contentType: 'image/jpeg' };
+      await uploadBytes(storageRef, blob, metadata);
+      const downloadURL = await getDownloadURL(storageRef);
+
+      setFormData(prev => ({
+        ...prev,
+        photos: [...prev.photos, downloadURL]
+      }));
+    } catch (e) {
+      console.error("Upload failed", e);
+      Alert.alert('エラー', '画像のアップロードに失敗しました');
+    } finally {
+      setIsLoading(false);
+      setSaveStatus('');
+    }
+  };
+
+  const removePhoto = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      photos: prev.photos.filter((_, i) => i !== index)
+    }));
+  };
+
+  const toggleSightedCreature = (creatureId: string) => {
+    setFormData(prev => {
+      const current = prev.sightedCreatures || [];
+      if (current.includes(creatureId)) {
+        return { ...prev, sightedCreatures: current.filter(id => id !== creatureId) };
+      } else {
+        return { ...prev, sightedCreatures: [...current, creatureId] };
+      }
+    });
+  };
 
   const handleSave = async () => {
     if (!formData.title || !formData.date) {
@@ -493,6 +578,100 @@ export default function EditLogScreen() {
           )}
         </View>
 
+        {/* Creatures Section */}
+        <View style={styles.sectionCard}>
+          <SectionHeader title="目撃した生物" icon={Heart} section="creatures" color="#ec4899" />
+          {openSections.creatures && (
+            <View style={styles.sectionBody}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>生物を検索（図鑑から追加）</Text>
+                <View style={styles.searchWrapper}>
+                  <Search size={16} color="#94a3b8" style={styles.searchIcon} />
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="生物名で検索..."
+                    value={creatureSearchTerm}
+                    onChangeText={setCreatureSearchTerm}
+                  />
+                </View>
+
+                {creatureSearchTerm.length > 0 && (
+                  <View style={styles.searchResults}>
+                    {filteredCreatures.map(c => (
+                      <TouchableOpacity
+                        key={c.id}
+                        style={styles.searchResultItem}
+                        onPress={() => {
+                          toggleSightedCreature(c.id);
+                          setCreatureSearchTerm('');
+                        }}
+                      >
+                        <Text style={styles.searchResultName}>{c.name}</Text>
+                        <Text style={styles.searchResultSub}>{c.category}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+
+                <View style={styles.tagGrid}>
+                  {formData.sightedCreatures.map(id => {
+                    const creature = masterCreatures.find(c => c.id === id);
+                    return (
+                      <View key={id} style={styles.tag}>
+                        <Text style={styles.tagText}>{creature?.name || '不明'}</Text>
+                        <TouchableOpacity onPress={() => toggleSightedCreature(id)}>
+                          <X size={14} color="#3b82f6" />
+                        </TouchableOpacity>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>メインの生物</Text>
+                <View style={styles.searchWrapper}>
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="メインで見つけた生物名..."
+                    value={masterCreatures.find(c => c.id === formData.creatureId)?.name || ''}
+                    editable={false}
+                  />
+                  {formData.creatureId ? (
+                    <TouchableOpacity onPress={() => setFormData(prev => ({ ...prev, creatureId: '' }))}>
+                      <X size={18} color="#94a3b8" />
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+                <Text style={styles.helpTextSmall}>※上の検索から追加されたものが「目撃した生物」に入ります。メインに設定したい場合は、個別に選択してください（現状はリストから選択）。</Text>
+              </View>
+            </View>
+          )}
+        </View>
+
+        {/* Photos Section */}
+        <View style={styles.sectionCard}>
+          <SectionHeader title="写真" icon={ImageIcon} section="photos" color="#8b5cf6" />
+          {openSections.photos && (
+            <View style={styles.sectionBody}>
+              <View style={styles.photoGrid}>
+                {formData.photos.map((uri, index) => (
+                  <View key={index} style={styles.photoCard}>
+                    <Image source={{ uri }} style={styles.photo} />
+                    <TouchableOpacity style={styles.removePhotoBtn} onPress={() => removePhoto(index)}>
+                      <X size={12} color="#fff" />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+                <TouchableOpacity style={styles.addPhotoBtn} onPress={handlePickImage} disabled={isLoading}>
+                  <Plus size={24} color="#94a3b8" />
+                  <Text style={styles.addPhotoText}>追加</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </View>
+
         {/* Comment Section */}
         <View style={styles.sectionCard}>
           <SectionHeader title="コメント・メモ" icon={Save} section="comment" color="#8b5cf6" />
@@ -571,4 +750,14 @@ const styles = StyleSheet.create({
   deleteBtnText: { color: '#ef4444', fontWeight: 'bold', marginLeft: 8 },
   loadingOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(255,255,255,0.7)', justifyContent: 'center', alignItems: 'center', zIndex: 100 },
   loadingText: { marginTop: 16, fontSize: 16, color: '#334155', fontWeight: '500' },
+  tagGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+  tag: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f1f5f9', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, gap: 6 },
+  tagText: { fontSize: 13, color: '#334155', fontWeight: '500' },
+  helpTextSmall: { fontSize: 11, color: '#94a3b8', marginTop: 8, lineHeight: 16 },
+  photoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  photoCard: { width: (width - 64 - 24) / 3, aspectRatio: 1, borderRadius: 12, overflow: 'hidden', backgroundColor: '#f1f5f9' },
+  photo: { width: '100%', height: '100%' },
+  removePhotoBtn: { position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 10, width: 20, height: 20, justifyContent: 'center', alignItems: 'center' },
+  addPhotoBtn: { width: (width - 64 - 24) / 3, aspectRatio: 1, borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0', borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8fafc' },
+  addPhotoText: { fontSize: 12, color: '#94a3b8', marginTop: 4, fontWeight: '500' },
 });
