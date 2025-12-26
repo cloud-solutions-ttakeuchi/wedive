@@ -4,16 +4,23 @@ import { Text, View } from '@/components/Themed';
 import { LogOut, ChevronRight, Bookmark, Heart, Settings, Activity, BookOpen, Grid, User as UserIcon, Award, Star, MapPin, Plus, Clock, Sparkles } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
-import { DiveLog } from '../../src/types';
+import { useApp } from '../../src/context/AppContext';
+import { DiveLog, Creature, Point } from '../../src/types';
+import { ImageWithFallback } from '../../src/components/ImageWithFallback';
 
 const { width } = Dimensions.get('window');
+const NO_IMAGE_CREATURE = require('../../assets/images/no-image-creature.png');
+const NO_IMAGE_POINT = require('../../assets/images/no-image-point.png');
 
-type TabType = 'dashboard' | 'logbook' | 'collection' | 'favorites';
+type TabType = 'dashboard' | 'logbook' | 'collection' | 'favorites' | 'wanted' | 'plan';
 
 export default function MyPageScreen() {
   const router = useRouter();
-  const { user, logs, isLoading, signOut } = useAuth();
+  const { user, logs, isLoading: authLoading, signOut } = useAuth();
+  const { creatures, points, isLoading: appLoading } = useApp();
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
+
+  const isLoading = authLoading || appLoading;
 
   const handleSignOut = async () => {
     await signOut();
@@ -48,36 +55,57 @@ export default function MyPageScreen() {
     );
   }
 
+  // Derived Data
+  const uniqueCreatureIds = Array.from(new Set(logs.flatMap(l => [l.creatureId, ...(l.sightedCreatures || [])]).filter(Boolean)));
+  const discoveredCreatures = uniqueCreatureIds.map(id => creatures.find(c => c.id === id)).filter((c): c is Creature => c !== undefined);
+  const favoriteCreatures = (user?.favoriteCreatureIds || []).map(id => creatures.find(c => c.id === id)).filter((c): c is Creature => c !== undefined);
+  const wantedCreatures = (user?.wanted || []).map(id => creatures.find(c => c.id === id)).filter((c): c is Creature => c !== undefined);
+  const bookmarkedPoints = (user?.bookmarkedPointIds || []).map(id => points.find(p => p.id === id)).filter((p): p is Point => p !== undefined);
+
+  const completionRate = creatures.length > 0 ? Math.round((uniqueCreatureIds.length / creatures.length) * 100) : 0;
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
         return (
           <View style={styles.tabContent}>
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Diving Stats</Text>
+              <Text style={styles.cardTitle}>STATS</Text>
               <View style={styles.statsGrid}>
                 <View style={styles.statItem}>
                   <Text style={styles.statNumber}>{logs.length || 0}</Text>
-                  <Text style={styles.statLabel}>Total Dives</Text>
+                  <Text style={styles.statLabel}>Dives</Text>
                 </View>
                 <View style={styles.statItem}>
-                  <Text style={styles.statNumber}>{user.favoriteCreatureIds?.length || 0}</Text>
-                  <Text style={styles.statLabel}>Creatures</Text>
+                  <Text style={styles.statNumber}>{uniqueCreatureIds.length}</Text>
+                  <Text style={styles.statLabel}>Found</Text>
                 </View>
                 <View style={styles.statItem}>
-                  <Text style={styles.statNumber}>{user.bookmarkedPointIds?.length || 0}</Text>
-                  <Text style={styles.statLabel}>Spots</Text>
+                  <Text style={[styles.statNumber, { color: '#0ea5e9' }]}>{completionRate}%</Text>
+                  <Text style={styles.statLabel}>Comp.</Text>
                 </View>
               </View>
             </View>
 
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Recent Badges</Text>
-              <View style={styles.badgeRow}>
-                <View style={styles.badgeIcon}><Award color="#fbbf24" size={24} /></View>
-                <View style={[styles.badgeIcon, { backgroundColor: '#f0fdf4' }]}><Activity color="#22c55e" size={24} /></View>
-                {/* Placeholder badges */}
-              </View>
+              <Text style={styles.cardTitle}>MASTERY</Text>
+              {/* Simplified Point Mastery for mobile */}
+              {bookmarkedPoints.slice(0, 3).map(point => (
+                <TouchableOpacity
+                  key={point.id}
+                  style={styles.masteryRow}
+                  onPress={() => router.push(`/details/spot/${point.id}`)}
+                >
+                  <View style={styles.masteryInfo}>
+                    <Text style={styles.masteryPointName}>{point.name}</Text>
+                    <Text style={styles.masteryPointArea}>{point.area || point.region}</Text>
+                  </View>
+                  <ChevronRight size={16} color="#cbd5e1" />
+                </TouchableOpacity>
+              ))}
+              {bookmarkedPoints.length === 0 && (
+                <Text style={styles.emptyMasteryText}>ブックマークしたポイントの進捗が表示されます。</Text>
+              )}
             </View>
           </View>
         );
@@ -132,18 +160,123 @@ export default function MyPageScreen() {
       case 'collection':
         return (
           <View style={styles.tabContent}>
-            <View style={styles.emptyState}>
-              <Grid size={48} color="#cbd5e1" />
-              <Text style={styles.emptyText}>Your creature collection is empty.</Text>
+            <View style={styles.creatureGrid}>
+              {discoveredCreatures.map(creature => (
+                <TouchableOpacity
+                  key={creature.id}
+                  style={styles.creatureSmallCard}
+                  onPress={() => router.push(`/details/creature/${creature.id}`)}
+                >
+                  <ImageWithFallback
+                    source={creature.imageUrl ? { uri: creature.imageUrl } : null}
+                    fallbackSource={NO_IMAGE_CREATURE}
+                    style={styles.creatureSmallThumb}
+                  />
+                  <View style={styles.creatureSmallInfo}>
+                    <Text style={styles.creatureSmallName} numberOfLines={1}>{creature.name}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+              {discoveredCreatures.length === 0 && (
+                <View style={styles.emptyState}>
+                  <Grid size={48} color="#cbd5e1" />
+                  <Text style={styles.emptyText}>まだ発見した生物がいません。</Text>
+                </View>
+              )}
             </View>
           </View>
         );
       case 'favorites':
         return (
           <View style={styles.tabContent}>
-            <View style={styles.emptyState}>
-              <Heart size={48} color="#cbd5e1" />
-              <Text style={styles.emptyText}>Save your favorite spots and creatures.</Text>
+            <View style={styles.creatureGrid}>
+              {favoriteCreatures.map(creature => (
+                <TouchableOpacity
+                  key={creature.id}
+                  style={styles.creatureSmallCard}
+                  onPress={() => router.push(`/details/creature/${creature.id}`)}
+                >
+                  <ImageWithFallback
+                    source={creature.imageUrl ? { uri: creature.imageUrl } : null}
+                    fallbackSource={NO_IMAGE_CREATURE}
+                    style={styles.creatureSmallThumb}
+                  />
+                  <View style={styles.creatureSmallInfo}>
+                    <Text style={styles.creatureSmallName} numberOfLines={1}>{creature.name}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+              {favoriteCreatures.length === 0 && (
+                <View style={styles.emptyState}>
+                  <Heart size={48} color="#cbd5e1" />
+                  <Text style={styles.emptyText}>お気に入りの生物がありません。</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        );
+      case 'wanted':
+        return (
+          <View style={styles.tabContent}>
+            <View style={styles.creatureGrid}>
+              {wantedCreatures.map(creature => (
+                <TouchableOpacity
+                  key={creature.id}
+                  style={styles.creatureSmallCard}
+                  onPress={() => router.push(`/details/creature/${creature.id}`)}
+                >
+                  <ImageWithFallback
+                    source={creature.imageUrl ? { uri: creature.imageUrl } : null}
+                    fallbackSource={NO_IMAGE_CREATURE}
+                    style={styles.creatureSmallThumb}
+                  />
+                  {uniqueCreatureIds.includes(creature.id) && (
+                    <View style={styles.checkBadge}>
+                      <Star size={10} color="#fff" fill="#fff" />
+                    </View>
+                  )}
+                  <View style={styles.creatureSmallInfo}>
+                    <Text style={styles.creatureSmallName} numberOfLines={1}>{creature.name}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+              {wantedCreatures.length === 0 && (
+                <View style={styles.emptyState}>
+                  <Bookmark size={48} color="#cbd5e1" />
+                  <Text style={styles.emptyText}>いつか見たい生物を登録しましょう。</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        );
+      case 'plan':
+        return (
+          <View style={styles.tabContent}>
+            <View style={{ gap: 12 }}>
+              {bookmarkedPoints.map(point => (
+                <TouchableOpacity
+                  key={point.id}
+                  style={styles.pointRowCard}
+                  onPress={() => router.push(`/details/spot/${point.id}`)}
+                >
+                  <ImageWithFallback
+                    source={point.imageUrl ? { uri: point.imageUrl } : null}
+                    fallbackSource={NO_IMAGE_POINT}
+                    style={styles.pointRowThumb}
+                  />
+                  <View style={styles.pointRowInfo}>
+                    <Text style={styles.pointRowName}>{point.name}</Text>
+                    <Text style={styles.pointRowArea}>{point.area || point.region}</Text>
+                  </View>
+                  <ChevronRight size={20} color="#cbd5e1" />
+                </TouchableOpacity>
+              ))}
+              {bookmarkedPoints.length === 0 && (
+                <View style={styles.emptyState}>
+                  <MapPin size={48} color="#cbd5e1" />
+                  <Text style={styles.emptyText}>行きたいスポットをブックマークしましょう。</Text>
+                </View>
+              )}
             </View>
           </View>
         );
@@ -165,8 +298,8 @@ export default function MyPageScreen() {
               <Text style={styles.name}>{user.name || 'Diver'}</Text>
               <Text style={styles.role}>{user.role === 'admin' ? 'Admin' : 'Diver'}</Text>
               <View style={styles.rankBadge}>
-                <Star size={10} color="#0ea5e9" fill="#0ea5e9" />
-                <Text style={styles.rankText}>Explorer Rank</Text>
+                <Sparkles size={10} color="#0ea5e9" fill="#0ea5e9" />
+                <Text style={styles.rankText}>{user.trustScore || 0} TP</Text>
               </View>
             </View>
             <TouchableOpacity
@@ -181,12 +314,19 @@ export default function MyPageScreen() {
           </View>
         </View>
 
-        <View style={styles.tabBar}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.tabBarScroll}
+          contentContainerStyle={styles.tabBar}
+        >
           {[
-            { id: 'dashboard', icon: Activity, label: '概況' },
-            { id: 'logbook', icon: BookOpen, label: 'ログ' },
-            { id: 'collection', icon: Grid, label: '図鑑' },
-            { id: 'favorites', icon: Heart, label: '推し' },
+            { id: 'dashboard', icon: Activity, label: 'ダッシュボード' },
+            { id: 'logbook', icon: BookOpen, label: 'ログブック' },
+            { id: 'collection', icon: Grid, label: 'コレクション' },
+            { id: 'favorites', icon: Heart, label: 'Favorites' },
+            { id: 'wanted', icon: Bookmark, label: 'Wanted' },
+            { id: 'plan', icon: MapPin, label: 'Plan' },
           ].map((tab) => (
             <TouchableOpacity
               key={tab.id}
@@ -197,7 +337,7 @@ export default function MyPageScreen() {
               <Text style={[styles.tabLabel, activeTab === tab.id && styles.activeTabLabel]}>{tab.label}</Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
 
         {renderContent()}
 
@@ -360,8 +500,12 @@ const styles = StyleSheet.create({
     borderBottomColor: '#f1f5f9',
     backgroundColor: '#fff',
   },
+  tabBarScroll: {
+    flexGrow: 0,
+    backgroundColor: '#fff',
+  },
   tabItem: {
-    flex: 1,
+    minWidth: 80,
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 2,
@@ -627,5 +771,98 @@ const styles = StyleSheet.create({
     color: '#1e293b',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  creatureGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  creatureSmallCard: {
+    width: (width - 40 - 12) / 2,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+  },
+  creatureSmallThumb: {
+    width: '100%',
+    aspectRatio: 1,
+  },
+  creatureSmallInfo: {
+    padding: 8,
+  },
+  creatureSmallName: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#334155',
+  },
+  masteryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  masteryInfo: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  masteryPointName: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#1e293b',
+  },
+  masteryPointArea: {
+    fontSize: 11,
+    color: '#94a3b8',
+    marginTop: 2,
+  },
+  emptyMasteryText: {
+    fontSize: 12,
+    color: '#94a3b8',
+    textAlign: 'center',
+    paddingVertical: 20,
+  },
+  checkBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#22c55e',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
+  },
+  pointRowCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+  },
+  pointRowThumb: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    marginRight: 12,
+  },
+  pointRowInfo: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  pointRowName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1e293b',
+  },
+  pointRowArea: {
+    fontSize: 12,
+    color: '#64748b',
+    marginTop: 2,
   },
 });
