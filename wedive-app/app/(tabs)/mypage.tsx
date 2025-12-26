@@ -29,26 +29,26 @@ export default function MyPageScreen() {
 
   // Derived Data
   // Derived Data
-  const normalizeId = (id?: string) => id?.replace(/^[cp]/, '') || id || '';
+  const mapLogToIds = (logs: DiveLog[]) => {
+    return Array.from(new Set(logs.flatMap(l => [l.creatureId, ...(l.sightedCreatures || [])]).filter((id): id is string => !!id)));
+  };
 
-  const uniqueCreatureIds = useMemo(() =>
-    Array.from(new Set((logs || []).flatMap(l => [l.creatureId, ...(l.sightedCreatures || [])]).filter((id): id is string => !!id))),
-    [logs]);
+  const uniqueCreatureIds = useMemo(() => mapLogToIds(logs || []), [logs]);
 
   const discoveredCreatures = useMemo(() =>
-    uniqueCreatureIds.map(id => creatures.find(c => normalizeId(c.id) === normalizeId(id))).filter((c): c is Creature => c !== undefined),
+    uniqueCreatureIds.map(id => creatures.find(c => c.id === id)).filter((c): c is Creature => c !== undefined),
     [uniqueCreatureIds, creatures]);
 
   const favoriteCreatures = useMemo(() =>
-    (user?.favoriteCreatureIds || []).map(id => creatures.find(c => normalizeId(c.id) === normalizeId(id))).filter((c): c is Creature => c !== undefined),
+    (user?.favoriteCreatureIds || []).map(id => creatures.find(c => c.id === id)).filter((c): c is Creature => c !== undefined),
     [user?.favoriteCreatureIds, creatures]);
 
   const wantedCreatures = useMemo(() =>
-    (user?.wanted || []).map(id => creatures.find(c => normalizeId(c.id) === normalizeId(id))).filter((c): c is Creature => c !== undefined),
+    (user?.wanted || []).map(id => creatures.find(c => c.id === id)).filter((c): c is Creature => c !== undefined),
     [user?.wanted, creatures]);
 
   const bookmarkedPoints = useMemo(() =>
-    (user?.bookmarkedPointIds || []).map(id => points.find(p => normalizeId(p.id) === normalizeId(id))).filter((p): p is Point => p !== undefined),
+    (user?.bookmarkedPointIds || []).map(id => points.find(p => p.id === id)).filter((p): p is Point => p !== undefined),
     [user?.bookmarkedPointIds, points]);
 
 
@@ -228,7 +228,7 @@ export default function MyPageScreen() {
                       contentContainerStyle={{ paddingRight: 16 }} // Add padding to end of scroll
                     >
                       {pm.creaturesAtPoint.map(creature => {
-                        const isDiscovered = pm.discoveredIds.has(normalizeId(creature.id));
+                        const isDiscovered = pm.discoveredIds.has(creature.id);
                         return (
                           <View key={creature.id} style={styles.masteryIconWrapper}>
                             {isDiscovered ? (
