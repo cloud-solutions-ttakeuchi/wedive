@@ -1,60 +1,28 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { db } from '../firebase';
-import { collection, query, onSnapshot, where } from 'firebase/firestore';
-import { Point, Creature, PointCreature } from '../types';
+import React, { createContext, useContext, useMemo } from 'react';
+// import { Point, Creature, PointCreature } from '../types';
+// フックの呼び出しを削除
 
+// AppContextは非推奨となります。各コンポーネントで usePoints, useCreatures などを使用してください。
+// 互換性のために型定義は残しますが、データは常に空になります。
 type AppContextType = {
-  points: Point[];
-  creatures: Creature[];
-  pointCreatures: PointCreature[];
-  isLoading: boolean;
+  // points: Point[];
+  // creatures: Creature[];
+  // pointCreatures: PointCreature[];
+  // isLoading: boolean;
+  // error: Error | null;
+  [key: string]: any; // 一時的な逃げ道
 };
 
-const AppContext = createContext<AppContextType>({
-  points: [],
-  creatures: [],
-  pointCreatures: [],
-  isLoading: true,
-});
+const AppContext = createContext<AppContextType>({}); // 空のオブジェクト
 
 export const useApp = () => useContext(AppContext);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [points, setPoints] = useState<Point[]>([]);
-  const [creatures, setCreatures] = useState<Creature[]>([]);
-  const [pointCreatures, setPointCreatures] = useState<PointCreature[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const pointsQuery = query(collection(db, 'points'));
-    const creaturesQuery = query(collection(db, 'creatures'));
-    const pointCreaturesQuery = query(collection(db, 'point_creatures'));
-
-    const unsubPoints = onSnapshot(pointsQuery, (snap) => {
-      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Point));
-      setPoints(data);
-    });
-
-    const unsubCreatures = onSnapshot(creaturesQuery, (snap) => {
-      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Creature));
-      setCreatures(data);
-    });
-
-    const unsubPointCreatures = onSnapshot(pointCreaturesQuery, (snap) => {
-      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as PointCreature));
-      setPointCreatures(data);
-      setIsLoading(false);
-    });
-
-    return () => {
-      unsubPoints();
-      unsubCreatures();
-      unsubPointCreatures();
-    };
-  }, []);
+  // ここでのデータ取得は廃止
+  // コンポーネントが必要な時に必要なデータを取得する TanStack Query の思想に準拠
 
   return (
-    <AppContext.Provider value={{ points, creatures, pointCreatures, isLoading }}>
+    <AppContext.Provider value={{}}>
       {children}
     </AppContext.Provider>
   );
