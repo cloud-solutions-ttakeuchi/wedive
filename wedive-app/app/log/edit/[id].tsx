@@ -131,11 +131,20 @@ export default function EditLogScreen() {
 
   const fetchMasterData = async () => {
     try {
-      const pointsSnap = await getDocs(query(collection(db, 'points'), where('status', '==', 'approved')));
-      setMasterPoints(pointsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Point)));
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('TIMEOUT')), 10000)
+      );
 
-      const creaturesSnap = await getDocs(query(collection(db, 'creatures'), where('status', '==', 'approved')));
-      setMasterCreatures(creaturesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      const pointsPromise = getDocs(query(collection(db, 'points'), where('status', '==', 'approved')));
+      const creaturesPromise = getDocs(query(collection(db, 'creatures'), where('status', '==', 'approved')));
+
+      const [pointsSnap, creaturesSnap] = await Promise.race([
+        Promise.all([pointsPromise, creaturesPromise]),
+        timeoutPromise
+      ]) as [any, any];
+
+      setMasterPoints(pointsSnap.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as Point)));
+      setMasterCreatures(creaturesSnap.docs.map((doc: any) => ({ id: doc.id, ...doc.data() })));
     } catch (e) {
       console.error("Master data fetch error:", e);
     }
@@ -146,55 +155,68 @@ export default function EditLogScreen() {
     setIsLoading(true);
     try {
       const logRef = doc(db, 'users', user.id, 'logs', id as string);
-      const snap = await getDoc(logRef);
-      if (snap.exists()) {
-        const log = snap.data() as DiveLog;
+
+      // 10秒のタイムアウトを設定
+      const fetchPromise = getDoc(logRef);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('TIMEOUT')), 10000)
+      );
+
+      const snap = await Promise.race([fetchPromise, timeoutPromise]) as any;
+
+      if (snap && snap.exists()) {
+        const data = snap.data() as DiveLog;
         setFormData({
-          title: log.title || '',
-          date: log.date || '',
-          diveNumber: String(log.diveNumber || ''),
-          pointId: log.location?.pointId || '',
-          pointName: log.location?.pointName || '',
-          region: log.location?.region || '',
-          shopName: log.location?.shopName || '',
-          buddy: log.team?.buddy || '',
-          guide: log.team?.guide || '',
-          members: (log.team?.members || []).join(', '),
-          entryTime: log.time?.entry || '',
-          exitTime: log.time?.exit || '',
-          maxDepth: String(log.depth?.max || ''),
-          avgDepth: String(log.depth?.average || ''),
-          weather: log.condition?.weather || 'sunny',
-          airTemp: String(log.condition?.airTemp || ''),
-          waterTempSurface: String(log.condition?.waterTemp?.surface || ''),
-          waterTempBottom: String(log.condition?.waterTemp?.bottom || ''),
-          transparency: String(log.condition?.transparency || ''),
-          wave: log.condition?.wave || 'none',
-          current: log.condition?.current || 'none',
-          surge: log.condition?.surge || 'none',
-          suitType: log.gear?.suitType || 'wet',
-          suitThickness: String(log.gear?.suitThickness || ''),
-          weight: String(log.gear?.weight || ''),
-          tankMaterial: log.gear?.tank?.material || 'steel',
-          tankCapacity: String(log.gear?.tank?.capacity || ''),
-          pressureStart: String(log.gear?.tank?.pressureStart || ''),
-          pressureEnd: String(log.gear?.tank?.pressureEnd || ''),
-          comment: log.comment || '',
-          photos: log.photos || [],
-          isPrivate: log.isPrivate || false,
-          creatureId: log.creatureId || '',
-          sightedCreatures: log.sightedCreatures || [],
-          entryType: (log.entryType as any) || 'boat',
-          importProfile: log.profile || [],
-          garminActivityId: log.garminActivityId || '',
+          title: data.title || '',
+          date: data.date || '',
+          diveNumber: data.diveNumber?.toString() || '',
+          pointId: data.location?.pointId || '',
+          pointName: data.location?.pointName || '',
+          region: data.location?.region || '',
+          shopName: data.location?.shopName || '',
+          buddy: data.team?.buddy || '',
+          guide: data.team?.guide || '',
+          members: (data.team?.members || []).join(', '),
+          entryTime: data.time?.entry || '',
+          exitTime: data.time?.exit || '',
+          maxDepth: data.depth?.max?.toString() || '',
+          avgDepth: data.depth?.average?.toString() || '',
+          weather: data.condition?.weather || 'sunny',
+          airTemp: data.condition?.airTemp?.toString() || '',
+          waterTempSurface: data.condition?.waterTemp?.surface?.toString() || '',
+          waterTempBottom: data.condition?.waterTemp?.bottom?.toString() || '',
+          transparency: data.condition?.transparency?.toString() || '',
+          wave: data.condition?.wave || 'none',
+          current: data.condition?.current || 'none',
+          surge: data.condition?.surge || 'none',
+          suitType: data.gear?.suitType || 'wet',
+          suitThickness: data.gear?.suitThickness?.toString() || '',
+          weight: data.gear?.weight?.toString() || '',
+          tankMaterial: data.gear?.tank?.material || 'steel',
+          tankCapacity: data.gear?.tank?.capacity?.toString() || '',
+          pressureStart: data.gear?.tank?.pressureStart?.toString() || '',
+          pressureEnd: data.gear?.tank?.pressureEnd?.toString() || '',
+          comment: data.comment || '',
+          photos: data.photos || [],
+          isPrivate: data.isPrivate || false,
+          creatureId: data.creatureId || '',
+          sightedCreatures: data.sightedCreatures || [],
+          entryType: data.entryType || 'boat',
+          importProfile: data.profile || [],
+          garminActivityId: data.garminActivityId || '',
         });
       } else {
         Alert.alert('エラー', 'ログが見つかりませんでした');
-        router.back();
+        router.push('/(tabs)/mypage');
       }
-    } catch (e) {
-      console.error("Fetch log error:", e);
-      Alert.alert('エラー', 'データの取得に失敗しました');
+    } catch (e: any) {
+      console.error("fetchLogData Error:", e);
+      if (e.message === 'TIMEOUT') {
+        Alert.alert('接続エラー', 'データの取得に時間がかかりすぎています。通信環境を確認して再試行してください。');
+      } else {
+        Alert.alert('エラー', 'データの読み込みに失敗しました');
+      }
+      router.back();
     } finally {
       setIsLoading(false);
     }
