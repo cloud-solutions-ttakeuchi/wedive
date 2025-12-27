@@ -290,11 +290,13 @@ export default function LogDetailScreen() {
               <View style={styles.gearRow}>
                 <Text style={styles.gearLabel}>スーツ</Text>
                 <Text style={styles.gearValue}>
-                  {log.gear.suitType === 'wet' ? 'ウェット' : log.gear.suitType === 'dry' ? 'ドライ' : '--'} {log.gear.suitThickness || ''}mm
+                  {log.gear.suitType === 'wet' ? 'ウェット' : log.gear.suitType === 'dry' ? 'ドライ' : '--'}
+                  {log.gear.suitThickness ? ` ${log.gear.suitThickness}mm` : ''}
                 </Text>
                 <Text style={styles.gearLabel}>タンク</Text>
                 <Text style={styles.gearValue}>
-                  {log.gear.tank?.material === 'steel' ? 'スチール' : log.gear.tank?.material === 'aluminum' ? 'アルミ' : '--'} {log.gear.tank?.capacity || ''}L
+                  {log.gear.tank?.material === 'steel' ? 'スチール' : log.gear.tank?.material === 'aluminum' ? 'アルミ' : '--'}
+                  {log.gear.tank?.capacity ? ` ${log.gear.tank.capacity}L` : ''}
                 </Text>
               </View>
               <View style={styles.gearRow}>
@@ -302,7 +304,8 @@ export default function LogDetailScreen() {
                 <Text style={styles.gearValue}>{log.gear.weight ? `${log.gear.weight}kg` : '--'}</Text>
                 <Text style={styles.gearLabel}>空気圧</Text>
                 <Text style={styles.gearValue}>
-                  {log.gear.tank?.pressureStart || '--'} → {log.gear.tank?.pressureEnd || '--'} bar
+                  {log.gear.tank?.pressureStart || '--'} → {log.gear.tank?.pressureEnd || '--'}
+                  {(log.gear.tank?.pressureStart || log.gear.tank?.pressureEnd) ? ' bar' : ''}
                 </Text>
               </View>
             </View>
