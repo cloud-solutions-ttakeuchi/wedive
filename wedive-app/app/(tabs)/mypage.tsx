@@ -4,8 +4,10 @@ import { Text, View } from '@/components/Themed';
 import { LogOut, ChevronRight, Bookmark, Heart, Settings, Activity, BookOpen, Grid, User as UserIcon, Award, Star, MapPin, Plus, Clock, Sparkles } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
-import { useApp } from '../../src/context/AppContext';
-import { DiveLog, Creature, Point, Rarity } from '../../src/types';
+import { usePoints } from '../../src/hooks/usePoints';
+import { useCreatures } from '../../src/hooks/useCreatures';
+import { useUserStats } from '../../src/hooks/useUserStats';
+import { DiveLog, Creature, Point } from '../../src/types';
 import { ImageWithFallback } from '../../src/components/ImageWithFallback';
 
 const { width } = Dimensions.get('window');
@@ -17,17 +19,21 @@ type TabType = 'dashboard' | 'logbook' | 'collection' | 'favorites' | 'wanted' |
 export default function MyPageScreen() {
   const router = useRouter();
   const { user, logs, isLoading: authLoading, signOut } = useAuth();
-  const { creatures, points, pointCreatures, isLoading: appLoading } = useApp();
+
+  const { data: points = [], isLoading: loadingPoints } = usePoints();
+  const { data: creatures = [], isLoading: loadingCreatures } = useCreatures();
+  // usePointCreatures is no longer needed for mastery calculation!
+  const { data: stats, isLoading: loadingStats } = useUserStats();
+
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
 
-  const isLoading = authLoading || appLoading;
+  const isLoading = authLoading || loadingPoints || loadingCreatures || loadingStats;
 
   const handleSignOut = async () => {
     await signOut();
     router.replace('/(auth)/login');
   };
 
-  // Derived Data
   // Derived Data
   const mapLogToIds = (logs: DiveLog[]) => {
     return Array.from(new Set(logs.flatMap(l => [l.creatureId, ...(l.sightedCreatures || [])]).filter((id): id is string => !!id)));
@@ -51,49 +57,8 @@ export default function MyPageScreen() {
     (user?.bookmarkedPointIds || []).map(id => points.find(p => p.id === id)).filter((p): p is Point => p !== undefined),
     [user?.bookmarkedPointIds, points]);
 
-
-
-  // Refactor: Align with Web version logic (simple map + filter)
-  const pointMastery = useMemo(() => {
-    if (isLoading) return [];
-
-    return points.map(point => {
-      // Direct comparison like Web version (assuming IDs are consistent)
-      const pointLogs = (logs || []).filter(l => l.location.pointId === point.id || l.spotId === point.id);
-      if (pointLogs.length === 0) return null;
-
-      const validPointCreatures = pointCreatures.filter(pc => pc.pointId === point.id && (pc.status === 'approved' || pc.status === undefined));
-
-      const creaturesInPoint = validPointCreatures.map(pc => {
-        const creature = creatures.find(c => c.id === pc.creatureId);
-        return creature ? { ...creature, localRarity: pc.localRarity as Rarity } : null;
-      }).filter((c): c is Creature & { localRarity: Rarity } => c !== null)
-        .sort((a, b) => {
-          const rarityOrder: Record<string, number> = { 'Legendary': 4, 'Epic': 3, 'Rare': 2, 'Common': 1 };
-          return (rarityOrder[b.localRarity] || 0) - (rarityOrder[a.localRarity] || 0);
-        });
-
-      const pointLogCreatureIds = new Set(
-        pointLogs.flatMap(l => [l.creatureId, ...(l.sightedCreatures || [])]).filter(Boolean)
-      );
-
-      const discoveredCount = creaturesInPoint.filter(c => pointLogCreatureIds.has(c.id)).length;
-      const totalCount = creaturesInPoint.length;
-      const masteryRate = totalCount > 0 ? Math.round((discoveredCount / totalCount) * 100) : 0;
-
-      return {
-        point,
-        diveCount: pointLogs.length,
-        masteryRate,
-        discoveredCount,
-        totalCount,
-        creaturesAtPoint: creaturesInPoint,
-        discoveredIds: pointLogCreatureIds
-      };
-    })
-      .filter((pm): pm is NonNullable<typeof pm> => pm !== null)
-      .sort((a, b) => b.diveCount - a.diveCount);
-  }, [points, logs, pointCreatures, creatures, isLoading]);
+  // Use server-side calculated stats directly
+  const pointMastery = stats?.points || [];
 
   const completionRate = creatures.length > 0 ? Math.round((uniqueCreatureIds.length / creatures.length) * 100) : 0;
 
@@ -129,7 +94,7 @@ export default function MyPageScreen() {
     switch (activeTab) {
       case 'dashboard':
         const trustScore = user.trustScore || 0;
-        const currentRankProgress = Math.min(100, (trustScore % 100)); // Sample logic: every 100 TP is a major level/progress
+        const currentRankProgress = Math.min(100, (trustScore % 100));
 
         return (
           <View style={styles.tabContent}>
@@ -192,20 +157,19 @@ export default function MyPageScreen() {
               </Text>
             </View>
 
-
             {/* Point Mastery Section */}
             <View style={styles.masterySection}>
               <Text style={styles.sectionTitleMain}>Point Mastery</Text>
               {pointMastery.length > 0 ? (
                 pointMastery.map(pm => (
                   <TouchableOpacity
-                    key={pm.point.id}
+                    key={pm.pointId}
                     style={styles.masteryCard}
-                    onPress={() => router.push(`/details/spot/${pm.point.id}`)}
+                    onPress={() => router.push(`/details/spot/${pm.pointId}`)}
                   >
                     <View style={styles.masteryHeader}>
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.masteryPointName}>{pm.point.name}</Text>
+                        <Text style={styles.masteryPointName}>{pm.pointName}</Text>
                         <Text style={styles.masterySubInfo}>{pm.diveCount} dives · {pm.discoveredCount} / {pm.totalCount} species</Text>
                       </View>
                       <View style={styles.masteryRateContainer}>
@@ -225,14 +189,17 @@ export default function MyPageScreen() {
                       horizontal
                       showsHorizontalScrollIndicator={false}
                       style={styles.masteryCreatureRow}
-                      contentContainerStyle={{ paddingRight: 16 }} // Add padding to end of scroll
+                      contentContainerStyle={{ paddingRight: 16 }}
                     >
-                      {pm.creaturesAtPoint.map(creature => {
-                        const isDiscovered = pm.discoveredIds.has(creature.id);
+                      {pm.creaturesAtPoint && pm.creaturesAtPoint.map(creature => {
+                        const isDiscovered = creature.isDiscovered;
                         return (
                           <View key={creature.id} style={styles.masteryIconWrapper}>
                             {isDiscovered ? (
-                              <Image source={{ uri: creature.imageUrl }} style={styles.masteryIcon} />
+                              <Image
+                                source={creature.imageUrl ? { uri: creature.imageUrl } : NO_IMAGE_CREATURE}
+                                style={styles.masteryIcon}
+                              />
                             ) : (
                               <View style={styles.masteryIconLocked}>
                                 <Text style={styles.masteryIconLockedText}>?</Text>
@@ -252,6 +219,7 @@ export default function MyPageScreen() {
             </View>
           </View>
         );
+
       case 'logbook':
         return (
           <View style={styles.tabContent}>
@@ -300,6 +268,7 @@ export default function MyPageScreen() {
             )}
           </View>
         );
+
       case 'collection':
         return (
           <View style={styles.tabContent}>
@@ -329,6 +298,7 @@ export default function MyPageScreen() {
             </View>
           </View>
         );
+
       case 'favorites':
         return (
           <View style={styles.tabContent}>
@@ -387,6 +357,7 @@ export default function MyPageScreen() {
             </View>
           </View>
         );
+
       case 'wanted':
         return (
           <View style={styles.tabContent}>
@@ -421,6 +392,7 @@ export default function MyPageScreen() {
             </View>
           </View>
         );
+
       case 'plan':
         return (
           <View style={styles.tabContent}>
