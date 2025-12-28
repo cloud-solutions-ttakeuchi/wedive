@@ -89,6 +89,7 @@ graph TD
 | `runDataCleansing` | データクレンジングバッチの起動命令 | Cloud Run Jobs |
 | `onPointUpdateTranslate` | 指定ドキュメント更新時の自動多言語翻訳（トリガー） | Firestore / Vertex AI |
 | `onReviewWriteAggregateStats` | レビュー投稿・更新・削除時のポイント統計自動集計 | Firestore |
+| `onLogWriteCalcMastery` | ログ更新時のユーザー別攻略率・図鑑再計算 | Firestore |
 
 ### 2.2 バッチ処理 (Cloud Run Jobs)
 API タイムアウト（60秒）を超える重い処理や、定期的な一括処理を担当します。
