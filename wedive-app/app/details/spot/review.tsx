@@ -127,13 +127,15 @@ export default function AddReviewScreen() {
     setIsSubmitting(true);
 
     try {
+      const isApproved = !!formData.logId || user.role !== 'user';
       const reviewData = {
         ...formData,
         userId: user.id,
         userName: user.name,
         userProfileImage: user.profileImage,
         userLogsCount: logs.length,
-        isTrusted: !!formData.logId || user.role !== 'user',
+        status: isApproved ? 'approved' : 'pending',
+        isTrusted: isApproved,
         createdAt: new Date().toISOString()
       };
 

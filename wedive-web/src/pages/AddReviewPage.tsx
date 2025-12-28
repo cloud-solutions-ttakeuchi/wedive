@@ -542,7 +542,7 @@ const StepDetails = ({
               </div>
               <h4 className="font-black text-slate-900 uppercase text-xs tracking-widest">既存のログと連携</h4>
             </div>
-            <p className="text-xs text-slate-500 mb-4 font-medium">ログと紐付けることで「信頼性バッジ」が付与され、データの説得力が向上します。</p>
+            <p className="text-xs text-slate-500 mb-4 font-medium">ログと紐付けることで「Verified Log（潜水証明あり）」バッジが付与され、データの説得力が向上します。</p>
             <select
               value={data.logId || ''}
               onChange={e => onChange({ logId: e.target.value })}

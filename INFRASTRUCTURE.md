@@ -131,12 +131,14 @@ GitHub Actions を通じて、以下の 3 段階でデプロイが実行され�
 | :--- | :--- | :--- |
 | `GCLOUD_PROJECT` | Google Cloud プロジェクト ID | Firestore、Vertex AI、Cloud Run 等のリソース特定。**必須。** |
 | `LOCATION` / `GCP_REGION` | リソースの稼働リージョン | Cloud Run Job、Firebase Functions の実行場所指定。 |
-| `AI_LOCATION` | Vertex AI (Gen AI) の実行リージョン | Gemini API や Context Cache のパフォーマンス最適化用。 |
+| `AI_AGENT_LOCATION` | Vertex AI (Gen AI) の実行リージョン | Gemini 2.0 Flash 及 Context Caching を利用するため `us-central1` を指定してください。 |
 | `LOG_LEVEL` | ログ出力詳細度 | DEBUG, INFO, WARN, ERROR のいずれか。システムのデバッグに使用。 |
 | `BASIC_AUTH_USER` | Basic 認証ユーザー名 | ステージング・本番環境へのアクセス制限（未設定時は解除）。 |
 | `BASIC_AUTH_PASS` | Basic 認証パスワード | 同上。 |
 | `CLEANSING_JOB_NAME` | Cloud Run Jobs 名 | AI クレンジングを実行するジョブの名称指定。 |
 | `ENABLE_V2_VERTEX_SEARCH` | Managed RAG 有効化フラグ | `true` で Vertex AI Search を使用。 (旧: `USE_VERTEX_AI_SEARCH`) |
+| `ENABLE_V2_AI_CONCIERGE` | AIコンシェルジュ有効化フラグ | 公開範囲の制御に使用。 |
+| `ENABLE_V6_REVIEWS` | ユーザーレビュー有効化フラグ | 新機能の段階的リリース用。 |
 | `VERTEX_AI_CONCIERGE_DATA_STORE_IDS` | コンシェルジュ用データストア ID | カンマ区切りで複数指定可能。 |
 | `VERTEX_AI_DRAFT_DATA_STORE_IDS` | ドラフト生成用データストア ID | カンマ区切りで複数指定可能。 |
 | `VITE_FIREBASE_API_KEY` | Firebase API キー | フロントエンドからの Firebase 接続認証。 |

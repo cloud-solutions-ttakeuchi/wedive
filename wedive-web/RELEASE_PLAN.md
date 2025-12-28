@@ -68,13 +68,14 @@ Diving Dex App のリリーススケジュールとロードマップです。
 ---
 
 ### 4. Feature Toggles Inventory
-現在管理されているフィーチャートグルの一覧です。Firebase Remote Configで管理されます。
+現在管理されているフィーチャートグルの一覧です。Web・アプリそれぞれの `features.ts` または環境変数で管理されます。
 
-| Key (Parameter Name) | Type | Default | Description | Status |
+| Key (Parameter Name) | Platform | Default | Description | Status |
 |---|---|---|---|---|
-| `enable_garmin_import` | Boolean | `false` | Garminデータインポート機能（V1: ZIP取込）の有効化。<br>MyPageに「Garmin取込」ボタンを表示する。 | **Ready** (Prod: OFF) |
-| `enable_garmin_graph` | Boolean | `false` | 詳細グラフ（V2: 深度プロファイル）の表示。<br>LogDetailModalにグラフを表示する。 | **Dev** (Prod: OFF) |
-| `enable_ai_concierge` | Admin-Only | `false` | AIコンシェルジュ機能の段階的リリース。<br>true:全体公開, false:管理者(admin)のみアクセス可能とし、グラウンディング化の検証を行う。 | **Beta** (Admin Only) |
+| `ENABLE_V2_AI_CONCIERGE` | Common | `false` | AIコンシェルジュ機能の段階的リリース。<br>true:全体公開, false:管理者(admin)のみアクセス可能とし、グラウンディング化の検証を行う。 | **Beta** |
+| `ENABLE_V2_AI_AUTO_FILL` | Web | `false` | スポット・生物登録時のAI自動入力機能。 | **Ready** |
+| `ENABLE_V6_REVIEWS` | Common | `false` | ユーザーレビュー機能 (v6.0.0)。3ステップ投稿、ポテンシャル比較表示。 | **Released** |
+| `ENABLE_V2_VERTEX_SEARCH` | Functions | `false` | Managed RAG (Vertex AI Search) の有効化。 | **Ready** |
 | `LOG_LEVEL` | Env Var | `info` | アプリ全体のログ出力レベル制御。<br>`debug`:詳細ログ出力, `info`:通常ログ。 | **Ready** |
 
 ## Project Management & Release Workflow

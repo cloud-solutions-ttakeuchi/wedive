@@ -19,6 +19,7 @@ export const onReviewWriteAggregateStats = onDocumentWritten({
   try {
     const reviewsSnap = await db.collection("reviews")
       .where("pointId", "==", pointId)
+      .where("status", "==", "approved")
       .orderBy("createdAt", "desc")
       .get();
 

@@ -12,6 +12,9 @@
     - **Photo Reviews**: レビューへの最大5枚の写真アップロードと Firebase Storage 連携を Web/App 双方で実現。
 
 ### Fixed
+- **Review Approval System**: ハイブリッド承認フローを導入。ログ紐付けがある投稿は即時公開、それ以外は管理者の承認後に公開。
+- **Verified Log Badge**: 潜水証明（ログ連携）があるレビューに専用バッジを表示し、情報の信頼性を可視化。
+- **Review Stats Filtering**: 承認済みレビューのみを統計集計対象とするように Cloud Functions を更新。
 - **App Review Page Stability**: モバイル版レビュー画面のスタイル崩れと TypeScript の型エラーを全面的に解消。
 - **User Log Count Accuracy**: レビュー投稿時に、ダミー値ではなく実際のダイブ本数（`logs.length`）が記録されるように修正。
 

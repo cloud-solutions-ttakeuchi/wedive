@@ -21,30 +21,45 @@
 
 ---
 
-## 2. エンティティ関連図 (ER Diagram)
+---
+
+## 2. エンティティ関連図 (Database Structure)
 
 ```mermaid
 erDiagram
-    REGION ||--o{ ZONE : "contains"
-    REGION ||--o{ AREA : "contains (direct link)"
-    REGION ||--o{ POINT : "contains (direct link)"
-    ZONE ||--o{ AREA : "contains"
-    ZONE ||--o{ POINT : "contains (direct link)"
-    AREA ||--o{ POINT : "contains"
+    %% Root Collections
+    USER ||--o{ LOG : "Sub-collection (users/{uid}/logs)"
+    USER ||--o{ REVIEW : "Ref ID (reviews.userId)"
+    USER ||--o{ CREATURE : "Ref ID List (favoriteCreatureIds)"
+    USER ||--o{ POINT : "Ref ID List (bookmarkedPointIds)"
     
-    POINT ||--o{ POINT_CREATURE : "has sightings"
-    CREATURE ||--o{ POINT_CREATURE : "seen at"
-    POINT ||--o{ REVIEW : "has reviews"
+    POINT ||--o{ REVIEW : "Ref ID (reviews.pointId)"
+    POINT ||--o{ POINT_CREATURE : "Root Mapping (id: p_c)"
+    POINT ||--o| ACTUAL_STATS : "Embedded (actualStats)"
     
-    USER ||--o{ LOG : "records"
-    USER ||--o{ REVIEW : "writes"
-    LOG ||--o| REVIEW : "linked to"
-    POINT ||--o{ LOG : "is location for"
-    LOG }o--o{ CREATURE : "sighted in"
+    CREATURE ||--o{ POINT_CREATURE : "Root Mapping (id: p_c)"
     
-    USER ||--o{ CREATURE_PROPOSAL : "submits"
-    USER ||--o{ POINT_PROPOSAL : "submits"
+    LOG ||--o| POINT : "Ref ID (location.pointId)"
+    LOG ||--o{ CREATURE : "Ref ID List (sightedCreatures)"
+    LOG ||--o| REVIEW : "Ref ID (reviewId / Inverse: logId)"
+
+    %% Proposals (Admin)
+    USER ||--o{ CREATURE_PROPOSAL : "Ref ID (submitterId)"
+    USER ||--o{ POINT_PROPOSAL : "Ref ID (submitterId)"
+
+    %% Legend
+    %% Sub-collection: Physical nesting in Firestore
+    %% Ref ID: Single field containing target Document ID
+    %% Ref ID List: Array field containing multiple target IDs
+    %% Embedded: Nested Map object inside the document
 ```
+
+### 関連用語の凡例 (Legend)
+- **Sub-collection**: Firestore の物理的な階層構造。親のパス (`/users/uid`) の下に配置される。
+- **Ref ID**: 他ドキュメントの ID を単一の `string` フィールドとして保持。
+- **Ref ID List**: 他ドキュメントの ID を `string[]` (配列) 形式で保持。
+- **Root Mapping**: 多対多を実現するため、Root に配置した中間テーブル的役割のコレクション。
+- **Embedded**: 正規化せず、ドキュメント内に直接持っている属性情報（Map/独自オブジェクト）。
 
 ---
 
@@ -201,6 +216,7 @@ AIによる再構築結果や検索結果を保存し、費用の抑制と高速
 | `tags` | array(string)| 遭遇生物、地形、見どころタグ |
 | `comment` | string | 感想コメント |
 | `images` | array(string)| 写真URLリスト |
+| `status` | string | pending, approved, rejected |
 | `isTrusted` | boolean | 信頼性フラグ（ログ連携等に基づく） |
 | `createdAt` | string | 投稿日時 |
 

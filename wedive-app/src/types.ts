@@ -370,6 +370,7 @@ export interface Review {
   radar: ReviewRadar;
   tags: string[];
 
+  status: 'pending' | 'approved' | 'rejected';
   isTrusted: boolean;
   createdAt: string;
 }

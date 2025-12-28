@@ -319,8 +319,9 @@ const ReviewCard = ({ review }: { review: Review }) => {
                 className="w-16 h-16 rounded-2xl object-cover ring-4 ring-slate-50 shadow-lg"
               />
               {review.isTrusted && (
-                <div className="absolute -bottom-2 -right-2 bg-sky-500 text-white p-1.5 rounded-xl shadow-lg border-4 border-white">
-                  <ShieldCheck size={14} />
+                <div className="absolute -bottom-2 -right-2 bg-sky-500 text-white pl-1.5 pr-2 py-1 rounded-xl shadow-lg border-4 border-white flex items-center gap-1">
+                  <ShieldCheck size={14} className="shrink-0" />
+                  <span className="text-[8px] font-black uppercase whitespace-nowrap">Verified Log</span>
                 </div>
               )}
             </div>

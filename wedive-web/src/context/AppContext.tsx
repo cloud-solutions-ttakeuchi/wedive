@@ -160,7 +160,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setPointCreatures(data);
     });
 
-    const unsubReviews = onSnapshot(query(collection(firestore, 'reviews'), orderBy('createdAt', 'desc'), limit(100)), (snapshot) => {
+    const unsubReviews = onSnapshot(query(
+      collection(firestore, 'reviews'),
+      where('status', '==', 'approved'),
+      orderBy('createdAt', 'desc'),
+      limit(100)
+    ), (snapshot) => {
       const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Review));
       setReviews(data);
     });
@@ -479,9 +484,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     await updateDoc(doc(firestore, type === 'creature' ? 'creature_proposals' : 'point_proposals', id), { status: 'rejected' });
   };
 
-  const addReview = async (reviewData: Omit<Review, 'id' | 'userId' | 'userName' | 'userProfileImage' | 'userLogsCount' | 'isTrusted' | 'createdAt'>) => {
+  const addReview = async (reviewData: Omit<Review, 'id' | 'userId' | 'userName' | 'userProfileImage' | 'userLogsCount' | 'isTrusted' | 'createdAt' | 'status'>) => {
     if (!isAuthenticated) return;
     const newReviewId = `rv${Date.now()}`;
+    const isApproved = !!reviewData.logId || (currentUser.role !== 'user');
+
     const newReview: Review = {
       ...reviewData,
       id: newReviewId,
@@ -489,7 +496,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       userName: currentUser.name,
       userProfileImage: currentUser.profileImage,
       userLogsCount: allLogs.length,
-      isTrusted: !!reviewData.logId || (currentUser.role !== 'user'),
+      status: isApproved ? 'approved' : 'pending',
+      isTrusted: isApproved,
       createdAt: new Date().toISOString()
     };
 
