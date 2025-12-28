@@ -123,27 +123,33 @@ npm install
 npm run build
 ```
 
-## CI/CD Configuration (GitHub Actions)
+## CI/CD Configuration (GitHub Actions Environments)
 
-`deploy_develop.yml` (PR Auto Deploy) を動作させるためには、GitHub Repository Settings > Secrets and variables に以下の値を設定する必要があります。
+本プロジェクトでは GitHub Actions の Environment 機能を使用しています。
+`deploy_develop.yml` (Development環境) を動作させるためには、GitHub Repository Settings > Environments にて `development` Environment を作成し、以下の値を設定してください。
 
-### Secrets (Repository secrets)
+### Environment Secrets
 | Name | Value |
 | :--- | :--- |
-| `FIREBASE_SERVICE_ACCOUNT_WEDIVE_APP_DEV` | `dive-dex-app-dev` プロジェクトの Service Account Key (JSON全文) |
+| `FIREBASE_SERVICE_ACCOUNT_WEDIVE_APP` | 各環境(`dive-dex-app-dev`等)の Service Account Key (JSON全文) |
 | `BASIC_AUTH_PASS` | Basic認証用パスワード (任意) |
 
-### Variables (Repository variables)
-Dev環境用の設定値には `_DEV` 接尾辞を付けて登録してください。
-- `VITE_FIREBASE_API_KEY_DEV`
-- `VITE_FIREBASE_AUTH_DOMAIN_DEV`
-- `VITE_FIREBASE_PROJECT_ID_DEV` : `dive-dex-app-dev`
-- `VITE_FIREBASE_STORAGE_BUCKET_DEV`
-- `VITE_FIREBASE_MESSAGING_SENDER_ID_DEV`
-- `VITE_FIREBASE_APP_ID_DEV`
-- `VITE_FIREBASE_MEASUREMENT_ID_DEV`
-- `VERTEX_AI_CONCIERGE_DATA_STORE_IDS_DEV`
-- `VERTEX_AI_DRAFT_DATA_STORE_IDS_DEV`
+### Environment Variables
+Environment Variables に登録する際は、接尾辞(`_DEV`等)は不要です。環境ごとに適切な値を設定してください。
+
+- `VITE_FIREBASE_API_KEY`
+- `VITE_FIREBASE_AUTH_DOMAIN`
+- `VITE_FIREBASE_PROJECT_ID` : (例: `dive-dex-app-dev`)
+- `VITE_FIREBASE_STORAGE_BUCKET`
+- `VITE_FIREBASE_MESSAGING_SENDER_ID`
+- `VITE_FIREBASE_APP_ID`
+- `VITE_FIREBASE_MEASUREMENT_ID`
+- `VERTEX_AI_CONCIERGE_DATA_STORE_IDS`
+- `VERTEX_AI_DRAFT_DATA_STORE_IDS`
+- `LOG_LEVEL` : (例: `debug`)
+
+※ Repository Secrets/Variables ではなく、**Environment** Secrets/Variables に設定することに注意してください。
+※ `VITE_GOOGLE_MAPS_API_KEY` や `BASIC_AUTH_USER` など、全環境共通の値は Repository Variables に設定しても構いません。
 
 ## Deployment (Development Environment)
 
