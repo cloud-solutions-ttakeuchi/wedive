@@ -137,8 +137,8 @@ export default function AddReviewScreen() {
         trustLevel = 'expert';
       }
 
-      // Determine Approval Status
-      const isApproved = trustLevel === 'official' || trustLevel === 'verified';
+      // Determine Approval Status (Only Official is auto-approved to prevent negative campaign)
+      const isApproved = trustLevel === 'official';
 
       const reviewData = {
         ...formData,
@@ -148,7 +148,6 @@ export default function AddReviewScreen() {
         userLogsCount: logs.length,
         status: isApproved ? 'approved' : 'pending',
         trustLevel,
-        isTrusted: trustLevel !== 'standard',
         helpfulCount: 0,
         helpfulBy: [],
         createdAt: new Date().toISOString()

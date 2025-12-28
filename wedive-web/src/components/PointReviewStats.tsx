@@ -328,7 +328,7 @@ const ReviewCard = ({ review }: { review: Review }) => {
                     default: return null;
                   }
                 };
-                const badge = getBadge(review.trustLevel || (review.isTrusted ? 'verified' : undefined));
+                const badge = getBadge(review.trustLevel);
                 if (!badge) return null;
 
                 return (
