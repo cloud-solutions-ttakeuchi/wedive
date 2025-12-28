@@ -16,7 +16,7 @@ graph TD
     end
 
     subgraph "Global / User Side"
-        User((User / Browser))
+        User((User / Browser / Mobile))
         FBH[Firebase Hosting]
     end
 
@@ -26,6 +26,7 @@ graph TD
             AI_API[getConciergeResponse<br/>AIコンシェルジュAPI]
             DraftAPI[generateDraftAPI<br/>スポット・生物下書き生成]
             JobTrigger[runDataCleansing<br/>ジョブ実行トリガー]
+            ReviewStats[onReviewWriteAggregateStats<br/>レビュー集計トリガー]
         end
 
         subgraph "Batch Layer (Cloud Run Jobs)"
@@ -35,12 +36,13 @@ graph TD
         subgraph "Data Store"
             Auth[Firebase Authentication]
             Firestore[(Cloud Firestore)]
+            Storage[Firebase Storage]
         end
 
         subgraph "Vertex AI Stack (us-central1 / Grounding)"
             Gemini[[Gemini 2.0 Flash]]
             Cache[(Context Cache)]
-            ManagedRAG[[Managed RAG / Vertex AI Search]]
+            AgentBuilder[[Vertex AI Agent Builder]]
             DataStores[(Data Stores: Points, Creatures, Manuals)]
         end
         
@@ -53,6 +55,11 @@ graph TD
     AuthFunc -->|Serve| User
     
     User -->|Call API| AI_API & DraftAPI & JobTrigger
+    User -->|Write Review| Firestore
+    User -->|Upload Image| Storage
+    
+    Firestore -->|Trigger| ReviewStats
+    ReviewStats -->|Update Stats| Firestore
     
     JobTrigger -->|Trigger Job| CRJ
     CRJ -->|Read/Write| Firestore
@@ -60,8 +67,8 @@ graph TD
     
     AI_API & DraftAPI -->|Inference| Gemini
     Gemini -->|Optimization| Cache
-    Gemini -->|Fetch Grounding| ManagedRAG & GoogleSearch
-    ManagedRAG -->|Read| DataStores
+    Gemini -->|Fetch Grounding| AgentBuilder & GoogleSearch
+    AgentBuilder -->|Read| DataStores
     
     Artifact -->|Deployment Image| CRJ
 ```
