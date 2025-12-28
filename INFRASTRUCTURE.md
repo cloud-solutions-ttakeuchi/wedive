@@ -27,6 +27,7 @@ graph TD
             DraftAPI[generateDraftAPI<br/>スポット・生物下書き生成]
             JobTrigger[runDataCleansing<br/>ジョブ実行トリガー]
             ReviewStats[onReviewWriteAggregateStats<br/>レビュー集計トリガー]
+            MasteryCalc[onLogWriteCalcMastery<br/>攻略率計算トリガー]
         end
 
         subgraph "Batch Layer (Cloud Run Jobs)"
@@ -58,8 +59,9 @@ graph TD
     User -->|Write Review| Firestore
     User -->|Upload Image| Storage
     
-    Firestore -->|Trigger| ReviewStats
+    Firestore -->|Trigger| ReviewStats & MasteryCalc
     ReviewStats -->|Update Stats| Firestore
+    MasteryCalc -->|Update Stats| Firestore
     
     JobTrigger -->|Trigger Job| CRJ
     CRJ -->|Read/Write| Firestore
