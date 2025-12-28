@@ -348,6 +348,7 @@ export interface Review {
   userName: string;
   userProfileImage?: string;
   userLogsCount: number;
+  userRank?: string; // Self-declared rank at time of review
 
   rating: number; // 1-5
   comment: string;
@@ -366,6 +367,8 @@ export interface Review {
     flow: 'none' | 'weak' | 'strong' | 'drift';
     difficulty: 'easy' | 'normal' | 'hard';
     macroWideRatio: number; // 0 (Macro) to 100 (Wide)
+    depthMin?: number;
+    depthMax?: number;
   };
 
   radar: ReviewRadar;
@@ -375,5 +378,6 @@ export interface Review {
   trustLevel: 'standard' | 'verified' | 'expert' | 'professional' | 'official';
   helpfulCount: number;
   helpfulBy: string[];
+  date: string; // The date the dive occurred
   createdAt: string;
 }

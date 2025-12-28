@@ -7,8 +7,14 @@ import {
   Sun, Cloud, CloudRain, Zap, Droplets,
   ArrowLeft, ArrowRight, Check, Star, X,
   Camera, Tag, MessageSquare,
-  Navigation, Thermometer, Loader2
+  Navigation, Thermometer, Loader2, Calendar,
+  Anchor, Sparkles
 } from 'lucide-react';
+import {
+  Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+  ResponsiveContainer
+} from 'recharts';
+import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 import type { Review, ReviewRadar } from '../types';
 
@@ -19,7 +25,7 @@ export const AddReviewPage = () => {
   const queryParams = new URLSearchParams(location.search);
   const logId = queryParams.get('logId');
 
-  const { points, logs, addReview, isAuthenticated } = useApp();
+  const { points, logs, currentUser, addReview, isAuthenticated } = useApp();
   const point = points.find(p => p.id === pointId);
 
   const [step, setStep] = useState(1);
@@ -29,6 +35,7 @@ export const AddReviewPage = () => {
   const [formData, setFormData] = useState<Partial<Review>>({
     pointId,
     logId: logId || undefined,
+    date: new Date().toISOString().split('T')[0],
     rating: 4,
     condition: {
       weather: 'sunny',
@@ -41,6 +48,8 @@ export const AddReviewPage = () => {
       flow: 'none',
       difficulty: 'normal',
       macroWideRatio: 50,
+      depthMin: 5,
+      depthMax: 20,
     },
     radar: {
       encounter: 4,
@@ -51,11 +60,40 @@ export const AddReviewPage = () => {
     },
     tags: [],
     comment: '',
-    images: []
+    images: [],
+    userRank: currentUser?.certification?.rankId || '',
+    userLogsCount: logs.length || 0,
   });
 
   if (!point) return <div className="p-8 text-center">Point not found</div>;
   if (!isAuthenticated) return <div className="p-8 text-center">ログインが必要です</div>;
+
+  // Pre-fill from log if available
+  React.useEffect(() => {
+    if (logId) {
+      const log = logs.find(l => l.id === logId);
+      if (log) {
+        setFormData(prev => ({
+          ...prev,
+          date: log.date,
+          condition: {
+            ...prev.condition!,
+            weather: log.condition?.weather || prev.condition!.weather,
+            wave: log.condition?.wave || prev.condition!.wave,
+            airTemp: log.condition?.airTemp || prev.condition!.airTemp,
+            waterTemp: log.condition?.waterTemp?.surface || prev.condition!.waterTemp,
+          },
+          metrics: {
+            ...prev.metrics!,
+            visibility: log.condition?.transparency || prev.metrics!.visibility,
+            flow: log.condition?.current || prev.metrics!.flow as any,
+            depthMin: log.depth?.average || prev.metrics!.depthMin,
+            depthMax: log.depth?.max || prev.metrics!.depthMax,
+          }
+        }));
+      }
+    }
+  }, [logId, logs]);
 
   const handleNext = () => setStep(s => s + 1);
   const handleBack = () => setStep(s => s - 1);
@@ -119,29 +157,41 @@ export const AddReviewPage = () => {
       </div>
 
       <main className="max-w-2xl mx-auto px-6 py-8">
-        {step === 1 && (
-          <StepEnvironment
-            data={formData.condition!}
-            onChange={(c) => setFormData(prev => ({ ...prev, condition: { ...prev.condition!, ...c } }))}
-          />
-        )}
-        {step === 2 && (
-          <StepMetrics
-            data={formData.metrics!}
-            radar={formData.radar!}
-            onChange={(m) => setFormData(prev => ({ ...prev, metrics: { ...prev.metrics!, ...m } }))}
-            onRadarChange={(r) => setFormData(prev => ({ ...prev, radar: { ...prev.radar!, ...r } }))}
-          />
-        )}
-        {step === 3 && (
-          <StepDetails
-            data={formData}
-            onChange={(d) => setFormData(prev => ({ ...prev, ...d }))}
-            onImageUpload={handleImageUpload}
-            uploading={uploading}
-            fileInputRef={fileInputRef}
-          />
-        )}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={step}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            {step === 1 && (
+              <StepEnvironment
+                data={formData.condition!}
+                date={formData.date!}
+                onDateChange={(d) => setFormData(prev => ({ ...prev, date: d }))}
+                onChange={(c) => setFormData(prev => ({ ...prev, condition: { ...prev.condition!, ...c } }))}
+              />
+            )}
+            {step === 2 && (
+              <StepMetrics
+                data={formData.metrics!}
+                radar={formData.radar!}
+                onChange={(m) => setFormData(prev => ({ ...prev, metrics: { ...prev.metrics!, ...m } }))}
+                onRadarChange={(r) => setFormData(prev => ({ ...prev, radar: { ...prev.radar!, ...r } }))}
+              />
+            )}
+            {step === 3 && (
+              <StepDetails
+                data={formData}
+                onChange={(d) => setFormData(prev => ({ ...prev, ...d }))}
+                onImageUpload={handleImageUpload}
+                uploading={uploading}
+                fileInputRef={fileInputRef}
+              />
+            )}
+          </motion.div>
+        </AnimatePresence>
 
         {/* Navigation Buttons */}
         <div className="mt-12 flex gap-4">
@@ -154,19 +204,23 @@ export const AddReviewPage = () => {
             </button>
           )}
           {step < 3 ? (
-            <button
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={handleNext}
               className="flex-[2] h-14 rounded-2xl bg-sky-600 text-white font-black shadow-lg shadow-sky-200 hover:bg-sky-700 transition-all flex items-center justify-center gap-2"
             >
               次へ進む <ArrowRight size={18} />
-            </button>
+            </motion.button>
           ) : (
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={handleSubmit}
-              className="flex-[2] h-14 rounded-2xl bg-emerald-600 text-white font-black shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 scale-105"
+              className="flex-[2] h-14 rounded-2xl bg-emerald-600 text-white font-black shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
             >
               <Check size={20} /> レビューを投稿する
-            </button>
+            </motion.button>
           )}
         </div>
       </main>
@@ -175,7 +229,7 @@ export const AddReviewPage = () => {
 };
 
 // --- Step 1: Environment Selection ---
-const StepEnvironment = ({ data, onChange }: { data: any, onChange: (d: any) => void }) => {
+const StepEnvironment = ({ data, date, onDateChange, onChange }: { data: any, date: string, onDateChange: (d: string) => void, onChange: (d: any) => void }) => {
   const weatherOptions = [
     { id: 'sunny', icon: <Sun />, label: '晴天' },
     { id: 'cloudy', icon: <Cloud />, label: '曇り' },
@@ -196,8 +250,21 @@ const StepEnvironment = ({ data, onChange }: { data: any, onChange: (d: any) => 
       <section>
         <h2 className="text-2xl font-black text-slate-900 mb-6 flex items-center gap-2">
           <span className="w-8 h-8 bg-sky-100 text-sky-600 rounded-lg flex items-center justify-center text-sm font-bold">1</span>
-          今日の環境は？
+          いつ、どんな環境でしたか？
         </h2>
+
+        <section className="mb-8">
+          <p className="text-slate-500 font-bold mb-4 px-1">日付</p>
+          <div className="bg-white p-4 rounded-2xl border-2 border-slate-100 focus-within:border-sky-500 transition-all flex items-center gap-3">
+            <Calendar size={20} className="text-sky-500" />
+            <input
+              type="date"
+              value={date}
+              onChange={e => onDateChange(e.target.value)}
+              className="w-full bg-transparent font-bold text-slate-900 focus:outline-none"
+            />
+          </div>
+        </section>
 
         <p className="text-slate-500 font-bold mb-4 px-1">天候</p>
         <div className="grid grid-cols-3 gap-3">
@@ -240,31 +307,44 @@ const StepEnvironment = ({ data, onChange }: { data: any, onChange: (d: any) => 
         </div>
       </section>
 
-      <section className="grid grid-cols-2 gap-4">
-        <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">気温</label>
-          <div className="flex items-center gap-3">
-            <Thermometer size={20} className="text-orange-400" />
+      <section className="space-y-8">
+        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm group">
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-2">
+              <Thermometer size={18} className="text-orange-500" />
+              <span className="text-sm font-black text-slate-700">気温</span>
+            </div>
+            <span className="text-3xl font-black text-slate-900 tabular-nums">{data.airTemp}<span className="text-xs ml-1 text-slate-400">°C</span></span>
+          </div>
+          <div className="flex items-center gap-4">
+            <X size={14} className="text-sky-300" />
             <input
-              type="number"
+              type="range" min="0" max="45" step="1"
               value={data.airTemp}
               onChange={e => onChange({ airTemp: Number(e.target.value) })}
-              className="w-full text-2xl font-black text-slate-900 bg-transparent focus:outline-none"
+              className="flex-1 h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-orange-500"
             />
-            <span className="text-slate-400 font-black">°C</span>
+            <Sun size={14} className="text-orange-400" />
           </div>
         </div>
-        <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">水温</label>
-          <div className="flex items-center gap-3">
-            <Droplets size={20} className="text-sky-400" />
+
+        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm group">
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-2">
+              <Droplets size={18} className="text-sky-500" />
+              <span className="text-sm font-black text-slate-700">水温</span>
+            </div>
+            <span className="text-3xl font-black text-slate-900 tabular-nums">{data.waterTemp}<span className="text-xs ml-1 text-slate-400">°C</span></span>
+          </div>
+          <div className="flex items-center gap-4">
+            <Droplets size={14} className="text-sky-300" />
             <input
-              type="number"
+              type="range" min="5" max="35" step="1"
               value={data.waterTemp}
               onChange={e => onChange({ waterTemp: Number(e.target.value) })}
-              className="w-full text-2xl font-black text-slate-900 bg-transparent focus:outline-none"
+              className="flex-1 h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-sky-500"
             />
-            <span className="text-slate-400 font-black">°C</span>
+            <Zap size={14} className="text-amber-400" />
           </div>
         </div>
       </section>
@@ -274,13 +354,46 @@ const StepEnvironment = ({ data, onChange }: { data: any, onChange: (d: any) => 
 
 // --- Step 2: Metrics & Radar ---
 const StepMetrics = ({ data, radar, onChange, onRadarChange }: { data: any, radar: any, onChange: (d: any) => void, onRadarChange: (r: any) => void }) => {
+  const radarData = React.useMemo(() => [
+    { subject: '遭遇', A: radar.encounter },
+    { subject: 'エキサイト', A: radar.excite },
+    { subject: 'マクロ', A: radar.macro },
+    { subject: '快適', A: radar.comfort },
+    { subject: '透明度', A: radar.visibility },
+  ], [radar]);
+
   return (
-    <div className="space-y-10 animate-fade-in">
+    <div className="space-y-10">
       <section>
         <h2 className="text-2xl font-black text-slate-900 mb-6 flex items-center gap-2">
-          <span className="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center text-sm font-bold">2</span>
+          <span className="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center text-sm font-bold shadow-sm ring-1 ring-indigo-200">2</span>
           海のポテンシャル計測
         </h2>
+
+        {/* Live Radar Preview (WOW Factor) */}
+        <div className="bg-slate-900 p-8 rounded-[3rem] shadow-2xl shadow-indigo-900/30 mb-10 overflow-hidden relative border border-slate-800">
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/10 via-transparent to-transparent pointer-events-none" />
+          <div className="relative h-[240px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
+                <PolarGrid stroke="#334155" />
+                <PolarAngleAxis dataKey="subject" tick={{ fill: '#94A3B8', fontSize: 10, fontWeight: 800 }} />
+                <PolarRadiusAxis angle={30} domain={[0, 5]} tick={false} axisLine={false} />
+                <Radar
+                  name="Review"
+                  dataKey="A"
+                  stroke="#818CF8"
+                  fill="#818CF8"
+                  fillOpacity={0.6}
+                  animationDuration={500}
+                />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="text-center mt-2">
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Real-time Score Analysis</span>
+          </div>
+        </div>
 
         <div className="space-y-12">
           {/* Transparency Slider */}
@@ -325,6 +438,65 @@ const StepMetrics = ({ data, radar, onChange, onRadarChange }: { data: any, rada
             />
           </div>
 
+          {/* Depth Range Slider (Dual simulated with 2 sliders for now, or just max if complex) */}
+          <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-2">
+                <Anchor size={18} className="text-indigo-500" />
+                <span className="text-sm font-black text-slate-700">潜水水深 (範囲)</span>
+              </div>
+              <span className="text-xl font-black text-slate-900">
+                {data.depthMin} - {data.depthMax}<span className="text-xs ml-1">m</span>
+              </span>
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <span className="text-[10px] font-bold text-slate-400 w-8">MIN</span>
+                <input
+                  type="range" min="0" max="40" step="1"
+                  value={data.depthMin}
+                  onChange={(e) => onChange({ depthMin: Math.min(Number(e.target.value), data.depthMax) })}
+                  className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-400"
+                />
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="text-[10px] font-bold text-slate-400 w-8">MAX</span>
+                <input
+                  type="range" min="0" max="40" step="1"
+                  value={data.depthMax}
+                  onChange={(e) => onChange({ depthMax: Math.max(Number(e.target.value), data.depthMin) })}
+                  className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Flow / Current picker */}
+          <section>
+            <p className="text-slate-500 font-bold mb-4 px-1">流れ（ポイントの特徴）</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {[
+                { id: 'none', label: 'なし' },
+                { id: 'weak', label: '弱い' },
+                { id: 'strong', label: '強い' },
+                { id: 'drift', label: 'ドリフト' }
+              ].map(opt => (
+                <button
+                  key={opt.id}
+                  onClick={() => onChange({ flow: opt.id })}
+                  className={clsx(
+                    "p-3 rounded-2xl border-2 transition-all font-bold text-sm",
+                    data.flow === opt.id
+                      ? "bg-indigo-600 border-indigo-600 text-white"
+                      : "bg-white border-slate-100 text-slate-500"
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </section>
+
           {/* Difficulty Buttons */}
           <section>
             <p className="text-slate-500 font-bold mb-4 px-1">体感難易度</p>
@@ -353,13 +525,13 @@ const StepMetrics = ({ data, radar, onChange, onRadarChange }: { data: any, rada
         </div>
       </section>
 
-      {/* Radar Metrics Helper (Simple Selectors for now) */}
-      <section className="bg-slate-900 p-8 rounded-[3rem] text-white">
-        <h3 className="text-lg font-black mb-6 flex items-center gap-2">
-          <Star size={20} className="text-amber-400 fill-amber-400" />
-          5象限評価スコア
+      {/* Radar Metrics Input Helper */}
+      <section className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-xl shadow-slate-200/50">
+        <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-8 flex items-center gap-2">
+          <Star size={16} className="text-amber-400 fill-amber-400" />
+          5項目スコア入力
         </h3>
-        <div className="space-y-6">
+        <div className="space-y-8">
           <RadarRating label="生物遭遇度" value={radar.encounter} onChange={(v) => onRadarChange({ encounter: v })} />
           <RadarRating label="ワイド/エキサイト" value={radar.excite} onChange={(v) => onRadarChange({ excite: v })} />
           <RadarRating label="マクロ/じっくり" value={radar.macro} onChange={(v) => onRadarChange({ macro: v })} />
@@ -408,16 +580,35 @@ const StepDetails = ({
   const { logs } = useApp();
 
   const tags = [
-    'サメ', 'エイ', 'ウミガメ', '地形', '洞窟', 'ドロップオフ', '沈船', 'サンゴ', '群れ', 'ハゼ', 'ウミウシ'
+    'ドリフト', '絶景', '魚群', '透明度抜群', '洞窟', 'ドロップオフ', '沈船', 'サンゴ', 'ハゼ', 'ウミウシ'
   ];
 
   return (
     <div className="space-y-10 animate-fade-in">
       <section>
         <h2 className="text-2xl font-black text-slate-900 mb-6 flex items-center gap-2">
-          <span className="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center text-sm font-bold">3</span>
+          <span className="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center text-sm font-bold shadow-sm ring-1 ring-emerald-200">3</span>
           最後の一押し
         </h2>
+
+        {/* Quick Summary View */}
+        <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">選択された条件</span>
+            <span className="text-sm font-black text-sky-600 bg-sky-50 px-3 py-1 rounded-full">{data.date}</span>
+          </div>
+          <div className="flex flex-wrap gap-2 text-xs font-bold text-slate-600">
+            <span className="flex items-center gap-1 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
+              {data.condition.weather}
+            </span>
+            <span className="flex items-center gap-1 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
+              {data.metrics.visibility}m
+            </span>
+            <span className="flex items-center gap-1 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
+              Max {data.metrics.depthMax}m
+            </span>
+          </div>
+        </div>
 
         <div className="space-y-8">
           {/* Photo Upload */}
@@ -477,8 +668,10 @@ const StepDetails = ({
               {tags.map(tag => {
                 const isSelected = data.tags.includes(tag);
                 return (
-                  <button
+                  <motion.button
                     key={tag}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     onClick={() => {
                       const newTags = isSelected
                         ? data.tags.filter((t: string) => t !== tag)
@@ -493,7 +686,7 @@ const StepDetails = ({
                     )}
                   >
                     #{tag}
-                  </button>
+                  </motion.button>
                 );
               })}
             </div>
@@ -534,26 +727,66 @@ const StepDetails = ({
             </div>
           </div>
 
-          {/* Log Link */}
-          <div className="bg-slate-50 p-6 rounded-[2.5rem] border border-slate-200 border-dashed">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 bg-sky-100 text-sky-600 rounded-lg flex items-center justify-center">
-                <Check size={16} />
+          {/* Log Link & Self-Declaration */}
+          <section className="space-y-4">
+            <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm">
+              <div className="flex items-center gap-3 mb-6">
+                <Sparkles size={18} className="text-amber-500" />
+                <h4 className="font-black text-slate-900 uppercase text-xs tracking-widest">レビュアー情報 (自己申告)</h4>
               </div>
-              <h4 className="font-black text-slate-900 uppercase text-xs tracking-widest">既存のログと連携</h4>
+
+              <div className="space-y-6">
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">経験本数</label>
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="number"
+                      value={data.userLogsCount}
+                      onChange={e => onChange({ userLogsCount: Number(e.target.value) })}
+                      className="w-24 text-2xl font-black text-slate-900 bg-slate-50 px-4 py-2 rounded-xl focus:bg-white border-2 border-transparent focus:border-sky-500 outline-none transition-all"
+                    />
+                    <span className="text-slate-500 font-bold">Dives</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">保有資格 (ランク)</label>
+                  <select
+                    value={data.userRank}
+                    onChange={e => onChange({ userRank: e.target.value })}
+                    className="w-full h-12 px-4 rounded-xl bg-slate-50 border-2 border-transparent focus:border-sky-500 text-sm font-bold focus:outline-none transition-all"
+                  >
+                    <option value="">ランク未選択</option>
+                    <option value="owd">Open Water Diver</option>
+                    <option value="aow">Advanced Open Water</option>
+                    <option value="red">Rescue Diver</option>
+                    <option value="dm">Divemaster</option>
+                    <option value="inst">Instructor</option>
+                  </select>
+                </div>
+              </div>
             </div>
-            <p className="text-xs text-slate-500 mb-4 font-medium">ログと紐付けることで「Verified Log（潜水証明あり）」バッジが付与され、データの説得力が向上します。</p>
-            <select
-              value={data.logId || ''}
-              onChange={e => onChange({ logId: e.target.value })}
-              className="w-full h-12 px-4 rounded-xl bg-white border border-slate-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-sky-500"
-            >
-              <option value="">（選択しない）</option>
-              {logs.filter(l => l.location.pointId === data.pointId).map(l => (
-                <option key={l.id} value={l.id}>{l.date} #{l.diveNumber}のログ</option>
-              ))}
-            </select>
-          </div>
+
+            <div className="bg-slate-50 p-6 rounded-[2.5rem] border border-slate-200 border-dashed">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 bg-sky-100 text-sky-600 rounded-lg flex items-center justify-center">
+                  <Check size={16} />
+                </div>
+                <h4 className="font-black text-slate-900 uppercase text-xs tracking-widest">既存のログと連携</h4>
+              </div>
+              <p className="text-xs text-slate-500 mb-4 font-medium">ログと紐付けることで「Verified Log」バッジが付与されます。</p>
+              <select
+                value={data.logId || ''}
+                onChange={e => onChange({ logId: e.target.value })}
+                className="w-full h-12 px-4 rounded-xl bg-white border border-slate-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-sky-500"
+              >
+                <option value="">（選択しない）</option>
+                {logs.filter(l => l.location.pointId === data.pointId).map(l => (
+                  <option key={l.id} value={l.id}>{l.date} #{l.diveNumber}のログ</option>
+                ))}
+              </select>
+            </div>
+          </section>
         </div>
       </section>
     </div>

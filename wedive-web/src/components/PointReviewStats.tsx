@@ -3,7 +3,7 @@ import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell
 } from 'recharts';
-import { Star, MessageSquare, ShieldCheck, Zap, Droplets, Wind, Smile, Sun, Navigation, Anchor, Check } from 'lucide-react';
+import { Star, MessageSquare, ShieldCheck, Zap, Droplets, Wind, Smile, Sun, Navigation, Anchor, Check, Cloud, CloudRain, Thermometer, Info } from 'lucide-react';
 import clsx from 'clsx';
 import type { Point, Review, ReviewRadar } from '../types';
 
@@ -340,21 +340,39 @@ const ReviewCard = ({ review }: { review: Review }) => {
               })()}
             </div>
             <div>
-              <p className="font-black text-slate-900 text-sm">{review.userName}</p>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Logged {review.userLogsCount} dives</p>
+              <div className="flex items-center md:justify-center gap-1.5 mb-1">
+                <p className="font-black text-slate-900 text-sm">{review.userName}</p>
+                {review.userRank && (
+                  <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter ring-1 ring-slate-200">
+                    {review.userRank}
+                  </span>
+                )}
+              </div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Logged {review.userLogsCount} dives</p>
             </div>
           </div>
 
           <div className="mt-6 space-y-3 hidden md:block">
             <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-              <div className="text-[8px] font-black text-slate-400 uppercase mb-1">Status</div>
-              <p className="text-[10px] font-black text-slate-700 flex items-center gap-2">
-                {review.condition.weather === 'sunny' && <Sun size={12} className="text-amber-500" />}
-                {review.condition.weather === 'cloudy' && <Cloud size={12} className="text-slate-400" />}
-                {review.condition.weather === 'rainy' && <CloudRain size={12} className="text-sky-400" />}
-                {review.condition.weather === 'typhoon' && <Navigation size={12} className="text-rose-500" />}
-                {review.condition.waterTemp}°C / {review.metrics.visibility}m
-              </p>
+              <div className="text-[8px] font-black text-slate-400 uppercase mb-1">Dive Settings</div>
+              <div className="space-y-1.5">
+                <p className="text-[10px] font-black text-slate-700 flex items-center gap-2">
+                  {review.condition.weather === 'sunny' && <Sun size={12} className="text-amber-500" />}
+                  {review.condition.weather === 'cloudy' && <Cloud size={12} className="text-slate-400" />}
+                  {review.condition.weather === 'rainy' && <CloudRain size={12} className="text-sky-400" />}
+                  {review.condition.weather === 'typhoon' && <Navigation size={12} className="text-rose-500" />}
+                  {review.condition.weather === 'spring_bloom' && <Droplets size={12} className="text-emerald-500" />}
+                  <span className="opacity-40 font-medium">Weather</span>
+                </p>
+                <div className="h-px bg-slate-200 w-full" />
+                <p className="text-[10px] font-black text-slate-700 flex items-center gap-2">
+                  <Thermometer size={12} className="text-sky-500" />
+                  {review.condition.waterTemp}<span className="text-[8px] text-slate-400">°C</span>
+                  <span className="mx-0.5 text-slate-300">/</span>
+                  <Anchor size={12} className="text-indigo-500" />
+                  {review.metrics.depthMax || '--'}<span className="text-[8px] text-slate-400">m</span>
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -371,8 +389,8 @@ const ReviewCard = ({ review }: { review: Review }) => {
                 />
               ))}
             </div>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              {new Date(review.createdAt).toLocaleDateString()}
+            <span className="text-[10px] font-black text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full uppercase tracking-widest ring-1 ring-sky-100">
+              Dived on {review.date || new Date(review.createdAt).toLocaleDateString()}
             </span>
           </div>
 
@@ -420,27 +438,4 @@ const MetricBadge = ({ icon, label, value }: { icon: React.ReactNode, label: str
       {value === 'none' ? 'なし' : value === 'weak' ? '弱い' : value === 'strong' ? '強い' : value === 'drift' ? 'ドリフト' : value === 'easy' ? '余裕' : value === 'normal' ? '普通' : value === 'hard' ? '必死' : value}
     </div>
   </div>
-);
-
-const Info = ({ size, className }: { size: number, className?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <circle cx="12" cy="12" r="10" />
-    <path d="M12 16v-4" />
-    <path d="M12 8h.01" />
-  </svg>
-);
-
-const Cloud = ({ size, className }: { size: number, className?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M17.5 19c2.5 0 4.5-2 4.5-4.5 0-2.3-1.7-4.2-3.9-4.5C17.4 6.7 14.3 4 10.5 4 6.8 4 3.7 6.6 3.1 10.1c-1.8.4-3.1 2-3.1 4C0 16.7 2.2 19 5 19h12.5z" />
-  </svg>
-);
-
-const CloudRain = ({ size, className }: { size: number, className?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M16 13v8" />
-    <path d="M8 13v8" />
-    <path d="M12 15v8" />
-    <path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 10.25a4.5 4.5 0 0 0 .5 8.75" />
-  </svg>
 );

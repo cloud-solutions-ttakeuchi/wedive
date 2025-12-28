@@ -64,7 +64,7 @@ interface AppContextType {
   rejectProposal: (type: 'creature' | 'point', id: string) => Promise<void>;
   addCreatureProposal: (data: any) => Promise<void>;
   addPointProposal: (data: any) => Promise<void>;
-  addReview: (reviewData: Omit<Review, 'id' | 'userId' | 'userName' | 'userProfileImage' | 'userLogsCount' | 'isTrusted' | 'createdAt'>) => Promise<void>;
+  addReview: (reviewData: Omit<Review, 'id' | 'userId' | 'userName' | 'userProfileImage' | 'trustLevel' | 'createdAt' | 'status' | 'helpfulCount' | 'helpfulBy'>) => Promise<void>;
 
   // Expose data directly
   creatures: Creature[];
@@ -486,7 +486,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     await updateDoc(doc(firestore, type === 'creature' ? 'creature_proposals' : 'point_proposals', id), { status: 'rejected' });
   };
 
-  const addReview = async (reviewData: Omit<Review, 'id' | 'userId' | 'userName' | 'userProfileImage' | 'userLogsCount' | 'trustLevel' | 'createdAt' | 'status' | 'helpfulCount' | 'helpfulBy'>) => {
+  const addReview = async (reviewData: Omit<Review, 'id' | 'userId' | 'userName' | 'userProfileImage' | 'trustLevel' | 'createdAt' | 'status' | 'helpfulCount' | 'helpfulBy'>) => {
     if (!isAuthenticated) return;
     const newReviewId = `rv${Date.now()}`;
 
@@ -509,7 +509,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       userId: currentUser.id,
       userName: currentUser.name,
       userProfileImage: currentUser.profileImage,
-      userLogsCount: allLogs.length,
+      userLogsCount: reviewData.userLogsCount || allLogs.length,
       status: isApproved ? 'approved' : 'pending',
       trustLevel,
       helpfulCount: 0,
