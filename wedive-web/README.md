@@ -123,6 +123,28 @@ npm install
 npm run build
 ```
 
+## CI/CD Configuration (GitHub Actions)
+
+`deploy_develop.yml` (PR Auto Deploy) を動作させるためには、GitHub Repository Settings > Secrets and variables に以下の値を設定する必要があります。
+
+### Secrets (Repository secrets)
+| Name | Value |
+| :--- | :--- |
+| `FIREBASE_SERVICE_ACCOUNT_WEDIVE_APP_DEV` | `dive-dex-app-dev` プロジェクトの Service Account Key (JSON全文) |
+| `BASIC_AUTH_PASS` | Basic認証用パスワード (任意) |
+
+### Variables (Repository variables)
+Dev環境用の設定値には `_DEV` 接尾辞を付けて登録してください。
+- `VITE_FIREBASE_API_KEY_DEV`
+- `VITE_FIREBASE_AUTH_DOMAIN_DEV`
+- `VITE_FIREBASE_PROJECT_ID_DEV` : `dive-dex-app-dev`
+- `VITE_FIREBASE_STORAGE_BUCKET_DEV`
+- `VITE_FIREBASE_MESSAGING_SENDER_ID_DEV`
+- `VITE_FIREBASE_APP_ID_DEV`
+- `VITE_FIREBASE_MEASUREMENT_ID_DEV`
+- `VERTEX_AI_CONCIERGE_DATA_STORE_IDS_DEV`
+- `VERTEX_AI_DRAFT_DATA_STORE_IDS_DEV`
+
 ## Deployment (Development Environment)
 
 開発環境（`dive-dex-app-dev` プロジェクト）へのデプロイ手順です。本番リリースの前の動作確認に使用します。
