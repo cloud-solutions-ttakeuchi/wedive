@@ -73,11 +73,11 @@ graph TD
     User -->|Write Log| Firestore
     
     %% Background Triggers
-    Firestore -->|Trigger: "reviews/{id}"| ReviewStats
-    ReviewStats -->|Update: "points/{id}"| Firestore
+    Firestore -->|Trigger: reviews/id| ReviewStats
+    ReviewStats -->|Update: points/id| Firestore
     
-    Firestore -->|Trigger: "logs/{id}"| MasteryCalc
-    MasteryCalc -->|Update: "user/stats"| Firestore
+    Firestore -->|Trigger: logs/id| MasteryCalc
+    MasteryCalc -->|Update: user/stats| Firestore
     
     %% Batch Process
     JobTrigger -->|Start Job| CRJ
