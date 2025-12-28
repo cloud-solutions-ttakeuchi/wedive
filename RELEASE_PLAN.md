@@ -37,7 +37,17 @@ Diving Dex App のリリーススケジュールとロードマップです。
     - **Cost Engineering**: Context Caching によるトークンコストの大幅削減。
     - **CI/CD Integration**: GitHub Actions によるパイプライン Docker イメージの自動デプロイ（Staging & Production）。のリポジトリ構成の変数化完了。
     - **v2.1.4: Infrastructure Stabilization**: 環境依存値の完全外部化と、標準ロガーレベル（`LOG_LEVEL`）によるAI診断制御の実装。
+    - **v2.1.4: Infrastructure Stabilization**: 環境依存値の完全外部化と、標準ロガーレベル（`LOG_LEVEL`）によるAI診断制御の実装。
 
+### v6.0.0 (Reliable Review System) - Released
+**目的: 信頼性の高いレビューエコシステムの構築 (Trust & Safety)**
+
+- [x] **Review Trust System**:
+    - **Trust Levels**: `Official`, `Professional`, `Verified`, `Expert`, `Standard` の5段階評価を導入。
+    - **Approval Flow**: `Official` 以外は「承認待ち (Pending)」として扱い、不適切な投稿によるレピュテーションリスクを排除。
+    - **Verification**: ログ紐づけ (`logId`) による「Verified Log」バッジの表示。
+- [x] **Review UI**: 投稿時の信頼性判定ロジックと、閲覧時のバッジ表示機能。
+- [x] **Infrastructure**: ログ攻略率再計算トリガー (`onLogWriteCalcMastery`) によるユーザーランクのリアルタイム更新。
 
 ### v1.3.0 (Community Features) - Planning
 **目的: コミュニティ形成とリアルタイム交流**
@@ -74,7 +84,7 @@ Diving Dex App のリリーススケジュールとロードマップです。
 |---|---|---|---|---|
 | `ENABLE_V2_AI_CONCIERGE` | Common | `false` | AIコンシェルジュ機能の段階的リリース。<br>true:全体公開, false:管理者(admin)のみアクセス可能とし、グラウンディング化の検証を行う。 | **Beta** |
 | `ENABLE_V2_AI_AUTO_FILL` | Web | `false` | スポット・生物登録時のAI自動入力機能。 | **Ready** |
-| `ENABLE_V6_REVIEWS` | Common | `false` | ユーザーレビュー機能 (v6.0.0)。3ステップ投稿、ポテンシャル比較表示。 | **Released** |
+| `ENABLE_V6_REVIEWS` | Common | `false` | ユーザーレビュー機能 (v6.0.0)。信頼性スコア (`trustLevel`)、承認制フロー、ポテンシャル比較表示。 | **Released** |
 | `ENABLE_V2_VERTEX_SEARCH` | Functions | `false` | Managed RAG (Vertex AI Search) の有効化。 | **Ready** |
 | `LOG_LEVEL` | Env Var | `info` | アプリ全体のログ出力レベル制御。<br>`debug`:詳細ログ出力, `info`:通常ログ。 | **Ready** |
 
@@ -86,7 +96,19 @@ Diving Dex App のリリーススケジュールとロードマップです。
 - `RELEASE_PLAN.md`: ロードマップと機能要件の定義。
 - `CHANGELOG.md`: リリース（トグルON）された機能の履歴。
 
-### 2. Git Branching Strategy
+### 2. Environment & Deployment Workflow
+各環境へのデプロイメントパイプライン(`ci/cd`)と役割定義です。
+
+| 環境 | 役割 | デプロイ契機 (CD) | アクセス制限 |
+|---|---|---|---|
+| **Local** | 機能開発・単体テスト | 手動 (`npm run dev`) | なし |
+| **Develop** (Ex-Preview) | PRレビュー・動作確認 | Pull Request 作成/更新時に自動デプロイ | 一時URL (有効期限7日) |
+| **Staging** | 結合テスト・QA検証・AI動作確認 | `main` branch への push 時に自動デプロイ | Basic認証 (`BASIC_AUTH_USER`) |
+| **Production** | 本番サービス提供 | `main` branch への push 時に自動デプロイ | 一般公開 (機能はToggleで制御) |
+
+> **Note:** StagingとProductionは同時にデプロイされます。未完成の機能がProductionユーザーに露出しないよう、必ず **Feature Toggle** で保護してください。
+
+### 3. Git Branching Strategy
 長期間生存するブランチは `main` のみとします。リリース専用ブランチは作成しません。
 
 | ブランチ名 | 役割 |
@@ -95,7 +117,7 @@ Diving Dex App のリリーススケジュールとロードマップです。
 | **feature/xxx** | 機能追加・修正用ブランチ。**原則としてフィーチャートグルでラップされた状態**で実装する。短期間で `main` にマージされる。 |
 | **fix/xxx** | バグ修正用ブランチ。 |
 
-### 3. Feature Toggle Workflow
+### 4. Feature Toggle Workflow
 機能の公開はコードのデプロイではなく、トグルの有効化によって制御します。
 
 #### Phase 1: Implementation (実装)

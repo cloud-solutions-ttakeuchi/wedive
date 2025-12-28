@@ -127,6 +127,12 @@ npm run build
 
 開発環境（`dive-dex-app-dev` プロジェクト）へのデプロイ手順です。本番リリースの前の動作確認に使用します。
 
+**Autopilot (推奨)**:
+GitHub で Pull Request を作成・更新すると、GitHub Actions (`deploy_develop.yml`) により自動的に開発環境へデプロイされます。通常はこのフローを使用してください。
+
+**Manual Deployment (手動)**:
+急ぎの確認やローカルからの直接デプロイが必要な場合は、以下の手順に従ってください。
+
 ### 1. プロジェクトの切り替え
 ```bash
 firebase login --reauth

@@ -1,0 +1,105 @@
+name: Deploy to Develop
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'wedive-web/**'
+      - '.github/workflows/deploy_develop.yml'
+      - '!wedive-web/**/*.md'
+
+jobs:
+  build_and_deploy:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    environment: development
+    defaults:
+      run:
+        working-directory: wedive-web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: wedive-web/package-lock.json
+      - run: npm ci
+      - run: npm run build
+        env:
+          VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY_DEV }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN_DEV }}
+          VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID_DEV }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ vars.VITE_FIREBASE_STORAGE_BUCKET_DEV }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID_DEV }}
+          VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID_DEV }}
+          VITE_FIREBASE_MEASUREMENT_ID: ${{ vars.VITE_FIREBASE_MEASUREMENT_ID_DEV }}
+          VITE_GOOGLE_MAPS_API_KEY: ${{ vars.VITE_GOOGLE_MAPS_API_KEY }}
+          LOG_LEVEL: 'debug'
+      - name: Install and Build Functions
+        run: |
+          cd functions
+          npm ci
+          npm run build
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_WEDIVE_APP_DEV }}
+      - name: Deploy Functions
+        run: |
+          cp dist/index.html functions/index.html
+          mv dist/index.html dist/_app.html
+
+          echo "LOG_LEVEL=debug" >> functions/.env
+          echo "BASIC_AUTH_USER=${{ vars.BASIC_AUTH_USER }}" >> functions/.env
+          echo "BASIC_AUTH_PASS=${{ secrets.BASIC_AUTH_PASS }}" >> functions/.env
+          echo "CLEANSING_JOB_NAME=cleansing-job" >> functions/.env
+          echo "USE_VERTEX_AI_SEARCH=${{ vars.USE_VERTEX_AI_SEARCH }}" >> functions/.env
+          echo "VERTEX_AI_CONCIERGE_DATA_STORE_IDS=${{ vars.VERTEX_AI_CONCIERGE_DATA_STORE_IDS_DEV }}" >> functions/.env
+          echo "VERTEX_AI_DRAFT_DATA_STORE_IDS=${{ vars.VERTEX_AI_DRAFT_DATA_STORE_IDS_DEV }}" >> functions/.env
+
+          npx firebase-tools deploy --only functions --project ${{ vars.VITE_FIREBASE_PROJECT_ID_DEV }} --force
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_WEDIVE_APP_DEV }}'
+          projectId: ${{ vars.VITE_FIREBASE_PROJECT_ID_DEV }}
+          channelId: live
+          entryPoint: wedive-web
+
+  deploy_cleansing_job:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    environment: development
+    defaults:
+      run:
+        working-directory: wedive-web
+    steps:
+      - uses: actions/checkout@v4
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_WEDIVE_APP_DEV }}
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ vars.GCP_REGION || 'asia-northeast1' }}-docker.pkg.dev
+      - name: Build and Push Cleansing Image
+        run: |
+          docker build -t ${{ vars.GCP_REGION || 'asia-northeast1' }}-docker.pkg.dev/${{ vars.VITE_FIREBASE_PROJECT_ID_DEV }}/${{ vars.GCP_ARTIFACT_REPOSITORY_DEV || 'wedive-repo' }}/cleansing-pipeline:latest -f docker/cleansing/Dockerfile .
+          docker push ${{ vars.GCP_REGION || 'asia-northeast1' }}-docker.pkg.dev/${{ vars.VITE_FIREBASE_PROJECT_ID_DEV }}/${{ vars.GCP_ARTIFACT_REPOSITORY_DEV || 'wedive-repo' }}/cleansing-pipeline:latest
+      - name: Update Cloud Run Job
+        run: |
+          gcloud run jobs update cleansing-job \
+            --image ${{ vars.GCP_REGION || 'asia-northeast1' }}-docker.pkg.dev/${{ vars.VITE_FIREBASE_PROJECT_ID_DEV }}/${{ vars.GCP_ARTIFACT_REPOSITORY_DEV || 'wedive-repo' }}/cleansing-pipeline:latest \
+            --region ${{ vars.GCP_REGION || 'asia-northeast1' }} \
+            --set-env-vars "^:^GCLOUD_PROJECT=${{ vars.VITE_FIREBASE_PROJECT_ID_DEV }}:LOCATION=${{ vars.GCP_REGION || 'asia-northeast1' }}:AI_AGENT_LOCATION=${{ vars.AI_AGENT_LOCATION || 'us-central1' }}:LOG_LEVEL=debug:USE_VERTEX_AI_SEARCH=${{ vars.USE_VERTEX_AI_SEARCH }}:VERTEX_AI_CONCIERGE_DATA_STORE_IDS=${{ vars.VERTEX_AI_CONCIERGE_DATA_STORE_IDS_DEV }}:VERTEX_AI_DRAFT_DATA_STORE_IDS=${{ vars.VERTEX_AI_DRAFT_DATA_STORE_IDS_DEV }}" \
+            --task-timeout 3600 \
+            --tasks 1 \
+            --max-retries 0 || \
+          gcloud run jobs create cleansing-job \
+            --image ${{ vars.GCP_REGION || 'asia-northeast1' }}-docker.pkg.dev/${{ vars.VITE_FIREBASE_PROJECT_ID_DEV }}/${{ vars.GCP_ARTIFACT_REPOSITORY_DEV || 'wedive-repo' }}/cleansing-pipeline:latest \
+            --region ${{ vars.GCP_REGION || 'asia-northeast1' }} \
+            --set-env-vars "^:^GCLOUD_PROJECT=${{ vars.VITE_FIREBASE_PROJECT_ID_DEV }}:LOCATION=${{ vars.GCP_REGION || 'asia-northeast1' }}:AI_AGENT_LOCATION=${{ vars.AI_AGENT_LOCATION || 'us-central1' }}:LOG_LEVEL=debug:USE_VERTEX_AI_SEARCH=${{ vars.USE_VERTEX_AI_SEARCH }}:VERTEX_AI_CONCIERGE_DATA_STORE_IDS=${{ vars.VERTEX_AI_CONCIERGE_DATA_STORE_IDS_DEV }}:VERTEX_AI_DRAFT_DATA_STORE_IDS=${{ vars.VERTEX_AI_DRAFT_DATA_STORE_IDS_DEV }}" \
+            --task-timeout 3600 \
+            --tasks 1 \
+            --max-retries 0

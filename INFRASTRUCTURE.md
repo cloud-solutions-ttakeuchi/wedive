@@ -143,7 +143,9 @@ GitHub Actions を通じて、以下の 3 段階でデプロイが実行され�
 
 | 項目 | 値 |
 | :--- | :--- |
-| プロジェクト ID (本番) | `we-dive` |
+| プロジェクト ID (Prod) | `wedive` |
+| プロジェクト ID (Stg) | `dive-dex-app` |
+| プロジェクト ID (Dev) | `dive-dex-app-dev` |
 | Firestore リージョン | `asia-northeast1` |
 | AI プロセッサ ロケーション | `us-central1` |
 | Artifact Registry Repo | `wedive-repo` |
