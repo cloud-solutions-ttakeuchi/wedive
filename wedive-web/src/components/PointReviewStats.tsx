@@ -171,7 +171,6 @@ export const PointReviewStats: React.FC<PointReviewStatsProps> = ({ point, revie
               official={5}
               actual={stats?.avgRating || 0}
               unit="pts"
-              max={5}
               color="amber"
             />
             <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 italic">
@@ -271,8 +270,7 @@ export const PointReviewStats: React.FC<PointReviewStatsProps> = ({ point, revie
   );
 };
 
-const ComparisonBar = ({ label, official, actual, unit, max = 30, color }: { label: string, official: number, actual: number, unit: string, max?: number, color: string }) => {
-  const percent = Math.min((actual / official) * 100, 150); // limit to 150% visual
+const ComparisonBar = ({ label, official, actual, unit, color }: { label: string, official: number, actual: number, unit: string, color: string }) => {
 
   return (
     <div className="space-y-3">
@@ -407,10 +405,10 @@ const ReviewCard = ({ review }: { review: Review }) => {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <MetricBadge icon={<Droplets />} label="透明度" value={`${review.metrics.visibility}m`} />
-            <MetricBadge icon={<Wind />} label="流れ" value={review.metrics.flow} />
-            <MetricBadge icon={<Star />} label="難易度" value={review.metrics.difficulty} />
-            <MetricBadge icon={<Smile />} label="スタイル" value={review.metrics.macroWideRatio > 50 ? 'ワイド' : 'マクロ'} />
+            <MetricBadge icon={<Droplets />} value={`${review.metrics.visibility}m`} />
+            <MetricBadge icon={<Wind />} value={review.metrics.flow} />
+            <MetricBadge icon={<Star />} value={review.metrics.difficulty} />
+            <MetricBadge icon={<Smile />} value={review.metrics.macroWideRatio > 50 ? 'ワイド' : 'マクロ'} />
           </div>
 
           {review.images && review.images.length > 0 && (
@@ -431,7 +429,7 @@ const ReviewCard = ({ review }: { review: Review }) => {
   );
 };
 
-const MetricBadge = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) => (
+const MetricBadge = ({ icon, value }: { icon: React.ReactNode, value: string }) => (
   <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 flex flex-col items-center text-center">
     <div className="text-slate-400 mb-1">{React.cloneElement(icon as React.ReactElement<any>, { size: 14 })}</div>
     <div className="text-[10px] font-black text-slate-900 capitalize tracking-tighter">

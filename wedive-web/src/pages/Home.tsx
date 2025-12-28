@@ -7,8 +7,6 @@ import { ChevronRight, ChevronLeft, Star, Heart, Bookmark, Calendar, MapPin, Bot
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 import type { Log } from '../types';
-import { getBoolean } from 'firebase/remote-config';
-import { remoteConfig } from '../lib/firebase';
 import { FEATURE_FLAGS } from '../config/features';
 
 export const Home = () => {

@@ -16,7 +16,7 @@ import {
 } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
-import type { Review, ReviewRadar } from '../types';
+import type { Review } from '../types';
 
 export const AddReviewPage = () => {
   const { pointId } = useParams<{ pointId: string }>();
@@ -65,9 +65,6 @@ export const AddReviewPage = () => {
     userLogsCount: logs.length || 0,
   });
 
-  if (!point) return <div className="p-8 text-center">Point not found</div>;
-  if (!isAuthenticated) return <div className="p-8 text-center">ログインが必要です</div>;
-
   // Pre-fill from log if available
   React.useEffect(() => {
     if (logId) {
@@ -94,6 +91,9 @@ export const AddReviewPage = () => {
       }
     }
   }, [logId, logs]);
+
+  if (!point) return <div className="p-8 text-center">Point not found</div>;
+  if (!isAuthenticated) return <div className="p-8 text-center">ログインが必要です</div>;
 
   const handleNext = () => setStep(s => s + 1);
   const handleBack = () => setStep(s => s - 1);

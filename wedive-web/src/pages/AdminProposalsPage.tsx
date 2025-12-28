@@ -410,7 +410,6 @@ export const AdminProposalsPage = () => {
               <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><MapPin className="text-green-500" /> ポイント提案 ({proposalPoints.length})</h2>
               <div className="grid gap-4">
                 {proposalPoints.map(p => {
-                  const title = (p as any).proposalTitle || '';
                   const tid = (p as any).targetId || (p.id && !p.id.startsWith('prop') ? p.id : '');
                   const hasTargetId = tid !== '';
                   const rawType = String(p.proposalType || '').toLowerCase();
