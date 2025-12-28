@@ -13,7 +13,7 @@ import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { useState } from 'react';
 
-import { CERTIFICATION_MASTER, BADGE_MASTER, TRUST_RANKS } from '../constants/masterData';
+import { CERTIFICATIONS, BADGE_MASTER, TRUST_RANKS } from '../constants/masterData';
 
 export const MyPage = () => {
   const { currentUser, logs, points, zones, areas, creatures, pointCreatures, isAuthenticated, toggleLikeLog, deleteLogs, updateLogs } = useApp();
@@ -59,7 +59,7 @@ export const MyPage = () => {
 
   // Certification Info
   const userCert = currentUser.certification;
-  const certOrg = userCert ? CERTIFICATION_MASTER : null; // Mock: assuming single org for now or matching ID
+  const certOrg = userCert ? CERTIFICATIONS.find(o => o.id === userCert.orgId) : null;
   const certRank = userCert && certOrg ? certOrg.ranks.find(r => r.id === userCert.rankId) : null;
 
   // Badges Info

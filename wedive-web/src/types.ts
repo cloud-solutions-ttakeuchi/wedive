@@ -333,11 +333,12 @@ export type PointProposal = Point & EditProposal;
 
 // --- Review Types (v6.0.0+) ---
 export interface ReviewRadar {
-  encounter: number; // 遭遇度
-  excite: number;    // ワイド・エキサイト度
-  macro: number;     // マクロ・じっくり度
-  comfort: number;   // 快適度
-  visibility: number; // 透明度スコア
+  visibility: number;      // 透明度
+  satisfaction: number;    // 満足度
+  excite: number;          // エキサイト
+  comfort: number;         // 快適さ・余裕度
+  encounter: number;       // 生物遭遇率
+  topography: number;      // 地形満足度
 }
 
 export interface Review {
@@ -348,7 +349,8 @@ export interface Review {
   userName: string;
   userProfileImage?: string;
   userLogsCount: number;
-  userRank?: string; // Self-declared rank at time of review
+  userOrgId?: string; // Self-declared organization ID at time of review
+  userRank?: string; // Self-declared rank ID at time of review
 
   rating: number; // 1-5
   comment: string;

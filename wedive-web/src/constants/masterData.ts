@@ -7,17 +7,63 @@ export const TRUST_RANKS: RankMaster[] = [
   { id: 'sage', name: '図鑑の賢者', minScore: 100, roleUpgrade: true, designColor: 'amber-500', icon: 'Crown' }
 ];
 
-export const CERTIFICATION_MASTER: CertificationMaster = {
-  id: 'org_padi',
-  name: 'PADI',
-  ranks: [
-    { id: 'rank_ow', name: 'Open Water Diver', level: 1 },
-    { id: 'rank_aow', name: 'Advanced Open Water Diver', level: 2 },
-    { id: 'rank_red', name: 'Rescue Diver', level: 3 },
-    { id: 'rank_dm', name: 'Divemaster', level: 4 },
-    { id: 'rank_inst', name: 'Instructor', level: 5 },
-  ]
-};
+export const CERTIFICATIONS: CertificationMaster[] = [
+  {
+    id: 'padi',
+    name: 'PADI',
+    ranks: [
+      { id: 'entry', name: 'OWD', level: 1 },
+      { id: 'advanced', name: 'AOW', level: 2 },
+      { id: 'expert', name: 'Rescue / MSD', level: 3 },
+      { id: 'guide', name: 'DM', level: 4 },
+      { id: 'instructor', name: 'OWSI', level: 5 },
+    ]
+  },
+  {
+    id: 'naui',
+    name: 'NAUI',
+    ranks: [
+      { id: 'entry', name: 'オープンウォーター', level: 1 },
+      { id: 'advanced', name: 'アドバンススクーバ', level: 2 },
+      { id: 'expert', name: 'マスターダイバー', level: 3 },
+      { id: 'guide', name: 'ダイブマスター', level: 4 },
+      { id: 'instructor', name: 'インストラクター', level: 5 },
+    ]
+  },
+  {
+    id: 'ssi',
+    name: 'SSI',
+    ranks: [
+      { id: 'entry', name: 'OWD', level: 1 },
+      { id: 'advanced', name: 'アドバンスド・アドベンチュアラー', level: 2 },
+      { id: 'expert', name: 'マスターダイバー', level: 3 },
+      { id: 'guide', name: 'ダイブマスター', level: 4 },
+      { id: 'instructor', name: 'OWI', level: 5 },
+    ]
+  },
+  {
+    id: 'cmas',
+    name: 'CMAS',
+    ranks: [
+      { id: 'entry', name: '1スター', level: 1 },
+      { id: 'advanced', name: '2スター', level: 2 },
+      { id: 'expert', name: '3スター', level: 3 },
+      { id: 'guide', name: '4スター', level: 4 },
+      { id: 'instructor', name: 'モノトール(M)', level: 5 },
+    ]
+  },
+  {
+    id: 'bsac',
+    name: 'BSAC',
+    ranks: [
+      { id: 'entry', name: 'オーシャンダイバー', level: 1 },
+      { id: 'advanced', name: 'スポーツダイバー', level: 2 },
+      { id: 'expert', name: 'ダイブリーダー', level: 3 },
+      { id: 'guide', name: 'アドバンスダイバー', level: 4 },
+      { id: 'instructor', name: 'インストラクター', level: 5 },
+    ]
+  }
+];
 
 export const BADGE_MASTER: BadgeMaster[] = [
   {
