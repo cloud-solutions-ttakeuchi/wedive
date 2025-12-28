@@ -95,6 +95,7 @@ erDiagram
 | `area` | string | エリア名 (冗長化) |
 | `level` | string | Beginner, Intermediate, Advanced |
 | `maxDepth` | number | 最大水深 (m) |
+| `mainDepth` | map | 推奨・みどころ水深域: `{min, max}` |
 | `entryType` | string | beach, boat, entry_easy |
 | `current` | string | none, weak, strong, drift |
 | `topography` | array(string) | 地形タグ (sand, rock, wall, cave, muck) |
@@ -226,6 +227,8 @@ AIによる再構築結果や検索結果を保存し、費用の抑制と高速
 | `images` | array(string)| 写真URLリスト |
 | `status` | string | pending, approved, rejected |
 | `isTrusted` | boolean | 信頼性フラグ（ログ連携等に基づく） |
+| `helpfulCount`| number | 「参考になった」の数 |
+| `helpfulBy` | array(string)| 「参考になった」を押したユーザーのIDリスト |
 | `createdAt` | string | 投稿日時 |
 
 ---

@@ -34,6 +34,7 @@ export interface Point {
   // Attributes
   level: 'Beginner' | 'Intermediate' | 'Advanced';
   maxDepth: number;
+  mainDepth?: { min: number; max: number };
   entryType: 'beach' | 'boat' | 'entry_easy';
   current: 'none' | 'weak' | 'strong' | 'drift';
 
@@ -372,5 +373,7 @@ export interface Review {
 
   status: 'pending' | 'approved' | 'rejected';
   isTrusted: boolean;
+  helpfulCount: number;
+  helpfulBy: string[];
   createdAt: string;
 }
