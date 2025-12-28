@@ -372,6 +372,7 @@ export interface Review {
   tags: string[];
 
   status: 'pending' | 'approved' | 'rejected';
+  trustLevel: 'standard' | 'verified' | 'expert' | 'professional' | 'official';
   isTrusted: boolean;
   helpfulCount: number;
   helpfulBy: string[];

@@ -226,10 +226,19 @@ AIによる再構築結果や検索結果を保存し、費用の抑制と高速
 | `comment` | string | 感想コメント |
 | `images` | array(string)| 写真URLリスト |
 | `status` | string | pending, approved, rejected |
-| `isTrusted` | boolean | 信頼性フラグ（ログ連携等に基づく） |
-| `helpfulCount`| number | 「参考になった」の数 |
+| `trustLevel` | string | standard, verified, expert, professional, official |
+| `isTrusted` | boolean | 信頼性判定フラグ (standard以外はtrue) |
 | `helpfulBy` | array(string)| 「参考になった」を押したユーザーのIDリスト |
 | `createdAt` | string | 投稿日時 |
+
+#### 信頼性レベル (trustLevel) 定義
+| レベル | 定義 | 表示バッジ | 統計への重み | 判定条件 |
+| :--- | :--- | :--- | :--- | :--- |
+| `official` | 運営・モデレーター | 🛡️ Official | 最大 (x2.0) | `user.role` が `admin` または `moderator` |
+| `professional` | プロダイバー | ⚓ Professional | 特大 (x1.5) | インストラクター等の資格保有者 |
+| `verified` | 潜水証明あり | ✅ Verified Log | 大 (x1.2) | `logId` が紐付けられている投稿 |
+| `expert` | ベテラン | 🌟 Expert | 中 (x1.1) | `userLogsCount` が 100本以上 |
+| `standard` | 一般投稿 | なし | 通常 (x1.0) | 上記以外 |
 
 ---
 

@@ -484,10 +484,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     await updateDoc(doc(firestore, type === 'creature' ? 'creature_proposals' : 'point_proposals', id), { status: 'rejected' });
   };
 
-  const addReview = async (reviewData: Omit<Review, 'id' | 'userId' | 'userName' | 'userProfileImage' | 'userLogsCount' | 'isTrusted' | 'createdAt' | 'status'>) => {
+  const addReview = async (reviewData: Omit<Review, 'id' | 'userId' | 'userName' | 'userProfileImage' | 'userLogsCount' | 'isTrusted' | 'trustLevel' | 'createdAt' | 'status' | 'helpfulCount' | 'helpfulBy'>) => {
     if (!isAuthenticated) return;
     const newReviewId = `rv${Date.now()}`;
-    const isApproved = !!reviewData.logId || (currentUser.role !== 'user');
+
+    // Determine Trust Level
+    let trustLevel: Review['trustLevel'] = 'standard';
+    if (currentUser.role === 'admin' || currentUser.role === 'moderator') {
+      trustLevel = 'official';
+    } else if (!!reviewData.logId) {
+      trustLevel = 'verified';
+    } else if (allLogs.length >= 100) {
+      trustLevel = 'expert';
+    }
+
+    // Determine Approval Status (Only Official and Verified are auto-approved)
+    const isApproved = trustLevel === 'official' || trustLevel === 'verified';
 
     const newReview: Review = {
       ...reviewData,
@@ -497,7 +509,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       userProfileImage: currentUser.profileImage,
       userLogsCount: allLogs.length,
       status: isApproved ? 'approved' : 'pending',
-      isTrusted: isApproved,
+      trustLevel,
+      isTrusted: trustLevel !== 'standard',
+      helpfulCount: 0,
+      helpfulBy: [],
       createdAt: new Date().toISOString()
     };
 

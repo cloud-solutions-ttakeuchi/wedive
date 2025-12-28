@@ -3,7 +3,7 @@ import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell
 } from 'recharts';
-import { Star, MessageSquare, ShieldCheck, Zap, Droplets, Wind, Smile, Sun, Navigation } from 'lucide-react';
+import { Star, MessageSquare, ShieldCheck, Zap, Droplets, Wind, Smile, Sun, Navigation, Anchor, Check } from 'lucide-react';
 import clsx from 'clsx';
 import type { Point, Review, ReviewRadar } from '../types';
 
@@ -318,12 +318,26 @@ const ReviewCard = ({ review }: { review: Review }) => {
                 alt={review.userName}
                 className="w-16 h-16 rounded-2xl object-cover ring-4 ring-slate-50 shadow-lg"
               />
-              {review.isTrusted && (
-                <div className="absolute -bottom-2 -right-2 bg-sky-500 text-white pl-1.5 pr-2 py-1 rounded-xl shadow-lg border-4 border-white flex items-center gap-1">
-                  <ShieldCheck size={14} className="shrink-0" />
-                  <span className="text-[8px] font-black uppercase whitespace-nowrap">Verified Log</span>
-                </div>
-              )}
+              {(() => {
+                const getBadge = (level?: string) => {
+                  switch (level) {
+                    case 'official': return { label: 'Official', icon: <ShieldCheck size={14} className="shrink-0" />, color: 'bg-indigo-600' };
+                    case 'professional': return { label: 'Professional', icon: <Anchor size={14} className="shrink-0" />, color: 'bg-rose-600' };
+                    case 'verified': return { label: 'Verified Log', icon: <Check size={14} className="shrink-0" />, color: 'bg-sky-500' };
+                    case 'expert': return { label: 'Expert', icon: <Star size={14} className="shrink-0" />, color: 'bg-amber-500' };
+                    default: return null;
+                  }
+                };
+                const badge = getBadge(review.trustLevel || (review.isTrusted ? 'verified' : undefined));
+                if (!badge) return null;
+
+                return (
+                  <div className={`absolute -bottom-2 -right-2 ${badge.color} text-white pl-1.5 pr-2 py-1 rounded-xl shadow-lg border-4 border-white flex items-center gap-1`}>
+                    {badge.icon}
+                    <span className="text-[8px] font-black uppercase whitespace-nowrap">{badge.label}</span>
+                  </div>
+                );
+              })()}
             </div>
             <div>
               <p className="font-black text-slate-900 text-sm">{review.userName}</p>

@@ -127,7 +127,19 @@ export default function AddReviewScreen() {
     setIsSubmitting(true);
 
     try {
-      const isApproved = !!formData.logId || user.role !== 'user';
+      // Determine Trust Level
+      let trustLevel = 'standard';
+      if (user.role === 'admin' || user.role === 'moderator') {
+        trustLevel = 'official';
+      } else if (!!formData.logId) {
+        trustLevel = 'verified';
+      } else if (logs.length >= 100) {
+        trustLevel = 'expert';
+      }
+
+      // Determine Approval Status
+      const isApproved = trustLevel === 'official' || trustLevel === 'verified';
+
       const reviewData = {
         ...formData,
         userId: user.id,
@@ -135,7 +147,10 @@ export default function AddReviewScreen() {
         userProfileImage: user.profileImage,
         userLogsCount: logs.length,
         status: isApproved ? 'approved' : 'pending',
-        isTrusted: isApproved,
+        trustLevel,
+        isTrusted: trustLevel !== 'standard',
+        helpfulCount: 0,
+        helpfulBy: [],
         createdAt: new Date().toISOString()
       };
 
