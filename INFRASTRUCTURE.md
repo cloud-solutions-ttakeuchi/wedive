@@ -82,16 +82,16 @@ graph TD
 ### 2.1 API サービス (Firebase Functions v2)
 ユーザーのブラウザ（フロントエンド）から、Firebase Hosting のリライト経由で呼び出される関数群です。これらは内部的に Cloud Run 上でマイクロサービスとして稼働しています。
 
-| 関数名 / エンドポイント | 役割 | トリガー (Source) -> 連携先 (Target) |
-| :--- | :--- | :--- |
-| `basicAuth` | ステージング環境等の基本認証、および SPA の配布 | HTTP Request -> Hosting / Client |
-| `getConciergeResponse` | 自然言語によるスポット・生物の質問回答 | Callable API -> Vertex AI -> Client |
-| `generateSpotDraft` | ダイビングスポット情報の AI 自動生成 | Callable API -> Vertex AI -> Client |
-| `generateCreatureDraft` | 海洋生物情報の AI 自動生成 | Callable API -> Vertex AI -> Client |
-| `runDataCleansing` | データクレンジングバッチの起動命令 | Callable API -> Cloud Run Jobs |
-| `onPointUpdateTranslate` | 指定ドキュメント更新時の自動多言語翻訳 | **Write**: `points/{id}` -> Vertex AI -> **Update**: `points/{id}` |
-| `onReviewWriteAggregateStats` | レビュー投稿・更新・削除時のポイント統計自動集計 | **Write**: `reviews/{id}` -> **Update**: `points/{pointId}` |
-| `onLogWriteCalcMastery` | ログ更新時のユーザー別攻略率・図鑑再計算 | **Write**: `users/{uid}/logs/{id}` -> **Update**: `users/{uid}/stats/mastery` |
+| 関数名 | 役割 | トリガー (Source) | 出力・連携先 (Target) |
+| :--- | :--- | :--- | :--- |
+| `basicAuth` | SPA配信・認証 | HTTP Request (Firebase Hosting) | Web Client |
+| `getConciergeResponse` | AIコンシェルジュ API | Call (Callable) | Vertex AI -> Web Client |
+| `generateSpotDraft` | ドラフト自動生成 | Call (Callable) | Vertex AI -> Firestore (Draft) |
+| `generateCreatureDraft` | 生物ドラフト自動生成 | Call (Callable) | Vertex AI -> Firestore (Draft) |
+| `runDataCleansing` | データクレンジング起動 | Call (Callable) | Cloud Run Jobs |
+| `onPointUpdateTranslate` | 自動翻訳 | **Write**: `points/{id}` | Vertex AI -> **Write**: `points/{id}` |
+| `onReviewWriteAggregateStats` | レビュー集計 | **Write**: `reviews/{id}` | **Write**: `points/{id}` (stats) |
+| `onLogWriteCalcMastery` | 攻略率計算 | **Write**: `users/{uid}/logs/{lid}` | **Write**: `users/{uid}/stats/mastery` |
 
 ### 2.2 バッチ処理 (Cloud Run Jobs)
 API タイムアウト（60秒）を超える重い処理や、定期的な一括処理を担当します。
