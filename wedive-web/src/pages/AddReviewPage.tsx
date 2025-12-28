@@ -1,13 +1,13 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { storage } from '../lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import {
-  Sun, Cloud, CloudRain, Zap, Wind, Waves, Droplets,
+  Sun, Cloud, CloudRain, Zap, Droplets,
   ArrowLeft, ArrowRight, Check, Star, X,
-  Camera, Tag, MessageSquare, Info,
-  AlertTriangle, Navigation, Anchor, Thermometer, Loader2
+  Camera, Tag, MessageSquare,
+  Navigation, Thermometer, Loader2
 } from 'lucide-react';
 import clsx from 'clsx';
 import type { Review, ReviewRadar } from '../types';

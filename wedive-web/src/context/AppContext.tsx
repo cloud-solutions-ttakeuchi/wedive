@@ -62,6 +62,8 @@ interface AppContextType {
   removePointCreature: (pointId: string, creatureId: string) => Promise<void>;
   approveProposal: (type: 'creature' | 'point', id: string, data: any) => Promise<void>;
   rejectProposal: (type: 'creature' | 'point', id: string) => Promise<void>;
+  addCreatureProposal: (data: any) => Promise<void>;
+  addPointProposal: (data: any) => Promise<void>;
   addReview: (reviewData: Omit<Review, 'id' | 'userId' | 'userName' | 'userProfileImage' | 'userLogsCount' | 'isTrusted' | 'createdAt'>) => Promise<void>;
 
   // Expose data directly
