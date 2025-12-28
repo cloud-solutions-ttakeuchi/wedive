@@ -33,8 +33,8 @@ export const PointReviewStats: React.FC<PointReviewStatsProps> = ({ point, revie
     const avg = (key: keyof ReviewRadar) => filteredReviews.reduce((sum, r) => sum + r.radar[key], 0) / filteredReviews.length;
 
     return {
-      avgRating: reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length,
-      avgVisibility: reviews.reduce((sum, r) => sum + r.metrics.visibility, 0) / reviews.length,
+      avgRating: filteredReviews.reduce((sum, r) => sum + r.rating, 0) / filteredReviews.length,
+      avgVisibility: filteredReviews.reduce((sum, r) => sum + r.metrics.visibility, 0) / filteredReviews.length,
       radar: {
         encounter: avg('encounter'),
         excite: avg('excite'),
@@ -43,7 +43,7 @@ export const PointReviewStats: React.FC<PointReviewStatsProps> = ({ point, revie
         visibility: avg('visibility'),
       }
     };
-  }, [reviews]);
+  }, [filteredReviews]);
 
   // Radar Data Comparison
   const radarData = useMemo(() => {

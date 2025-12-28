@@ -492,7 +492,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     let trustLevel: Review['trustLevel'] = 'standard';
     if (currentUser.role === 'admin' || currentUser.role === 'moderator') {
       trustLevel = 'official';
-    } else if (!!reviewData.logId) {
+    } else if (reviewData.logId) {
       trustLevel = 'verified';
     } else if (allLogs.length >= 100) {
       trustLevel = 'expert';
