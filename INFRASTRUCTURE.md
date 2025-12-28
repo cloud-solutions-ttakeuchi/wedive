@@ -81,6 +81,7 @@ graph TD
 | `generateCreatureDraft` | 海洋生物情報の AI 自動生成 | Vertex AI Search (Draft DS) / Google Search |
 | `runDataCleansing` | データクレンジングバッチの起動命令 | Cloud Run Jobs |
 | `onPointUpdateTranslate` | 指定ドキュメント更新時の自動多言語翻訳（トリガー） | Firestore / Vertex AI |
+| `onReviewWriteAggregateStats` | レビュー投稿・更新・削除時のポイント統計自動集計 | Firestore |
 
 ### 2.2 バッチ処理 (Cloud Run Jobs)
 API タイムアウト（60秒）を超える重い処理や、定期的な一括処理を担当します。
@@ -135,7 +136,7 @@ GitHub Actions を通じて、以下の 3 段階でデプロイが実行され�
 | `BASIC_AUTH_USER` | Basic 認証ユーザー名 | ステージング・本番環境へのアクセス制限（未設定時は解除）。 |
 | `BASIC_AUTH_PASS` | Basic 認証パスワード | 同上。 |
 | `CLEANSING_JOB_NAME` | Cloud Run Jobs 名 | AI クレンジングを実行するジョブの名称指定。 |
-| `USE_VERTEX_AI_SEARCH` | Managed RAG 有効化フラグ | `true` で Vertex AI Search を使用。 |
+| `ENABLE_V2_VERTEX_SEARCH` | Managed RAG 有効化フラグ | `true` で Vertex AI Search を使用。 (旧: `USE_VERTEX_AI_SEARCH`) |
 | `VERTEX_AI_CONCIERGE_DATA_STORE_IDS` | コンシェルジュ用データストア ID | カンマ区切りで複数指定可能。 |
 | `VERTEX_AI_DRAFT_DATA_STORE_IDS` | ドラフト生成用データストア ID | カンマ区切りで複数指定可能。 |
 | `VITE_FIREBASE_API_KEY` | Firebase API キー | フロントエンドからの Firebase 接続認証。 |

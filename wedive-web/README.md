@@ -53,7 +53,7 @@ The following variables can be set in GitHub Actions Variables or Firebase Confi
 | `LOG_LEVEL` | アプリ全体のログ出力レベル制御。`debug` に設定すると、Vertex AI とのやり取りに関する詳細なログを出力します。 | `info` |
 | `LOCATION` | 一般的なインフラ実行リージョン（例: `asia-northeast1`） | `asia-northeast1` |
 | `AI_AGENT_LOCATION` | **必須**。Gemini 2.0 Flash 及び Context Caching を利用するため `us-central1` を指定してください。 | `us-central1` |
-| `USE_VERTEX_AI_SEARCH` | **Feature Flag**。`true` で Managed RAG (Vertex AI Search) を有効化します。 | `false` |
+| `ENABLE_V2_VERTEX_SEARCH` | **Feature Flag**。`true` で Managed RAG (Vertex AI Search) を有効化します。 (旧: `USE_VERTEX_AI_SEARCH`) | `false` |
 | `VERTEX_AI_CONCIERGE_DATA_STORE_IDS` | **AI コンシェルジュ専用**。参照するデータストア ID（複数指定はカンマ区切り）。WeDive マスタ、ガイドブックPDF等を指定します。 | - |
 | `VERTEX_AI_DRAFT_DATA_STORE_IDS` | **AI 自動登録・検証専用**。参照するデータストア ID（複数指定はカンマ区切り）。生物図鑑、公式公報、地点マスタ等を指定します。 | - |
 

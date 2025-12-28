@@ -49,7 +49,7 @@ WeDive アプリケーション（Cloud Functions）に対して、用途別に 
 ### Firebase への反映コマンド例
 ```bash
 # 全体フラグをONにする
-firebase functions:config:set ai.use_vertex_ai_search="true"
+firebase functions:config:set ai.enable_v2_vertex_search="true"
 
 # コンシェルジュ用データストア（複数指定）
 firebase functions:config:set ai.vertex_ai_concierge_data_store_ids="wedive-points,local-manuals-pdf"
@@ -68,5 +68,5 @@ WeDive の `generateAIDrafts` ツールは、コストと精度のバランス�
 
 ## 5. 運用上の注意点
 - **同期ラグ**: Firestore をソースにした場合、データの変更が検索結果に反映されるまで数十分程度のラグが発生することがあります。
-- **コスト管理**: Vertex AI Search のクエリ単価に注意してください。不要なデータストアは指定から外す、または `USE_VERTEX_AI_SEARCH` を `"false"` にすることで通常の LLM 動作に戻せます。
+- **コスト管理**: Vertex AI Search のクエリ単価に注意してください。不要なデータストアは指定から外す、または `ENABLE_V2_VERTEX_SEARCH` を `"false"` にすることで通常の LLM 動作に戻せます。
 - **リージョン**: Gemini 2.0 Flash を利用する場合、インフラ（Firebase）が日本にあっても、AI エージェントのロケーション（`AI_AGENT_LOCATION`）は `us-central1` に設定してください。

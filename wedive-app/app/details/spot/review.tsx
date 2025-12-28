@@ -40,7 +40,7 @@ export default function AddReviewScreen() {
   const { id: pointId, logId } = useLocalSearchParams();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, logs } = useAuth();
 
   const [step, setStep] = useState(0);
   const flatListRef = useRef<FlatList>(null);
@@ -123,7 +123,7 @@ export default function AddReviewScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!isAuthenticated || !user) return;
+    if (!isAuthenticated || !user || !pointId) return;
     setIsSubmitting(true);
 
     try {
@@ -132,7 +132,7 @@ export default function AddReviewScreen() {
         userId: user.id,
         userName: user.name,
         userProfileImage: user.profileImage,
-        userLogsCount: 20, // Dummy or actual logs count
+        userLogsCount: logs.length,
         isTrusted: !!formData.logId || user.role !== 'user',
         createdAt: new Date().toISOString()
       };

@@ -11,6 +11,7 @@ import { useAuth } from '../../../src/context/AuthContext';
 import { CreatureSelectorModal } from '../../../src/components/CreatureSelectorModal';
 import { RaritySelectorModal } from '../../../src/components/RaritySelectorModal';
 import { Alert } from 'react-native';
+import { FEATURE_FLAGS } from '../../../src/constants/features';
 
 import { ImageWithFallback } from '../../../src/components/ImageWithFallback';
 
@@ -390,12 +391,25 @@ export default function SpotDetailScreen() {
 
       {/* 4. Footer Action */}
       <View style={[styles.footerAction, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-        <TouchableOpacity
-          style={styles.primaryBtn}
-          onPress={() => router.push({ pathname: '/log/add', params: { pointId: point.id, pointName: point.name } })}
-        >
-          <Text style={styles.primaryBtnText}>このポイントでログを書く</Text>
-        </TouchableOpacity>
+        <View style={styles.footerRow}>
+          <TouchableOpacity
+            style={styles.logBtn}
+            onPress={() => router.push({ pathname: '/log/add', params: { pointId: point.id, pointName: point.name } })}
+          >
+            <Edit3 size={18} color="#fff" />
+            <Text style={styles.primaryBtnText}>ログを書く</Text>
+          </TouchableOpacity>
+
+          {FEATURE_FLAGS.ENABLE_V6_REVIEWS && (
+            <TouchableOpacity
+              style={styles.reviewBtn}
+              onPress={() => router.push({ pathname: '/details/spot/review' as any, params: { pointId: point.id } })}
+            >
+              <Star size={18} color="#0ea5e9" fill="#0ea5e9" />
+              <Text style={styles.reviewBtnText}>今をレポート</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       <CreatureSelectorModal
@@ -807,6 +821,42 @@ const styles = StyleSheet.create({
   pendingBadgeTextMini: {
     color: '#fff',
     fontSize: 8,
+    fontWeight: '900',
+  },
+  footerRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  logBtn: {
+    flex: 1.2,
+    backgroundColor: '#0ea5e9',
+    height: 56,
+    borderRadius: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    shadowColor: '#0ea5e9',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  reviewBtn: {
+    flex: 1,
+    backgroundColor: '#fff',
+    height: 56,
+    borderRadius: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderWidth: 1.5,
+    borderColor: '#0ea5e9',
+  },
+  reviewBtnText: {
+    color: '#0ea5e9',
+    fontSize: 15,
     fontWeight: '900',
   },
 });
