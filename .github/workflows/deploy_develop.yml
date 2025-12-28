@@ -46,6 +46,14 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_WEDIVE_APP }}
+      - name: Debug Secret Access
+        run: |
+          if [ -z "${{ secrets.FIREBASE_SERVICE_ACCOUNT_WEDIVE_APP }}" ]; then
+            echo "Error: FIREBASE_SERVICE_ACCOUNT_WEDIVE_APP is EMPTY"
+            exit 1
+          else
+            echo "Success: Secret is injected"
+          fi
       - name: Deploy Functions
         run: |
           cp dist/index.html functions/index.html
