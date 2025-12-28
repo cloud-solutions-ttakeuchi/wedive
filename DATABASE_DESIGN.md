@@ -227,7 +227,6 @@ AIによる再構築結果や検索結果を保存し、費用の抑制と高速
 | `images` | array(string)| 写真URLリスト |
 | `status` | string | pending, approved, rejected |
 | `trustLevel` | string | standard, verified, expert, professional, official |
-| `isTrusted` | boolean | 信頼性判定フラグ (standard以外はtrue) |
 | `helpfulBy` | array(string)| 「参考になった」を押したユーザーのIDリスト |
 | `createdAt` | string | 投稿日時 |
 
