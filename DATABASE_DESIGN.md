@@ -27,23 +27,29 @@
 
 ```mermaid
 erDiagram
-    %% Root Collections
+    %% --- Geographical Hierarchy ---
+    REGION ||--o{ ZONE : "Ref ID (zones.regionId)"
+    ZONE ||--o{ AREA : "Ref ID (areas.zoneId)"
+    AREA ||--o{ POINT : "Ref ID (points.areaId)"
+    REGION ||--o{ POINT : "Ref ID (points.regionId / Denormalized)"
+    
+    %% --- Core Entities & User Data ---
     USER ||--o{ LOG : "Sub-collection (users/{uid}/logs)"
     USER ||--o{ REVIEW : "Ref ID (reviews.userId)"
     USER ||--o{ CREATURE : "Ref ID List (favoriteCreatureIds)"
     USER ||--o{ POINT : "Ref ID List (bookmarkedPointIds)"
     
     POINT ||--o{ REVIEW : "Ref ID (reviews.pointId)"
-    POINT ||--o{ POINT_CREATURE : "Root Mapping (id: p_c)"
+    POINT ||--o{ POINT_CREATURE : "Root Mapping (ref_id: pointId)"
     POINT ||--o| ACTUAL_STATS : "Embedded (actualStats)"
     
-    CREATURE ||--o{ POINT_CREATURE : "Root Mapping (id: p_c)"
+    CREATURE ||--o{ POINT_CREATURE : "Root Mapping (ref_id: creatureId)"
     
     LOG ||--o| POINT : "Ref ID (location.pointId)"
     LOG ||--o{ CREATURE : "Ref ID List (sightedCreatures)"
     LOG ||--o| REVIEW : "Ref ID (reviewId / Inverse: logId)"
 
-    %% Proposals (Admin)
+    %% --- Proposals (Admin) ---
     USER ||--o{ CREATURE_PROPOSAL : "Ref ID (submitterId)"
     USER ||--o{ POINT_PROPOSAL : "Ref ID (submitterId)"
 
@@ -52,6 +58,7 @@ erDiagram
     %% Ref ID: Single field containing target Document ID
     %% Ref ID List: Array field containing multiple target IDs
     %% Embedded: Nested Map object inside the document
+    %% Denormalized: Data stored duplicated for query performance
 ```
 
 ### 関連用語の凡例 (Legend)
@@ -60,6 +67,7 @@ erDiagram
 - **Ref ID List**: 他ドキュメントの ID を `string[]` (配列) 形式で保持。
 - **Root Mapping**: 多対多を実現するため、Root に配置した中間テーブル的役割のコレクション。
 - **Embedded**: 正規化せず、ドキュメント内に直接持っている属性情報（Map/独自オブジェクト）。
+- **Denormalized**: 結合（Join）を避けるため、正規化を崩して重複して持たせているデータ。
 
 ---
 
