@@ -55,23 +55,37 @@ graph TD
     FBH -->|Rewrite /api/*| AuthFunc
     AuthFunc -->|Serve| User
     
-    User -->|Call API| AI_API & DraftAPI & JobTrigger
-    User -->|Write Review| Firestore
-    User -->|Upload Image| Storage
-    
-    Firestore -->|Trigger| ReviewStats & MasteryCalc
-    ReviewStats -->|Update Stats| Firestore
-    MasteryCalc -->|Update Stats| Firestore
-    
-    JobTrigger -->|Trigger Job| CRJ
-    CRJ -->|Read/Write| Firestore
-    CRJ -->|Grounding Search| Gemini
-    
-    AI_API & DraftAPI -->|Inference| Gemini
-    Gemini -->|Optimization| Cache
+    %% API Calls
+    User -->|Call: Generate Draft| DraftAPI
+    DraftAPI -->|Inference| Gemini
     Gemini -->|Fetch Grounding| AgentBuilder & GoogleSearch
     AgentBuilder -->|Read| DataStores
+    DraftAPI -->|Return JSON| User
     
+    User -->|Call: Concierge| AI_API
+    AI_API -->|Inference| Gemini
+    AI_API -->|Return Answer| User
+
+    %% Data Write Flow
+    User -->|Call: Run Job| JobTrigger
+    User -->|Write Review| Firestore
+    User -->|Upload Image| Storage
+    User -->|Write Log| Firestore
+    
+    %% Background Triggers
+    Firestore -->|Trigger: reviews/{id}| ReviewStats
+    ReviewStats -->|Update: points/{id}| Firestore
+    
+    Firestore -->|Trigger: logs/{id}| MasteryCalc
+    MasteryCalc -->|Update: user/stats| Firestore
+    
+    %% Batch Process
+    JobTrigger -->|Start Job| CRJ
+    CRJ -->|Read All Data| Firestore
+    CRJ -->|Grounding Check| Gemini
+    CRJ -->|Write: point_creatures| Firestore
+    
+    Gemini -->|Optimization| Cache
     Artifact -->|Deployment Image| CRJ
 ```
 
@@ -86,9 +100,9 @@ graph TD
 | :--- | :--- | :--- | :--- |
 | `basicAuth` | SPA配信・認証 | HTTP Request (Firebase Hosting) | Web Client |
 | `getConciergeResponse` | AIコンシェルジュ API | Call (Callable) | Vertex AI -> Web Client |
-| `generateSpotDraft` | ドラフト自動生成 | Call (Callable) | Vertex AI -> Firestore (Draft) |
-| `generateCreatureDraft` | 生物ドラフト自動生成 | Call (Callable) | Vertex AI -> Firestore (Draft) |
-| `runDataCleansing` | データクレンジング起動 | Call (Callable) | Cloud Run Jobs |
+| `generateSpotDraft` | ドラフト自動生成 | Call (Callable) | Vertex AI -> Web Client (JSON) |
+| `generateCreatureDraft` | 生物ドラフト自動生成 | Call (Callable) | Vertex AI -> Web Client (JSON) |
+| `runDataCleansing` | データクレンジング起動 | Call (Callable) | Cloud Run Jobs -> AI -> `point_creatures` |
 | `onPointUpdateTranslate` | 自動翻訳 | **Write**: `points/{id}` | Vertex AI -> **Write**: `points/{id}` |
 | `onReviewWriteAggregateStats` | レビュー集計 | **Write**: `reviews/{id}` | **Write**: `points/{id}` (stats) |
 | `onLogWriteCalcMastery` | 攻略率計算 | **Write**: `users/{uid}/logs/{lid}` | **Write**: `users/{uid}/stats/mastery` |
@@ -96,9 +110,9 @@ graph TD
 ### 2.2 バッチ処理 (Cloud Run Jobs)
 API タイムアウト（60秒）を超える重い処理や、定期的な一括処理を担当します。
 
-| ジョブ名 | 役割 | 実行タイミング |
-| :--- | :--- | :--- |
-| `cleansing-job` | 全ポイント・生物の紐付け整合性チェック、AI による推論と検証 | 管理画面からの手動 / スケジュール |
+| ジョブ名 | 役割 | トリガー / 実行タイミング | 出力・連携先 (Target) |
+| :--- | :--- | :--- | :--- |
+| `cleansing-job` | 生物紐付け整合性チェック & AI生成 | `runDataCleansing` / Schedule | Vertex AI -> **Write**: `point_creatures` |
 
 ---
 
