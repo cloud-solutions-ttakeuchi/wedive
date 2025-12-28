@@ -27,7 +27,7 @@ export const AddReviewPage = () => {
   const queryParams = new URLSearchParams(location.search);
   const logId = queryParams.get('logId');
 
-  const { points, logs, currentUser, addReview, isAuthenticated } = useApp();
+  const { points, logs, currentUser, addReview, isAuthenticated, updateUser } = useApp();
   const point = points.find(p => p.id === pointId);
 
   const [step, setStep] = useState(1);
@@ -129,6 +129,18 @@ export const AddReviewPage = () => {
   const handleSubmit = async () => {
     try {
       await addReview(formData as any);
+
+      // Also update user profile with latest certification
+      if (currentUser && currentUser.id !== 'guest') {
+        await updateUser({
+          certification: {
+            orgId: formData.userOrgId || 'padi',
+            rankId: formData.userRank || 'entry',
+            date: currentUser.certification?.date || new Date().toISOString().split('T')[0]
+          }
+        });
+      }
+
       alert('レビューを投稿しました！');
       navigate(`/point/${pointId}`);
     } catch (e) {

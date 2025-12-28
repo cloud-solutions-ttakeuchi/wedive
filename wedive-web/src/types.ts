@@ -369,6 +369,7 @@ export interface Review {
     flow: 'none' | 'weak' | 'strong' | 'drift';
     difficulty: 'easy' | 'normal' | 'hard';
     macroWideRatio: number; // 0 (Macro) to 100 (Wide)
+    terrainIntensity?: number; // 0 (Standard) to 100 (Terrain/Wreck)
     depthMin?: number;
     depthMax?: number;
   };
