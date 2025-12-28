@@ -512,8 +512,8 @@ const StepMetrics = ({ data, radar, onChange, onRadarChange }: { data: any, rada
                   className={clsx(
                     "p-4 rounded-3xl border-2 transition-all flex flex-col items-center gap-1",
                     data.difficulty === opt.id
-                      ? "bg-slate-900 border-slate-900 text-white"
-                      : "bg-white border-slate-100 text-slate-500"
+                      ? "bg-sky-50 border-sky-500 text-sky-600 ring-4 ring-sky-500/10"
+                      : "bg-white border-slate-100 text-slate-500 hover:border-slate-200"
                   )}
                 >
                   <span className="text-xl">{opt.icon}</span>
@@ -545,7 +545,7 @@ const StepMetrics = ({ data, radar, onChange, onRadarChange }: { data: any, rada
 
 const RadarRating = ({ label, value, onChange }: { label: string, value: number, onChange: (v: number) => void }) => (
   <div className="flex items-center justify-between">
-    <span className="text-xs font-bold text-white/60">{label}</span>
+    <span className="text-xs font-black text-slate-500 uppercase tracking-tight">{label}</span>
     <div className="flex gap-1.5">
       {[1, 2, 3, 4, 5].map(star => (
         <button
@@ -553,10 +553,10 @@ const RadarRating = ({ label, value, onChange }: { label: string, value: number,
           onClick={() => onChange(star)}
           className={clsx(
             "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
-            star <= value ? "bg-amber-400 text-slate-900" : "bg-white/10 text-white/30 hover:bg-white/20"
+            star <= value ? "bg-amber-400 text-slate-900 shadow-sm" : "bg-slate-50 text-slate-300 hover:bg-slate-100"
           )}
         >
-          <span className="text-xs font-black">{star}</span>
+          <span className="text-[10px] font-black">{star}</span>
         </button>
       ))}
     </div>
