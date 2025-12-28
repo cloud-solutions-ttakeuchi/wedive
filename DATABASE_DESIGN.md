@@ -34,8 +34,11 @@ erDiagram
     
     POINT ||--o{ POINT_CREATURE : "has sightings"
     CREATURE ||--o{ POINT_CREATURE : "seen at"
+    POINT ||--o{ REVIEW : "has reviews"
     
     USER ||--o{ LOG : "records"
+    USER ||--o{ REVIEW : "writes"
+    LOG ||--o| REVIEW : "linked to"
     POINT ||--o{ LOG : "is location for"
     LOG }o--o{ CREATURE : "sighted in"
     
@@ -84,6 +87,8 @@ erDiagram
 | `imageUrl` | string | メイン画像URL |
 | `imageKeyword` | string | 画像検索用キーワード |
 | `bookmarkCount` | number | ブックマーク数 |
+| `officialStats`| map | `{visibility: [min, max], currents: string[], difficulty: string, radar: {encounter, excite, macro, comfort, visibility}}` |
+| `actualStats` | map | 集計データ: `{avgRating, avgVisibility, currentCondition: {weather, wave}, seasonalRadar: {month: radar}}` |
 
 ### 3.3 `creatures` (生物マスタ)
 | フィールド | 型 | 説明 |
@@ -180,6 +185,24 @@ WeDive では、スケーラビリティとクエリ効率を考慮し、ユー�
 
 ### 3.8 `ai_grounding_cache` (AI事実確認キャッシュ)
 AIによる再構築結果や検索結果を保存し、費用の抑制と高速化を図る。
+
+### 3.9 `reviews` (ポイントレビュー)
+ポイントに対するユーザーの生の声と環境実測値を管理します。
+| フィールド | 型 | 説明 |
+| :--- | :--- | :--- |
+| `id` | string | `rv` + タイムスタンプ |
+| `pointId` | string | 対象ポイントID |
+| `userId` | string | 投稿者ID |
+| `logId` | string | 関連ログID (任意) |
+| `rating` | number | 総合満足度 (1-5) |
+| `condition` | map | `{weather, wind, wave, airTemp, waterTemp}` |
+| `metrics` | map | `{visibility, flow, difficulty, macroWideRatio(0-100)}` |
+| `radar` | map | `{encounter, excite, macro, comfort, visibility}` (1-5スコア) |
+| `tags` | array(string)| 遭遇生物、地形、見どころタグ |
+| `comment` | string | 感想コメント |
+| `images` | array(string)| 写真URLリスト |
+| `isTrusted` | boolean | 信頼性フラグ（ログ連携等に基づく） |
+| `createdAt` | string | 投稿日時 |
 
 ---
 

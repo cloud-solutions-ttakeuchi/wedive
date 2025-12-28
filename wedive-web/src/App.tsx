@@ -26,6 +26,7 @@ import { PublicLogsPage } from './pages/PublicLogsPage';
 import { TermsPage } from './pages/TermsPage';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { ConciergePage } from './pages/ConciergePage';
+import { AddReviewPage } from './pages/AddReviewPage';
 import { TermsAgreementModal } from './components/TermsAgreementModal';
 import { LanguageProvider } from './context/LanguageContext';
 
@@ -60,6 +61,7 @@ function App() {
               <Route path="/points" element={<PointSearchPage />} />
               <Route path="/logs" element={<PublicLogsPage />} />
               <Route path="/point/:id" element={<PointDetailPage />} />
+              <Route path="/add-review/:pointId" element={<AddReviewPage />} />
               <Route path="/terms" element={<TermsPage />} />
               <Route path="/privacy" element={<PrivacyPage />} />
             </Routes>

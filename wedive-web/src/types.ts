@@ -63,6 +63,26 @@ export interface Point {
 
   // creatures: string[]; // Removed in favor of PointCreature relation
   bookmarkCount: number;
+
+  // Review & Potential Data (v6.0.0+)
+  officialStats?: {
+    visibility: [number, number]; // [min, max]
+    currents: string[];
+    difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+    radar: ReviewRadar;
+  };
+  actualStats?: {
+    avgRating: number;
+    avgVisibility: number;
+    reviewCount: number;
+    currentCondition?: {
+      weather: string;
+      wave: string;
+    };
+    seasonalRadar?: {
+      [month: number]: ReviewRadar;
+    };
+  };
 }
 
 export type DivingPoint = Point;
@@ -309,3 +329,47 @@ export interface EditProposal {
 
 export type CreatureProposal = Creature & EditProposal;
 export type PointProposal = Point & EditProposal;
+
+// --- Review Types (v6.0.0+) ---
+export interface ReviewRadar {
+  encounter: number; // 遭遇度
+  excite: number;    // ワイド・エキサイト度
+  macro: number;     // マクロ・じっくり度
+  comfort: number;   // 快適度
+  visibility: number; // 透明度スコア
+}
+
+export interface Review {
+  id: string;
+  pointId: string;
+  userId: string;
+  logId?: string;
+  userName: string;
+  userProfileImage?: string;
+  userLogsCount: number;
+
+  rating: number; // 1-5
+  comment: string;
+  images: string[];
+
+  condition: {
+    weather: 'sunny' | 'cloudy' | 'rainy' | 'stormy' | 'typhoon' | 'spring_bloom';
+    airTemp?: number;
+    waterTemp?: number;
+    wave: 'none' | 'low' | 'high';
+    wind?: string;
+  };
+
+  metrics: {
+    visibility: number; // m
+    flow: 'none' | 'weak' | 'strong' | 'drift';
+    difficulty: 'easy' | 'normal' | 'hard';
+    macroWideRatio: number; // 0 (Macro) to 100 (Wide)
+  };
+
+  radar: ReviewRadar;
+  tags: string[];
+
+  isTrusted: boolean;
+  createdAt: string;
+}

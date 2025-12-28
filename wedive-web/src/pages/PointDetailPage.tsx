@@ -9,10 +9,12 @@ import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 
 const libraries: ("places" | "geometry")[] = ["places"];
 
+import { PointReviewStats } from '../components/PointReviewStats';
+
 export const PointDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   // Use pointCreatures from context
-  const { points, creatures, pointCreatures, currentUser, toggleBookmarkPoint, isAuthenticated, removePointCreature } = useApp();
+  const { points, creatures, pointCreatures, currentUser, toggleBookmarkPoint, isAuthenticated, removePointCreature, reviews } = useApp();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY || '';
@@ -24,6 +26,10 @@ export const PointDetailPage = () => {
   });
 
   const point = points.find(p => p.id === id);
+
+  const pointReviews = useMemo(() =>
+    reviews.filter(r => r.pointId === id),
+    [reviews, id]);
 
   // Inhabitants Logic (Updated for PointCreature model)
   const inhabitants = useMemo(() => {
@@ -84,18 +90,30 @@ export const PointDetailPage = () => {
             )}
           </div>
 
-          <button
-            onClick={() => toggleBookmarkPoint(point.id)}
-            className={clsx(
-              "flex items-center gap-2 px-6 py-2.5 rounded-full font-bold shadow-2xl transition-all transform hover:scale-105 active:scale-95 border",
-              currentUser.bookmarkedPointIds.includes(point.id)
-                ? "bg-white text-amber-500 border-white"
-                : "bg-white/10 backdrop-blur-md text-white border-white/30 hover:bg-white/20"
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => toggleBookmarkPoint(point.id)}
+              className={clsx(
+                "flex items-center gap-2 px-6 py-2.5 rounded-full font-bold shadow-2xl transition-all transform hover:scale-105 active:scale-95 border",
+                currentUser.bookmarkedPointIds.includes(point.id)
+                  ? "bg-white text-amber-500 border-white"
+                  : "bg-white/10 backdrop-blur-md text-white border-white/30 hover:bg-white/20"
+              )}
+            >
+              <Bookmark size={20} className={clsx(currentUser.bookmarkedPointIds.includes(point.id) && "fill-current")} />
+              <span className="hidden sm:inline">{currentUser.bookmarkedPointIds.includes(point.id) ? '保存済み' : '保存する'}</span>
+            </button>
+
+            {isAuthenticated && (
+              <Link
+                to={`/add-review/${point.id}`}
+                className="flex items-center gap-2 px-6 py-2.5 rounded-full font-black bg-sky-500 text-white shadow-2xl transition-all transform hover:scale-105 active:scale-95 border border-sky-400 hover:bg-sky-600"
+              >
+                <Plus size={20} />
+                <span className="hidden sm:inline">レビューを書く</span>
+              </Link>
             )}
-          >
-            <Bookmark size={20} className={clsx(currentUser.bookmarkedPointIds.includes(point.id) && "fill-current")} />
-            <span className="hidden sm:inline">{currentUser.bookmarkedPointIds.includes(point.id) ? '保存済み' : '保存する'}</span>
-          </button>
+          </div>
         </div>
 
         <div className="absolute bottom-0 left-0 right-0 p-8 md:p-16 text-white max-w-[1400px] mx-auto z-10">
@@ -160,6 +178,9 @@ export const PointDetailPage = () => {
                 </div>
               </div>
             </section>
+
+            {/* Point Reviews & Stats (v6.0.0) */}
+            <PointReviewStats point={point} reviews={pointReviews} />
 
             {/* Inhabitants List */}
             <section>
