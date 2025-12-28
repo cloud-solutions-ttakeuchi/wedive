@@ -36,11 +36,12 @@ export const PointReviewStats: React.FC<PointReviewStatsProps> = ({ point, revie
       avgRating: filteredReviews.reduce((sum, r) => sum + r.rating, 0) / filteredReviews.length,
       avgVisibility: filteredReviews.reduce((sum, r) => sum + r.metrics.visibility, 0) / filteredReviews.length,
       radar: {
-        encounter: avg('encounter'),
-        excite: avg('excite'),
-        macro: avg('macro'),
-        comfort: avg('comfort'),
         visibility: avg('visibility'),
+        satisfaction: avg('satisfaction'),
+        excite: avg('excite'),
+        comfort: avg('comfort'),
+        encounter: avg('encounter'),
+        topography: avg('topography'),
       }
     };
   }, [filteredReviews]);
@@ -48,15 +49,16 @@ export const PointReviewStats: React.FC<PointReviewStatsProps> = ({ point, revie
   // Radar Data Comparison
   const radarData = useMemo(() => {
     const labels: Record<keyof ReviewRadar, string> = {
-      encounter: '遭遇度',
+      visibility: '透明度',
+      satisfaction: '満足度',
       excite: 'エキサイト',
-      macro: 'マクロ',
       comfort: '快適度',
-      visibility: '透明度'
+      encounter: '遭遇度',
+      topography: '地形'
     };
 
     const official = point.officialStats?.radar || {
-      encounter: 4, excite: 3, macro: 4, comfort: 4, visibility: 3
+      visibility: 3, satisfaction: 4, excite: 3, comfort: 4, encounter: 4, topography: 3
     };
 
     return Object.keys(labels).map((key) => ({

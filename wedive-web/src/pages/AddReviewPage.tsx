@@ -8,7 +8,7 @@ import {
   ArrowLeft, ArrowRight, Check, Star, X,
   Camera, Tag, MessageSquare,
   Navigation, Thermometer, Loader2, Calendar,
-  Anchor, Sparkles, Wind, Smile, MapPin,
+  Anchor, Sparkles,
   Activity, Info, Shield
 } from 'lucide-react';
 import { CERTIFICATIONS } from '../constants/masterData';
