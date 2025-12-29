@@ -13,8 +13,10 @@ import {
   Navigation, Thermometer, Loader2, Calendar,
   Anchor, Sparkles,
   Activity, Info, Shield,
-  Search, Maximize, Map, Mountain, Wind
+  Search, Map, Wind
 } from 'lucide-react';
+
+registerLocale('ja', ja);
 import { CERTIFICATIONS } from '../constants/masterData';
 import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
@@ -411,12 +413,6 @@ const Step1Env = ({ data, date, onDateChange, onChange }: any) => {
 };
 
 const Step2Metrics = ({ data, onChange }: any) => {
-  const flowOptions = [
-    { id: 'none', label: 'なし' },
-    { id: 'weak', label: '弱い' },
-    { id: 'strong', label: '強い' },
-    { id: 'drift', label: 'ドリフト' }
-  ];
 
   return (
     <div className="space-y-8">

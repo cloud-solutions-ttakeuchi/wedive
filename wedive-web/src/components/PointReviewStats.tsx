@@ -8,6 +8,15 @@ import { Star, MessageSquare, ShieldCheck, Zap, Droplets, Wind, Smile, Sun, Navi
 import clsx from 'clsx';
 import type { Point, Review, ReviewRadar } from '../types';
 
+const RADAR_LABELS: Record<keyof ReviewRadar, string> = {
+  visibility: '透明度',
+  satisfaction: '満足度',
+  excite: 'エキサイト',
+  comfort: '快適度',
+  encounter: '遭遇度',
+  topography: '地形'
+};
+
 interface PointReviewStatsProps {
   point: Point;
   reviews: Review[];
@@ -66,29 +75,21 @@ export const PointReviewStats: React.FC<PointReviewStatsProps> = ({ point, revie
     };
   }, [filteredReviews, filteredAreaReviews]);
 
-  // Radar Data Comparison
+  // Radar Data Comparison deconstructed for better memoization tracking
+  const { current: currentStats, area: areaStats } = stats;
   const radarData = useMemo(() => {
-    const labels: Record<keyof ReviewRadar, string> = {
-      visibility: '透明度',
-      satisfaction: '満足度',
-      excite: 'エキサイト',
-      comfort: '快適度',
-      encounter: '遭遇度',
-      topography: '地形'
-    };
-
     const official = point.officialStats?.radar || {
       visibility: 3, satisfaction: 4, excite: 3, comfort: 4, encounter: 4, topography: 3
     };
 
-    return Object.keys(labels).map((key) => ({
-      subject: labels[key as keyof ReviewRadar],
-      official: official[key as keyof ReviewRadar],
-      actual: stats.current?.radar[key as keyof ReviewRadar] || 0,
-      area: stats.area?.radar[key as keyof ReviewRadar] || 0,
+    return (Object.keys(RADAR_LABELS) as Array<keyof ReviewRadar>).map((key) => ({
+      subject: RADAR_LABELS[key],
+      official: official[key],
+      actual: currentStats?.radar[key] || 0,
+      area: areaStats?.radar[key] || 0,
       fullMark: 5
     }));
-  }, [point, stats]);
+  }, [point.officialStats, currentStats, areaStats]);
 
   // Monthly stats for "Best Season" analysis
   const monthlyStats = useMemo(() => {
