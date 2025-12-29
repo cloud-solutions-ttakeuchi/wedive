@@ -529,8 +529,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     // Determine Approval Status (Only Official is auto-approved to prevent negative campaign)
     const isApproved = trustLevel === 'official';
 
+    const targetPoint = points.find(p => p.id === reviewData.pointId);
     const newReview: Review = {
       ...reviewData,
+      areaId: targetPoint?.areaId,
+      zoneId: targetPoint?.zoneId,
+      regionId: targetPoint?.regionId,
       id: newReviewId,
       userId: currentUser.id,
       userName: currentUser.name,

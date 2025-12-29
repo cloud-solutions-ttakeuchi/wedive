@@ -344,6 +344,9 @@ export interface ReviewRadar {
 export interface Review {
   id: string;
   pointId: string;
+  areaId?: string;
+  zoneId?: string;
+  regionId?: string;
   userId: string;
   logId?: string;
   userName: string;

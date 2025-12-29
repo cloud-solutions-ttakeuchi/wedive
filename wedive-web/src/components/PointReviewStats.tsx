@@ -1,50 +1,70 @@
 import React, { useMemo } from 'react';
 import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell,
+  CartesianGrid
 } from 'recharts';
-import { Star, MessageSquare, ShieldCheck, Zap, Droplets, Wind, Smile, Sun, Navigation, Anchor, Check, Cloud, CloudRain, Thermometer, Info } from 'lucide-react';
+import { Star, MessageSquare, ShieldCheck, Zap, Droplets, Wind, Smile, Sun, Navigation, Anchor, Check, Cloud, CloudRain, Thermometer, Info, AlertCircle } from 'lucide-react';
 import clsx from 'clsx';
 import type { Point, Review, ReviewRadar } from '../types';
 
 interface PointReviewStatsProps {
   point: Point;
   reviews: Review[];
+  areaReviews?: Review[];
 }
 
-export const PointReviewStats: React.FC<PointReviewStatsProps> = ({ point, reviews }) => {
-  const [filter, setFilter] = React.useState<'all' | 'sunny' | 'spring_bloom' | 'winter'>('all');
+export const PointReviewStats: React.FC<PointReviewStatsProps> = ({ point, reviews, areaReviews = [] }) => {
+  const [filter, setFilter] = React.useState<'all' | 'spring' | 'summer' | 'autumn' | 'winter'>('all');
 
   // Aggregate Review Data with filtering
   const filteredReviews = useMemo(() => {
     if (filter === 'all') return reviews;
-    if (filter === 'spring_bloom') return reviews.filter(r => r.condition.weather === 'spring_bloom');
-    if (filter === 'sunny') return reviews.filter(r => r.condition.weather === 'sunny');
-    if (filter === 'winter') return reviews.filter(r => {
-      const month = new Date(r.createdAt).getMonth() + 1;
-      return month === 12 || month === 1 || month === 2;
+    return reviews.filter(r => {
+      const month = new Date(r.date || r.createdAt).getMonth() + 1;
+      if (filter === 'spring') return month >= 3 && month <= 5;
+      if (filter === 'summer') return month >= 6 && month <= 8;
+      if (filter === 'autumn') return month >= 9 && month <= 11;
+      if (filter === 'winter') return month === 12 || month === 1 || month === 2;
+      return true;
     });
-    return reviews;
   }, [reviews, filter]);
 
-  const stats = useMemo(() => {
-    if (filteredReviews.length === 0) return null;
+  const filteredAreaReviews = useMemo(() => {
+    if (filter === 'all') return areaReviews;
+    return areaReviews.filter(r => {
+      const month = new Date(r.date || r.createdAt).getMonth() + 1;
+      if (filter === 'spring') return month >= 3 && month <= 5;
+      if (filter === 'summer') return month >= 6 && month <= 8;
+      if (filter === 'autumn') return month >= 9 && month <= 11;
+      if (filter === 'winter') return month === 12 || month === 1 || month === 2;
+      return true;
+    });
+  }, [areaReviews, filter]);
 
-    const avg = (key: keyof ReviewRadar) => filteredReviews.reduce((sum, r) => sum + r.radar[key], 0) / filteredReviews.length;
+  const stats = useMemo(() => {
+    const calculateStats = (revs: Review[]) => {
+      if (revs.length === 0) return null;
+      const avg = (key: keyof ReviewRadar) => revs.reduce((sum, r) => sum + r.radar[key], 0) / revs.length;
+      return {
+        avgRating: revs.reduce((sum, r) => sum + r.rating, 0) / revs.length,
+        avgVisibility: revs.reduce((sum, r) => sum + r.metrics.visibility, 0) / revs.length,
+        radar: {
+          visibility: avg('visibility'),
+          satisfaction: avg('satisfaction'),
+          excite: avg('excite'),
+          comfort: avg('comfort'),
+          encounter: avg('encounter'),
+          topography: avg('topography'),
+        }
+      };
+    };
 
     return {
-      avgRating: filteredReviews.reduce((sum, r) => sum + r.rating, 0) / filteredReviews.length,
-      avgVisibility: filteredReviews.reduce((sum, r) => sum + r.metrics.visibility, 0) / filteredReviews.length,
-      radar: {
-        visibility: avg('visibility'),
-        satisfaction: avg('satisfaction'),
-        excite: avg('excite'),
-        comfort: avg('comfort'),
-        encounter: avg('encounter'),
-        topography: avg('topography'),
-      }
+      current: calculateStats(filteredReviews),
+      area: calculateStats(filteredAreaReviews)
     };
-  }, [filteredReviews]);
+  }, [filteredReviews, filteredAreaReviews]);
 
   // Radar Data Comparison
   const radarData = useMemo(() => {
@@ -64,7 +84,8 @@ export const PointReviewStats: React.FC<PointReviewStatsProps> = ({ point, revie
     return Object.keys(labels).map((key) => ({
       subject: labels[key as keyof ReviewRadar],
       official: official[key as keyof ReviewRadar],
-      actual: stats?.radar[key as keyof ReviewRadar] || 0,
+      actual: stats.current?.radar[key as keyof ReviewRadar] || 0,
+      area: stats.area?.radar[key as keyof ReviewRadar] || 0,
       fullMark: 5
     }));
   }, [point, stats]);
@@ -79,7 +100,7 @@ export const PointReviewStats: React.FC<PointReviewStatsProps> = ({ point, revie
     }));
 
     reviews.forEach(r => {
-      const m = new Date(r.createdAt).getMonth();
+      const m = new Date(r.date || r.createdAt).getMonth();
       months[m].visibility += r.metrics.visibility;
       months[m].encounter += r.radar.encounter;
       months[m].count += 1;
@@ -105,7 +126,7 @@ export const PointReviewStats: React.FC<PointReviewStatsProps> = ({ point, revie
             <p className="text-slate-400 text-xs font-bold mt-1 uppercase tracking-widest">Official Specs vs Real-time Reviews</p>
           </div>
           <div className="flex bg-slate-100 p-1 rounded-xl h-fit">
-            {(['all', 'sunny', 'spring_bloom', 'winter'] as const).map(f => (
+            {(['all', 'spring', 'summer', 'autumn', 'winter'] as const).map(f => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
@@ -114,7 +135,7 @@ export const PointReviewStats: React.FC<PointReviewStatsProps> = ({ point, revie
                   filter === f ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600"
                 )}
               >
-                {f === 'all' ? 'All' : f === 'sunny' ? 'Sunny' : f === 'spring_bloom' ? 'Spring' : 'Winter'}
+                {f}
               </button>
             ))}
           </div>
@@ -142,6 +163,13 @@ export const PointReviewStats: React.FC<PointReviewStatsProps> = ({ point, revie
                   fill="#0EA5E9"
                   fillOpacity={0.4}
                 />
+                <Radar
+                  name="エリア平均"
+                  dataKey="area"
+                  stroke="#10B981"
+                  fill="#10B981"
+                  fillOpacity={0.1}
+                />
                 <Tooltip
                   contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }}
                 />
@@ -154,7 +182,11 @@ export const PointReviewStats: React.FC<PointReviewStatsProps> = ({ point, revie
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-sky-500" />
-                <span className="text-[10px] font-black text-sky-500 tracking-tighter">実測（直近）</span>
+                <span className="text-[10px] font-black text-sky-500 tracking-tighter">実測（ポイント）</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                <span className="text-[10px] font-black text-emerald-500 tracking-tighter">実測（エリア平均）</span>
               </div>
             </div>
           </div>
@@ -164,14 +196,14 @@ export const PointReviewStats: React.FC<PointReviewStatsProps> = ({ point, revie
             <ComparisonBar
               label="透明度 (Transparency)"
               official={point.officialStats?.visibility[1] || 20}
-              actual={stats?.avgVisibility || 0}
+              actual={stats.current?.avgVisibility || 0}
               unit="m"
               color="sky"
             />
             <ComparisonBar
               label="総合満足度 (Satisfaction)"
               official={5}
-              actual={stats?.avgRating || 0}
+              actual={stats.current?.avgRating || 0}
               unit="pts"
               color="amber"
             />
@@ -180,9 +212,19 @@ export const PointReviewStats: React.FC<PointReviewStatsProps> = ({ point, revie
                 <Info size={14} className="inline mr-1 text-slate-400" />
                 公式スペックを100%としたとき、現在は
                 <span className="text-sky-600 font-black mx-1">
-                  {stats ? Math.round((stats.avgVisibility / (point.officialStats?.visibility[1] || 20)) * 100) : '--'}%
+                  {stats.current ? Math.round((stats.current.avgVisibility / (point.officialStats?.visibility[1] || 20)) * 100) : '--'}%
                 </span>
                 の透明度ポテンシャルを発揮しています。
+                {stats.area && (
+                  <span className="block mt-1 text-[10px]">
+                    エリア全体の平均 ({stats.area.avgVisibility.toFixed(1)}m) と比較して
+                    <span className={clsx("font-extrabold mx-1", (stats.current?.avgVisibility || 0) >= stats.area.avgVisibility ? "text-emerald-600" : "text-rose-500")}>
+                      {Math.abs(Math.round(((stats.current?.avgVisibility || 0) / stats.area.avgVisibility - 1) * 100))}%
+                      {(stats.current?.avgVisibility || 0) >= stats.area.avgVisibility ? "高い" : "低い"}
+                    </span>
+                    状態です。
+                  </span>
+                )}
               </p>
             </div>
           </div>
@@ -190,52 +232,54 @@ export const PointReviewStats: React.FC<PointReviewStatsProps> = ({ point, revie
       </section>
 
       {/* 2. Best Season Graphs (Monthly Stats) */}
-      <section className="bg-slate-900 rounded-[2.5rem] p-8 md:p-10 shadow-2xl shadow-sky-900/20 border border-slate-800">
+      <section className="bg-white rounded-[2.5rem] p-8 md:p-10 shadow-xl shadow-slate-200/50 border border-slate-100">
         <div className="flex items-center justify-between mb-10">
           <div>
-            <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
-              <Sun className="text-sky-400" size={24} />
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+              <Sun className="text-sky-500" size={24} />
               ベストシーズン・分析
             </h2>
-            <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-1">Monthly Potential Analysis</p>
+            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-1">Monthly Potential Analysis</p>
           </div>
         </div>
 
         <div className="h-[250px] w-full mt-6">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={monthlyStats || []}>
+              <CartesianGrid vertical={false} stroke="#F1F5F9" strokeDasharray="4 4" />
               <XAxis
                 dataKey="month"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: '#475569', fontSize: 10, fontWeight: 800 }}
+                tick={{ fill: '#64748B', fontSize: 10, fontWeight: 800 }}
+                dy={10}
               />
               <YAxis hide />
               <Tooltip
-                cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '12px', color: '#fff' }}
+                cursor={{ fill: 'rgba(0,0,0,0.02)' }}
+                contentStyle={{ backgroundColor: '#fff', border: 'none', borderRadius: '16px', color: '#1e293b', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }}
               />
-              <Bar dataKey="visibility" name="透明度 (m)" radius={[4, 4, 0, 0]}>
+              <Bar dataKey="visibility" name="透明度 (Avg)" radius={[4, 4, 0, 0]} barSize={24}>
                 {(monthlyStats || []).map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.visibility > 15 ? '#0ea5e9' : '#334155'} />
+                  <Cell key={`cell-${index}`} fill={entry.visibility > 0 ? (entry.visibility > 15 ? '#0EA5E9' : '#94A3B8') : 'transparent'} />
                 ))}
               </Bar>
-              <Bar dataKey="encounter" name="遭遇度" radius={[4, 4, 0, 0]}>
+              <Bar dataKey="encounter" name="遭遇度 (Avg)" radius={[4, 4, 0, 0]} barSize={24}>
                 {(monthlyStats || []).map((entry, index) => (
-                  <Cell key={`cell-e-${index}`} fill={entry.encounter > 3.5 ? '#fbbf24' : '#1e293b'} />
+                  <Cell key={`cell-e-${index}`} fill={entry.encounter > 0 ? (entry.encounter > 3.5 ? '#F59E0B' : '#CBD5E1') : 'transparent'} />
                 ))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <div className="flex justify-center gap-6 mt-6">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-sky-500" />
-            <span className="text-[10px] font-black text-slate-400 uppercase">Avg Transparency</span>
+        <div className="flex justify-center gap-8 mt-10">
+          <div className="flex items-center gap-3">
+            <div className="w-3 h-3 rounded-full bg-sky-500 shadow-sm" />
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Avg Transparency</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-amber-400" />
-            <span className="text-[10px] font-black text-slate-400 uppercase">High Encounter</span>
+          <div className="flex items-center gap-3">
+            <div className="w-3 h-3 rounded-full bg-amber-500 shadow-sm" />
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">High Encounter</span>
           </div>
         </div>
       </section>
@@ -354,23 +398,27 @@ const ReviewCard = ({ review }: { review: Review }) => {
 
           <div className="mt-6 space-y-3 hidden md:block">
             <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-              <div className="text-[8px] font-black text-slate-400 uppercase mb-1">Dive Settings</div>
-              <div className="space-y-1.5">
+              <div className="text-[8px] font-black text-slate-500 uppercase mb-2 tracking-wider">Dive Settings</div>
+              <div className="space-y-2">
                 <p className="text-[10px] font-black text-slate-700 flex items-center gap-2">
                   {review.condition.weather === 'sunny' && <Sun size={12} className="text-amber-500" />}
                   {review.condition.weather === 'cloudy' && <Cloud size={12} className="text-slate-400" />}
                   {review.condition.weather === 'rainy' && <CloudRain size={12} className="text-sky-400" />}
                   {review.condition.weather === 'typhoon' && <Navigation size={12} className="text-rose-500" />}
                   {review.condition.weather === 'spring_bloom' && <Droplets size={12} className="text-emerald-500" />}
-                  <span className="opacity-40 font-medium">Weather</span>
+                  <span className="text-slate-500 font-bold uppercase text-[9px]">Weather</span>
                 </p>
                 <div className="h-px bg-slate-200 w-full" />
-                <p className="text-[10px] font-black text-slate-700 flex items-center gap-2">
-                  <Thermometer size={12} className="text-sky-500" />
-                  {review.condition.waterTemp}<span className="text-[8px] text-slate-400">°C</span>
-                  <span className="mx-0.5 text-slate-300">/</span>
-                  <Anchor size={12} className="text-indigo-500" />
-                  {review.metrics.depthMax || '--'}<span className="text-[8px] text-slate-400">m</span>
+                <p className="text-[10px] font-black text-slate-700 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Thermometer size={12} className="text-sky-500" />
+                    {review.condition.waterTemp}<span className="text-[8px] text-slate-500">°C</span>
+                  </span>
+                  <span className="mx-1 text-slate-200">|</span>
+                  <span className="flex items-center gap-1.5">
+                    <Anchor size={12} className="text-indigo-500" />
+                    {review.metrics.depthMax || '--'}<span className="text-[8px] text-slate-500">m</span>
+                  </span>
                 </p>
               </div>
             </div>
@@ -380,14 +428,22 @@ const ReviewCard = ({ review }: { review: Review }) => {
         {/* Right: Content */}
         <div className="flex-1 space-y-4">
           <div className="flex justify-between items-start">
-            <div className="flex gap-1">
-              {[1, 2, 3, 4, 5].map(star => (
-                <Star
-                  key={star}
-                  size={16}
-                  className={clsx(star <= review.rating ? "text-amber-400 fill-amber-400" : "text-slate-100")}
-                />
-              ))}
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-1">
+                {[1, 2, 3, 4, 5].map(star => (
+                  <Star
+                    key={star}
+                    size={16}
+                    className={clsx(star <= review.rating ? "text-amber-400 fill-amber-400" : "text-slate-100")}
+                  />
+                ))}
+              </div>
+              {review.status === 'pending' && (
+                <div className="flex items-center gap-1.5 text-amber-600 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-100 w-fit">
+                  <AlertCircle size={10} />
+                  <span className="text-[9px] font-black uppercase tracking-wider">Approval Pending</span>
+                </div>
+              )}
             </div>
             <span className="text-[10px] font-black text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full uppercase tracking-widest ring-1 ring-sky-100">
               Dived on {review.date || new Date(review.createdAt).toLocaleDateString()}
