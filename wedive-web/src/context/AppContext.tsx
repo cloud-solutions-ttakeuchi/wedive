@@ -72,6 +72,7 @@ interface AppContextType {
   pointCreatures: PointCreature[];
   logs: Log[];
   reviews: Review[];
+  proposalReviews: Review[];
   recentLogs: Log[];
   proposalCreatures: (Creature & { proposalType?: string, diffData?: any, targetId?: string, reason?: string })[];
   proposalPoints: (Point & { proposalType?: string, diffData?: any, targetId?: string, reason?: string })[];
@@ -82,6 +83,8 @@ interface AppContextType {
   allUsers: User[];
   updateUserRole: (uid: string, newRole: 'user' | 'moderator' | 'admin') => Promise<void>;
   deleteAccount: () => Promise<void>;
+  approveReview: (reviewId: string) => Promise<void>;
+  rejectReview: (reviewId: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -111,6 +114,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [proposalPoints, setProposalPoints] = useState<Point[]>([]);
   const [allLogs, setAllLogs] = useState<Log[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [proposalReviews, setProposalReviews] = useState<Review[]>([]);
   const [recentLogs, setRecentLogs] = useState<Log[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
 
@@ -192,6 +196,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     let unsubLogs: (() => void) | undefined;
     let unsubProposalsC: (() => void) | undefined;
     let unsubProposalsP: (() => void) | undefined;
+    let unsubProposalsR: (() => void) | undefined;
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -239,6 +244,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         unsubProposalsP = onSnapshot(qPoints, (snapshot) => {
           setProposalPoints(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Point)));
         });
+        const qReviews = query(collection(firestore, 'reviews'), where('status', '==', 'pending'));
+        unsubProposalsR = onSnapshot(qReviews, (snapshot) => {
+          setProposalReviews(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Review)));
+        });
 
       } else {
         setIsAuthenticated(false);
@@ -254,6 +263,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (unsubLogs) unsubLogs();
       if (unsubProposalsC) unsubProposalsC();
       if (unsubProposalsP) unsubProposalsP();
+      if (unsubProposalsR) unsubProposalsR();
     };
   }, []);
 
@@ -486,6 +496,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     await updateDoc(doc(firestore, type === 'creature' ? 'creature_proposals' : 'point_proposals', id), { status: 'rejected' });
   };
 
+  const approveReview = async (reviewId: string) => {
+    if (currentUser.role !== 'admin' && currentUser.role !== 'moderator') return;
+    try {
+      await updateDoc(doc(firestore, 'reviews', reviewId), { status: 'approved' });
+      alert('レビューを承認しました');
+    } catch (e) { console.error(e); }
+  };
+
+  const rejectReview = async (reviewId: string) => {
+    if (currentUser.role !== 'admin' && currentUser.role !== 'moderator') return;
+    try {
+      await updateDoc(doc(firestore, 'reviews', reviewId), { status: 'rejected' });
+      alert('レビューを却下しました');
+    } catch (e) { console.error(e); }
+  };
+
   const addReview = async (reviewData: Omit<Review, 'id' | 'userId' | 'userName' | 'userProfileImage' | 'trustLevel' | 'createdAt' | 'status' | 'helpfulCount' | 'helpfulBy'>) => {
     if (!isAuthenticated) return;
     const newReviewId = `rv${Date.now()}`;
@@ -530,7 +556,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const value = {
     currentUser, isAuthenticated, isLoading, login, logout, calculateRarity, addLog, addCreature, addPoint, addPointCreature, removePointCreature, updateLog, updateCreature, updatePoint, deleteLog, deleteLogs, updateLogs, updateUser, toggleLikeLog, toggleFavorite, toggleWanted, toggleBookmarkPoint,
-    creatures, points, pointCreatures, logs: allLogs, reviews, recentLogs, proposalCreatures, proposalPoints, regions, zones, areas, addCreatureProposal, addPointProposal, approveProposal, rejectProposal, allUsers, updateUserRole, deleteAccount, addReview
+    creatures, points, pointCreatures, logs: allLogs, reviews, proposalReviews, recentLogs, proposalCreatures, proposalPoints, regions, zones, areas, addCreatureProposal, addPointProposal, approveProposal, rejectProposal, allUsers, updateUserRole, deleteAccount, addReview, approveReview, rejectReview
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
