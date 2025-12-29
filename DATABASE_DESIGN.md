@@ -223,7 +223,7 @@ AIによる再構築結果や検索結果を保存し、費用の抑制と高速
 | `logId` | string | 関連ログID (任意) |
 | `rating` | number | 総合満足度 (1-5) |
 | `condition` | map | `{weather, wind, wave, airTemp, waterTemp}` |
-| `metrics` | map | `{visibility, flow, difficulty, macroWideRatio(0-100)}` |
+| `metrics` | map | `{depthAvg, depthMax, visibility, flow, difficulty, macroWideRatio(0-100)}` |
 | `radar` | map | `{encounter, excite, macro, comfort, visibility}` (1-5スコア) |
 | `tags` | array(string)| 遭遇生物、地形、見どころタグ |
 | `comment` | string | 感想コメント |

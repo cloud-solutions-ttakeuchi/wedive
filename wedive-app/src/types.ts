@@ -344,6 +344,9 @@ export interface ReviewRadar {
 export interface Review {
   id: string;
   pointId: string;
+  areaId?: string;
+  zoneId?: string;
+  regionId?: string;
   userId: string;
   logId?: string;
   userName: string;
@@ -355,7 +358,6 @@ export interface Review {
   rating: number; // 1-5
   comment: string;
   images: string[];
-  date?: string; // Date of dive
 
   condition: {
     weather: 'sunny' | 'cloudy' | 'rainy' | 'stormy' | 'typhoon' | 'spring_bloom';
@@ -382,5 +384,6 @@ export interface Review {
   trustLevel: 'standard' | 'verified' | 'expert' | 'professional' | 'official';
   helpfulCount: number;
   helpfulBy: string[];
+  date: string; // The date the dive occurred
   createdAt: string;
 }

@@ -164,7 +164,6 @@ GitHub Actions を通じて、以下の 3 段階でデプロイが実行され�
 | `CLEANSING_JOB_NAME` | Cloud Run Jobs 名 | AI クレンジングを実行するジョブの名称指定。 |
 | `ENABLE_V2_VERTEX_SEARCH` | Managed RAG 有効化フラグ | `true` で Vertex AI Search を使用。 (旧: `USE_VERTEX_AI_SEARCH`) |
 | `ENABLE_V2_AI_CONCIERGE` | AIコンシェルジュ有効化フラグ | 公開範囲の制御に使用。 |
-| `ENABLE_V6_REVIEWS` | ユーザーレビュー有効化フラグ | 新機能の段階的リリース用。 |
 | `VERTEX_AI_CONCIERGE_DATA_STORE_IDS` | コンシェルジュ用データストア ID | カンマ区切りで複数指定可能。 |
 | `VERTEX_AI_DRAFT_DATA_STORE_IDS` | ドラフト生成用データストア ID | カンマ区切りで複数指定可能。 |
 | `VITE_FIREBASE_API_KEY` | Firebase API キー | フロントエンドからの Firebase 接続認証。 |

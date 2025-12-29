@@ -10,7 +10,6 @@ import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 const libraries: ("places" | "geometry")[] = ["places"];
 
 import { PointReviewStats } from '../components/PointReviewStats';
-import { FEATURE_FLAGS } from '../config/features';
 
 export const PointDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -126,7 +125,7 @@ export const PointDetailPage = () => {
               <span className="hidden sm:inline">{currentUser.bookmarkedPointIds.includes(point.id) ? '保存済み' : '保存する'}</span>
             </button>
 
-            {isAuthenticated && FEATURE_FLAGS.ENABLE_V6_REVIEWS && (
+            {isAuthenticated && (
               <Link
                 to={`/add-review/${point.id}`}
                 className="flex items-center gap-2 px-6 py-2.5 bg-sky-500 hover:bg-sky-400 text-white rounded-full font-bold shadow-2xl transition-all transform hover:scale-105 active:scale-95 border border-sky-400/50"
@@ -201,10 +200,8 @@ export const PointDetailPage = () => {
               </div>
             </section>
 
-            {/* Point Reviews & Stats (v6.0.0) */}
-            {FEATURE_FLAGS.ENABLE_V6_REVIEWS && (
-              <PointReviewStats point={point} reviews={pointReviews} areaReviews={areaReviews} />
-            )}
+            {/* Point Reviews & Stats */}
+            <PointReviewStats point={point} reviews={pointReviews} areaReviews={areaReviews} />
 
             {/* Inhabitants List */}
             <section>

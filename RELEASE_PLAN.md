@@ -101,7 +101,6 @@ Diving Dex App のリリーススケジュールとロードマップです。
 |---|---|---|---|---|
 | `ENABLE_V2_AI_CONCIERGE` | Common | `false` | AIコンシェルジュ機能の段階的リリース。<br>true:全体公開, false:管理者(admin)のみアクセス可能とし、グラウンディング化の検証を行う。 | **Beta** |
 | `ENABLE_V2_AI_AUTO_FILL` | Web | `false` | スポット・生物登録時のAI自動入力機能。 | **Ready** |
-| `ENABLE_V6_REVIEWS` | Common | `false` | ユーザーレビュー機能 (v6.0.0)。信頼性スコア (`trustLevel`)、承認制フロー、ポテンシャル比較表示。 | **Released** |
 | `ENABLE_V2_VERTEX_SEARCH` | Functions | `false` | Managed RAG (Vertex AI Search) の有効化。 | **Ready** |
 | `LOG_LEVEL` | Env Var | `info` | アプリ全体のログ出力レベル制御。<br>`debug`:詳細ログ出力, `info`:通常ログ。 | **Ready** |
 
