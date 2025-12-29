@@ -137,7 +137,7 @@ export const translations = {
     'home.popular_spots': '人気のスポット',
     'home.trending_creatures': '今、会える生物',
     'home.sightings': '発見数',
-    'home.logs': 'ログ',
+    'home.logs': 'レビュー',
 
     // Pokedex
     'pokedex.title': '全生物図鑑',
@@ -148,7 +148,7 @@ export const translations = {
     'spot.difficulty': '難易度',
     'spot.features': '特徴',
     'spot.field_guide': '生息する生物リスト',
-    'spot.field_guide_desc': 'ここで見られる生物です。タップして詳細を見るか、発見ログを登録できます。',
+    'spot.field_guide_desc': 'ここで見られる生物です。タップして詳細を見るか、発見レポを登録できます。',
     'spot.not_found': 'ポイントが見つかりません',
     'spot.species': '種',
     'spot.log': '記録',
@@ -161,13 +161,13 @@ export const translations = {
     'creature.not_found_message': '生物が見つかりません',
     'creature.where_to_find': 'どこで会える？ (逆引き)',
     'creature.found_button': 'ここで見つけた！',
-    'creature.log_title': '発見ログを登録',
+    'creature.log_title': '発見レポを登録',
     'creature.where': '場所は？',
     'creature.select_point': 'ポイントを選択...',
     'creature.comment': 'コメント (任意)',
     'creature.comment_placeholder': 'でかかった！',
     'creature.cancel': 'キャンセル',
-    'creature.save': 'ログを保存',
+    'creature.save': 'レポを保存',
 
     // My Page
     'mypage.pro_diver': 'プロダイバー',
@@ -180,8 +180,8 @@ export const translations = {
     'mypage.activity_zone': 'エリア別活動量',
     'mypage.point_mastery': 'ポイント攻略度',
     'mypage.mastery': '攻略率',
-    'mypage.recent_logs': '最近のログ',
-    'mypage.no_logs': 'ログはまだありません。潜りに行こう！',
+    'mypage.recent_logs': '最近のレビュー',
+    'mypage.no_logs': 'レビューはまだありません。潜りに行こう！',
 
     // Bulk Actions
     'bulk.selected': '件選択中',

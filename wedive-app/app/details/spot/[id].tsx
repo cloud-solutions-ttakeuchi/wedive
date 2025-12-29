@@ -391,25 +391,15 @@ export default function SpotDetailScreen() {
 
       {/* 4. Footer Action */}
       <View style={[styles.footerAction, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-        <View style={styles.footerRow}>
-          <TouchableOpacity
-            style={styles.logBtn}
-            onPress={() => router.push({ pathname: '/log/add', params: { pointId: point.id, pointName: point.name } })}
-          >
-            <Edit3 size={18} color="#fff" />
-            <Text style={styles.primaryBtnText}>ログを書く</Text>
-          </TouchableOpacity>
-
-          {FEATURE_FLAGS.ENABLE_V6_REVIEWS && (
-            <TouchableOpacity
-              style={styles.reviewBtn}
-              onPress={() => router.push({ pathname: '/details/spot/review' as any, params: { pointId: point.id } })}
-            >
-              <Star size={18} color="#0ea5e9" fill="#0ea5e9" />
-              <Text style={styles.reviewBtnText}>今をレポート</Text>
-            </TouchableOpacity>
-          )}
-        </View>
+        <TouchableOpacity
+          style={styles.primaryBtn}
+          onPress={() => router.push({ pathname: '/details/spot/review' as any, params: { pointId: point.id } })}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <Star size={22} color="#fff" fill="#fff" />
+            <Text style={styles.primaryBtnText}>レビューを書く</Text>
+          </View>
+        </TouchableOpacity>
       </View>
 
       <CreatureSelectorModal

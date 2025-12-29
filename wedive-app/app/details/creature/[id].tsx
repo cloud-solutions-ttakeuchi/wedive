@@ -422,7 +422,7 @@ export default function CreatureDetailScreen() {
           style={styles.primaryBtn}
           onPress={() => router.push({ pathname: '/log/add', params: { creatureId: creature.id, creatureName: creature.name } })}
         >
-          <Text style={styles.primaryBtnText}>この生物の目撃ログを書く</Text>
+          <Text style={styles.primaryBtnText}>この生物の発見レポを書く</Text>
         </TouchableOpacity>
       </View>
 

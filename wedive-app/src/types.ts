@@ -333,11 +333,12 @@ export type PointProposal = Point & EditProposal;
 
 // --- Review Types (v6.0.0+) ---
 export interface ReviewRadar {
-  encounter: number; // 遭遇度
-  excite: number;    // ワイド・エキサイト度
-  macro: number;     // マクロ・じっくり度
-  comfort: number;   // 快適度
-  visibility: number; // 透明度スコア
+  visibility: number;      // 透明度
+  satisfaction: number;    // 満足度
+  excite: number;          // エキサイト
+  comfort: number;         // 快適さ・余裕度
+  encounter: number;       // 生物遭遇率
+  topography: number;      // 地形満足度
 }
 
 export interface Review {
@@ -348,10 +349,13 @@ export interface Review {
   userName: string;
   userProfileImage?: string;
   userLogsCount: number;
+  userOrgId?: string; // Self-declared organization ID at time of review
+  userRank?: string; // Self-declared rank ID at time of review
 
   rating: number; // 1-5
   comment: string;
   images: string[];
+  date?: string; // Date of dive
 
   condition: {
     weather: 'sunny' | 'cloudy' | 'rainy' | 'stormy' | 'typhoon' | 'spring_bloom';
@@ -366,6 +370,9 @@ export interface Review {
     flow: 'none' | 'weak' | 'strong' | 'drift';
     difficulty: 'easy' | 'normal' | 'hard';
     macroWideRatio: number; // 0 (Macro) to 100 (Wide)
+    terrainIntensity?: number; // 0 (Standard) to 100 (Terrain/Wreck)
+    depthAvg?: number;
+    depthMax?: number;
   };
 
   radar: ReviewRadar;

@@ -3,13 +3,17 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { storage } from '../lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import ReactDatePicker, { registerLocale } from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
+import { ja } from 'date-fns/locale/ja';
 import {
   Sun, Cloud, CloudRain, Zap, Droplets,
   ArrowLeft, ArrowRight, Check, Star, X,
   Camera, Tag, MessageSquare,
   Navigation, Thermometer, Loader2, Calendar,
   Anchor, Sparkles,
-  Activity, Info, Shield
+  Activity, Info, Shield,
+  Search, Maximize, Map, Mountain, Wind
 } from 'lucide-react';
 import { CERTIFICATIONS } from '../constants/masterData';
 import {
@@ -51,7 +55,7 @@ export const AddReviewPage = () => {
       difficulty: 'normal',
       macroWideRatio: 50,
       terrainIntensity: 50,
-      depthMin: 5,
+      depthAvg: 10,
       depthMax: 20,
     } as any,
     radar: {
@@ -89,7 +93,7 @@ export const AddReviewPage = () => {
             ...prev.metrics!,
             visibility: log.condition?.transparency || prev.metrics!.visibility,
             flow: log.condition?.current || prev.metrics!.flow as any,
-            depthMin: log.depth?.average || prev.metrics!.depthMin,
+            depthAvg: log.depth?.average || prev.metrics!.depthAvg,
             depthMax: log.depth?.max || prev.metrics!.depthMax,
           }
         }));
@@ -222,6 +226,11 @@ export const AddReviewPage = () => {
                     newRadar.comfort = Math.max(1, baseComfort);
                   }
 
+                  // Sync Topography Radar with Terrain Intensity
+                  if (m.terrainIntensity !== undefined) {
+                    newRadar.topography = Math.min(5, Math.floor(m.terrainIntensity / 20) + 1);
+                  }
+
                   return { ...prev, metrics: newMetrics, radar: newRadar };
                 })}
               />
@@ -293,18 +302,72 @@ const Step1Env = ({ data, date, onDateChange, onChange }: any) => {
         いつ、どんな環境でしたか？
       </h2>
 
-      <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-1.5">
-          <Calendar size={12} /> 潜水日
-        </p>
-        <div className="relative">
-          <input
-            type="date"
-            value={date}
-            onChange={e => onDateChange(e.target.value)}
-            className="w-full h-14 px-6 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-sky-500 font-bold outline-none transition-all text-slate-900"
-          />
+      <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm transition-all hover:shadow-md relative overflow-hidden">
+        <div className="flex justify-between items-center mb-6">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+            <Calendar size={12} /> 潜水日
+          </p>
+          <div className="flex gap-2">
+            {[
+              { label: '今日', offset: 0, color: 'text-sky-600 bg-sky-50' },
+              { label: '昨日', offset: 1, color: 'text-amber-600 bg-amber-50' },
+              {
+                label: '先週末',
+                getOffset: () => {
+                  const d = new Date();
+                  const day = d.getDay();
+                  return day === 0 ? 1 : day === 6 ? 0 : day + 1;
+                },
+                color: 'text-indigo-600 bg-indigo-50'
+              }
+            ].map(chip => {
+              const d = new Date();
+              const offset = ('offset' in chip) ? (chip.offset as number) : (chip as any).getOffset();
+              d.setDate(d.getDate() - offset);
+              const chipIso = d.toISOString().split('T')[0];
+              const isActive = date === chipIso;
+
+              return (
+                <button
+                  key={chip.label}
+                  onClick={() => onDateChange(chipIso)}
+                  className={clsx(
+                    "px-3 py-1 rounded-full text-[10px] font-black transition-all hover:scale-105 active:scale-95 shadow-sm ring-1 ring-inset",
+                    isActive ? `${chip.color} ring-current` : "bg-white text-slate-400 ring-slate-200"
+                  )}
+                >
+                  {chip.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
+
+        <div className="relative group/datepicker">
+          <ReactDatePicker
+            selected={date ? new Date(date) : null}
+            onChange={(d: Date | null) => onDateChange(d ? d.toISOString().split('T')[0] : '')}
+            dateFormat="yyyy年 MM月 dd日"
+            locale="ja"
+            className="w-full h-16 px-8 bg-slate-50 rounded-3xl border-2 border-transparent focus:border-sky-500 font-black outline-none transition-all text-slate-900 cursor-pointer text-xl shadow-inner text-center"
+            placeholderText="日付を選択してください"
+            wrapperClassName="w-full"
+            maxDate={new Date()}
+            showMonthDropdown={false}
+            showYearDropdown={false}
+            inline={false}
+            autoFocus={false}
+          />
+          <div className="absolute left-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300 group-hover/datepicker:text-sky-500 transition-colors">
+            <Sparkles size={18} />
+          </div>
+        </div>
+
+        {date && (
+          <p className="mt-4 text-center text-[10px] font-bold text-sky-500 animate-in fade-in slide-in-from-top-1">
+            素晴らしいダイビングの日ですね！
+          </p>
+        )}
       </div>
 
       <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
@@ -361,65 +424,217 @@ const Step2Metrics = ({ data, onChange }: any) => {
         ポイントの特性
       </h2>
 
-      <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
-        <div className="flex justify-between items-end mb-6">
-          <div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5"><Activity size={12} /> 透明度</p><p className="text-3xl font-black text-slate-900">{data.visibility}<span className="text-lg ml-1 font-normal opacity-50">m</span></p></div>
+      <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm relative overflow-hidden group">
+        <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+          <Activity size={48} className={clsx(
+            data.visibility >= 25 ? "text-amber-500" :
+              data.visibility >= 15 ? "text-emerald-500" : "text-sky-500"
+          )} />
+        </div>
+        <div className="flex justify-between items-end mb-6 relative z-10">
+          <div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5"><Activity size={12} /> 透明度</p>
+            <p className={clsx("text-4xl font-black tabular-nums transition-colors",
+              data.visibility >= 25 ? "text-amber-500" :
+                data.visibility >= 15 ? "text-emerald-500" : "text-slate-900"
+            )}>
+              {data.visibility}<span className="text-lg ml-1 font-normal opacity-50">m</span>
+            </p>
+          </div>
           <div className="text-right">
-            <span className={clsx("px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tight shadow-sm ring-1 ring-inset",
-              data.visibility >= 25 ? "bg-emerald-50 text-emerald-600 ring-emerald-200" :
-                data.visibility >= 10 ? "bg-sky-50 text-sky-600 ring-sky-200" :
-                  "bg-amber-50 text-amber-600 ring-amber-200")}>
-              {data.visibility >= 25 ? '抜けてる！' : data.visibility >= 10 ? '良好' : '濁り気味'}
+            <span className={clsx("px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-tight shadow-md ring-1 ring-inset transition-all",
+              data.visibility >= 25 ? "bg-amber-50 text-amber-600 ring-amber-200 animate-pulse" :
+                data.visibility >= 15 ? "bg-emerald-50 text-emerald-600 ring-emerald-200" :
+                  data.visibility >= 8 ? "bg-sky-50 text-sky-600 ring-sky-200" :
+                    "bg-amber-50 text-amber-600 ring-amber-200")}>
+              {data.visibility >= 25 ? '神の領域 (Godly)' :
+                data.visibility >= 15 ? '抜群！ (Fantastic)' :
+                  data.visibility >= 8 ? '良好 (Clear)' : '濁り気味 (Misty)'}
             </span>
           </div>
         </div>
-        <input type="range" min="2" max="50" value={data.visibility} onChange={(e) => onChange({ visibility: Number(e.target.value) })} className="w-full h-3 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-sky-500" />
+        <div className="relative h-4 mt-8">
+          <div className="absolute inset-0 bg-slate-100 rounded-full" />
+          <motion.div
+            className={clsx("absolute inset-y-0 left-0 rounded-full transition-colors duration-500",
+              data.visibility >= 25 ? "bg-amber-400" :
+                data.visibility >= 15 ? "bg-emerald-400" : "bg-sky-500"
+            )}
+            initial={{ width: 0 }}
+            animate={{ width: `${Math.pow(data.visibility / 50, 0.6) * 100}%` }}
+          />
+          <input
+            type="range"
+            min="2"
+            max="50"
+            value={data.visibility}
+            onChange={(e) => onChange({ visibility: Number(e.target.value) })}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+          />
+        </div>
+        <div className="flex justify-between mt-4 px-1 text-[10px] font-black text-slate-300">
+          <span>0m</span>
+          <span className={clsx(data.visibility >= 15 && "text-emerald-500 font-black")}>15m</span>
+          <span className={clsx(data.visibility >= 25 && "text-amber-500 font-black")}>30m</span>
+          <span>50m+</span>
+        </div>
       </div>
 
-      <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
-        <div className="flex justify-between items-center mb-4">
-          <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest">マクロ狙い</span>
-          <p className="text-sm font-black text-slate-900 bg-slate-50 px-4 py-1 rounded-full border border-slate-100 shadow-inner">
+      <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm relative overflow-hidden group">
+        <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+          <Search size={48} className="text-orange-500" />
+        </div>
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-2">
+            <Search size={16} className="text-orange-500" />
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">マクロ・ワイド比率</span>
+          </div>
+          <p className="text-sm font-black text-slate-900 bg-slate-50 px-4 py-1.5 rounded-full border border-slate-100 shadow-sm ring-1 ring-slate-200/50">
             {data.macroWideRatio < 30 ? 'じっくりマクロ' : data.macroWideRatio > 70 ? 'ワイド・景観' : 'バランス型'}
           </p>
-          <span className="text-[10px] font-black text-sky-500 uppercase tracking-widest">ワイド狙い</span>
         </div>
-        <input type="range" min="0" max="100" step="10" value={data.macroWideRatio} onChange={(e) => onChange({ macroWideRatio: Number(e.target.value) })} className="w-full h-3 bg-gradient-to-r from-orange-300 via-slate-100 to-sky-400 rounded-lg appearance-none cursor-pointer accent-slate-600" />
+        <div className="flex justify-between text-[10px] font-black mb-4 px-1">
+          <span className="text-orange-500 uppercase">Macro Focus</span>
+          <span className="text-sky-500 uppercase">Wide Field</span>
+        </div>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          step="5"
+          value={data.macroWideRatio}
+          onChange={(e) => onChange({ macroWideRatio: Number(e.target.value) })}
+          className="w-full h-3 bg-gradient-to-r from-orange-200 via-slate-50 to-sky-200 rounded-full appearance-none cursor-pointer accent-slate-800 transition-all hover:h-4 focus:ring-4 focus:ring-slate-100"
+        />
       </div>
 
-      <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
-        <div className="flex justify-between items-center mb-4">
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">標準ポイント</span>
-          <p className="text-sm font-black text-slate-900 bg-slate-50 px-4 py-1 rounded-full border border-slate-100 shadow-inner">
-            {data.terrainIntensity < 30 ? 'ノーマル' : data.terrainIntensity > 70 ? '極地・洞窟' : '地形で遊ぶ'}
+      <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm relative overflow-hidden group">
+        <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+          <Map size={48} className="text-indigo-500" />
+        </div>
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-2">
+            <Map size={16} className="text-indigo-500" />
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">地形・環境の激しさ</span>
+          </div>
+          <p className="text-sm font-black text-indigo-600 bg-indigo-50/50 px-4 py-1.5 rounded-full border border-indigo-100 shadow-sm ring-1 ring-indigo-200/50">
+            {data.terrainIntensity < 30 ? '標準的な構成' : data.terrainIntensity > 70 ? '極地・洞窟' : '地形で遊ぶ'}
           </p>
-          <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">地形・沈船</span>
         </div>
-        <input type="range" min="0" max="100" step="10" value={data.terrainIntensity || 0} onChange={(e) => onChange({ terrainIntensity: Number(e.target.value) })} className="w-full h-3 bg-gradient-to-r from-slate-200 to-indigo-500 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
+        <div className="flex justify-between text-[10px] font-black mb-4 px-1">
+          <span className="text-slate-400 uppercase">Standard</span>
+          <span className="text-indigo-500 uppercase">Extreme Terrain</span>
+        </div>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          step="5"
+          value={data.terrainIntensity || 0}
+          onChange={(e) => onChange({ terrainIntensity: Number(e.target.value) })}
+          className="w-full h-3 bg-gradient-to-r from-slate-50 to-indigo-100 rounded-full appearance-none cursor-pointer accent-indigo-600 transition-all hover:h-4 focus:ring-4 focus:ring-indigo-50"
+        />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-2 text-indigo-500"><Anchor size={18} /><span className="text-xs font-black text-slate-700 uppercase">潜水水深</span></div>
-            <span className="text-xl font-black text-slate-900 tabular-nums">{data.depthMin}-{data.depthMax}<span className="text-[10px] ml-1 font-normal opacity-50 uppercase">m</span></span>
+      <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm relative overflow-hidden group">
+        <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
+          <Anchor size={64} className="text-indigo-500" />
+        </div>
+        <div className="flex justify-between items-center mb-10 relative z-10">
+          <div className="flex items-center gap-3">
+            <Anchor size={24} className="text-indigo-500" />
+            <h3 className="text-lg font-black text-slate-900 tracking-tight">潜水プロファイル (Depth)</h3>
+          </div>
+          <div className="text-right">
+            <span className="text-3xl font-black text-slate-900 tabular-nums">
+              {data.depthAvg}
+              <span className="text-lg mx-2 text-slate-300">/</span>
+              {data.depthMax}
+              <span className="text-sm ml-1 font-bold text-slate-400 uppercase">m</span>
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 relative z-10">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center px-2">
+              <span className="text-xs font-black text-slate-500 uppercase tracking-widest">平均水深 (Average)</span>
+              <span className="text-sm font-black text-indigo-600 tabular-nums bg-indigo-50 px-3 py-1 rounded-lg">{data.depthAvg}m</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="40"
+              step="0.5"
+              value={data.depthAvg}
+              onChange={(e) => onChange({ depthAvg: Math.min(Number(e.target.value), data.depthMax) })}
+              className="w-full h-4 bg-gradient-to-r from-indigo-50 via-indigo-100 to-indigo-50 rounded-full appearance-none cursor-pointer accent-indigo-500 transition-all hover:h-6 focus:ring-4 focus:ring-indigo-100"
+            />
           </div>
           <div className="space-y-4">
-            <input type="range" min="0" max="40" value={data.depthMin} onChange={(e) => onChange({ depthMin: Math.min(Number(e.target.value), data.depthMax) })} className="w-full h-1.5 bg-slate-50 rounded-lg appearance-none accent-indigo-400" />
-            <input type="range" min="0" max="40" value={data.depthMax} onChange={(e) => onChange({ depthMax: Math.max(Number(e.target.value), data.depthMin) })} className="w-full h-1.5 bg-slate-50 rounded-lg appearance-none accent-indigo-600" />
+            <div className="flex justify-between items-center px-2">
+              <span className="text-xs font-black text-slate-500 uppercase tracking-widest">最大水深 (Maximum)</span>
+              <span className="text-sm font-black text-rose-600 tabular-nums bg-rose-50 px-3 py-1 rounded-lg">{data.depthMax}m</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="50"
+              step="1"
+              value={data.depthMax}
+              onChange={(e) => onChange({ depthMax: Math.max(Number(e.target.value), data.depthAvg) })}
+              className="w-full h-4 bg-gradient-to-r from-rose-50 via-rose-100 to-rose-50 rounded-full appearance-none cursor-pointer accent-rose-500 transition-all hover:h-6 focus:ring-4 focus:ring-rose-100"
+            />
           </div>
         </div>
+      </div>
 
-        <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">流れ</p>
-          <div className="grid grid-cols-2 gap-2">
-            {flowOptions.map(f => (
-              <button key={f.id} onClick={() => onChange({ flow: f.id })} className={clsx("h-10 rounded-xl border-2 transition-all font-black text-[10px] uppercase tracking-tighter",
-                data.flow === f.id ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-100" : "bg-white border-slate-50 text-slate-400 hover:border-slate-100")}>
-                {f.label}
-              </button>
-            ))}
-          </div>
+      <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm relative overflow-hidden group">
+        <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
+          <Wind size={64} className="text-sky-500" />
+        </div>
+        <div className="flex items-center gap-3 mb-10 relative z-10">
+          <Wind size={24} className="text-sky-500" />
+          <h3 className="text-lg font-black text-slate-900 tracking-tight">水の流れ (Currents)</h3>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 relative z-10">
+          {[
+            { id: 'none', label: 'なし (None)', icon: '〰', desc: '穏やかで静かな海' },
+            { id: 'weak', label: '弱い (Weak)', icon: '🌬️', desc: '心地よい適度な流れ' },
+            { id: 'strong', label: '強い (Strong)', icon: '🌪️', desc: '注意が必要な強い流れ' },
+            { id: 'drift', label: '流す (Drift)', icon: '🚤', desc: '爽快なドリフト！' }
+          ].map(f => (
+            <motion.button
+              key={f.id}
+              whileHover={{ y: -4, scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => onChange({ flow: f.id })}
+              className={clsx(
+                "p-6 rounded-[2rem] border-2 transition-all text-left flex flex-col gap-4 relative overflow-hidden group/btn",
+                data.flow === f.id
+                  ? "bg-slate-900 border-slate-900 text-white shadow-xl shadow-slate-200"
+                  : "bg-white border-slate-100 text-slate-400 hover:border-slate-200 hover:bg-slate-50 shadow-sm"
+              )}
+            >
+              <div className={clsx(
+                "w-12 h-12 rounded-2xl flex items-center justify-center text-2xl transition-transform group-hover/btn:scale-110",
+                data.flow === f.id ? "bg-white/10" : "bg-slate-50"
+              )}>
+                {f.icon}
+              </div>
+              <div>
+                <p className={clsx("font-black text-sm uppercase tracking-tight", data.flow === f.id ? "text-white" : "text-slate-900")}>{f.label}</p>
+                <p className={clsx("text-[10px] font-bold mt-0.5", data.flow === f.id ? "text-slate-400" : "text-slate-400")}>{f.desc}</p>
+              </div>
+              {data.flow === f.id && (
+                <div className="absolute top-1 right-1">
+                  <div className="bg-sky-500 w-6 h-6 rounded-full flex items-center justify-center shadow-lg">
+                    <Check size={14} className="text-white" />
+                  </div>
+                </div>
+              )}
+            </motion.button>
+          ))}
         </div>
       </div>
 
