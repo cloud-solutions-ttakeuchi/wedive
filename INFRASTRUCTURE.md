@@ -170,3 +170,21 @@ GitHub Actions を通じて、以下の 3 段階でデプロイが実行され�
 | `VITE_FIREBASE_API_KEY` | Firebase API キー | フロントエンドからの Firebase 接続認証。 |
 | `VITE_GOOGLE_MAPS_API_KEY` | Google Maps API キー | 地図の表示、座標選択、ジオコーディングに使用。 |
 | `VITE_FIREBASE_PROJECT_ID` | フロントエンド用プロジェクト ID | フロントエンドが接続する Firebase プロジェクトの指定。 |
+| `VITE_VERTEX_AI_LOCATION` | Vertex AI リージョン | Vertex AI Search などの API 呼び出し先。 |
+
+---
+
+## 7. セキュリティとデータ整合性
+
+### 7.1 Firestore セキュリティルール (`firestore.rules`)
+原則として「最小権限」を適用しますが、WeDive では以下のルールで公開性とセキュリティを両立しています。
+- **マスターデータ (Points/Creatures)**: 全員 `read` 可。認証済みユーザーのみ `write` 可（要審査）。
+- **ユーザーデータ (Logs)**: `isPrivate` が false のもののみ全員 `read` 可。本人のみ `write` 可。
+- **レビュー (Reviews)**: `status == "approved"` または投稿者本人のレビューのみ `read` 可。認証済みユーザーのみ `create` 可。
+
+### 7.2 複合インデックス (Composite Indexes)
+以下のユースケースに対応するため、Firestore コンソールでのインデックス作成が必須です。
+- **レビュー一覧**: `userId` (ASC) + `date` (DESC) - 本人の最新レビュー取得用。
+- **承認済みレビュー**: `status` (ASC) + `date` (DESC) - 全体公開フィード用。
+- **提案一覧**: `submitterId` (ASC) + `status` (ASC) - プロフィール画面での申請状況確認用。
+- **公認ログ検索**: `isPrivate` (ASC) + `date` (DESC) - コレクショングループクエリ用。

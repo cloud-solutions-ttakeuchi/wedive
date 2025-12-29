@@ -2,6 +2,29 @@
 
 プロジェクトの変更履歴を記録します。
 
+## [6.2.1] - 2025-12-29
+### Added
+- **Area-wide Comparative Statistics**: ポイント詳細ページにて、同一エリア内の他ポイントの平均値（透明度、レーダーチャート指標）を表示し、相対的なコンディション比較が可能に。
+- **Hierarchical Stats Aggregation**: Cloud Functions による自動集計を Area, Zone, Region レベルまで拡張。
+
+### Fixed
+- **Review Visibility & Permissions**:
+  - 非管理者ユーザーが自分の「承認待ち」レビューを即座に確認できない問題を修正。
+  - `firestore.rules` の更新により、ゲストユーザーでも承認済みレビューが閲覧可能に。
+  - インデックス不足による一般ユーザー向けのクエリ同期エラーを解消。
+- **UI/UX Improvements**:
+  - レビューの並び順を「投稿日」ではなく「潜水日（Dived Date）」優先に修正。
+  - レビュー投稿画面（AddReviewPage）にて、Cカードの指導団体変更時にランクが正しく再選択されない問題を修正。
+- **CI/Build Stability**:
+  - `AppContext` 内での `setState` 呼び出しによるカスケードレンダリング（React Lint Error）を解消。
+
+## [6.2.0] - 2025-12-29
+### Added
+- **Dynamic Review Display on Spot Details**:
+    - **Live Potential Stats**: 直近のレビュー統計（平均評価、平均透明度）をポイント詳細ページに反映。公式スペックとの動的な比較表示を実装。
+    - **Integrated Review Feed**: 承認済みのレビューを詳細ページに一覧表示。各レビューには、投稿者のトラストレベル、海況指標（透明度・流れ・水温）、写真ギャラリーが含まれます。
+    - **CTA Enhancement**: 「今の海況を報告」ボタンを設置し、ユーザーからの情報提供を促進。
+
 ## [6.1.0] - 2025-12-29
 ### Added
 - **Admin Dashboard Redesign**:

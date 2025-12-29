@@ -58,6 +58,14 @@ Diving Dex App のリリーススケジュールとロードマップです。
     - **Moderation Tools**: レビューの保留・承認・却下機能の実装。
 - [x] **Reliability**: 非同期処理中の多重送信防止、Firestore ペイロードのサニタイズ。
 
+### v6.2.0 (Live Review Reflection) - Released
+**目的: リアルタイムな海況情報の共有と信頼性の可視化**
+
+- [x] **Spot Detail Integration**:
+    - **Live Potential Display**: 平均評価と透明度の動的表示。
+    - **Review Feed**: 承認済みレビューのリッチな一覧表示。
+- [x] **Comparison UI**: 公式ポテンシャルと実測値の比較ロジックの実装。
+
 ### v1.3.0 (Community Features) - Planning
 **目的: コミュニティ形成とリアルタイム交流**
 

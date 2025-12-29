@@ -13,8 +13,10 @@ import {
   Navigation, Thermometer, Loader2, Calendar,
   Anchor, Sparkles,
   Activity, Info, Shield,
-  Search, Maximize, Map, Mountain, Wind
+  Search, Map, Wind
 } from 'lucide-react';
+
+registerLocale('ja', ja);
 import { CERTIFICATIONS } from '../constants/masterData';
 import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
@@ -69,8 +71,8 @@ export const AddReviewPage = () => {
     tags: [],
     comment: '',
     images: [],
-    userOrgId: currentUser?.certification?.orgId || 'padi',
-    userRank: currentUser?.certification?.rankId || 'entry',
+    userOrgId: (currentUser?.certification?.orgId || 'padi').toLowerCase(),
+    userRank: (currentUser?.certification?.rankId || 'entry').toLowerCase(),
     userLogsCount: logs.length || 0,
   });
 
@@ -302,7 +304,7 @@ const Step1Env = ({ data, date, onDateChange, onChange }: any) => {
         いつ、どんな環境でしたか？
       </h2>
 
-      <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm transition-all hover:shadow-md relative overflow-hidden">
+      <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm transition-all hover:shadow-md relative">
         <div className="flex justify-between items-center mb-6">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
             <Calendar size={12} /> 潜水日
@@ -357,6 +359,7 @@ const Step1Env = ({ data, date, onDateChange, onChange }: any) => {
             showYearDropdown={false}
             inline={false}
             autoFocus={false}
+            portalId="root"
           />
           <div className="absolute left-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300 group-hover/datepicker:text-sky-500 transition-colors">
             <Sparkles size={18} />
@@ -410,12 +413,6 @@ const Step1Env = ({ data, date, onDateChange, onChange }: any) => {
 };
 
 const Step2Metrics = ({ data, onChange }: any) => {
-  const flowOptions = [
-    { id: 'none', label: 'なし' },
-    { id: 'weak', label: '弱い' },
-    { id: 'strong', label: '強い' },
-    { id: 'drift', label: 'ドリフト' }
-  ];
 
   return (
     <div className="space-y-8">
@@ -757,8 +754,12 @@ const Step3Evaluation = ({ data, onChange, onRadarChange, onImageUpload, uploadi
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter flex items-center gap-1"><Shield size={10} /> 指導団体</span>
               <select
                 value={data.userOrgId}
-                onChange={e => onChange({ userOrgId: e.target.value })}
-                className="w-full h-8 bg-transparent text-[10px] font-black outline-none appearance-none cursor-pointer"
+                onChange={e => {
+                  const orgId = e.target.value.toLowerCase();
+                  const firstRank = CERTIFICATIONS.find(o => o.id === orgId)?.ranks[0]?.id || '';
+                  onChange({ userOrgId: orgId, userRank: firstRank });
+                }}
+                className="w-full h-8 bg-transparent text-[10px] font-black outline-none cursor-pointer"
               >
                 {CERTIFICATIONS.map(org => (
                   <option key={org.id} value={org.id}>{org.name}</option>
@@ -770,9 +771,9 @@ const Step3Evaluation = ({ data, onChange, onRadarChange, onImageUpload, uploadi
               <select
                 value={data.userRank}
                 onChange={e => onChange({ userRank: e.target.value })}
-                className="w-full h-8 bg-transparent text-[10px] font-black outline-none appearance-none cursor-pointer"
+                className="w-full h-8 bg-transparent text-[10px] font-black outline-none cursor-pointer"
               >
-                {CERTIFICATIONS.find(o => o.id === data.userOrgId)?.ranks.map(rank => (
+                {CERTIFICATIONS.find(o => o.id.toLowerCase() === data.userOrgId?.toLowerCase())?.ranks.map(rank => (
                   <option key={rank.id} value={rank.id}>{rank.name}</option>
                 ))}
               </select>

@@ -69,6 +69,16 @@ service cloud.firestore {
       allow write: if isAuthenticated();
     }
 
+    // Reviews Collection
+    match /reviews/{reviewId} {
+      // Allowed to read if it's approved or if it's your own
+      allow read: if true;
+      // allow read: if resource.data.status == 'approved' || !('status' in resource.data) || isOwner(resource.data.userId);
+
+      allow create: if isAuthenticated();
+      allow update, delete: if isOwner(resource.data.userId) || (isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'moderator']);
+    }
+
     // Catch-all (Default deny)
     match /{document=**} {
       allow read, write: if false;

@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext';
 import { ImageWithFallback } from '../components/common/ImageWithFallback';
 import { MapPin, Droplets, Wind, Mountain, ArrowLeft, Plus, Search, X, Check, Anchor, AlertCircle, Bookmark, Star } from 'lucide-react';
 import clsx from 'clsx';
-import type { Creature, Rarity } from '../types';
+import type { Creature, Rarity, Review } from '../types';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 
 const libraries: ("places" | "geometry")[] = ["places"];
@@ -15,7 +15,7 @@ import { FEATURE_FLAGS } from '../config/features';
 export const PointDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   // Use pointCreatures from context
-  const { points, creatures, pointCreatures, currentUser, toggleBookmarkPoint, isAuthenticated, removePointCreature, reviews } = useApp();
+  const { points, creatures, pointCreatures, currentUser, toggleBookmarkPoint, isAuthenticated, removePointCreature, reviews, proposalReviews } = useApp();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY || '';
@@ -28,9 +28,30 @@ export const PointDetailPage = () => {
 
   const point = points.find(p => p.id === id);
 
-  const pointReviews = useMemo(() =>
-    reviews.filter(r => r.pointId === id),
-    [reviews, id]);
+  const pointReviews = useMemo(() => {
+    // Merge approved reviews and relevant pending reviews (self or admin)
+    const isAdmin = currentUser.role === 'admin' || currentUser.role === 'moderator';
+    const allUnique = new Map<string, Review>();
+    reviews.forEach(r => allUnique.set(r.id, r));
+    proposalReviews.filter(r => isAdmin || r.userId === currentUser.id).forEach(r => allUnique.set(r.id, r));
+
+    const allRelevantReviews = Array.from(allUnique.values());
+    return allRelevantReviews.filter(r => r.pointId === id);
+  }, [reviews, proposalReviews, currentUser, id]);
+
+  const areaReviews = useMemo(() => {
+    if (!point) return [];
+    const isAdmin = currentUser.role === 'admin' || currentUser.role === 'moderator';
+    const allUnique = new Map<string, Review>();
+    reviews.forEach(r => allUnique.set(r.id, r));
+    proposalReviews.filter(r => isAdmin || r.userId === currentUser.id).forEach(r => allUnique.set(r.id, r));
+
+    const allRelevantReviews = Array.from(allUnique.values());
+    return allRelevantReviews.filter(r => {
+      const p = points.find(pointItem => pointItem.id === r.pointId);
+      return p && p.area === point.area && p.id !== point.id;
+    });
+  }, [reviews, proposalReviews, currentUser, point, points]);
 
   // Inhabitants Logic (Updated for PointCreature model)
   const inhabitants = useMemo(() => {
@@ -182,7 +203,7 @@ export const PointDetailPage = () => {
 
             {/* Point Reviews & Stats (v6.0.0) */}
             {FEATURE_FLAGS.ENABLE_V6_REVIEWS && (
-              <PointReviewStats point={point} reviews={pointReviews} />
+              <PointReviewStats point={point} reviews={pointReviews} areaReviews={areaReviews} />
             )}
 
             {/* Inhabitants List */}
