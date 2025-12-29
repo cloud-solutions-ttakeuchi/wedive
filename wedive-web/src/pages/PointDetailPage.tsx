@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext';
 import { ImageWithFallback } from '../components/common/ImageWithFallback';
 import { MapPin, Droplets, Wind, Mountain, ArrowLeft, Plus, Search, X, Check, Anchor, AlertCircle, Bookmark, Star } from 'lucide-react';
 import clsx from 'clsx';
-import type { Creature, Rarity } from '../types';
+import type { Creature, Rarity, Review } from '../types';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 
 const libraries: ("places" | "geometry")[] = ["places"];
@@ -31,20 +31,22 @@ export const PointDetailPage = () => {
   const pointReviews = useMemo(() => {
     // Merge approved reviews and relevant pending reviews (self or admin)
     const isAdmin = currentUser.role === 'admin' || currentUser.role === 'moderator';
-    const allRelevantReviews = [
-      ...reviews,
-      ...proposalReviews.filter(r => isAdmin || r.userId === currentUser.id)
-    ];
+    const allUnique = new Map<string, Review>();
+    reviews.forEach(r => allUnique.set(r.id, r));
+    proposalReviews.filter(r => isAdmin || r.userId === currentUser.id).forEach(r => allUnique.set(r.id, r));
+
+    const allRelevantReviews = Array.from(allUnique.values());
     return allRelevantReviews.filter(r => r.pointId === id);
   }, [reviews, proposalReviews, currentUser, id]);
 
   const areaReviews = useMemo(() => {
     if (!point) return [];
     const isAdmin = currentUser.role === 'admin' || currentUser.role === 'moderator';
-    const allRelevantReviews = [
-      ...reviews,
-      ...proposalReviews.filter(r => isAdmin || r.userId === currentUser.id)
-    ];
+    const allUnique = new Map<string, Review>();
+    reviews.forEach(r => allUnique.set(r.id, r));
+    proposalReviews.filter(r => isAdmin || r.userId === currentUser.id).forEach(r => allUnique.set(r.id, r));
+
+    const allRelevantReviews = Array.from(allUnique.values());
     return allRelevantReviews.filter(r => {
       const p = points.find(pointItem => pointItem.id === r.pointId);
       return p && p.area === point.area && p.id !== point.id;

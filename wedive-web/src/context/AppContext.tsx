@@ -137,13 +137,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const unsubR = onSnapshot(collection(firestore, 'regions'), (snap) => {
       if (!snap.empty) setRegions(snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as any)));
-    });
+    }, (err) => console.error("Snapshot error (regions):", err));
     const unsubZ = onSnapshot(collection(firestore, 'zones'), (snap) => {
       if (!snap.empty) setZones(snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as any)));
-    });
+    }, (err) => console.error("Snapshot error (zones):", err));
     const unsubA = onSnapshot(collection(firestore, 'areas'), (snap) => {
       if (!snap.empty) setAreas(snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as any)));
-    });
+    }, (err) => console.error("Snapshot error (areas):", err));
     return () => { unsubR(); unsubZ(); unsubA(); };
   }, []);
 
@@ -164,17 +164,21 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const unsubPointCreatures = onSnapshot(collection(firestore, 'point_creatures'), (snapshot) => {
       const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as PointCreature));
       setPointCreatures(data);
-    });
+    }, (err) => console.error("Snapshot error (point_creatures):", err));
 
     const unsubReviews = onSnapshot(query(
       collection(firestore, 'reviews'),
-      where('status', '==', 'approved'),
-      orderBy('createdAt', 'desc'),
-      limit(100)
+      limit(200)
     ), (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Review));
+      const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Review))
+        .filter(r => r.status === 'approved' || !r.status) // statusがない古いデータも承認済みとして扱う
+        .sort((a, b) => {
+          const timeA = new Date(a.createdAt || a.date || 0).getTime();
+          const timeB = new Date(b.createdAt || b.date || 0).getTime();
+          return timeB - timeA;
+        });
       setReviews(data);
-    });
+    }, (err) => console.error("Snapshot error (reviews/all_public):", err));
 
     // Global Recent Public Logs
     let unsubPublicLogs: () => void = () => { };
@@ -193,18 +197,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // 3. Auth & User-Specific Sync
   useEffect(() => {
     let unsubUser: (() => void) | undefined;
-    let unsubLogs: (() => void) | undefined;
-    let unsubProposalsC: (() => void) | undefined;
-    let unsubProposalsP: (() => void) | undefined;
-    let unsubProposalsR: (() => void) | undefined;
-
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setIsAuthenticated(true);
         setIsLoading(true);
         isDeletingRef.current = false;
 
-        // User Profile
+        // User Profile Listener
         const userDocRef = doc(firestore, 'users', user.uid);
         unsubUser = onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists()) {
@@ -228,44 +227,69 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           }
           setIsLoading(false);
         });
-
-        // User Logs
-        const logsQuery = query(collection(firestore, 'users', user.uid, 'logs'), orderBy('date', 'desc'));
-        unsubLogs = onSnapshot(logsQuery, (snapshot) => {
-          setAllLogs(snapshot.docs.map(doc => doc.data() as Log));
-        });
-
-        // Proposals (Pending)
-        const qCreatures = query(collection(firestore, 'creature_proposals'), where('status', '==', 'pending'));
-        unsubProposalsC = onSnapshot(qCreatures, (snapshot) => {
-          setProposalCreatures(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Creature)));
-        });
-        const qPoints = query(collection(firestore, 'point_proposals'), where('status', '==', 'pending'));
-        unsubProposalsP = onSnapshot(qPoints, (snapshot) => {
-          setProposalPoints(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Point)));
-        });
-        const qReviews = query(collection(firestore, 'reviews'), where('status', '==', 'pending'));
-        unsubProposalsR = onSnapshot(qReviews, (snapshot) => {
-          setProposalReviews(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Review)));
-        });
-
       } else {
         setIsAuthenticated(false);
         setIsLoading(false);
         setCurrentUser(GUEST_USER);
-        setAllLogs([]);
+        if (unsubUser) { unsubUser(); unsubUser = undefined; }
       }
     });
-
     return () => {
       unsubscribeAuth();
       if (unsubUser) unsubUser();
-      if (unsubLogs) unsubLogs();
-      if (unsubProposalsC) unsubProposalsC();
-      if (unsubProposalsP) unsubProposalsP();
-      if (unsubProposalsR) unsubProposalsR();
     };
   }, []);
+
+  // 4. Data Sync (Logs, Proposals, Personal Reviews)
+  useEffect(() => {
+    if (!isAuthenticated || currentUser.id === 'guest') {
+      setAllLogs([]);
+      setProposalCreatures([]);
+      setProposalPoints([]);
+      setProposalReviews([]);
+      return;
+    }
+
+    const userId = currentUser.id;
+    const isAdmin = currentUser.role === 'admin' || currentUser.role === 'moderator';
+
+    // User Logs
+    const logsQuery = query(collection(firestore, 'users', userId, 'logs'), orderBy('date', 'desc'));
+    const unsubLogs = onSnapshot(logsQuery, (snapshot) => {
+      setAllLogs(snapshot.docs.map(doc => doc.data() as Log));
+    }, (err) => console.error("Snapshot error (user logs):", err));
+
+    // Creatures Proposals (Pending)
+    const qC = isAdmin
+      ? query(collection(firestore, 'creature_proposals'), where('status', '==', 'pending'))
+      : query(collection(firestore, 'creature_proposals'), where('submitterId', '==', userId), where('status', '==', 'pending'));
+    const unsubC = onSnapshot(qC, (snapshot) => {
+      setProposalCreatures(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Creature)));
+    }, (err) => console.error("Snapshot error (creature proposals):", err));
+
+    // Points Proposals (Pending)
+    const qP = isAdmin
+      ? query(collection(firestore, 'point_proposals'), where('status', '==', 'pending'))
+      : query(collection(firestore, 'point_proposals'), where('submitterId', '==', userId), where('status', '==', 'pending'));
+    const unsubP = onSnapshot(qP, (snapshot) => {
+      setProposalPoints(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Point)));
+    }, (err) => console.error("Snapshot error (point proposals):", err));
+
+    // Reviews (Pending for Admin, Own for User)
+    const qR = isAdmin
+      ? query(collection(firestore, 'reviews'), where('status', '==', 'pending'))
+      : query(collection(firestore, 'reviews'), where('userId', '==', userId));
+    const unsubR = onSnapshot(qR, (snapshot) => {
+      setProposalReviews(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Review)));
+    }, (err) => console.error("Snapshot error (personal/pending reviews):", err));
+
+    return () => {
+      unsubLogs();
+      unsubC();
+      unsubP();
+      unsubR();
+    };
+  }, [isAuthenticated, currentUser.id, currentUser.role]);
 
   // Admin Specific: Fetch All Users
   useEffect(() => {
