@@ -4,7 +4,8 @@
 
 ## [6.2.1] - 2025-12-29
 ### Added
-- **Area-wide Comparative Statistics**: ポイント詳細ページにて、同一エリア内の他ポイントの平均値（透明度、レーダーチャート指標）を表示し、相対的なコンディション比較が可能に。
+- **Area-wide Comparative Statistics**: ポイント詳細ページにて、同一エリア内の他ポイントの平均値（透明度、レーダーチャート指標）を表示し、相対的なコンディション比較が可能に。(Web/App)
+- **Review Feed Integration (App)**: Web版と同等の詳細レビューフィードをモバイルアプリに統合。承認済みレビューおよび自分の投稿（承知待ち含む）をリアルタイムに閲覧可能。
 - **Hierarchical Stats Aggregation**: Cloud Functions による自動集計を Area, Zone, Region レベルまで拡張。
 
 ### Fixed

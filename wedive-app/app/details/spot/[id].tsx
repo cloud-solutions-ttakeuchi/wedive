@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions, ActivityIndicator, Platform, Share as RNShare, View, Text, StatusBar } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronLeft, MapPin, Droplets, Wind, Mountain, Bookmark, Share, Edit3, Anchor, Home, Star } from 'lucide-react-native';
@@ -11,9 +11,10 @@ import { useAuth } from '../../../src/context/AuthContext';
 import { CreatureSelectorModal } from '../../../src/components/CreatureSelectorModal';
 import { RaritySelectorModal } from '../../../src/components/RaritySelectorModal';
 import { Alert } from 'react-native';
-import { FEATURE_FLAGS } from '../../../src/constants/features';
-
 import { ImageWithFallback } from '../../../src/components/ImageWithFallback';
+import { useReviews } from '../../../src/hooks/useReviews';
+import { PointReviewStats } from '../../../src/components/PointReviewStats';
+import { ReviewCard } from '../../../src/components/ReviewCard';
 
 const { width } = Dimensions.get('window');
 
@@ -33,6 +34,19 @@ export default function SpotDetailScreen() {
   const [showRarityModal, setShowRarityModal] = useState(false);
   const [selectedCreature, setSelectedCreature] = useState<Creature | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { approved, personal, area, isLoading: isReviewsLoading } = useReviews(point?.id, point?.areaId);
+
+  const allVisibleReviews = useMemo(() => {
+    const combined = [...approved];
+    personal.forEach(p => {
+      if (!combined.find(r => r.id === p.id)) {
+        combined.push(p);
+      }
+    });
+    // Sort by dive date DESC
+    return combined.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  }, [approved, personal]);
 
   useEffect(() => {
     if (user && point) {
@@ -64,18 +78,24 @@ export default function SpotDetailScreen() {
           const creatureIds = creatureLinks.map(link => link.creatureId);
 
           if (creatureIds.length > 0) {
-            // Firestore 'in' query has a limit of 10-30 items depending on SDK version
-            const cQuery = query(
-              collection(db, 'creatures'),
-              where('id', 'in', creatureIds.slice(0, 10))
-            );
-            const cSnap = await getDocs(cQuery);
-            const creatureDocs = cSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Creature));
+            const chunks = [];
+            for (let i = 0; i < creatureIds.length; i += 10) {
+              chunks.push(creatureIds.slice(i, i + 10));
+            }
 
-            // Map back to include the point_creature status
+            let allCreatureDocs: Creature[] = [];
+            for (const chunk of chunks) {
+              const cQuery = query(
+                collection(db, 'creatures'),
+                where('id', 'in', chunk)
+              );
+              const cSnap = await getDocs(cQuery);
+              allCreatureDocs = [...allCreatureDocs, ...cSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Creature))];
+            }
+
             const data = creatureLinks
               .map(link => {
-                const doc = creatureDocs.find(c => c.id === link.creatureId);
+                const doc = allCreatureDocs.find(c => c.id === link.creatureId);
                 return doc ? { ...doc, _linkStatus: link.status } : null;
               })
               .filter((c): c is Creature & { _linkStatus: PointCreature['status'] } => c !== null);
@@ -163,6 +183,14 @@ export default function SpotDetailScreen() {
       Alert.alert('エラー', 'ブックマークの更新に失敗しました。');
     }
   };
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <ActivityIndicator size="large" color="#0ea5e9" />
+      </View>
+    );
+  }
 
   if (!point) {
     return (
@@ -264,6 +292,16 @@ export default function SpotDetailScreen() {
             <Text style={styles.descriptionText}>
               {point.description || 'スポットの詳細情報はまだ登録されていません。'}
             </Text>
+          </View>
+
+          {/* Review Stats & Real-time Metrics */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Real-time Condition</Text>
+            <PointReviewStats
+              point={point}
+              reviews={allVisibleReviews}
+              areaReviews={area}
+            />
           </View>
 
           {/* Confirmed Creatures List */}
@@ -386,6 +424,29 @@ export default function SpotDetailScreen() {
               </View>
             </View>
           </View>
+
+          {/* Review Feed */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeaderBetween}>
+              <Text style={styles.sectionTitle}>Reviews</Text>
+              <Text style={styles.reviewCountText}>{allVisibleReviews.length}件の投稿</Text>
+            </View>
+
+            {allVisibleReviews.length > 0 ? (
+              <View style={styles.reviewList}>
+                {allVisibleReviews.map(review => (
+                  <ReviewCard
+                    key={review.id}
+                    review={review}
+                  />
+                ))}
+              </View>
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>まだレビューがありません。最初の投稿をしませんか？</Text>
+              </View>
+            )}
+          </View>
         </View>
       </ScrollView>
 
@@ -442,55 +503,63 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   center: {
-    flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 110,
+    alignItems: 'center',
   },
   floatingHeader: {
     position: 'absolute',
     left: 20,
     right: 20,
+    zIndex: 100,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    zIndex: 1000,
-  },
-  rightButtons: {
-    flexDirection: 'row',
-    gap: 12,
+    alignItems: 'center',
   },
   glassCircle: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    alignItems: 'center',
+    backgroundColor: 'rgba(15, 23, 42, 0.4)',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 6,
+      },
+    }),
+  },
+  rightButtons: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 100,
   },
   heroContainer: {
-    width: width,
-    height: 480,
-    backgroundColor: '#0f172a',
+    height: 380,
+    width: '100%',
+    position: 'relative',
   },
   heroImage: {
     width: '100%',
     height: '100%',
-    opacity: 0.9,
   },
   heroOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.15)',
+    backgroundColor: 'rgba(0,0,0,0.35)',
   },
   heroBottom: {
     position: 'absolute',
-    bottom: 60,
+    bottom: 40,
     left: 24,
     right: 24,
   },
@@ -502,116 +571,130 @@ const styles = StyleSheet.create({
   breadcrumbItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
   },
   breadcrumbLink: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '700',
+    color: 'rgba(255,255,255,0.9)',
+    fontSize: 12,
+    fontWeight: '600',
   },
   breadcrumbSeparator: {
-    color: 'rgba(255, 255, 255, 0.4)',
+    color: 'rgba(255,255,255,0.4)',
     marginHorizontal: 8,
-    fontWeight: '900',
+    fontSize: 12,
   },
   levelBadge: {
-    backgroundColor: '#0ea5e9',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
     alignSelf: 'flex-start',
-    marginBottom: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
   },
   levelText: {
     color: '#fff',
     fontSize: 10,
-    fontWeight: '900',
+    fontWeight: '800',
     letterSpacing: 1,
   },
   heroTitle: {
-    fontSize: 34,
+    fontSize: 32,
     fontWeight: '900',
     color: '#fff',
-    letterSpacing: -0.5,
-    lineHeight: 42,
+    lineHeight: 40,
+    textShadowColor: 'rgba(0,0,0,0.2)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   mainCard: {
+    marginTop: -30,
     backgroundColor: '#fff',
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
-    marginTop: -40,
-    paddingTop: 30,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingTop: 32,
     paddingHorizontal: 24,
   },
   statsGrid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     justifyContent: 'space-between',
     marginBottom: 32,
+    gap: 12,
   },
   statBox: {
-    width: (width - 48 - 14) / 2,
-    backgroundColor: '#f8fafc',
-    borderRadius: 24,
-    padding: 16,
-    marginBottom: 14,
+    flex: 1,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#f1f5f9',
   },
   statIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    alignItems: 'center',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
-    marginBottom: 10,
+    alignItems: 'center',
+    marginBottom: 8,
   },
   statLabel: {
-    fontSize: 10,
+    fontSize: 9,
+    fontWeight: '800',
     color: '#94a3b8',
-    fontWeight: '900',
-    marginBottom: 4,
+    letterSpacing: 0.5,
+    marginBottom: 2,
   },
   statValue: {
-    fontSize: 15,
-    fontWeight: '900',
+    fontSize: 14,
+    fontWeight: '800',
     color: '#1e293b',
   },
   section: {
     marginBottom: 32,
   },
+  sectionHeaderBetween: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   sectionTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '900',
     color: '#1e293b',
-    marginBottom: 14,
+    marginBottom: 12,
   },
   sectionTitleSmall: {
-    fontSize: 11,
-    fontWeight: '900',
-    color: '#94a3b8',
-    textTransform: 'uppercase',
-    letterSpacing: 1.5,
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#1e293b',
     marginBottom: 16,
   },
   descriptionText: {
-    fontSize: 16,
+    fontSize: 15,
     lineHeight: 26,
     color: '#475569',
-    fontWeight: '500',
+  },
+  tagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  tag: {
+    backgroundColor: '#f1f5f9',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  tagText: {
+    fontSize: 13,
+    color: '#475569',
+    fontWeight: '600',
   },
   creatureScroll: {
-    paddingRight: 24,
     gap: 12,
+    paddingRight: 24,
   },
   creatureCard: {
     width: 140,
-    backgroundColor: '#f8fafc',
-    borderRadius: 20,
+    backgroundColor: '#fff',
+    borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#f1f5f9',
@@ -619,14 +702,13 @@ const styles = StyleSheet.create({
   creatureThumb: {
     width: '100%',
     height: 100,
-    backgroundColor: '#e2e8f0',
   },
   creatureInfo: {
     padding: 10,
   },
   creatureName: {
     fontSize: 13,
-    fontWeight: '800',
+    fontWeight: '700',
     color: '#1e293b',
     marginBottom: 4,
   },
@@ -634,46 +716,41 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 2,
   },
-  tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  tag: {
-    backgroundColor: '#f1f5f9',
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 12,
-  },
-  tagText: {
-    fontSize: 13,
-    color: '#64748b',
-    fontWeight: '700',
-  },
   mapCard: {
-    borderRadius: 28,
+    borderRadius: 24,
+    backgroundColor: '#fff',
     overflow: 'hidden',
-    backgroundColor: '#f8fafc',
     borderWidth: 1,
     borderColor: '#f1f5f9',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
   mapContainer: {
     height: 180,
-    backgroundColor: '#e2e8f0',
+    backgroundColor: '#f8fafc',
   },
   map: {
     ...StyleSheet.absoluteFillObject,
   },
   noMap: {
     flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
   },
   noMapText: {
     fontSize: 12,
     color: '#94a3b8',
-    fontWeight: '700',
-    marginTop: 6,
+    fontWeight: '600',
   },
   mapFooter: {
     padding: 16,
@@ -682,29 +759,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   addressText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#475569',
+    fontSize: 13,
+    color: '#64748b',
     flex: 1,
     marginRight: 10,
   },
   addressBadge: {
-    backgroundColor: '#e0f2fe',
+    backgroundColor: '#0ea5e9',
     paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
   addressBadgeText: {
-    fontSize: 10,
-    color: '#0369a1',
-    fontWeight: '900',
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '800',
   },
   footerAction: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: '#fff',
     paddingHorizontal: 24,
     paddingTop: 12,
     borderTopWidth: 1,
@@ -712,97 +788,41 @@ const styles = StyleSheet.create({
   },
   primaryBtn: {
     backgroundColor: '#0ea5e9',
-    height: 58,
-    borderRadius: 20,
-    alignItems: 'center',
+    height: 56,
+    borderRadius: 28,
     justifyContent: 'center',
-    shadowColor: '#0ea5e9',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 8,
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#0ea5e9',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.25,
+        shadowRadius: 16,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
   },
   primaryBtnText: {
     color: '#fff',
-    fontSize: 17,
-    fontWeight: '900',
-  },
-  errorText: {
     fontSize: 16,
-    color: '#94a3b8',
-    marginBottom: 20,
-  },
-  backBtnSimple: {
-    backgroundColor: '#f1f5f9',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 14,
-  },
-  backBtnText: {
-    color: '#0ea5e9',
-    fontWeight: '800',
-  },
-  sectionHeaderBetween: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 14,
+    fontWeight: '900',
   },
   addLinkBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#f0f9ff',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#e0f2fe',
   },
   addLinkBtnText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#0ea5e9',
-  },
-  emptyState: {
-    padding: 30,
-    alignItems: 'center',
-    backgroundColor: '#f8fafc',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#f1f5f9',
-    borderStyle: 'dashed',
-  },
-  emptyStateText: {
-    fontSize: 14,
-    color: '#94a3b8',
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  emptyAddBtn: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-  },
-  emptyAddBtnText: {
     fontSize: 13,
-    fontWeight: '800',
     color: '#0ea5e9',
-  },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 2000,
+    fontWeight: '700',
   },
   pendingBadgeMini: {
     position: 'absolute',
-    top: 4,
-    left: 4,
+    top: 6,
+    right: 6,
     backgroundColor: '#f59e0b',
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -813,40 +833,65 @@ const styles = StyleSheet.create({
     fontSize: 8,
     fontWeight: '900',
   },
-  footerRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  logBtn: {
-    flex: 1.2,
-    backgroundColor: '#0ea5e9',
-    height: 56,
-    borderRadius: 18,
-    flexDirection: 'row',
+  emptyState: {
+    padding: 32,
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    shadowColor: '#0ea5e9',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    backgroundColor: '#f8fafc',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+    borderStyle: 'dashed',
   },
-  reviewBtn: {
-    flex: 1,
+  emptyStateText: {
+    fontSize: 13,
+    color: '#94a3b8',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  emptyAddBtn: {
+    marginTop: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     backgroundColor: '#fff',
-    height: 56,
-    borderRadius: 18,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    borderWidth: 1.5,
-    borderColor: '#0ea5e9',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
-  reviewBtnText: {
+  emptyAddBtnText: {
+    fontSize: 12,
     color: '#0ea5e9',
-    fontSize: 15,
-    fontWeight: '900',
+    fontWeight: '700',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  backBtnSimple: {
+    marginTop: 20,
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    backgroundColor: '#f1f5f9',
+    borderRadius: 20,
+  },
+  backBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#94a3b8',
+    fontWeight: '600',
+  },
+  reviewCountText: {
+    fontSize: 12,
+    color: '#94a3b8',
+    fontWeight: '600',
+  },
+  reviewList: {
+    marginTop: 10,
   },
 });
