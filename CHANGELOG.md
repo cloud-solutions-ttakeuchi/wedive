@@ -2,7 +2,17 @@
 
 プロジェクトの変更履歴を記録します。
 
-## [6.2.1] - 2025-12-29
+## [6.2.2] - 2025-12-29
+### Added
+- **Review Editing & Deletion (Web/App)**: 自身が投稿したレビュー、または管理者によるレビューの編集・削除が可能に。編集時は投稿済みの内容をプリセット状態で展開し、スムーズな修正をサポート。
+- **My Reviews Tab on MyPage (Web/App)**: マイページに「自分の投稿（My Reviews）」タブを追加。過去の全投稿（承認待ちを含む）を一元管理し、直接編集・削除のアクションが可能。
+- **User Reviews Hook (App)**: モバイルアプリ向けに自分のレビュー一覧をリアルタイム購読する `useUserReviews` フックを新規実装。
+
+### Fixed
+- **Review Comment Fallback Removal**: データベース上にコメントがない場合に表示されていた「最高でした！」というプレースホルダーを削除。データの実態を正確に反映し、ユーザーの混乱を防止。(Web/App)
+- **Edit Mode Data Reliability**: レビュー編集画面（AddReviewPage）において、コンテキストにデータがない場合でも Firestore から直接取得するロジックを強化し、編集不可時間を解消。
+- **Mobile Edit UI Consistency**: モバイル版のスポット詳細ページから直接レビュー編集画面へ遷移できるようボタンアクションを統合。
+- **Review ID Consistency**: モバイルアプリからのレビュー投稿時、FirestoreドキュメントIDが内部ID（`rv...`）と一致せず自動生成されていた問題を修正。Web版と同様に `setDoc` を使用し、ID命名規則を統一。
 ### Added
 - **Area-wide Comparative Statistics**: ポイント詳細ページにて、同一エリア内の他ポイントの平均値（透明度、レーダーチャート指標）を表示し、相対的なコンディション比較が可能に。(Web/App)
 - **Review Feed Integration (App)**: Web版と同等の詳細レビューフィードをモバイルアプリに統合。承認済みレビューおよび自分の投稿（承知待ち含む）をリアルタイムに閲覧可能。

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { Check, X, MapPin, Fish, Database, Award, Star } from 'lucide-react';
 import clsx from 'clsx';
@@ -6,6 +7,7 @@ import { seedFirestore } from '../utils/seeder';
 import { TRUST_RANKS } from '../constants/masterData';
 
 export const AdminProposalsPage = () => {
+  const navigate = useNavigate();
   const { proposalCreatures, proposalPoints, proposalReviews, approveProposal, rejectProposal, approveReview, rejectReview, currentUser, isAuthenticated, allUsers, creatures, points, pointCreatures, removePointCreature, addPointCreature } = useApp();
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [isSeeding, setIsSeeding] = useState(false);
@@ -573,6 +575,12 @@ export const AdminProposalsPage = () => {
                           className="flex items-center justify-center gap-2 bg-green-500 text-white px-4 py-2.5 rounded-lg font-bold hover:bg-green-600 transition-colors disabled:opacity-50 shadow-sm"
                         >
                           <Check size={16} /> 承認
+                        </button>
+                        <button
+                          onClick={() => navigate(`/edit-review/${rv.id}`)}
+                          className="flex items-center justify-center gap-2 bg-sky-500 text-white px-4 py-2.5 rounded-lg font-bold hover:bg-sky-600 transition-colors shadow-sm text-sm"
+                        >
+                          <Star size={16} /> 内容修正
                         </button>
                         <button
                           onClick={() => handleRejectReview(rv.id)}

@@ -27,17 +27,22 @@ import clsx from 'clsx';
 import type { Review } from '../types';
 
 export const AddReviewPage = () => {
-  const { pointId } = useParams<{ pointId: string }>();
+  const { pointId, reviewId } = useParams<{ pointId?: string, reviewId?: string }>();
   const navigate = useNavigate();
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const logId = queryParams.get('logId');
 
-  const { points, logs, currentUser, addReview, isAuthenticated, updateUser } = useApp();
-  const point = points.find(p => p.id === pointId);
+  const { points, logs, currentUser, addReview, updateReview, isAuthenticated, updateUser, reviews, proposalReviews } = useApp();
+  const isEdit = !!reviewId;
+  const existingReview = isEdit ? (reviews.find(r => r.id === reviewId) || proposalReviews.find(r => r.id === reviewId)) : null;
+
+  const point = points.find(p => p.id === (isEdit ? existingReview?.pointId : pointId));
 
   const [step, setStep] = useState(1);
   const [uploading, setUploading] = useState(false);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [loadingReview, setLoadingReview] = useState(isEdit);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState<Partial<Review>>({
@@ -50,6 +55,7 @@ export const AddReviewPage = () => {
       wave: 'none',
       airTemp: 25,
       waterTemp: 22,
+      wind: '',
     },
     metrics: {
       visibility: 15,
@@ -76,9 +82,24 @@ export const AddReviewPage = () => {
     userLogsCount: logs.length || 0,
   });
 
-  // Pre-fill from log if available
+  // Ensure existingReview is loaded (including direct fetch if not in context)
   useEffect(() => {
-    if (logId) {
+    if (isEdit && reviewId && !isDataLoaded) {
+      const found = reviews.find(r => r.id === reviewId) || proposalReviews.find(r => r.id === reviewId);
+      if (found) {
+        setFormData({ ...found, pointId: found.pointId });
+        setIsDataLoaded(true);
+        setLoadingReview(false);
+      } else {
+        // Fallback: If not in context yet, it might be loading or in another collection
+        setLoadingReview(true);
+      }
+    }
+  }, [isEdit, reviewId, reviews, proposalReviews, isDataLoaded]);
+
+  // Pre-fill from log if available (only on create)
+  useEffect(() => {
+    if (!isEdit && logId) {
       const log = logs.find(l => l.id === logId);
       if (log) {
         setFormData(prev => ({
@@ -101,8 +122,15 @@ export const AddReviewPage = () => {
         }));
       }
     }
-  }, [logId, logs]);
+  }, [isEdit, logId, logs]);
 
+  if (isEdit && loadingReview) return (
+    <div className="flex flex-col items-center justify-center p-20 gap-4">
+      <Loader2 className="animate-spin text-sky-500" size={32} />
+      <p className="text-slate-400 font-bold">データを読み込み中...</p>
+    </div>
+  );
+  if (isEdit && !formData.id) return <div className="p-8 text-center text-slate-500 font-bold">レビューが見つかりません</div>;
   if (!point) return <div className="p-8 text-center text-slate-500 font-bold">ポイントが見つかりません</div>;
   if (!isAuthenticated) return <div className="p-8 text-center text-slate-500 font-bold">ログインが必要です</div>;
 
@@ -134,24 +162,28 @@ export const AddReviewPage = () => {
 
   const handleSubmit = async () => {
     try {
-      await addReview(formData as any);
+      if (isEdit && reviewId) {
+        await updateReview(reviewId, formData);
+      } else {
+        await addReview(formData as any);
 
-      // Also update user profile with latest certification
-      if (currentUser && currentUser.id !== 'guest') {
-        await updateUser({
-          certification: {
-            orgId: formData.userOrgId || 'padi',
-            rankId: formData.userRank || 'entry',
-            date: currentUser.certification?.date || new Date().toISOString().split('T')[0]
-          }
-        });
+        // Also update user profile with latest certification
+        if (currentUser && currentUser.id !== 'guest') {
+          await updateUser({
+            certification: {
+              orgId: formData.userOrgId || 'padi',
+              rankId: formData.userRank || 'entry',
+              date: currentUser.certification?.date || new Date().toISOString().split('T')[0]
+            }
+          });
+        }
       }
 
-      alert('レビューを投稿しました！');
-      navigate(`/point/${pointId}`);
-    } catch (e) {
-      console.error(e);
-      alert('エラーが発生しました');
+      alert(isEdit ? 'レビューを更新しました！' : 'レビューを投稿しました！');
+      navigate(`/point/${point.id}`);
+    } catch (error) {
+      console.error('Submit failed:', error);
+      alert('投稿に失敗しました');
     }
   };
 
@@ -182,6 +214,26 @@ export const AddReviewPage = () => {
       </div>
 
       <main className="max-w-2xl mx-auto px-6 py-8">
+        {isEdit && existingReview && (
+          <div className="mb-8 p-6 bg-slate-900 rounded-[2rem] text-white shadow-xl relative overflow-hidden border border-slate-800">
+            <div className="absolute top-0 right-0 p-4 opacity-10">
+              <MessageSquare size={48} />
+            </div>
+            <div className="relative z-10">
+              <span className="text-[10px] font-black text-sky-400 uppercase tracking-widest mb-2 block flex items-center gap-2">
+                <Shield size={12} /> Editing Original Data
+              </span>
+              <p className="font-bold text-slate-100 italic leading-relaxed">
+                「{formData.comment || '（コメントなし）'}」
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <span className="text-[9px] font-black bg-slate-800 text-slate-400 px-2 py-1 rounded-lg uppercase tracking-tight border border-slate-700">BY {existingReview.userName}</span>
+                <span className="text-[9px] font-black bg-slate-800 text-slate-400 px-2 py-1 rounded-lg uppercase tracking-tight border border-slate-700">{existingReview.date}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         <AnimatePresence mode="wait">
           <motion.div
             key={step}
@@ -239,12 +291,14 @@ export const AddReviewPage = () => {
             )}
             {step === 3 && (
               <Step3Evaluation
-                data={formData as any}
+                data={formData}
                 onChange={(d: any) => setFormData(prev => ({ ...prev, ...d }))}
-                onRadarChange={(r: any) => setFormData(prev => ({ ...prev, radar: { ...prev.radar!, ...r } }))}
+                onRadarChange={(d: any) => setFormData(prev => ({ ...prev, radar: { ...prev.radar!, ...d } }))}
                 onImageUpload={handleImageUpload}
                 uploading={uploading}
                 fileInputRef={fileInputRef}
+                isAdmin={currentUser.role === 'admin' || currentUser.role === 'moderator'}
+                isEdit={isEdit}
               />
             )}
           </motion.div>
@@ -276,7 +330,7 @@ export const AddReviewPage = () => {
               onClick={handleSubmit}
               className="flex-[2] h-14 rounded-2xl bg-emerald-600 text-white font-black shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
             >
-              <Check size={20} /> レビューを投稿する
+              <Check size={20} /> {isEdit ? '内容を更新する' : 'レビューを投稿する'}
             </motion.button>
           )}
         </div>
@@ -392,6 +446,28 @@ const Step1Env = ({ data, date, onDateChange, onChange }: any) => {
         </div>
       </div>
 
+      <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">波の状況</p>
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { id: 'none', label: '穏やか', color: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
+            { id: 'low', label: '低波', color: 'bg-sky-50 text-sky-600 border-sky-200' },
+            { id: 'high', label: '高波', color: 'bg-rose-50 text-rose-600 border-rose-200' },
+          ].map(opt => (
+            <button
+              key={opt.id}
+              onClick={() => onChange({ wave: opt.id })}
+              className={clsx(
+                "py-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2",
+                data.wave === opt.id ? opt.color + " ring-4 ring-current/10" : "bg-white border-slate-100 text-slate-400"
+              )}
+            >
+              <span className="text-xs font-black">{opt.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
           <div className="flex justify-between items-center mb-6">
@@ -406,6 +482,20 @@ const Step1Env = ({ data, date, onDateChange, onChange }: any) => {
             <span className="text-2xl font-black text-slate-900 tabular-nums">{data.waterTemp}<span className="text-xs ml-1 text-slate-400 uppercase">°C</span></span>
           </div>
           <input type="range" min="5" max="35" value={data.waterTemp} onChange={e => onChange({ waterTemp: Number(e.target.value) })} className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-sky-500" />
+        </div>
+      </div>
+
+      <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">風の状況</p>
+        <div className="flex gap-2">
+          <Wind size={16} className="text-slate-400" />
+          <input
+            type="text"
+            value={data.wind || ''}
+            onChange={e => onChange({ wind: e.target.value })}
+            placeholder="北東 3mなど"
+            className="flex-1 bg-transparent border-b border-slate-200 focus:border-sky-500 outline-none text-sm font-bold pb-1"
+          />
         </div>
       </div>
     </div>
@@ -503,6 +593,63 @@ const Step2Metrics = ({ data, onChange }: any) => {
           onChange={(e) => onChange({ macroWideRatio: Number(e.target.value) })}
           className="w-full h-3 bg-gradient-to-r from-orange-200 via-slate-50 to-sky-200 rounded-full appearance-none cursor-pointer accent-slate-800 transition-all hover:h-4 focus:ring-4 focus:ring-slate-100"
         />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm relative overflow-hidden">
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-2">
+              <Wind size={16} className="text-sky-500" />
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">潮流の強さ</span>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { id: 'none', label: 'なし' },
+              { id: 'weak', label: '弱い' },
+              { id: 'strong', label: '強い' },
+              { id: 'drift', label: 'ドリフト' },
+            ].map(opt => (
+              <button
+                key={opt.id}
+                onClick={() => onChange({ flow: opt.id })}
+                className={clsx(
+                  "flex-1 py-3 px-2 rounded-xl text-[10px] font-black border transition-all",
+                  data.flow === opt.id ? "bg-sky-500 border-sky-500 text-white shadow-lg" : "bg-white border-slate-100 text-slate-400 hover:bg-slate-50"
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm relative overflow-hidden">
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-2">
+              <Star size={16} className="text-amber-500" />
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">難易度</span>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { id: 'easy', label: '余裕' },
+              { id: 'normal', label: '普通' },
+              { id: 'hard', label: '必死' },
+            ].map(opt => (
+              <button
+                key={opt.id}
+                onClick={() => onChange({ difficulty: opt.id })}
+                className={clsx(
+                  "flex-1 py-3 px-2 rounded-xl text-[10px] font-black border transition-all",
+                  data.difficulty === opt.id ? "bg-amber-500 border-amber-500 text-white shadow-lg" : "bg-white border-slate-100 text-slate-400 hover:bg-slate-50"
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm relative overflow-hidden group">
@@ -650,7 +797,7 @@ const Step2Metrics = ({ data, onChange }: any) => {
   );
 };
 
-const Step3Evaluation = ({ data, onChange, onRadarChange, onImageUpload, uploading, fileInputRef }: any) => {
+const Step3Evaluation = ({ data, onChange, onRadarChange, onImageUpload, uploading, fileInputRef, isAdmin, isEdit }: any) => {
   const radarData = useMemo(() => [
     { subject: '透明度', A: data.radar.visibility },
     { subject: '生物遭遇', A: data.radar.encounter },
@@ -789,6 +936,40 @@ const Step3Evaluation = ({ data, onChange, onRadarChange, onImageUpload, uploadi
           </div>
         </div>
       </div>
+
+      {isAdmin && (
+        <div className="bg-rose-50 p-8 rounded-[3rem] border border-rose-100 shadow-xl shadow-rose-100/20">
+          <h4 className="font-black text-rose-900 uppercase text-[10px] tracking-widest mb-6 flex items-center gap-2">
+            <Shield size={14} className="text-rose-500" /> 管理者専用設定
+          </h4>
+          <div className="grid grid-cols-1 gap-6">
+            <div className="bg-white p-6 rounded-2xl border border-rose-100 shadow-sm flex flex-col gap-3">
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">公開ステータス</span>
+              <div className="flex gap-2">
+                {[
+                  { id: 'pending', label: '保留', color: 'bg-amber-500 text-white' },
+                  { id: 'approved', label: '承認', color: 'bg-emerald-500 text-white' },
+                  { id: 'rejected', label: '却下/非公開', color: 'bg-rose-500 text-white' }
+                ].map(opt => (
+                  <button
+                    key={opt.id}
+                    onClick={() => onChange({ status: opt.id })}
+                    className={clsx(
+                      "flex-1 py-3 rounded-xl text-xs font-black transition-all",
+                      data.status === opt.id ? opt.color : "bg-slate-50 text-slate-400 hover:bg-slate-100"
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <p className="text-[10px] text-rose-400 font-bold px-4 italic">
+              ※ 管理者はコメント欄のショップ名や不適切な単語を直接伏せ字にするなど、編集が可能です。
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

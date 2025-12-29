@@ -6,7 +6,7 @@ import { LogImportModal } from '../components/LogImportModal';
 import { ProfileEditModal } from '../components/ProfileEditModal';
 import { LogCard } from '../components/LogCard';
 import { BulkEditModal } from '../components/BulkEditModal';
-import { Award, MapPin, Grid, List, BookOpen, Heart, Bookmark, Check, Star, PenTool, ChevronRight, Compass, Droplet, Map as MapIcon, Aperture, Crown, Shield, Info, Settings, X, Activity, Droplets, Image as ImageIcon, Upload, Trash2 } from 'lucide-react';
+import { Award, MapPin, Grid, List, BookOpen, Heart, Bookmark, Check, Star, PenTool, ChevronRight, Compass, Droplet, Map as MapIcon, Aperture, Crown, Shield, Info, Settings, X, Activity, Droplets, Image as ImageIcon, Upload, Trash2, MessageSquare } from 'lucide-react';
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { Link } from 'react-router-dom';
@@ -16,10 +16,10 @@ import { useState } from 'react';
 import { CERTIFICATIONS, BADGE_MASTER, TRUST_RANKS } from '../constants/masterData';
 
 export const MyPage = () => {
-  const { currentUser, logs, points, zones, areas, creatures, pointCreatures, isAuthenticated, toggleLikeLog, deleteLogs, updateLogs } = useApp();
+  const { currentUser, logs, points, zones, areas, creatures, pointCreatures, isAuthenticated, toggleLikeLog, deleteLogs, updateLogs, proposalReviews, deleteReview } = useApp();
   const { t } = useLanguage();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'logbook' | 'collection' | 'favorites' | 'wanted' | 'bookmarks'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'logbook' | 'collection' | 'favorites' | 'wanted' | 'bookmarks' | 'reviews'>('dashboard');
   const [selectedLogId, setSelectedLogId] = useState<string | null>(null);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedLogIds, setSelectedLogIds] = useState<string[]>([]);
@@ -276,6 +276,7 @@ export const MyPage = () => {
             { id: 'favorites', label: 'Favorites', icon: Heart },
             { id: 'wanted', label: 'Wanted', icon: Bookmark },
             { id: 'bookmarks', label: 'Plan', icon: MapPin },
+            { id: 'reviews', label: 'My Reviews', icon: MessageSquare },
           ].map(tab => (
             <button
               key={tab.id}
@@ -834,11 +835,79 @@ export const MyPage = () => {
         )
       }
       {/* Edit Profile Modal */}
-      {/* Edit Profile Modal */}
       <ProfileEditModal
         isOpen={isEditingProfile}
         onClose={() => setIsEditingProfile(false)}
       />
-    </div >
+      {/* Reviews Tab */}
+      {activeTab === 'reviews' && (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center px-1">
+            <h3 className="font-bold text-deepBlue-900 flex items-center gap-2">
+              <MessageSquare size={18} className="text-ocean" />
+              投稿したレビュー <span className="text-gray-400 text-sm font-normal">({proposalReviews.length})</span>
+            </h3>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {proposalReviews.length === 0 ? (
+              <div className="col-span-full py-20 text-center bg-white rounded-3xl border border-dashed border-gray-200">
+                <MessageSquare size={48} className="mx-auto text-gray-200 mb-4" />
+                <p className="text-gray-400 font-bold">まだレビューを投稿していません</p>
+              </div>
+            ) : (
+              // Use regular div with styled card for MyPage
+              proposalReviews.map(rv => (
+                <div key={rv.id} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all group">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map(star => (
+                        <Star key={star} size={14} className={star <= rv.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-100"} />
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {rv.status === 'pending' && (
+                        <span className="text-[10px] font-black bg-amber-50 text-amber-600 px-2 py-1 rounded-lg border border-amber-100 uppercase">Pending</span>
+                      )}
+                      <span className="text-[10px] font-bold text-gray-400">{rv.date}</span>
+                    </div>
+                  </div>
+
+                  <Link to={`/point/${rv.pointId}`} className="block mb-3">
+                    <h4 className="font-bold text-gray-900 hover:text-ocean-600 transition-colors">Point: {points.find(p => p.id === rv.pointId)?.name || rv.pointId}</h4>
+                  </Link>
+
+                  <p className={clsx(
+                    "text-sm line-clamp-2 italic mb-4",
+                    rv.comment ? "text-gray-600" : "text-gray-300"
+                  )}>
+                    「{rv.comment || '（コメントなし）'}」
+                  </p>
+
+                  <div className="flex justify-end gap-2 border-t border-gray-50 pt-4">
+                    <Link
+                      to={`/edit-review/${rv.id}`}
+                      className="p-2 text-gray-400 hover:text-ocean-500 hover:bg-ocean-50 rounded-xl transition-all"
+                    >
+                      <PenTool size={16} />
+                    </Link>
+                    <button
+                      onClick={async () => {
+                        if (window.confirm('このレビューを削除しますか？')) {
+                          await deleteReview(rv.id);
+                        }
+                      }}
+                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
