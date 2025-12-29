@@ -507,7 +507,7 @@ const ReviewCard = ({ review }: { review: Review }) => {
           </div>
 
           <h4 className="text-lg md:text-xl font-bold text-slate-800 leading-relaxed italic border-l-4 border-sky-100 pl-4">
-            「{review.comment || '最高でした！'}」
+            「{review.comment || ''}」
           </h4>
 
           <div className="flex flex-wrap gap-2">

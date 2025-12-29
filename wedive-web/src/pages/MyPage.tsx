@@ -877,7 +877,12 @@ export const MyPage = () => {
                     <h4 className="font-bold text-gray-900 hover:text-ocean-600 transition-colors">Point: {points.find(p => p.id === rv.pointId)?.name || rv.pointId}</h4>
                   </Link>
 
-                  <p className="text-sm text-gray-600 line-clamp-2 italic mb-4">「{rv.comment}」</p>
+                  <p className={clsx(
+                    "text-sm line-clamp-2 italic mb-4",
+                    rv.comment ? "text-gray-600" : "text-gray-300"
+                  )}>
+                    「{rv.comment || '（コメントなし）'}」
+                  </p>
 
                   <div className="flex justify-end gap-2 border-t border-gray-50 pt-4">
                     <Link
@@ -889,9 +894,6 @@ export const MyPage = () => {
                     <button
                       onClick={async () => {
                         if (window.confirm('このレビューを削除しますか？')) {
-                          // Note: deleteReview should be destructured from useApp
-                          // The following line is replaced by the correct destructuring and call
-                          // const { deleteReview } = (useApp as any)(); // This is a bit hacky if not destructured above
                           await deleteReview(rv.id);
                         }
                       }}

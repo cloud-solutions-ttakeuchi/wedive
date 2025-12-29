@@ -440,9 +440,10 @@ export default function SpotDetailScreen() {
                     review={review}
                     onDelete={() => deleteReview(review.id)}
                     onEdit={() => {
-                      // We don't have EditReviewScreen yet in the app,
-                      // but the Web version has it full-featured.
-                      alert('レビューの編集はWeb版から行ってください。');
+                      router.push({
+                        pathname: '/details/spot/review',
+                        params: { pointId: point.id, reviewId: review.id }
+                      });
                     }}
                   />
                 ))}

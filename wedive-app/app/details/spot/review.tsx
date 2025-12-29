@@ -37,6 +37,7 @@ interface Metrics {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
+  center: { justifyContent: 'center', alignItems: 'center' },
   header: { padding: 10, flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
   headerBtn: { padding: 10 },
   headerTitleContainer: { flex: 1, alignItems: 'center' },
@@ -190,7 +191,8 @@ const styles = StyleSheet.create({
 });
 
 export default function AddReviewScreen() {
-  const { pointId: pointIdFromParams, logId } = useLocalSearchParams();
+  const { pointId: pointIdFromParams, logId, reviewId } = useLocalSearchParams();
+  const isEdit = !!reviewId;
   const pointId = pointIdFromParams as string;
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -237,6 +239,35 @@ export default function AddReviewScreen() {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingReview, setIsLoadingReview] = useState(isEdit);
+
+  // Fetch Existing Review for Edit Mode
+  useEffect(() => {
+    async function fetchReview() {
+      if (isEdit && reviewId) {
+        setIsLoadingReview(true);
+        try {
+          // We need to find by ID. In AddReviewScreen, we might not have 'reviews' state.
+          // Directly fetch from Firestore.
+          const q = query(collection(db, 'reviews'), where('id', '==', reviewId));
+          const snap = await getDocs(q);
+          if (!snap.empty) {
+            const data = snap.docs[0].data() as Review;
+            setFormData({ ...data });
+          } else {
+            Alert.alert('Error', 'Review not found');
+            router.back();
+          }
+        } catch (e) {
+          console.error(e);
+          Alert.alert('Error', 'Failed to load review');
+        } finally {
+          setIsLoadingReview(false);
+        }
+      }
+    }
+    fetchReview();
+  }, [isEdit, reviewId]);
 
   // Sync Log Data if logId is provided
   useEffect(() => {
@@ -365,10 +396,22 @@ export default function AddReviewScreen() {
 
       console.log("[ReviewSubmit] Review data ready, sending to Firestore...", reviewData);
 
-      await addDoc(collection(db, 'reviews'), reviewData);
-      console.log("[ReviewSubmit] Successfully added to Firestore!");
+      if (isEdit && reviewId) {
+        const q = query(collection(db, 'reviews'), where('id', '==', reviewId));
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          await updateDoc(doc(db, 'reviews', snap.docs[0].id), reviewData);
+          console.log("[ReviewSubmit] Successfully updated Firestore!");
+          Alert.alert('完了', 'レビューを更新しました！');
+        } else {
+          throw new Error('Review document not found for update');
+        }
+      } else {
+        await addDoc(collection(db, 'reviews'), reviewData);
+        console.log("[ReviewSubmit] Successfully added to Firestore!");
+        Alert.alert('完了', 'レビューを投稿しました！');
+      }
 
-      Alert.alert('完了', 'レビューを投稿しました！');
       router.back();
     } catch (error) {
       console.error("[ReviewSubmit] Firestore Error:", error);
@@ -438,17 +481,25 @@ export default function AddReviewScreen() {
     }
   };
 
+  if (isLoadingReview) {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <ActivityIndicator size="large" color="#0ea5e9" />
+        <Text style={{ marginTop: 12, color: '#94a3b8', fontWeight: '800' }}>読み込み中...</Text>
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={styles.header}>
         <TouchableOpacity onPress={handleBack} style={styles.headerBtn}>
-          <X size={24} color="#1e293b" />
+          <ArrowLeft size={24} color="#1e293b" />
         </TouchableOpacity>
         <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle}>レビュー投稿</Text>
+          <Text style={styles.headerTitle}>{isEdit ? 'レビューを編集' : 'レビューを投稿'}</Text>
           <View style={styles.progressBarBg}>
-            <View style={[styles.progressBar, { width: `${((step + 1) / 3) * 100}%` }]} />
+            <View style={[styles.progressBar, { width: `${(step + 1) * 33.3}%` }]} />
           </View>
         </View>
         <View style={styles.headerSpacer} />

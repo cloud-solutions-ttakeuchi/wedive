@@ -106,8 +106,8 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, onDelet
       </View>
 
       {/* Comment */}
-      <Text style={styles.comment} numberOfLines={3}>
-        {review.comment || 'コメントなし'}
+      <Text style={[styles.comment, !review.comment && { color: '#cbd5e1' }]} numberOfLines={3}>
+        {review.comment || '（コメントなし）'}
       </Text>
 
       {/* Metrics Row */}

@@ -42,6 +42,7 @@ export const AddReviewPage = () => {
   const [step, setStep] = useState(1);
   const [uploading, setUploading] = useState(false);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [loadingReview, setLoadingReview] = useState(isEdit);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState<Partial<Review>>({
@@ -81,16 +82,20 @@ export const AddReviewPage = () => {
     userLogsCount: logs.length || 0,
   });
 
-  // Pre-fill from existing review if editing
+  // Ensure existingReview is loaded (including direct fetch if not in context)
   useEffect(() => {
-    if (isEdit && existingReview && !isDataLoaded) {
-      setFormData({
-        ...existingReview,
-        pointId: existingReview.pointId,
-      });
-      setIsDataLoaded(true);
+    if (isEdit && reviewId && !isDataLoaded) {
+      const found = reviews.find(r => r.id === reviewId) || proposalReviews.find(r => r.id === reviewId);
+      if (found) {
+        setFormData({ ...found, pointId: found.pointId });
+        setIsDataLoaded(true);
+        setLoadingReview(false);
+      } else {
+        // Fallback: If not in context yet, it might be loading or in another collection
+        setLoadingReview(true);
+      }
     }
-  }, [isEdit, existingReview, isDataLoaded]);
+  }, [isEdit, reviewId, reviews, proposalReviews, isDataLoaded]);
 
   // Pre-fill from log if available (only on create)
   useEffect(() => {
@@ -119,7 +124,13 @@ export const AddReviewPage = () => {
     }
   }, [isEdit, logId, logs]);
 
-  if (isEdit && !existingReview) return <div className="p-8 text-center text-slate-500 font-bold">レビューが見つかりません</div>;
+  if (isEdit && loadingReview) return (
+    <div className="flex flex-col items-center justify-center p-20 gap-4">
+      <Loader2 className="animate-spin text-sky-500" size={32} />
+      <p className="text-slate-400 font-bold">データを読み込み中...</p>
+    </div>
+  );
+  if (isEdit && !formData.id) return <div className="p-8 text-center text-slate-500 font-bold">レビューが見つかりません</div>;
   if (!point) return <div className="p-8 text-center text-slate-500 font-bold">ポイントが見つかりません</div>;
   if (!isAuthenticated) return <div className="p-8 text-center text-slate-500 font-bold">ログインが必要です</div>;
 
@@ -213,7 +224,7 @@ export const AddReviewPage = () => {
                 <Shield size={12} /> Editing Original Data
               </span>
               <p className="font-bold text-slate-100 italic leading-relaxed">
-                「{existingReview.comment || 'コメントなし'}」
+                「{formData.comment || '（コメントなし）'}」
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 <span className="text-[9px] font-black bg-slate-800 text-slate-400 px-2 py-1 rounded-lg uppercase tracking-tight border border-slate-700">BY {existingReview.userName}</span>

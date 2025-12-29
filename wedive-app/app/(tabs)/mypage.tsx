@@ -9,12 +9,17 @@ import { useCreatures } from '../../src/hooks/useCreatures';
 import { useUserStats } from '../../src/hooks/useUserStats';
 import { DiveLog, Creature, Point } from '../../src/types';
 import { ImageWithFallback } from '../../src/components/ImageWithFallback';
+import { ReviewCard } from '../../src/components/ReviewCard';
+import { useUserReviews } from '../../src/hooks/useUserReviews';
+import { db } from '../../src/firebase';
+import { doc, deleteDoc } from 'firebase/firestore';
+import { Alert } from 'react-native';
 
 const { width } = Dimensions.get('window');
 const NO_IMAGE_CREATURE = require('../../assets/images/no-image-creature.png');
 const NO_IMAGE_POINT = require('../../assets/images/no-image-point.png');
 
-type TabType = 'dashboard' | 'logbook' | 'collection' | 'favorites' | 'wanted' | 'plan';
+type TabType = 'dashboard' | 'logbook' | 'collection' | 'favorites' | 'wanted' | 'plan' | 'reviews';
 
 export default function MyPageScreen() {
   const router = useRouter();
@@ -24,10 +29,11 @@ export default function MyPageScreen() {
   const { data: creatures = [], isLoading: loadingCreatures } = useCreatures();
   // usePointCreatures is no longer needed for mastery calculation!
   const { data: stats, isLoading: loadingStats } = useUserStats();
+  const { reviews: userReviews, isLoading: loadingReviews } = useUserReviews();
 
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
 
-  const isLoading = authLoading || loadingPoints || loadingCreatures || loadingStats;
+  const isLoading = authLoading || loadingPoints || loadingCreatures || loadingStats || loadingReviews;
 
   const handleSignOut = async () => {
     await signOut();
@@ -424,6 +430,44 @@ export default function MyPageScreen() {
             </View>
           </View>
         );
+      case 'reviews':
+        return (
+          <View style={styles.tabContent}>
+            {userReviews.length > 0 ? (
+              <View style={{ gap: 16 }}>
+                {userReviews.map((review: any) => (
+                  <ReviewCard
+                    key={review.id}
+                    review={review}
+                    onEdit={() => {
+                      router.push({
+                        pathname: '/details/spot/review',
+                        params: { pointId: review.pointId, reviewId: review.id }
+                      });
+                    }}
+                    onDelete={async () => {
+                      try {
+                        // Find the doc reference by the standard Firestore ID (if it exists)
+                        // This might be tricky if we don't have the doc ID.
+                        // Our hook maps doc.id to review.id so we have it.
+                        await deleteDoc(doc(db, 'reviews', review.id));
+                        Alert.alert('完了', 'レビューを削除しました');
+                      } catch (e) {
+                        console.error(e);
+                        Alert.alert('エラー', '削除に失敗しました');
+                      }
+                    }}
+                  />
+                ))}
+              </View>
+            ) : (
+              <View style={styles.emptyState}>
+                <BookOpen size={48} color="#cbd5e1" />
+                <Text style={styles.emptyText}>投稿したレビューがまだありません。</Text>
+              </View>
+            )}
+          </View>
+        );
     }
   };
 
@@ -464,6 +508,7 @@ export default function MyPageScreen() {
             { id: 'logbook', icon: BookOpen, label: 'ログ' },
             { id: 'collection', icon: Grid, label: '図鑑' },
             { id: 'favorites', icon: Heart, label: '推し' },
+            { id: 'reviews', icon: BookOpen, label: '投稿' },
           ].map((tab) => (
             <TouchableOpacity
               key={tab.id}
