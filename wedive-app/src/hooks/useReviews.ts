@@ -72,18 +72,21 @@ export function useReviews(pointId?: string, areaId?: string) {
   const approved = useQuery<Review[]>({
     queryKey: ['reviews', pointId, 'approved'],
     enabled: !!pointId,
+    queryFn: () => [], // Dummy to satisfy TanStack Query v5
     initialData: []
   });
 
   const personal = useQuery<Review[]>({
     queryKey: ['reviews', pointId, user?.id],
     enabled: !!pointId && !!user && user.id !== 'guest',
+    queryFn: () => [], // Dummy to satisfy TanStack Query v5
     initialData: []
   });
 
   const area = useQuery<Review[]>({
     queryKey: ['reviews', 'area', areaId],
     enabled: !!areaId,
+    queryFn: () => [], // Dummy to satisfy TanStack Query v5
     initialData: []
   });
 
