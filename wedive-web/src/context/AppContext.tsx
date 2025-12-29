@@ -85,6 +85,8 @@ interface AppContextType {
   deleteAccount: () => Promise<void>;
   approveReview: (reviewId: string) => Promise<void>;
   rejectReview: (reviewId: string) => Promise<void>;
+  updateReview: (reviewId: string, reviewData: Partial<Review>) => Promise<void>;
+  deleteReview: (reviewId: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -578,13 +580,62 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const updateReview = async (reviewId: string, reviewData: Partial<Review>) => {
+    if (!isAuthenticated) return;
+    const existingReview = reviews.find(r => r.id === reviewId) || proposalReviews.find(r => r.id === reviewId);
+    if (!existingReview) return;
+
+    const isAdmin = currentUser.role === 'admin' || currentUser.role === 'moderator';
+    const isOwner = existingReview.userId === currentUser.id;
+
+    if (!isAdmin && !isOwner) {
+      alert('編集権限がありません');
+      return;
+    }
+
+    try {
+      const payload: Partial<Review> = { ...reviewData };
+
+      // If user edits, revert to pending unless admin (excluding only metadata updates if any)
+      if (!isAdmin && isOwner && existingReview.status === 'approved') {
+        payload.status = 'pending';
+      }
+
+      await updateDoc(doc(firestore, 'reviews', reviewId), sanitizePayload(payload));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const deleteReview = async (reviewId: string) => {
+    if (!isAuthenticated) return;
+    const existingReview = reviews.find(r => r.id === reviewId) || proposalReviews.find(r => r.id === reviewId);
+    if (!existingReview) return;
+
+    const isAdmin = currentUser.role === 'admin' || currentUser.role === 'moderator';
+    const isOwner = existingReview.userId === currentUser.id;
+
+    if (!isAdmin && !isOwner) {
+      alert('削除権限がありません');
+      return;
+    }
+
+    if (!window.confirm('このレビューを削除しますか？')) return;
+
+    try {
+      await deleteDoc(doc(firestore, 'reviews', reviewId));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const updateUserRole = async (uid: string, newRole: 'user' | 'moderator' | 'admin') => {
     if (currentUser.role === 'admin') await updateDoc(doc(firestore, 'users', uid), { role: newRole });
   };
 
   const value = {
     currentUser, isAuthenticated, isLoading, login, logout, calculateRarity, addLog, addCreature, addPoint, addPointCreature, removePointCreature, updateLog, updateCreature, updatePoint, deleteLog, deleteLogs, updateLogs, updateUser, toggleLikeLog, toggleFavorite, toggleWanted, toggleBookmarkPoint,
-    creatures, points, pointCreatures, logs: allLogs, reviews, proposalReviews, recentLogs, proposalCreatures, proposalPoints, regions, zones, areas, addCreatureProposal, addPointProposal, approveProposal, rejectProposal, allUsers, updateUserRole, deleteAccount, addReview, approveReview, rejectReview
+    creatures, points, pointCreatures, logs: allLogs, reviews, proposalReviews, recentLogs, proposalCreatures, proposalPoints, regions, zones, areas, addCreatureProposal, addPointProposal, approveProposal, rejectProposal, allUsers, updateUserRole, deleteAccount, addReview, approveReview, rejectReview, updateReview, deleteReview
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

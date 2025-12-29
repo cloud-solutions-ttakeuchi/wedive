@@ -1,10 +1,12 @@
 import React, { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useApp } from '../context/AppContext';
 import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell,
   CartesianGrid
 } from 'recharts';
-import { Star, MessageSquare, ShieldCheck, Zap, Droplets, Wind, Smile, Sun, Navigation, Anchor, Check, Cloud, CloudRain, Thermometer, Info, AlertCircle } from 'lucide-react';
+import { Star, MessageSquare, ShieldCheck, Zap, Droplets, Wind, Smile, Sun, Navigation, Anchor, Check, Cloud, CloudRain, Thermometer, Info, AlertCircle, Pencil, Trash2 } from 'lucide-react';
 import clsx from 'clsx';
 import type { Point, Review, ReviewRadar } from '../types';
 
@@ -369,6 +371,20 @@ const ComparisonBar = ({ label, official, actual, unit, color }: { label: string
 };
 
 const ReviewCard = ({ review }: { review: Review }) => {
+  const { currentUser, deleteReview } = useApp();
+  const navigate = useNavigate();
+  const isAdmin = currentUser.role === 'admin' || currentUser.role === 'moderator';
+  const isOwner = review.userId === currentUser.id;
+  const canEdit = isAdmin || isOwner;
+
+  const handleEdit = () => {
+    navigate(`/edit-review/${review.id}`);
+  };
+
+  const handleDelete = async () => {
+    await deleteReview(review.id);
+  };
+
   return (
     <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-md border border-slate-100 hover:shadow-xl transition-all duration-300 group">
       <div className="flex flex-col md:flex-row gap-6">
@@ -464,9 +480,29 @@ const ReviewCard = ({ review }: { review: Review }) => {
                 </div>
               )}
             </div>
-            <span className="text-[10px] font-black text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full uppercase tracking-widest ring-1 ring-sky-100">
-              Dived on {review.date || new Date(review.createdAt).toLocaleDateString()}
-            </span>
+            <div className="flex items-center gap-3">
+              {canEdit && (
+                <div className="flex gap-1">
+                  <button
+                    onClick={handleEdit}
+                    className="p-2 text-slate-400 hover:text-sky-500 hover:bg-sky-50 rounded-xl transition-all"
+                    title="Edit Review"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                    title="Delete Review"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              )}
+              <span className="text-[10px] font-black text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full uppercase tracking-widest ring-1 ring-sky-100">
+                Dived on {review.date || new Date(review.createdAt).toLocaleDateString()}
+              </span>
+            </div>
           </div>
 
           <h4 className="text-lg md:text-xl font-bold text-slate-800 leading-relaxed italic border-l-4 border-sky-100 pl-4">

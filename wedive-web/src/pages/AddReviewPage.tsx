@@ -27,14 +27,17 @@ import clsx from 'clsx';
 import type { Review } from '../types';
 
 export const AddReviewPage = () => {
-  const { pointId } = useParams<{ pointId: string }>();
+  const { pointId, reviewId } = useParams<{ pointId?: string, reviewId?: string }>();
   const navigate = useNavigate();
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const logId = queryParams.get('logId');
 
-  const { points, logs, currentUser, addReview, isAuthenticated, updateUser } = useApp();
-  const point = points.find(p => p.id === pointId);
+  const { points, logs, currentUser, addReview, updateReview, isAuthenticated, updateUser, reviews, proposalReviews } = useApp();
+  const isEdit = !!reviewId;
+  const existingReview = isEdit ? (reviews.find(r => r.id === reviewId) || proposalReviews.find(r => r.id === reviewId)) : null;
+
+  const point = points.find(p => p.id === (isEdit ? existingReview?.pointId : pointId));
 
   const [step, setStep] = useState(1);
   const [uploading, setUploading] = useState(false);
@@ -76,9 +79,19 @@ export const AddReviewPage = () => {
     userLogsCount: logs.length || 0,
   });
 
-  // Pre-fill from log if available
+  // Pre-fill from existing review if editing
   useEffect(() => {
-    if (logId) {
+    if (isEdit && existingReview) {
+      setFormData({
+        ...existingReview,
+        pointId: existingReview.pointId,
+      });
+    }
+  }, [isEdit, existingReview]);
+
+  // Pre-fill from log if available (only on create)
+  useEffect(() => {
+    if (!isEdit && logId) {
       const log = logs.find(l => l.id === logId);
       if (log) {
         setFormData(prev => ({
@@ -101,8 +114,9 @@ export const AddReviewPage = () => {
         }));
       }
     }
-  }, [logId, logs]);
+  }, [isEdit, logId, logs]);
 
+  if (isEdit && !existingReview) return <div className="p-8 text-center text-slate-500 font-bold">レビューが見つかりません</div>;
   if (!point) return <div className="p-8 text-center text-slate-500 font-bold">ポイントが見つかりません</div>;
   if (!isAuthenticated) return <div className="p-8 text-center text-slate-500 font-bold">ログインが必要です</div>;
 
@@ -134,24 +148,28 @@ export const AddReviewPage = () => {
 
   const handleSubmit = async () => {
     try {
-      await addReview(formData as any);
+      if (isEdit && reviewId) {
+        await updateReview(reviewId, formData);
+      } else {
+        await addReview(formData as any);
 
-      // Also update user profile with latest certification
-      if (currentUser && currentUser.id !== 'guest') {
-        await updateUser({
-          certification: {
-            orgId: formData.userOrgId || 'padi',
-            rankId: formData.userRank || 'entry',
-            date: currentUser.certification?.date || new Date().toISOString().split('T')[0]
-          }
-        });
+        // Also update user profile with latest certification
+        if (currentUser && currentUser.id !== 'guest') {
+          await updateUser({
+            certification: {
+              orgId: formData.userOrgId || 'padi',
+              rankId: formData.userRank || 'entry',
+              date: currentUser.certification?.date || new Date().toISOString().split('T')[0]
+            }
+          });
+        }
       }
 
-      alert('レビューを投稿しました！');
-      navigate(`/point/${pointId}`);
-    } catch (e) {
-      console.error(e);
-      alert('エラーが発生しました');
+      alert(isEdit ? 'レビューを更新しました！' : 'レビューを投稿しました！');
+      navigate(`/point/${point.id}`);
+    } catch (error) {
+      console.error('Submit failed:', error);
+      alert('投稿に失敗しました');
     }
   };
 
@@ -239,12 +257,13 @@ export const AddReviewPage = () => {
             )}
             {step === 3 && (
               <Step3Evaluation
-                data={formData as any}
+                data={formData}
                 onChange={(d: any) => setFormData(prev => ({ ...prev, ...d }))}
-                onRadarChange={(r: any) => setFormData(prev => ({ ...prev, radar: { ...prev.radar!, ...r } }))}
+                onRadarChange={(d: any) => setFormData(prev => ({ ...prev, radar: { ...prev.radar!, ...d } }))}
                 onImageUpload={handleImageUpload}
                 uploading={uploading}
                 fileInputRef={fileInputRef}
+                isAdmin={currentUser.role === 'admin' || currentUser.role === 'moderator'}
               />
             )}
           </motion.div>
@@ -650,7 +669,7 @@ const Step2Metrics = ({ data, onChange }: any) => {
   );
 };
 
-const Step3Evaluation = ({ data, onChange, onRadarChange, onImageUpload, uploading, fileInputRef }: any) => {
+const Step3Evaluation = ({ data, onChange, onRadarChange, onImageUpload, uploading, fileInputRef, isAdmin }: any) => {
   const radarData = useMemo(() => [
     { subject: '透明度', A: data.radar.visibility },
     { subject: '生物遭遇', A: data.radar.encounter },
@@ -789,6 +808,40 @@ const Step3Evaluation = ({ data, onChange, onRadarChange, onImageUpload, uploadi
           </div>
         </div>
       </div>
+
+      {isAdmin && (
+        <div className="bg-rose-50 p-8 rounded-[3rem] border border-rose-100 shadow-xl shadow-rose-100/20">
+          <h4 className="font-black text-rose-900 uppercase text-[10px] tracking-widest mb-6 flex items-center gap-2">
+            <Shield size={14} className="text-rose-500" /> 管理者専用設定
+          </h4>
+          <div className="grid grid-cols-1 gap-6">
+            <div className="bg-white p-6 rounded-2xl border border-rose-100 shadow-sm flex flex-col gap-3">
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">公開ステータス</span>
+              <div className="flex gap-2">
+                {[
+                  { id: 'pending', label: '保留', color: 'bg-amber-500 text-white' },
+                  { id: 'approved', label: '承認', color: 'bg-emerald-500 text-white' },
+                  { id: 'rejected', label: '却下/非公開', color: 'bg-rose-500 text-white' }
+                ].map(opt => (
+                  <button
+                    key={opt.id}
+                    onClick={() => onChange({ status: opt.id })}
+                    className={clsx(
+                      "flex-1 py-3 rounded-xl text-xs font-black transition-all",
+                      data.status === opt.id ? opt.color : "bg-slate-50 text-slate-400 hover:bg-slate-100"
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <p className="text-[10px] text-rose-400 font-bold px-4 italic">
+              ※ 管理者はコメント欄のショップ名や不適切な単語を直接伏せ字にするなど、編集が可能です。
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

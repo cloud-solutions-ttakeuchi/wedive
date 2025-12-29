@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions } from 'react-native';
-import { Star, MessageSquare, ThumbsUp, Shield, Clock, Droplets, Thermometer, Wind, AlertCircle } from 'lucide-react-native';
+import { Star, MessageSquare, ThumbsUp, Shield, Clock, Droplets, Thermometer, Wind, AlertCircle, Pencil, Trash2 } from 'lucide-react-native';
+import { Alert } from 'react-native';
+import { useAuth } from '../context/AuthContext';
 import { Review } from '../types';
 import { ImageWithFallback } from './ImageWithFallback';
 
@@ -9,11 +11,17 @@ const { width } = Dimensions.get('window');
 interface ReviewCardProps {
   review: Review;
   onPress?: () => void;
+  onDelete?: () => void;
+  onEdit?: () => void;
   isOwn?: boolean;
 }
 
-export const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, isOwn }) => {
+export const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, onDelete, onEdit, isOwn: isOwnProp }) => {
+  const { user } = useAuth();
   const isPending = review.status === 'pending';
+  const isAdmin = user?.role === 'admin' || user?.role === 'moderator';
+  const isOwner = user?.id === review.userId;
+  const canModify = isAdmin || isOwner;
 
   const getTrustColor = (level: Review['trustLevel']) => {
     switch (level) {
@@ -62,12 +70,39 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, isOwn }
           <Clock size={12} color="#94a3b8" />
           <Text style={styles.dateText}>{review.date || 'Unknown Date'}</Text>
         </View>
-        {isPending && (
-          <View style={styles.pendingBadge}>
-            <AlertCircle size={10} color="#f59e0b" />
-            <Text style={styles.pendingText}>承認待ち (審査中)</Text>
-          </View>
-        )}
+        <View style={styles.headerActions}>
+          {isPending && (
+            <View style={styles.pendingBadge}>
+              <AlertCircle size={10} color="#f59e0b" />
+              <Text style={styles.pendingText}>承認待ち</Text>
+            </View>
+          )}
+          {canModify && (
+            <View style={styles.actionButtons}>
+              <TouchableOpacity
+                onPress={onEdit}
+                style={styles.actionBtn}
+              >
+                <Pencil size={14} color="#0ea5e9" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  Alert.alert(
+                    "削除",
+                    "このレビューを削除しますか？",
+                    [
+                      { text: "キャンセル", style: "cancel" },
+                      { text: "削除", style: "destructive", onPress: onDelete }
+                    ]
+                  );
+                }}
+                style={styles.actionBtn}
+              >
+                <Trash2 size={14} color="#f43f5e" />
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
       </View>
 
       {/* Comment */}
@@ -192,6 +227,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 10,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  actionBtn: {
+    padding: 6,
+    backgroundColor: '#f8fafc',
+    borderRadius: 8,
   },
   dateItem: {
     flexDirection: 'row',

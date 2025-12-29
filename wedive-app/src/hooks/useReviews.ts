@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { collection, query, where, onSnapshot, limit } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, limit, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Review } from '../types';
 import { useAuth } from '../context/AuthContext';
@@ -90,10 +90,21 @@ export function useReviews(pointId?: string, areaId?: string) {
     initialData: []
   });
 
+  const deleteReview = async (reviewId: string) => {
+    if (!user || user.id === 'guest') return;
+    try {
+      await deleteDoc(doc(db, 'reviews', reviewId));
+    } catch (e) {
+      console.error('Delete review error:', e);
+      throw e;
+    }
+  };
+
   return {
     approved: approved.data || [],
     personal: personal.data || [],
     area: area.data || [],
-    isLoading: isLoading || approved.isLoading
+    isLoading: isLoading || approved.isLoading,
+    deleteReview
   };
 }

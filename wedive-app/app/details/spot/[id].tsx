@@ -35,7 +35,7 @@ export default function SpotDetailScreen() {
   const [selectedCreature, setSelectedCreature] = useState<Creature | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { approved, personal, area, isLoading: isReviewsLoading } = useReviews(point?.id, point?.areaId);
+  const { approved, personal, area, isLoading: isReviewsLoading, deleteReview } = useReviews(point?.id, point?.areaId);
 
   const allVisibleReviews = useMemo(() => {
     const combined = [...approved];
@@ -438,6 +438,12 @@ export default function SpotDetailScreen() {
                   <ReviewCard
                     key={review.id}
                     review={review}
+                    onDelete={() => deleteReview(review.id)}
+                    onEdit={() => {
+                      // We don't have EditReviewScreen yet in the app,
+                      // but the Web version has it full-featured.
+                      alert('レビューの編集はWeb版から行ってください。');
+                    }}
                   />
                 ))}
               </View>
