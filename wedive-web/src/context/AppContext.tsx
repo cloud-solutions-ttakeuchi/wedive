@@ -173,8 +173,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Review))
         .filter(r => r.status === 'approved' || !r.status) // statusがない古いデータも承認済みとして扱う
         .sort((a, b) => {
-          const timeA = new Date(a.createdAt || a.date || 0).getTime();
-          const timeB = new Date(b.createdAt || b.date || 0).getTime();
+          const timeA = new Date(a.date || a.createdAt || 0).getTime();
+          const timeB = new Date(b.date || b.createdAt || 0).getTime();
           return timeB - timeA;
         });
       setReviews(data);

@@ -71,8 +71,8 @@ export const AddReviewPage = () => {
     tags: [],
     comment: '',
     images: [],
-    userOrgId: currentUser?.certification?.orgId || 'padi',
-    userRank: currentUser?.certification?.rankId || 'entry',
+    userOrgId: (currentUser?.certification?.orgId || 'padi').toLowerCase(),
+    userRank: (currentUser?.certification?.rankId || 'entry').toLowerCase(),
     userLogsCount: logs.length || 0,
   });
 
@@ -754,8 +754,12 @@ const Step3Evaluation = ({ data, onChange, onRadarChange, onImageUpload, uploadi
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter flex items-center gap-1"><Shield size={10} /> 指導団体</span>
               <select
                 value={data.userOrgId}
-                onChange={e => onChange({ userOrgId: e.target.value })}
-                className="w-full h-8 bg-transparent text-[10px] font-black outline-none appearance-none cursor-pointer"
+                onChange={e => {
+                  const orgId = e.target.value.toLowerCase();
+                  const firstRank = CERTIFICATIONS.find(o => o.id === orgId)?.ranks[0]?.id || '';
+                  onChange({ userOrgId: orgId, userRank: firstRank });
+                }}
+                className="w-full h-8 bg-transparent text-[10px] font-black outline-none cursor-pointer"
               >
                 {CERTIFICATIONS.map(org => (
                   <option key={org.id} value={org.id}>{org.name}</option>
@@ -767,9 +771,9 @@ const Step3Evaluation = ({ data, onChange, onRadarChange, onImageUpload, uploadi
               <select
                 value={data.userRank}
                 onChange={e => onChange({ userRank: e.target.value })}
-                className="w-full h-8 bg-transparent text-[10px] font-black outline-none appearance-none cursor-pointer"
+                className="w-full h-8 bg-transparent text-[10px] font-black outline-none cursor-pointer"
               >
-                {CERTIFICATIONS.find(o => o.id === data.userOrgId)?.ranks.map(rank => (
+                {CERTIFICATIONS.find(o => o.id.toLowerCase() === data.userOrgId?.toLowerCase())?.ranks.map(rank => (
                   <option key={rank.id} value={rank.id}>{rank.name}</option>
                 ))}
               </select>

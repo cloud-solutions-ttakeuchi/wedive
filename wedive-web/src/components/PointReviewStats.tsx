@@ -25,6 +25,7 @@ interface PointReviewStatsProps {
 
 export const PointReviewStats: React.FC<PointReviewStatsProps> = ({ point, reviews, areaReviews = [] }) => {
   const [filter, setFilter] = React.useState<'all' | 'spring' | 'summer' | 'autumn' | 'winter'>('all');
+  const [sortBy, setSortBy] = React.useState<'latest' | 'rating'>('latest');
 
   // Aggregate Review Data with filtering
   const filteredReviews = useMemo(() => {
@@ -113,6 +114,19 @@ export const PointReviewStats: React.FC<PointReviewStatsProps> = ({ point, revie
       encounter: m.count > 0 ? m.encounter / m.count : 0
     }));
   }, [reviews]);
+
+  // Sorted and filtered reviews for the feed
+  const sortedReviews = useMemo(() => {
+    return [...filteredReviews].sort((a, b) => {
+      if (sortBy === 'latest') {
+        const timeA = new Date(a.date || a.createdAt).getTime();
+        const timeB = new Date(b.date || b.createdAt).getTime();
+        return timeB - timeA;
+      } else {
+        return b.rating - a.rating;
+      }
+    });
+  }, [filteredReviews, sortBy]);
 
   return (
     <div className="space-y-12">
@@ -292,14 +306,18 @@ export const PointReviewStats: React.FC<PointReviewStatsProps> = ({ point, revie
             <MessageSquare className="text-emerald-500" size={24} />
             最新のレビュー
           </h2>
-          <select className="bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold text-slate-600 focus:outline-none shadow-sm">
-            <option>最新順</option>
-            <option>評価の高い順</option>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as 'latest' | 'rating')}
+            className="bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold text-slate-600 focus:outline-none shadow-sm cursor-pointer hover:border-sky-300 transition-colors"
+          >
+            <option value="latest">最新順（潜水日）</option>
+            <option value="rating">評価の高い順</option>
           </select>
         </div>
 
         <div className="space-y-6">
-          {reviews.length === 0 ? (
+          {sortedReviews.length === 0 ? (
             <div className="bg-white rounded-[2rem] p-12 text-center border-4 border-dashed border-slate-100 flex flex-col items-center gap-4">
               <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300">
                 <MessageSquare size={32} />
@@ -307,7 +325,7 @@ export const PointReviewStats: React.FC<PointReviewStatsProps> = ({ point, revie
               <p className="font-black text-slate-400">まだレビューはありません</p>
             </div>
           ) : (
-            reviews.map(review => (
+            sortedReviews.map(review => (
               <ReviewCard key={review.id} review={review} />
             ))
           )}
