@@ -48,6 +48,15 @@ Diving Dex App のリリーススケジュールとロードマップです。
     - **Verification**: ログ紐づけ (`logId`) による「Verified Log」バッジの表示。
 - [x] **Review UI**: 投稿時の信頼性判定ロジックと、閲覧時のバッジ表示機能。
 - [x] **Infrastructure**: ログ攻略率再計算トリガー (`onLogWriteCalcMastery`) によるユーザーランクのリアルタイム更新。
+- [x] **Stabilization**: シミュレータにおける送信バグの解消、依存ライブラリ (`react-datepicker`) の互換修正。
+
+### v6.1.0 (Moderation & Governance) - Released
+**目的: 管理コストの削減とガバナンスの強化**
+
+- [x] **Admin Redesign**:
+    - **Categorized Dashboard**: 生物・ポイント・関係性・レビューに整理された管理UI。
+    - **Moderation Tools**: レビューの保留・承認・却下機能の実装。
+- [x] **Reliability**: 非同期処理中の多重送信防止、Firestore ペイロードのサニタイズ。
 
 ### v1.3.0 (Community Features) - Planning
 **目的: コミュニティ形成とリアルタイム交流**

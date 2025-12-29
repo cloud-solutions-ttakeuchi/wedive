@@ -2,6 +2,18 @@
 
 プロジェクトの変更履歴を記録します。
 
+## [6.1.0] - 2025-12-29
+### Added
+- **Admin Dashboard Redesign**:
+    - **Categorized Proposals**: 提案管理画面を「生物」「ポイント」「ポイント_生物（関係性）」「レビュー」の4つのタブに整理し、情報の視認性と管理効率を大幅に向上。
+    - **Review Moderation System**: 管理者が保留中のレビュー（コメント、評価、各種海況指標）を確認し、承認または却下を判断できるフローを実装。
+    - **Dashboard UX Refinement**: アクティブなタブに応じた件数バッジ表示、および処理中の二重クリック防止策（`processingId` 管理）を導入。
+- **Core Action Extensions**:
+    - `AppContext` にレビュー承認・却下用の非同期アクション (`approveReview`, `rejectReview`) を追加。
+
+### Improved
+- **Admin Navigation**: カテゴリごとのフィルタリングにより、大量の提案がある場合でも迅速な対応を可能に。
+
 ## [6.0.0] - 2025-12-28
 ### Added
 - **User Review System (Phase 1)**:
@@ -12,6 +24,12 @@
     - **Photo Reviews**: レビューへの最大5枚の写真アップロードと Firebase Storage 連携を Web/App 双方で実現。
 
 ### Fixed
+- **Mobile Review Stabilization**:
+    - **Simulator Compatibility**: モバイルアプリ（Simulator）環境でのレビュー投稿時のサイレントエラー（送信が完了しない問題）を特定し解消。
+    - **Param Passing logic**: `useLocalSearchParams` でのポイントID取得漏れを修正。
+    - **Firestore Sanitization**: `undefined` な値を送信して発生していた Firebase エラーを修正。
+- **Dependency Resolution**:
+    - `react-datepicker` の型エラー（React 19 互換性）を解決するため安定版へダウングレードし、設定を最適化。
 - **Review Approval System**: ハイブリッド承認フローを導入。ログ紐付けがある投稿は即時公開、それ以外は管理者の承認後に公開。
 - **Verified Log Badge**: 潜水証明（ログ連携）があるレビューに専用バッジを表示し、情報の信頼性を可視化。
 - **Review Stats Filtering**: 承認済みレビューのみを統計集計対象とするように Cloud Functions を更新。
