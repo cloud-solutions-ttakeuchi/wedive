@@ -216,6 +216,9 @@ AIによる再構築結果や検索結果を保存し、費用の抑制と高速
 | :--- | :--- | :--- |
 | `id` | string | `rv` + タイムスタンプ |
 | `pointId` | string | 対象ポイントID |
+| `areaId` | string | (Denormalized) エリアID (集計用) |
+| `zoneId` | string | (Denormalized) ゾーンID (集計用) |
+| `regionId` | string | (Denormalized) リージョンID (集計用) |
 | `userId` | string | 投稿者ID |
 | `logId` | string | 関連ログID (任意) |
 | `rating` | number | 総合満足度 (1-5) |

@@ -231,6 +231,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setIsAuthenticated(false);
         setIsLoading(false);
         setCurrentUser(GUEST_USER);
+        setAllLogs([]);
+        setProposalCreatures([]);
+        setProposalPoints([]);
+        setProposalReviews([]);
         if (unsubUser) { unsubUser(); unsubUser = undefined; }
       }
     });
@@ -243,10 +247,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // 4. Data Sync (Logs, Proposals, Personal Reviews)
   useEffect(() => {
     if (!isAuthenticated || currentUser.id === 'guest') {
-      setAllLogs([]);
-      setProposalCreatures([]);
-      setProposalPoints([]);
-      setProposalReviews([]);
       return;
     }
 
