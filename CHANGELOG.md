@@ -2,6 +2,13 @@
 
 プロジェクトの変更履歴を記録します。
 
+## [6.2.0] - 2025-12-29
+### Added
+- **Dynamic Review Display on Spot Details**:
+    - **Live Potential Stats**: 直近のレビュー統計（平均評価、平均透明度）をポイント詳細ページに反映。公式スペックとの動的な比較表示を実装。
+    - **Integrated Review Feed**: 承認済みのレビューを詳細ページに一覧表示。各レビューには、投稿者のトラストレベル、海況指標（透明度・流れ・水温）、写真ギャラリーが含まれます。
+    - **CTA Enhancement**: 「今の海況を報告」ボタンを設置し、ユーザーからの情報提供を促進。
+
 ## [6.1.0] - 2025-12-29
 ### Added
 - **Admin Dashboard Redesign**:
