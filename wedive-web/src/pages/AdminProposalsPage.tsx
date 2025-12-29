@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Check, X, MapPin, Fish, Database, Award } from 'lucide-react';
+import { Check, X, MapPin, Fish, Database, Award, Star } from 'lucide-react';
+import clsx from 'clsx';
 import { seedFirestore } from '../utils/seeder';
 import { TRUST_RANKS } from '../constants/masterData';
 
 export const AdminProposalsPage = () => {
-  const { proposalCreatures, proposalPoints, approveProposal, rejectProposal, currentUser, isAuthenticated, allUsers, creatures, points, pointCreatures, removePointCreature, addPointCreature } = useApp();
+  const { proposalCreatures, proposalPoints, proposalReviews, approveProposal, rejectProposal, approveReview, rejectReview, currentUser, isAuthenticated, allUsers, creatures, points, pointCreatures, removePointCreature, addPointCreature } = useApp();
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [isSeeding, setIsSeeding] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<'creature' | 'point' | 'rel' | 'review'>('creature');
 
   // Filter deletion and addition requests
   const deletionRequests = pointCreatures.filter(pc => pc.status === 'deletion_requested');
@@ -90,6 +92,20 @@ export const AdminProposalsPage = () => {
     await rejectProposal(type, id);
     setProcessingId(null);
   };
+
+  const handleApproveReview = async (id: string) => {
+    if (!window.confirm('このレビューを承認しますか？')) return;
+    setProcessingId(id);
+    await approveReview(id);
+    setProcessingId(null);
+  }
+
+  const handleRejectReview = async (id: string) => {
+    if (!window.confirm('このレビューを却下しますか？')) return;
+    setProcessingId(id);
+    await rejectReview(id);
+    setProcessingId(null);
+  }
 
   const getSubmitterInfo = (submitterId: string) => {
     const user = allUsers.find(u => u.id === submitterId);
@@ -209,17 +225,41 @@ export const AdminProposalsPage = () => {
       </div>
 
       <div className="max-w-5xl mx-auto mb-8">
-        <h2 className="text-lg font-bold text-gray-700 mb-4 border-b pb-2">承認待ちリスト</h2>
-        {proposalCreatures.length === 0 && proposalPoints.length === 0 && (
-          <div className="text-center text-gray-400 py-10 bg-white rounded-xl border border-dashed border-gray-300">
-            承認待ちの項目はありません
-          </div>
-        )}
+        <div className="flex flex-wrap gap-2 mb-8 bg-white p-2 rounded-2xl shadow-sm border border-gray-100">
+          {[
+            { id: 'creature', label: '生物', icon: <Fish size={18} />, count: proposalCreatures.length },
+            { id: 'point', label: 'ポイント', icon: <MapPin size={18} />, count: proposalPoints.length },
+            { id: 'rel', label: 'ポイント_生物', icon: <Database size={18} />, count: additionRequests.length + deletionRequests.length },
+            { id: 'review', label: 'レビュー', icon: <Star size={18} />, count: proposalReviews.length },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveCategory(tab.id as any)}
+              className={clsx(
+                "flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all",
+                activeCategory === tab.id
+                  ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200 scale-105"
+                  : "text-gray-500 hover:bg-gray-50 bg-transparent"
+              )}
+            >
+              {tab.icon}
+              {tab.label}
+              {tab.count > 0 && (
+                <span className={clsx(
+                  "ml-1 text-[10px] px-1.5 py-0.5 rounded-full font-black",
+                  activeCategory === tab.id ? "bg-white/20 text-white" : "bg-red-500 text-white"
+                )}>
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="space-y-8 max-w-5xl mx-auto">
         {/* Creatures */}
-        {proposalCreatures.length > 0 && (
+        {activeCategory === 'creature' && proposalCreatures.length > 0 && (
           <section>
             <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><Fish className="text-blue-500" /> 生物提案 ({proposalCreatures.length})</h2>
             <div className="grid gap-4">
@@ -288,49 +328,256 @@ export const AdminProposalsPage = () => {
           </section>
         )}
 
-        {/* Addition Requests (Pending) */}
-        {
-          additionRequests.length > 0 && (
-            <section>
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-blue-600"><Check className="text-blue-500" /> 追加リクエスト ({additionRequests.length})</h2>
-              <div className="grid gap-4">
-                {additionRequests.map(req => {
-                  const targetPoint = points.find(p => p.id === req.pointId);
-                  const targetCreature = creatures.find(c => c.id === req.creatureId);
-                  return (
-                    <div key={req.id} className="bg-white p-6 rounded-xl shadow-sm border border-blue-100 flex flex-col md:flex-row gap-6 items-center">
-
-                      <div className="w-20 h-20 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden border border-gray-100">
-                        <img src={targetCreature?.imageUrl} className="w-full h-full object-cover" alt={targetCreature?.name} />
+        {/* Categories: Point-Creature Relationships */}
+        {activeCategory === 'rel' && (
+          <div className="space-y-12">
+            {/* Addition Requests (Pending) */}
+            {additionRequests.length > 0 && (
+              <section>
+                <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-blue-600"><Check className="text-blue-500" /> 追加リクエスト ({additionRequests.length})</h2>
+                <div className="grid gap-4">
+                  {additionRequests.map(req => {
+                    const targetPoint = points.find(p => p.id === req.pointId);
+                    const targetCreature = creatures.find(c => c.id === req.creatureId);
+                    return (
+                      <div key={req.id} className="bg-white p-6 rounded-xl shadow-sm border border-blue-100 flex flex-col md:flex-row gap-6 items-center">
+                        <div className="w-20 h-20 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden border border-gray-100">
+                          <img src={targetCreature?.imageUrl} className="w-full h-full object-cover" alt={targetCreature?.name} />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-lg font-bold text-gray-900">
+                            {targetCreature?.name} <span className="text-sm font-normal text-gray-500">at</span> {targetPoint?.name}
+                          </h3>
+                          <div className="mt-1 flex gap-2 text-xs">
+                            <span className={`px-2 py-0.5 rounded border ${req.localRarity === 'Common' ? 'bg-gray-100 border-gray-300 text-gray-600' :
+                              req.localRarity === 'Rare' ? 'bg-blue-100 border-blue-300 text-blue-600' :
+                                'bg-purple-100 border-purple-300 text-purple-600'}`}>
+                              {req.localRarity}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-500 mt-1">追加申請されています</p>
+                        </div>
+                        <div className="flex flex-col gap-2 justify-center min-w-[140px]">
+                          <button
+                            onClick={() => handleApproveAddition(req)}
+                            disabled={processingId === req.id}
+                            className="flex items-center justify-center gap-2 bg-blue-500 text-white px-4 py-2.5 rounded-lg font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 shadow-sm"
+                          >
+                            <Check size={16} /> 承認
+                          </button>
+                          <button
+                            onClick={() => handleRejectAddition(req)}
+                            disabled={processingId === req.id}
+                            className="flex items-center justify-center gap-2 bg-white text-gray-600 border border-gray-200 px-4 py-2.5 rounded-lg font-bold hover:bg-gray-50 transition-colors disabled:opacity-50 shadow-sm"
+                          >
+                            <X size={16} /> 却下
+                          </button>
+                        </div>
                       </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
 
-                      <div className="flex-1">
-                        <h3 className="text-lg font-bold text-gray-900">
-                          {targetCreature?.name} <span className="text-sm font-normal text-gray-500">at</span> {targetPoint?.name}
-                        </h3>
-                        <div className="mt-1 flex gap-2 text-xs">
-                          <span className={`px-2 py-0.5 rounded border ${req.localRarity === 'Common' ? 'bg-gray-100 border-gray-300 text-gray-600' :
-                            req.localRarity === 'Rare' ? 'bg-blue-100 border-blue-300 text-blue-600' :
-                              'bg-purple-100 border-purple-300 text-purple-600'}`}>
-                            {req.localRarity}
+            {/* Deletion Requests */}
+            {
+              deletionRequests.length > 0 && (
+                <section>
+                  <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-red-600"><X className="text-red-500" /> 削除リクエスト ({deletionRequests.length})</h2>
+                  <div className="grid gap-4">
+                    {deletionRequests.map(req => {
+                      const targetPoint = points.find(p => p.id === req.pointId);
+                      const targetCreature = creatures.find(c => c.id === req.creatureId);
+                      return (
+                        <div key={req.id} className="bg-white p-6 rounded-xl shadow-sm border border-red-100 flex flex-col md:flex-row gap-6 items-center">
+                          <div className="flex-1">
+                            <h3 className="text-lg font-bold text-gray-900">
+                              {targetCreature?.name} <span className="text-sm font-normal text-gray-500">at</span> {targetPoint?.name}
+                            </h3>
+                            <p className="text-sm text-gray-500">削除申請されています</p>
+                          </div>
+                          <div className="flex flex-col gap-2 justify-center min-w-[140px]">
+                            <button
+                              onClick={() => handleApproveDeletion(req)}
+                              disabled={processingId === req.id}
+                              className="flex items-center justify-center gap-2 bg-red-500 text-white px-4 py-2.5 rounded-lg font-bold hover:bg-red-600 transition-colors disabled:opacity-50 shadow-sm"
+                            >
+                              <X size={16} /> 削除実行
+                            </button>
+                            <button
+                              onClick={() => handleRejectDeletion(req)}
+                              disabled={processingId === req.id}
+                              className="flex items-center justify-center gap-2 bg-white text-gray-600 border border-gray-200 px-4 py-2.5 rounded-lg font-bold hover:bg-gray-50 transition-colors disabled:opacity-50 shadow-sm"
+                            >
+                              <Check size={16} /> 却下(維持)
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              )
+            }
+            {additionRequests.length === 0 && deletionRequests.length === 0 && (
+              <div className="text-center text-gray-400 py-12 bg-white rounded-2xl border border-dashed border-gray-200">
+                関係性の申請はありません
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Categories: Points */}
+        {activeCategory === 'point' && proposalPoints.length > 0 && (
+          <section>
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><MapPin className="text-green-500" /> ポイント提案 ({proposalPoints.length})</h2>
+            <div className="grid gap-4">
+              {proposalPoints.map(p => {
+                const tid = (p as any).targetId || (p.id && !p.id.startsWith('prop') ? p.id : '');
+                const hasTargetId = tid !== '';
+                const rawType = String(p.proposalType || '').toLowerCase();
+
+                // Priority: Explicit proposalType
+                const isDelete = rawType === 'delete' || (p as any).isDeletionRequest === true;
+                const isUpdate = (rawType === 'update' || hasTargetId) && !isDelete;
+                const isCreate = !hasTargetId && !isDelete;
+
+                const isDuplicate = isCreate && points.some(existing => existing.name === p.name);
+
+                return (
+                  <div key={p.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col gap-4">
+                    <div className="flex flex-col md:flex-row gap-6">
+                      <div className="w-32 h-32 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden border border-gray-100">
+                        <img src={isUpdate && p.diffData?.imageUrl ? p.diffData.imageUrl : p.imageUrl} className="w-full h-full object-cover" alt={p.name} />
+                      </div>
+                      <div className="flex-1 py-1">
+                        <div className="flex justify-between items-start">
+                          <h3 className="text-lg font-bold text-gray-900">
+                            {(isUpdate || isDelete) ? (points.find(x => x.id === tid || x.id.replace(/_/g, '') === tid.replace(/_/g, ''))?.name || p.name || 'Unknown') : p.name}
+                            {hasTargetId && <span className="text-xs font-mono text-gray-400 ml-2">[{tid}]</span>}
+                            {isCreate && <span className="text-sm font-normal text-gray-500 ml-2">in {p.area}, {p.zone}</span>}
+                          </h3>
+                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${isDelete ? 'bg-red-100 text-red-800' : isUpdate ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'}`}>
+                            {isDelete ? '削除提案' : isUpdate ? '変更提案' : '新規登録'}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-500 mt-1">追加申請されています</p>
-                        {/* {getSubmitterInfo(req.submitterId || '')} // Submitter info logic needs to track who submitted */}
+
+                        {isDuplicate && (
+                          <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-red-700 text-xs font-bold flex items-center gap-1">
+                            ⚠️ 同名のポイントが既に存在します。重複登録の可能性があります！
+                          </div>
+                        )}
+
+                        {(isUpdate || isDelete) ? (
+                          renderDiff(p, 'point')
+                        ) : (
+                          <p className="text-sm text-gray-600 mt-2 line-clamp-2">{p.description}</p>
+                        )}
+
+                        {/* Submitter Info Highlight */}
+                        {getSubmitterInfo(p.submitterId)}
+
+                        {!isUpdate && (
+                          <div className="mt-3 flex gap-2 text-xs text-gray-500">
+                            <span className="bg-gray-100 px-2 py-1 rounded border border-gray-200">Level: {p.level}</span>
+                            <span className="bg-gray-100 px-2 py-1 rounded border border-gray-200">Depth: {p.maxDepth}m</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-2 justify-center min-w-[140px]">
+                        <button
+                          onClick={() => handleApprove('point', p)}
+                          disabled={processingId === p.id}
+                          className="flex items-center justify-center gap-2 bg-green-500 text-white px-4 py-2.5 rounded-lg font-bold hover:bg-green-600 transition-colors disabled:opacity-50 shadow-sm"
+                        >
+                          <Check size={16} /> 承認 <span className="text-xs opacity-90">(+5 TP)</span>
+                        </button>
+                        <button
+                          onClick={() => handleReject('point', p.id)}
+                          disabled={processingId === p.id}
+                          className="flex items-center justify-center gap-2 bg-white text-red-600 border border-red-200 px-4 py-2.5 rounded-lg font-bold hover:bg-red-50 transition-colors disabled:opacity-50 shadow-sm"
+                        >
+                          <X size={16} /> 却下
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* DEBUG DATA DISPLAY */}
+                    {import.meta.env.DEV && (
+                      <details className="mt-4 p-4 bg-gray-900 text-green-400 rounded-lg text-xs overflow-auto">
+                        <summary className="cursor-pointer font-mono hover:text-green-300">Raw Data Debug (Firestore Fields)</summary>
+                        <pre className="mt-2">{JSON.stringify({
+                          proposalType: (p as any).proposalType,
+                          type: (p as any).type,
+                          targetId: (p as any).targetId,
+                          isDeletionRequest: (p as any).isDeletionRequest,
+                          diffData: p.diffData,
+                          title: (p as any).proposalTitle
+                        }, null, 2)}</pre>
+                      </details>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* Categories: Reviews */}
+        {activeCategory === 'review' && (
+          <section>
+            <h2 className="text-xl font-bold mb-6 flex items-center gap-2"><Star className="text-amber-500" /> レビュー提案 ({proposalReviews.length})</h2>
+            {proposalReviews.length === 0 ? (
+              <div className="text-center text-gray-400 py-12 bg-white rounded-2xl border border-dashed border-gray-200">
+                承認待ちのレビューはありません
+              </div>
+            ) : (
+              <div className="grid gap-6">
+                {proposalReviews.map(rv => {
+                  const targetPoint = points.find(p => p.id === rv.pointId);
+                  return (
+                    <div key={rv.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row gap-6">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100">
+                            {rv.userProfileImage ? <img src={rv.userProfileImage} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-400 font-bold">{rv.userName.charAt(0)}</div>}
+                          </div>
+                          <div>
+                            <p className="font-bold text-gray-900">{rv.userName}</p>
+                            <p className="text-[10px] text-gray-400 uppercase tracking-widest">{rv.createdAt} ・ {targetPoint?.name}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-1 mb-3">
+                          {[1, 2, 3, 4, 5].map(star => (
+                            <Star key={star} size={14} className={star <= (rv.rating || 0) ? "text-amber-400 fill-amber-400" : "text-gray-200"} />
+                          ))}
+                        </div>
+
+                        <div className="p-4 bg-gray-50 rounded-xl mb-4 border border-gray-100 italic text-gray-700 text-sm">
+                          "{rv.comment || 'コメントなし'}"
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                          <span className="text-[10px] px-2 py-1 bg-sky-50 text-sky-600 rounded-lg font-bold border border-sky-100">透明度: {rv.metrics?.visibility}m</span>
+                          <span className="text-[10px] px-2 py-1 bg-indigo-50 text-indigo-600 rounded-lg font-bold border border-indigo-100">平均水深: {rv.metrics?.depthAvg}m</span>
+                          <span className="text-[10px] px-2 py-1 bg-emerald-50 text-emerald-600 rounded-lg font-bold border border-emerald-100">流れ: {rv.metrics?.flow}</span>
+                        </div>
                       </div>
 
                       <div className="flex flex-col gap-2 justify-center min-w-[140px]">
                         <button
-                          onClick={() => handleApproveAddition(req)}
-                          disabled={processingId === req.id}
-                          className="flex items-center justify-center gap-2 bg-blue-500 text-white px-4 py-2.5 rounded-lg font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 shadow-sm"
+                          onClick={() => handleApproveReview(rv.id)}
+                          disabled={processingId === rv.id}
+                          className="flex items-center justify-center gap-2 bg-green-500 text-white px-4 py-2.5 rounded-lg font-bold hover:bg-green-600 transition-colors disabled:opacity-50 shadow-sm"
                         >
                           <Check size={16} /> 承認
                         </button>
                         <button
-                          onClick={() => handleRejectAddition(req)}
-                          disabled={processingId === req.id}
-                          className="flex items-center justify-center gap-2 bg-white text-gray-600 border border-gray-200 px-4 py-2.5 rounded-lg font-bold hover:bg-gray-50 transition-colors disabled:opacity-50 shadow-sm"
+                          onClick={() => handleRejectReview(rv.id)}
+                          disabled={processingId === rv.id}
+                          className="flex items-center justify-center gap-2 bg-white text-red-600 border border-red-200 px-4 py-2.5 rounded-lg font-bold hover:bg-red-50 transition-colors disabled:opacity-50 shadow-sm"
                         >
                           <X size={16} /> 却下
                         </button>
@@ -339,167 +586,9 @@ export const AdminProposalsPage = () => {
                   );
                 })}
               </div>
-            </section>
-          )
-        }
-
-        {/* Deletion Requests */}
-        {
-          deletionRequests.length > 0 && (
-            <section>
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-red-600"><X className="text-red-500" /> 削除リクエスト ({deletionRequests.length})</h2>
-              <div className="grid gap-4">
-                {deletionRequests.map(req => {
-                  const targetPoint = points.find(p => p.id === req.pointId);
-                  const targetCreature = creatures.find(c => c.id === req.creatureId);
-                  return (
-                    <div key={req.id} className="bg-white p-6 rounded-xl shadow-sm border border-red-100 flex flex-col md:flex-row gap-6 items-center">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-bold text-gray-900">
-                          {targetCreature?.name} <span className="text-sm font-normal text-gray-500">at</span> {targetPoint?.name}
-                        </h3>
-                        <p className="text-sm text-gray-500">削除申請されています</p>
-                      </div>
-                      <div className="flex flex-col gap-2 justify-center min-w-[140px]">
-                        <button
-                          onClick={() => handleApproveDeletion(req)}
-                          disabled={processingId === req.id}
-                          className="flex items-center justify-center gap-2 bg-red-500 text-white px-4 py-2.5 rounded-lg font-bold hover:bg-red-600 transition-colors disabled:opacity-50 shadow-sm"
-                        >
-                          <X size={16} /> 削除実行
-                        </button>
-                        <button
-                          onClick={() => handleRejectDeletion(req)}
-                          disabled={processingId === req.id}
-                          className="flex items-center justify-center gap-2 bg-white text-gray-600 border border-gray-200 px-4 py-2.5 rounded-lg font-bold hover:bg-gray-50 transition-colors disabled:opacity-50 shadow-sm"
-                        >
-                          <Check size={16} /> 却下(維持)
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          )
-        }          {/* We need updatePointCreature? Or just use addPointCreature logic?
-                            // Actually we can just updateDoc directly if we had a function...
-                            // Or call addPointCreature which sets to approved/pending.
-                            // Since it's admin doing this rejection, calling addPointCreature will set it to 'approved'.
-                            // But we need to keep the original Rarity?
-                            // Let's use addPointCreature(pointId, creatureId, req.localRarity) -> status='approved' (Admin)
-                            await addPointCreature(req.pointId, req.creatureId, req.localRarity);
-                          }}
-                          className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-bold hover:bg-gray-300"
-                        >
-                          却下 (復元)
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          )
-        }
-
-        {/* Points */}
-        {
-          proposalPoints.length > 0 && (
-            <section>
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><MapPin className="text-green-500" /> ポイント提案 ({proposalPoints.length})</h2>
-              <div className="grid gap-4">
-                {proposalPoints.map(p => {
-                  const tid = (p as any).targetId || (p.id && !p.id.startsWith('prop') ? p.id : '');
-                  const hasTargetId = tid !== '';
-                  const rawType = String(p.proposalType || '').toLowerCase();
-
-                  // Priority: Explicit proposalType
-                  const isDelete = rawType === 'delete' || (p as any).isDeletionRequest === true;
-                  const isUpdate = (rawType === 'update' || hasTargetId) && !isDelete;
-                  const isCreate = !hasTargetId && !isDelete;
-
-                  const isDuplicate = isCreate && points.some(existing => existing.name === p.name);
-
-                  return (
-                    <div key={p.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col gap-4">
-                      <div className="flex flex-col md:flex-row gap-6">
-                        <div className="w-32 h-32 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden border border-gray-100">
-                          <img src={isUpdate && p.diffData?.imageUrl ? p.diffData.imageUrl : p.imageUrl} className="w-full h-full object-cover" alt={p.name} />
-                        </div>
-                        <div className="flex-1 py-1">
-                          <div className="flex justify-between items-start">
-                            <h3 className="text-lg font-bold text-gray-900">
-                              {(isUpdate || isDelete) ? (points.find(x => x.id === tid || x.id.replace(/_/g, '') === tid.replace(/_/g, ''))?.name || p.name || 'Unknown') : p.name}
-                              {hasTargetId && <span className="text-xs font-mono text-gray-400 ml-2">[{tid}]</span>}
-                              {isCreate && <span className="text-sm font-normal text-gray-500 ml-2">in {p.area}, {p.zone}</span>}
-                            </h3>
-                            <span className={`text-xs px-2 py-1 rounded-full font-medium ${isDelete ? 'bg-red-100 text-red-800' : isUpdate ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'}`}>
-                              {isDelete ? '削除提案' : isUpdate ? '変更提案' : '新規登録'}
-                            </span>
-                          </div>
-
-                          {isDuplicate && (
-                            <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-red-700 text-xs font-bold flex items-center gap-1">
-                              ⚠️ 同名のポイントが既に存在します。重複登録の可能性があります！
-                            </div>
-                          )}
-
-                          {(isUpdate || isDelete) ? (
-                            renderDiff(p, 'point')
-                          ) : (
-                            <p className="text-sm text-gray-600 mt-2 line-clamp-2">{p.description}</p>
-                          )}
-
-                          {/* Submitter Info Highlight */}
-                          {getSubmitterInfo(p.submitterId)}
-
-                          {!isUpdate && (
-                            <div className="mt-3 flex gap-2 text-xs text-gray-500">
-                              <span className="bg-gray-100 px-2 py-1 rounded border border-gray-200">Level: {p.level}</span>
-                              <span className="bg-gray-100 px-2 py-1 rounded border border-gray-200">Depth: {p.maxDepth}m</span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex flex-col gap-2 justify-center min-w-[140px]">
-                          <button
-                            onClick={() => handleApprove('point', p)}
-                            disabled={processingId === p.id}
-                            className="flex items-center justify-center gap-2 bg-green-500 text-white px-4 py-2.5 rounded-lg font-bold hover:bg-green-600 transition-colors disabled:opacity-50 shadow-sm"
-                          >
-                            <Check size={16} /> 承認 <span className="text-xs opacity-90">(+5 TP)</span>
-                          </button>
-                          <button
-                            onClick={() => handleReject('point', p.id)}
-                            disabled={processingId === p.id}
-                            className="flex items-center justify-center gap-2 bg-white text-red-600 border border-red-200 px-4 py-2.5 rounded-lg font-bold hover:bg-red-50 transition-colors disabled:opacity-50 shadow-sm"
-                          >
-                            <X size={16} /> 却下
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* DEBUG DATA DISPLAY */}
-                      {import.meta.env.DEV && (
-                        <details className="mt-4 p-4 bg-gray-900 text-green-400 rounded-lg text-xs overflow-auto">
-                          <summary className="cursor-pointer font-mono hover:text-green-300">Raw Data Debug (Firestore Fields)</summary>
-                          <pre className="mt-2">{JSON.stringify({
-                            proposalType: (p as any).proposalType,
-                            type: (p as any).type,
-                            targetId: (p as any).targetId,
-                            isDeletionRequest: (p as any).isDeletionRequest,
-                            diffData: p.diffData,
-                            title: (p as any).proposalTitle
-                          }, null, 2)}</pre>
-                        </details>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          )
-        }
+            )}
+          </section>
+        )}
       </div>
     </div>
   );
