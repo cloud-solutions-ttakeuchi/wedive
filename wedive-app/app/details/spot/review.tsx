@@ -5,7 +5,7 @@ import { Sun, Cloud, CloudRain, Check, Star, Navigation, Droplets, X, ArrowRight
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../../src/context/AuthContext';
 import { db, storage } from '../../../src/firebase';
-import { collection, addDoc, doc, getDoc, getDocs, query, where, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, doc, getDoc, getDocs, query, where, updateDoc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import * as ImagePicker from 'expo-image-picker';
 import type { Review, ReviewRadar } from '../../../src/types';
@@ -373,19 +373,38 @@ export default function AddReviewScreen() {
       // Determine Approval Status (Only Official is auto-approved to prevent negative campaign)
       const isApproved = trustLevel === 'official';
 
-      const reviewData: any = {
-        ...formData,
-        id: `rv${Date.now()}`,
-        userId: user.id,
-        userName: user.name,
-        userProfileImage: user.profileImage || null,
-        userLogsCount: formData.userLogsCount || logs.length,
-        status: isApproved ? 'approved' : 'pending',
-        trustLevel,
-        helpfulCount: 0,
-        helpfulBy: [],
-        createdAt: new Date().toISOString()
-      };
+      let reviewData: any;
+
+      if (isEdit && reviewId) {
+        // Edit Mode: Update existing
+        reviewData = {
+          ...formData, // Contains original id, createdAt
+          userId: user.id,
+          userName: user.name,
+          userProfileImage: user.profileImage || null,
+          userLogsCount: formData.userLogsCount || logs.length,
+          status: isApproved ? 'approved' : 'pending', // Revert to pending
+          trustLevel,
+          updatedAt: new Date().toISOString()
+        };
+        // Ensure we don't accidentally change the ID
+        reviewData.id = formData.id;
+      } else {
+        // Create Mode: New data
+        reviewData = {
+          ...formData,
+          id: `rv${Date.now()}`,
+          userId: user.id,
+          userName: user.name,
+          userProfileImage: user.profileImage || null,
+          userLogsCount: formData.userLogsCount || logs.length,
+          status: isApproved ? 'approved' : 'pending',
+          trustLevel,
+          helpfulCount: 0,
+          helpfulBy: [],
+          createdAt: new Date().toISOString()
+        };
+      }
 
       // Firestore doesn't accept 'undefined'. Remove undefined keys.
       Object.keys(reviewData).forEach(key => {
@@ -407,7 +426,7 @@ export default function AddReviewScreen() {
           throw new Error('Review document not found for update');
         }
       } else {
-        await addDoc(collection(db, 'reviews'), reviewData);
+        await setDoc(doc(db, 'reviews', reviewData.id), reviewData);
         console.log("[ReviewSubmit] Successfully added to Firestore!");
         Alert.alert('完了', 'レビューを投稿しました！');
       }
