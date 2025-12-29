@@ -302,7 +302,7 @@ const Step1Env = ({ data, date, onDateChange, onChange }: any) => {
         いつ、どんな環境でしたか？
       </h2>
 
-      <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm transition-all hover:shadow-md relative overflow-hidden">
+      <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm transition-all hover:shadow-md relative">
         <div className="flex justify-between items-center mb-6">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
             <Calendar size={12} /> 潜水日
@@ -357,6 +357,7 @@ const Step1Env = ({ data, date, onDateChange, onChange }: any) => {
             showYearDropdown={false}
             inline={false}
             autoFocus={false}
+            portalId="root"
           />
           <div className="absolute left-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300 group-hover/datepicker:text-sky-500 transition-colors">
             <Sparkles size={18} />
