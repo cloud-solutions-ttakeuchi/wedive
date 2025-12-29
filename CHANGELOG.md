@@ -2,6 +2,32 @@
 
 プロジェクトの変更履歴を記録します。
 
+## [6.0.0] - 2025-12-28
+### Added
+- **User Review System (Phase 1)**:
+    - **Multi-step Review Flow (Web/App)**: 3ステップ構成の直感的なレビュー投稿機能を実装。海況選択、数値入力（透明度等）、タグ・画像投稿に対応。
+    - **Cloud Aggregation Logic**: Firebase Functions によるレビュー統計の自動集計 (`onReviewWriteAggregateStats`) を導入。ポイントの平均評価、透明度、コンディションをリアルタイム更新。
+    - **Best Season Analysis (Web)**: 月別の平均透明度と遭遇度を可視化する「ベストシーズン・分析」グラフをスポット詳細ページに追加。
+    - **Personalized Alerts (Web)**: ユーザーの経験本数（ログ数）に基づき、現在の海況がスキルレベルに対して危険な場合に警告を表示する動的アラートを検索結果に実装。
+    - **Photo Reviews**: レビューへの最大5枚の写真アップロードと Firebase Storage 連携を Web/App 双方で実現。
+
+### Fixed
+- **Review Approval System**: ハイブリッド承認フローを導入。ログ紐付けがある投稿は即時公開、それ以外は管理者の承認後に公開。
+- **Verified Log Badge**: 潜水証明（ログ連携）があるレビューに専用バッジを表示し、情報の信頼性を可視化。
+- **Review Stats Filtering**: 承認済みレビューのみを統計集計対象とするように Cloud Functions を更新。
+- **App Review Page Stability**: モバイル版レビュー画面のスタイル崩れと TypeScript の型エラーを全面的に解消。
+- **User Log Count Accuracy**: レビュー投稿時に、ダミー値ではなく実際のダイブ本数（`logs.length`）が記録されるように修正。
+
+### Changed
+- **Feature Flag Standardization**:
+    - 全プラットフォーム（Web/App/Functions）でフィーチャーフラグの命名規則を `ENABLE_V{MAJOR}_{NAME}` (UPPER_SNAKE_CASE) に統一。
+    - `USE_VERTEX_AI_SEARCH` → `ENABLE_V2_VERTEX_SEARCH`
+    - `AI_CONCIERGE` → `ENABLE_V2_AI_CONCIERGE`
+    - `AI_AUTO_FILL` → `ENABLE_V2_AI_AUTO_FILL`
+    - `ADVANCED_LOCATION_PICKER` → `ENABLE_V2_LOCATION_PICKER`
+    - `ENABLE_ID_BASED_HIERARCHY` → `ENABLE_V2_ID_HIERARCHY`
+    - 命名規則の統一により、導入バージョンが明確になり、将来的な機能削除・クリーンアップの予見性を向上。
+
 ## [4.0.0] - 2025-12-27
 ### Added
 - **Offline First Support (App)**:
@@ -152,9 +178,11 @@
 - **Infrastructure & Reliability**:
     - **Ultra-Long Batch Support**: Cloud Run Job のタイムアウト制限を 24時間（最大で7日間）まで拡張。タイムアウトによる再起動リスクを排除。
     - **Environment Variables**:
+        | 項目 | 説明 | 既定値 |
+        | :--- | :--- | :--- |
         | `LOCATION` | 一般的なインフラ実行リージョン（例: `asia-northeast1`） | `asia-northeast1` |
         | `AI_AGENT_LOCATION` | **必須**。Gemini 2.0 Flash 及 Context Caching を利用するため `us-central1` を指定してください。 | `us-central1` |
-        | `USE_VERTEX_AI_SEARCH` | **Feature Flag**。`true` で Managed RAG (Vertex AI Search) を有効化します。 | `false` |
+        | `ENABLE_V2_VERTEX_SEARCH` | **Feature Flag**。`true` で Managed RAG (Vertex AI Search) を有効化します。(旧: `USE_VERTEX_AI_SEARCH`) | `false` |
         | `VERTEX_AI_DATA_STORE_ID` | Vertex AI Search のデータストア ID。コンシェルジュの検索対象を指定します。 | - |
     - **Standardized AI Location**: Gemini 2.0 Flash と Caching API の互換性を確保するため、AI 処理用リージョンを `us-central1` に標準化。
 

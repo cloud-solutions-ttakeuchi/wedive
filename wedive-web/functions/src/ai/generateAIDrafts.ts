@@ -76,7 +76,7 @@ export const generateSpotDraft = onCall({
   const cached = await getCachedGrounding(spotName, "spot");
   if (cached) return cached;
 
-  const useVertexSearch = process.env.USE_VERTEX_AI_SEARCH === "true";
+  const useVertexSearch = process.env.ENABLE_V2_VERTEX_SEARCH === "true" || process.env.USE_VERTEX_AI_SEARCH === "true";
   const dataStoreIds = process.env.VERTEX_AI_DRAFT_DATA_STORE_IDS;
   const projectId = process.env.GCLOUD_PROJECT;
 
@@ -192,7 +192,7 @@ export const generateCreatureDraft = onCall({
   const cached = await getCachedGrounding(creatureName, "creature");
   if (cached) return cached;
 
-  const useVertexSearch = process.env.USE_VERTEX_AI_SEARCH === "true";
+  const useVertexSearch = process.env.ENABLE_V2_VERTEX_SEARCH === "true" || process.env.USE_VERTEX_AI_SEARCH === "true";
   const dataStoreIds = process.env.VERTEX_AI_DRAFT_DATA_STORE_IDS;
   const projectId = process.env.GCLOUD_PROJECT;
 

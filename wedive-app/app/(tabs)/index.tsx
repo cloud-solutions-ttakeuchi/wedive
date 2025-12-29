@@ -9,6 +9,7 @@ import { useRouter } from 'expo-router';
 import { ImageWithFallback } from '../../src/components/ImageWithFallback';
 import { usePoints } from '../../src/hooks/usePoints';
 import { useCreatures } from '../../src/hooks/useCreatures';
+import { FEATURE_FLAGS } from '../../src/constants/features';
 
 const { width } = Dimensions.get('window');
 
@@ -63,20 +64,22 @@ export default function TabOneScreen() {
 
         <View style={styles.content}>
           {/* Hero Section */}
-          <View style={styles.heroSection}>
-            <View style={styles.aiBadge}>
-              <Sparkles size={12} color="#0ea5e9" />
-              <Text style={styles.aiBadgeText}>NEW AI FEATURE</Text>
+          {FEATURE_FLAGS.ENABLE_V2_AI_CONCIERGE && (
+            <View style={styles.heroSection}>
+              <View style={styles.aiBadge}>
+                <Sparkles size={12} color="#0ea5e9" />
+                <Text style={styles.aiBadgeText}>NEW AI FEATURE</Text>
+              </View>
+              <Text style={styles.heroTitle}>あなただけの{"\n"}<Text style={styles.heroHighlight}>コンシェルジュ</Text></Text>
+              <Text style={styles.heroDesc}>最高のダイビングプランをAIと一緒に作りましょう。</Text>
+              <TouchableOpacity
+                style={styles.heroBtn}
+                onPress={() => router.push('/ai')}
+              >
+                <Text style={styles.heroBtnText}>AIに相談する</Text>
+              </TouchableOpacity>
             </View>
-            <Text style={styles.heroTitle}>あなただけの{"\n"}<Text style={styles.heroHighlight}>コンシェルジュ</Text></Text>
-            <Text style={styles.heroDesc}>最高のダイビングプランをAIと一緒に作りましょう。</Text>
-            <TouchableOpacity
-              style={styles.heroBtn}
-              onPress={() => router.push('/ai')}
-            >
-              <Text style={styles.heroBtnText}>AIに相談する</Text>
-            </TouchableOpacity>
-          </View>
+          )}
 
           {/* Featured Spot */}
           <View style={styles.section}>

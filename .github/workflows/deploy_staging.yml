@@ -14,6 +14,10 @@ jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
     environment: staging
+    permissions:
+      checks: write
+      contents: read
+      pull-requests: write
     defaults:
       run:
         working-directory: wedive-web
@@ -44,7 +48,7 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_WEDIVE_APP_STG }}
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_WEDIVE_APP }}
       - name: Deploy Functions
         run: |
           # Copy index.html to functions folder so the Function can serve it
@@ -65,7 +69,7 @@ jobs:
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_WEDIVE_APP_STG }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_WEDIVE_APP }}'
           channelId: live
           projectId: ${{ vars.VITE_FIREBASE_PROJECT_ID }}
           entryPoint: wedive-web
@@ -80,7 +84,7 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_WEDIVE_APP_STG }}
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_WEDIVE_APP }}
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
       - name: Configure Docker for Artifact Registry

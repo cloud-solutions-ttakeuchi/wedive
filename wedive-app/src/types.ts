@@ -34,6 +34,7 @@ export interface Point {
   // Attributes
   level: 'Beginner' | 'Intermediate' | 'Advanced';
   maxDepth: number;
+  mainDepth?: { min: number; max: number };
   entryType: 'beach' | 'boat' | 'entry_easy';
   current: 'none' | 'weak' | 'strong' | 'drift';
 
@@ -63,6 +64,26 @@ export interface Point {
 
   // creatures: string[]; // Removed in favor of PointCreature relation
   bookmarkCount: number;
+
+  // Review & Potential Data (v6.0.0+)
+  officialStats?: {
+    visibility: [number, number]; // [min, max]
+    currents: string[];
+    difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+    radar: ReviewRadar;
+  };
+  actualStats?: {
+    avgRating: number;
+    avgVisibility: number;
+    reviewCount: number;
+    currentCondition?: {
+      weather: string;
+      wave: string;
+    };
+    seasonalRadar?: {
+      [month: number]: ReviewRadar;
+    };
+  };
 }
 
 export type DivingPoint = Point;
@@ -309,3 +330,57 @@ export interface EditProposal {
 
 export type CreatureProposal = Creature & EditProposal;
 export type PointProposal = Point & EditProposal;
+
+// --- Review Types (v6.0.0+) ---
+export interface ReviewRadar {
+  visibility: number;      // 透明度
+  satisfaction: number;    // 満足度
+  excite: number;          // エキサイト
+  comfort: number;         // 快適さ・余裕度
+  encounter: number;       // 生物遭遇率
+  topography: number;      // 地形満足度
+}
+
+export interface Review {
+  id: string;
+  pointId: string;
+  userId: string;
+  logId?: string;
+  userName: string;
+  userProfileImage?: string;
+  userLogsCount: number;
+  userOrgId?: string; // Self-declared organization ID at time of review
+  userRank?: string; // Self-declared rank ID at time of review
+
+  rating: number; // 1-5
+  comment: string;
+  images: string[];
+  date?: string; // Date of dive
+
+  condition: {
+    weather: 'sunny' | 'cloudy' | 'rainy' | 'stormy' | 'typhoon' | 'spring_bloom';
+    airTemp?: number;
+    waterTemp?: number;
+    wave: 'none' | 'low' | 'high';
+    wind?: string;
+  };
+
+  metrics: {
+    visibility: number; // m
+    flow: 'none' | 'weak' | 'strong' | 'drift';
+    difficulty: 'easy' | 'normal' | 'hard';
+    macroWideRatio: number; // 0 (Macro) to 100 (Wide)
+    terrainIntensity?: number; // 0 (Standard) to 100 (Terrain/Wreck)
+    depthAvg?: number;
+    depthMax?: number;
+  };
+
+  radar: ReviewRadar;
+  tags: string[];
+
+  status: 'pending' | 'approved' | 'rejected';
+  trustLevel: 'standard' | 'verified' | 'expert' | 'professional' | 'official';
+  helpfulCount: number;
+  helpfulBy: string[];
+  createdAt: string;
+}

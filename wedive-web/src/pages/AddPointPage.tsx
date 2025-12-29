@@ -7,6 +7,7 @@ import type { Point } from '../types';
 import { auth } from '../lib/firebase';
 import { MapPickerModal } from '../components/MapPickerModal';
 import { HierarchicalAreaSelector } from '../components/HierarchicalAreaSelector';
+import { FEATURE_FLAGS } from '../config/features';
 
 export const AddPointPage = () => {
   const navigate = useNavigate();
@@ -285,7 +286,7 @@ export const AddPointPage = () => {
             <div>
               <div className="flex justify-between items-center mb-1.5">
                 <label className="block text-sm font-bold text-gray-700">ポイント名</label>
-                {(currentUser?.role === 'admin' || currentUser?.subscription?.status === 'active') && (
+                {(FEATURE_FLAGS.ENABLE_V2_AI_AUTO_FILL || currentUser?.role === 'admin') && (
                   <button
                     type="button"
                     onClick={handleAIAutoFill}

@@ -1,11 +1,12 @@
 import { Link, useSearchParams } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { ChevronRight, MapPin, Droplets, Anchor, Wind, Mountain, ArrowRight, Bookmark, Image as ImageIcon } from 'lucide-react';
+import { ChevronRight, MapPin, Droplets, Anchor, Wind, Mountain, ArrowRight, Bookmark, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import clsx from 'clsx';
 import type { Region, Zone, Area } from '../types';
+import { FEATURE_FLAGS } from '../config/features';
 
 export const PointSearchPage = () => {
-  const { points: allPoints, regions: allRegions, zones: allZones, areas: allAreas, currentUser, toggleBookmarkPoint } = useApp();
+  const { points: allPoints, regions: allRegions, zones: allZones, areas: allAreas, currentUser, logs, toggleBookmarkPoint } = useApp();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Derived Selection State from URL
@@ -213,8 +214,56 @@ export const PointSearchPage = () => {
                           <ImageIcon size={32} />
                         </div>
                       )}
-                      <div className="absolute top-2 left-2 bg-black/50 backdrop-blur-sm text-white text-xs font-bold px-2 py-1 rounded">
-                        {point.level}
+                      <div className="absolute top-2 left-2 flex flex-col gap-1">
+                        <div className="bg-black/50 backdrop-blur-sm text-white text-[10px] font-black px-2 py-1 rounded uppercase tracking-tighter">
+                          {point.level}
+                        </div>
+                        {FEATURE_FLAGS.ENABLE_V6_REVIEWS && (
+                          <>
+                            {point.actualStats && point.actualStats.reviewCount > 0 && point.officialStats && (
+                              <div className={clsx(
+                                "backdrop-blur-md text-white text-[10px] font-black px-2 py-1 rounded shadow-lg border",
+                                point.actualStats.avgVisibility >= point.officialStats.visibility[1] * 0.8 ? "bg-emerald-500/80 border-emerald-400" :
+                                  point.actualStats.avgVisibility >= point.officialStats.visibility[0] ? "bg-sky-500/80 border-sky-400" : "bg-rose-500/80 border-rose-400"
+                              )}>
+                                {Math.round((point.actualStats.avgVisibility / ((point.officialStats.visibility[1] + point.officialStats.visibility[0]) / 2)) * 100) - 100}% Pot.
+                              </div>
+                            )}
+                            {/* Personalized Alert (v6.0.0) */}
+                            {currentUser.role !== 'admin' && point.actualStats && point.actualStats.reviewCount > 0 && (
+                              <div className="flex flex-col gap-1">
+                                {(() => {
+                                  const userLogCount = logs.length;
+                                  const isBeginner = userLogCount < 30;
+                                  const isHardNow = (point.actualStats as any).recentHardDifficulty;
+
+                                  if (isHardNow) {
+                                    if (point.level === 'Advanced' && userLogCount < 50) {
+                                      return (
+                                        <div className="bg-rose-600 text-white text-[8px] font-black px-2 py-1 rounded flex items-center gap-1 animate-bounce shadow-lg">
+                                          <AlertCircle size={10} /> スキルに対し難易度が急上昇中
+                                        </div>
+                                      );
+                                    }
+                                    if (isBeginner) {
+                                      return (
+                                        <div className="bg-rose-500 text-white text-[8px] font-black px-2 py-1 rounded flex items-center gap-1 animate-pulse">
+                                          <AlertCircle size={10} /> 現在の海況は初心者には危険です
+                                        </div>
+                                      );
+                                    }
+                                    return (
+                                      <div className="bg-amber-500 text-white text-[8px] font-black px-2 py-1 rounded flex items-center gap-1 border border-amber-400">
+                                        <AlertCircle size={10} /> 海況悪化：注意が必要です
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                })()}
+                              </div>
+                            )}
+                          </>
+                        )}
                       </div>
                     </div>
 

@@ -67,6 +67,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     plugins: [
       "expo-router",
       "expo-image-picker",
+      "@react-native-community/datetimepicker",
       [
         "@react-native-google-signin/google-signin",
         {

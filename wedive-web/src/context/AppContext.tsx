@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react';
-import type { User, Log, Rarity, Creature, Point, PointCreature } from '../types';
+import type { User, Log, Rarity, Creature, Point, PointCreature, Review } from '../types';
 import { INITIAL_DATA } from '../data/initialData';
 import { auth, googleProvider, db as firestore, functions } from '../lib/firebase';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
@@ -60,16 +60,18 @@ interface AppContextType {
   areas: typeof INITIAL_DATA.areas;
   addPointCreature: (pointId: string, creatureId: string, localRarity: Rarity) => Promise<void>;
   removePointCreature: (pointId: string, creatureId: string) => Promise<void>;
-  addCreatureProposal: (creatureData: Omit<Creature, 'id' | 'status' | 'submitterId'>) => Promise<void>;
-  addPointProposal: (pointData: Omit<Point, 'id' | 'status' | 'submitterId' | 'createdAt' | 'areaId' | 'zoneId' | 'regionId' | 'bookmarkCount'>) => Promise<void>;
   approveProposal: (type: 'creature' | 'point', id: string, data: any) => Promise<void>;
   rejectProposal: (type: 'creature' | 'point', id: string) => Promise<void>;
+  addCreatureProposal: (data: any) => Promise<void>;
+  addPointProposal: (data: any) => Promise<void>;
+  addReview: (reviewData: Omit<Review, 'id' | 'userId' | 'userName' | 'userProfileImage' | 'trustLevel' | 'createdAt' | 'status' | 'helpfulCount' | 'helpfulBy'>) => Promise<void>;
 
   // Expose data directly
   creatures: Creature[];
   points: Point[];
   pointCreatures: PointCreature[];
   logs: Log[];
+  reviews: Review[];
   recentLogs: Log[];
   proposalCreatures: (Creature & { proposalType?: string, diffData?: any, targetId?: string, reason?: string })[];
   proposalPoints: (Point & { proposalType?: string, diffData?: any, targetId?: string, reason?: string })[];
@@ -108,6 +110,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [proposalCreatures, setProposalCreatures] = useState<Creature[]>([]);
   const [proposalPoints, setProposalPoints] = useState<Point[]>([]);
   const [allLogs, setAllLogs] = useState<Log[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [recentLogs, setRecentLogs] = useState<Log[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
 
@@ -159,6 +162,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setPointCreatures(data);
     });
 
+    const unsubReviews = onSnapshot(query(
+      collection(firestore, 'reviews'),
+      where('status', '==', 'approved'),
+      orderBy('createdAt', 'desc'),
+      limit(100)
+    ), (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Review));
+      setReviews(data);
+    });
+
     // Global Recent Public Logs
     let unsubPublicLogs: () => void = () => { };
     try {
@@ -169,7 +182,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     } catch (e) { console.error(e); }
 
     return () => {
-      unsubCreatures(); unsubPoints(); unsubPointCreatures(); unsubPublicLogs();
+      unsubCreatures(); unsubPoints(); unsubPointCreatures(); unsubReviews(); unsubPublicLogs();
     };
   }, []);
 
@@ -473,13 +486,51 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     await updateDoc(doc(firestore, type === 'creature' ? 'creature_proposals' : 'point_proposals', id), { status: 'rejected' });
   };
 
+  const addReview = async (reviewData: Omit<Review, 'id' | 'userId' | 'userName' | 'userProfileImage' | 'trustLevel' | 'createdAt' | 'status' | 'helpfulCount' | 'helpfulBy'>) => {
+    if (!isAuthenticated) return;
+    const newReviewId = `rv${Date.now()}`;
+
+    // Determine Trust Level
+    let trustLevel: Review['trustLevel'] = 'standard';
+    if (currentUser.role === 'admin' || currentUser.role === 'moderator') {
+      trustLevel = 'official';
+    } else if (reviewData.logId) {
+      trustLevel = 'verified';
+    } else if (allLogs.length >= 100) {
+      trustLevel = 'expert';
+    }
+
+    // Determine Approval Status (Only Official is auto-approved to prevent negative campaign)
+    const isApproved = trustLevel === 'official';
+
+    const newReview: Review = {
+      ...reviewData,
+      id: newReviewId,
+      userId: currentUser.id,
+      userName: currentUser.name,
+      userProfileImage: currentUser.profileImage,
+      userLogsCount: reviewData.userLogsCount || allLogs.length,
+      status: isApproved ? 'approved' : 'pending',
+      trustLevel,
+      helpfulCount: 0,
+      helpfulBy: [],
+      createdAt: new Date().toISOString()
+    };
+
+    try {
+      await setDoc(doc(firestore, 'reviews', newReviewId), sanitizePayload(newReview));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const updateUserRole = async (uid: string, newRole: 'user' | 'moderator' | 'admin') => {
     if (currentUser.role === 'admin') await updateDoc(doc(firestore, 'users', uid), { role: newRole });
   };
 
   const value = {
     currentUser, isAuthenticated, isLoading, login, logout, calculateRarity, addLog, addCreature, addPoint, addPointCreature, removePointCreature, updateLog, updateCreature, updatePoint, deleteLog, deleteLogs, updateLogs, updateUser, toggleLikeLog, toggleFavorite, toggleWanted, toggleBookmarkPoint,
-    creatures, points, pointCreatures, logs: allLogs, recentLogs, proposalCreatures, proposalPoints, regions, zones, areas, addCreatureProposal, addPointProposal, approveProposal, rejectProposal, allUsers, updateUserRole, deleteAccount
+    creatures, points, pointCreatures, logs: allLogs, reviews, recentLogs, proposalCreatures, proposalPoints, regions, zones, areas, addCreatureProposal, addPointProposal, approveProposal, rejectProposal, allUsers, updateUserRole, deleteAccount, addReview
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

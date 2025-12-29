@@ -22,7 +22,7 @@ export const getConciergeResponse = onCall({
   if (!query) throw new Error("missing-query");
 
   // --- Feature Flags and Configuration ---
-  const useVertexSearch = process.env.USE_VERTEX_AI_SEARCH === "true";
+  const useVertexSearch = process.env.ENABLE_V2_VERTEX_SEARCH === "true" || process.env.USE_VERTEX_AI_SEARCH === "true";
   const dataStoreIds = process.env.VERTEX_AI_CONCIERGE_DATA_STORE_IDS;
   const projectId = process.env.GCLOUD_PROJECT;
 

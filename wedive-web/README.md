@@ -53,7 +53,7 @@ The following variables can be set in GitHub Actions Variables or Firebase Confi
 | `LOG_LEVEL` | アプリ全体のログ出力レベル制御。`debug` に設定すると、Vertex AI とのやり取りに関する詳細なログを出力します。 | `info` |
 | `LOCATION` | 一般的なインフラ実行リージョン（例: `asia-northeast1`） | `asia-northeast1` |
 | `AI_AGENT_LOCATION` | **必須**。Gemini 2.0 Flash 及び Context Caching を利用するため `us-central1` を指定してください。 | `us-central1` |
-| `USE_VERTEX_AI_SEARCH` | **Feature Flag**。`true` で Managed RAG (Vertex AI Search) を有効化します。 | `false` |
+| `ENABLE_V2_VERTEX_SEARCH` | **Feature Flag**。`true` で Managed RAG (Vertex AI Search) を有効化します。 (旧: `USE_VERTEX_AI_SEARCH`) | `false` |
 | `VERTEX_AI_CONCIERGE_DATA_STORE_IDS` | **AI コンシェルジュ専用**。参照するデータストア ID（複数指定はカンマ区切り）。WeDive マスタ、ガイドブックPDF等を指定します。 | - |
 | `VERTEX_AI_DRAFT_DATA_STORE_IDS` | **AI 自動登録・検証専用**。参照するデータストア ID（複数指定はカンマ区切り）。生物図鑑、公式公報、地点マスタ等を指定します。 | - |
 
@@ -123,9 +123,43 @@ npm install
 npm run build
 ```
 
+## CI/CD Configuration (GitHub Actions Environments)
+
+本プロジェクトでは GitHub Actions の Environment 機能を使用しています。
+`deploy_develop.yml` (Development環境) を動作させるためには、GitHub Repository Settings > Environments にて `development` Environment を作成し、以下の値を設定してください。
+
+### Environment Secrets
+| Name | Value |
+| :--- | :--- |
+| `FIREBASE_SERVICE_ACCOUNT_WEDIVE_APP` | 各環境(`dive-dex-app-dev`等)の Service Account Key (JSON全文) |
+| `BASIC_AUTH_PASS` | Basic認証用パスワード (任意) |
+
+### Environment Variables
+Environment Variables に登録する際は、接尾辞(`_DEV`等)は不要です。環境ごとに適切な値を設定してください。
+
+- `VITE_FIREBASE_API_KEY`
+- `VITE_FIREBASE_AUTH_DOMAIN`
+- `VITE_FIREBASE_PROJECT_ID` : (例: `dive-dex-app-dev`)
+- `VITE_FIREBASE_STORAGE_BUCKET`
+- `VITE_FIREBASE_MESSAGING_SENDER_ID`
+- `VITE_FIREBASE_APP_ID`
+- `VITE_FIREBASE_MEASUREMENT_ID`
+- `VERTEX_AI_CONCIERGE_DATA_STORE_IDS`
+- `VERTEX_AI_DRAFT_DATA_STORE_IDS`
+- `LOG_LEVEL` : (例: `debug`)
+
+※ Repository Secrets/Variables ではなく、**Environment** Secrets/Variables に設定することに注意してください。
+※ `VITE_GOOGLE_MAPS_API_KEY` や `BASIC_AUTH_USER` など、全環境共通の値は Repository Variables に設定しても構いません。
+
 ## Deployment (Development Environment)
 
 開発環境（`dive-dex-app-dev` プロジェクト）へのデプロイ手順です。本番リリースの前の動作確認に使用します。
+
+**Autopilot (推奨)**:
+GitHub で Pull Request を作成・更新すると、GitHub Actions (`deploy_develop.yml`) により自動的に開発環境へデプロイされます。通常はこのフローを使用してください。
+
+**Manual Deployment (手動)**:
+急ぎの確認やローカルからの直接デプロイが必要な場合は、以下の手順に従ってください。
 
 ### 1. プロジェクトの切り替え
 ```bash

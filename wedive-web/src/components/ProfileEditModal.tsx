@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Camera, X, Star, Plus, Trash2, AlertTriangle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { CERTIFICATION_MASTER } from '../constants/masterData';
+import { CERTIFICATIONS } from '../constants/masterData';
 import clsx from 'clsx';
 import { ImageWithFallback } from './common/ImageWithFallback';
 import { HierarchicalPointSelector } from './HierarchicalPointSelector';
@@ -20,9 +20,9 @@ export const ProfileEditModal = ({ isOpen, onClose }: Props) => {
   // Basic Info State
   const [name, setName] = useState(currentUser.name);
   const [profileImage, setProfileImage] = useState<string | undefined>(currentUser.profileImage);
-  const [rankId, setRankId] = useState(currentUser.certification?.rankId || '');
+  const [rankId, setRankId] = useState(currentUser.certification?.rankId || 'entry');
   const [certDate, setCertDate] = useState(currentUser.certification?.date || '');
-  const [orgId, setOrgId] = useState(currentUser.certification?.orgId || CERTIFICATION_MASTER.id);
+  const [orgId, setOrgId] = useState(currentUser.certification?.orgId || 'padi');
 
   // Favorites State
   const [favPoints, setFavPoints] = useState<{ id: string; isPrimary: boolean }[]>(currentUser.favorites?.points || []);
@@ -41,9 +41,9 @@ export const ProfileEditModal = ({ isOpen, onClose }: Props) => {
       // eslint-disable-next-line
       setName(currentUser.name);
       setProfileImage(currentUser.profileImage);
-      setRankId(currentUser.certification?.rankId || '');
+      setRankId(currentUser.certification?.rankId || 'entry');
       setCertDate(currentUser.certification?.date || '');
-      setOrgId(currentUser.certification?.orgId || CERTIFICATION_MASTER.id);
+      setOrgId(currentUser.certification?.orgId || 'padi');
 
       setFavPoints(currentUser.favorites?.points || []);
       setFavShops(currentUser.favorites?.shops || []);
@@ -213,7 +213,24 @@ export const ProfileEditModal = ({ isOpen, onClose }: Props) => {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">指導団体</label>
+                    <select
+                      value={orgId}
+                      onChange={(e) => {
+                        setOrgId(e.target.value);
+                        // Reset rank to 'entry' or similar when org changes
+                        const firstRank = CERTIFICATIONS.find(o => o.id === e.target.value)?.ranks[0]?.id;
+                        if (firstRank) setRankId(firstRank);
+                      }}
+                      className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-ocean outline-none"
+                    >
+                      {CERTIFICATIONS.map(org => (
+                        <option key={org.id} value={org.id}>{org.name}</option>
+                      ))}
+                    </select>
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">認定ランク</label>
                     <select
@@ -221,21 +238,20 @@ export const ProfileEditModal = ({ isOpen, onClose }: Props) => {
                       onChange={(e) => setRankId(e.target.value)}
                       className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-ocean outline-none"
                     >
-                      <option value="">選択してください</option>
-                      {CERTIFICATION_MASTER.ranks.map(rank => (
+                      {CERTIFICATIONS.find(o => o.id === orgId)?.ranks.map(rank => (
                         <option key={rank.id} value={rank.id}>{rank.name}</option>
                       ))}
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">認定日</label>
-                    <input
-                      type="date"
-                      value={certDate}
-                      onChange={(e) => setCertDate(e.target.value)}
-                      className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-ocean outline-none"
-                    />
-                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">認定日</label>
+                  <input
+                    type="date"
+                    value={certDate}
+                    onChange={(e) => setCertDate(e.target.value)}
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-ocean outline-none"
+                  />
                 </div>
               </div>
             )}
@@ -510,7 +526,7 @@ export const ProfileEditModal = ({ isOpen, onClose }: Props) => {
             保存する
           </button>
         </div>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 };

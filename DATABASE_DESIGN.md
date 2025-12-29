@@ -21,27 +21,53 @@
 
 ---
 
-## 2. エンティティ関連図 (ER Diagram)
+---
+
+## 2. エンティティ関連図 (Database Structure)
 
 ```mermaid
 erDiagram
-    REGION ||--o{ ZONE : "contains"
-    REGION ||--o{ AREA : "contains (direct link)"
-    REGION ||--o{ POINT : "contains (direct link)"
-    ZONE ||--o{ AREA : "contains"
-    ZONE ||--o{ POINT : "contains (direct link)"
-    AREA ||--o{ POINT : "contains"
+    %% --- Geographical Hierarchy ---
+    REGION ||--o{ ZONE : "Ref ID (zones.regionId)"
+    ZONE ||--o{ AREA : "Ref ID (areas.zoneId)"
+    AREA ||--o{ POINT : "Ref ID (points.areaId)"
+    REGION ||--o{ POINT : "Ref ID (points.regionId / Denormalized)"
     
-    POINT ||--o{ POINT_CREATURE : "has sightings"
-    CREATURE ||--o{ POINT_CREATURE : "seen at"
+    %% --- Core Entities & User Data ---
+    USER ||--o{ LOG : "Sub-collection (users/{uid}/logs)"
+    USER ||--o{ REVIEW : "Ref ID (reviews.userId)"
+    USER ||--o{ CREATURE : "Ref ID List (favoriteCreatureIds)"
+    USER ||--o{ POINT : "Ref ID List (bookmarkedPointIds)"
     
-    USER ||--o{ LOG : "records"
-    POINT ||--o{ LOG : "is location for"
-    LOG }o--o{ CREATURE : "sighted in"
+    POINT ||--o{ REVIEW : "Ref ID (reviews.pointId)"
+    POINT ||--o{ POINT_CREATURE : "Root Mapping (ref_id: pointId)"
+    POINT ||--o| ACTUAL_STATS : "Embedded (actualStats)"
     
-    USER ||--o{ CREATURE_PROPOSAL : "submits"
-    USER ||--o{ POINT_PROPOSAL : "submits"
+    CREATURE ||--o{ POINT_CREATURE : "Root Mapping (ref_id: creatureId)"
+    
+    LOG ||--o| POINT : "Ref ID (location.pointId)"
+    LOG ||--o{ CREATURE : "Ref ID List (sightedCreatures)"
+    LOG ||--o| REVIEW : "Ref ID (reviewId / Inverse: logId)"
+
+    %% --- Proposals (Admin) ---
+    USER ||--o{ CREATURE_PROPOSAL : "Ref ID (submitterId)"
+    USER ||--o{ POINT_PROPOSAL : "Ref ID (submitterId)"
+
+    %% Legend
+    %% Sub-collection: Physical nesting in Firestore
+    %% Ref ID: Single field containing target Document ID
+    %% Ref ID List: Array field containing multiple target IDs
+    %% Embedded: Nested Map object inside the document
+    %% Denormalized: Data stored duplicated for query performance
 ```
+
+### 関連用語の凡例 (Legend)
+- **Sub-collection**: Firestore の物理的な階層構造。親のパス (`/users/uid`) の下に配置される。
+- **Ref ID**: 他ドキュメントの ID を単一の `string` フィールドとして保持。
+- **Ref ID List**: 他ドキュメントの ID を `string[]` (配列) 形式で保持。
+- **Root Mapping**: 多対多を実現するため、Root に配置した中間テーブル的役割のコレクション。
+- **Embedded**: 正規化せず、ドキュメント内に直接持っている属性情報（Map/独自オブジェクト）。
+- **Denormalized**: 結合（Join）を避けるため、正規化を崩して重複して持たせているデータ。
 
 ---
 
@@ -69,6 +95,7 @@ erDiagram
 | `area` | string | エリア名 (冗長化) |
 | `level` | string | Beginner, Intermediate, Advanced |
 | `maxDepth` | number | 最大水深 (m) |
+| `mainDepth` | map | 推奨・みどころ水深域: `{min, max}` |
 | `entryType` | string | beach, boat, entry_easy |
 | `current` | string | none, weak, strong, drift |
 | `topography` | array(string) | 地形タグ (sand, rock, wall, cave, muck) |
@@ -84,6 +111,8 @@ erDiagram
 | `imageUrl` | string | メイン画像URL |
 | `imageKeyword` | string | 画像検索用キーワード |
 | `bookmarkCount` | number | ブックマーク数 |
+| `officialStats`| map | `{visibility: [min, max], currents: string[], difficulty: string, radar: {encounter, excite, macro, comfort, visibility}}` |
+| `actualStats` | map | 集計データ: `{avgRating, avgVisibility, currentCondition: {weather, wave}, seasonalRadar: {month: radar}}` |
 
 ### 3.3 `creatures` (生物マスタ)
 | フィールド | 型 | 説明 |
@@ -180,6 +209,36 @@ WeDive では、スケーラビリティとクエリ効率を考慮し、ユー�
 
 ### 3.8 `ai_grounding_cache` (AI事実確認キャッシュ)
 AIによる再構築結果や検索結果を保存し、費用の抑制と高速化を図る。
+
+### 3.9 `reviews` (ポイントレビュー)
+ポイントに対するユーザーの生の声と環境実測値を管理します。
+| フィールド | 型 | 説明 |
+| :--- | :--- | :--- |
+| `id` | string | `rv` + タイムスタンプ |
+| `pointId` | string | 対象ポイントID |
+| `userId` | string | 投稿者ID |
+| `logId` | string | 関連ログID (任意) |
+| `rating` | number | 総合満足度 (1-5) |
+| `condition` | map | `{weather, wind, wave, airTemp, waterTemp}` |
+| `metrics` | map | `{visibility, flow, difficulty, macroWideRatio(0-100)}` |
+| `radar` | map | `{encounter, excite, macro, comfort, visibility}` (1-5スコア) |
+| `tags` | array(string)| 遭遇生物、地形、見どころタグ |
+| `comment` | string | 感想コメント |
+| `images` | array(string)| 写真URLリスト |
+| `status` | string | pending, approved, rejected |
+| `trustLevel` | string | standard, verified, expert, professional, official |
+| `helpfulCount`| number | 「参考になった」の数 |
+| `helpfulBy` | array(string)| 「参考になった」を押したユーザーのIDリスト |
+| `createdAt` | string | 投稿日時 |
+
+#### 信頼性レベル (trustLevel) 定義
+| レベル | 定義 | 表示バッジ | 統計への重み (未実装) | 判定条件 |
+| :--- | :--- | :--- | :--- | :--- |
+| `official` | 運営・モデレーター | 🛡️ Official | 最大 (x2.0) | `user.role` が `admin` または `moderator` |
+| `professional` | プロダイバー | ⚓ Professional | 特大 (x1.5) | インストラクター等の資格保有者 |
+| `verified` | 潜水証明あり | ✅ Verified Log | 大 (x1.2) | `logId` が紐付けられている投稿 |
+| `expert` | ベテラン | 🌟 Expert | 中 (x1.1) | `userLogsCount` が 100本以上 |
+| `standard` | 一般投稿 | なし | 通常 (x1.0) | 上記以外 |
 
 ---
 

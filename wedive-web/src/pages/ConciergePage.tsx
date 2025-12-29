@@ -2,8 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, Send, Bot, User, Loader2, MapPin, Anchor, Sparkles } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { auth, remoteConfig } from '../lib/firebase';
-import { getBoolean } from 'firebase/remote-config';
+import { auth } from '../lib/firebase';
+import { FEATURE_FLAGS } from '../config/features';
 import clsx from 'clsx';
 
 interface Message {
@@ -119,10 +119,8 @@ export const ConciergePage = () => {
     );
   }
 
-  const isAiConciergeEnabled = getBoolean(remoteConfig, 'enable_ai_concierge');
-
   // Feature Flag: Admin Only (if not explicitly enabled for all)
-  if (!isAiConciergeEnabled && !isAdmin) {
+  if (!FEATURE_FLAGS.ENABLE_V2_AI_CONCIERGE && !isAdmin) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
         <div className="bg-white rounded-3xl p-10 shadow-xl text-center max-w-md w-full border border-gray-100 animate-fade-in">

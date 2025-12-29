@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { ChevronDown, MapPin, Search } from 'lucide-react';
 import clsx from 'clsx';

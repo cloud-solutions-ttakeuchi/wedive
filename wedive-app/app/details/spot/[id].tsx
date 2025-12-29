@@ -11,6 +11,7 @@ import { useAuth } from '../../../src/context/AuthContext';
 import { CreatureSelectorModal } from '../../../src/components/CreatureSelectorModal';
 import { RaritySelectorModal } from '../../../src/components/RaritySelectorModal';
 import { Alert } from 'react-native';
+import { FEATURE_FLAGS } from '../../../src/constants/features';
 
 import { ImageWithFallback } from '../../../src/components/ImageWithFallback';
 
@@ -392,9 +393,12 @@ export default function SpotDetailScreen() {
       <View style={[styles.footerAction, { paddingBottom: Math.max(insets.bottom, 12) }]}>
         <TouchableOpacity
           style={styles.primaryBtn}
-          onPress={() => router.push({ pathname: '/log/add', params: { pointId: point.id, pointName: point.name } })}
+          onPress={() => router.push({ pathname: '/details/spot/review' as any, params: { pointId: point.id } })}
         >
-          <Text style={styles.primaryBtnText}>このポイントでログを書く</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <Star size={22} color="#fff" fill="#fff" />
+            <Text style={styles.primaryBtnText}>レビューを書く</Text>
+          </View>
         </TouchableOpacity>
       </View>
 
@@ -807,6 +811,42 @@ const styles = StyleSheet.create({
   pendingBadgeTextMini: {
     color: '#fff',
     fontSize: 8,
+    fontWeight: '900',
+  },
+  footerRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  logBtn: {
+    flex: 1.2,
+    backgroundColor: '#0ea5e9',
+    height: 56,
+    borderRadius: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    shadowColor: '#0ea5e9',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  reviewBtn: {
+    flex: 1,
+    backgroundColor: '#fff',
+    height: 56,
+    borderRadius: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderWidth: 1.5,
+    borderColor: '#0ea5e9',
+  },
+  reviewBtnText: {
+    color: '#0ea5e9',
+    fontSize: 15,
     fontWeight: '900',
   },
 });

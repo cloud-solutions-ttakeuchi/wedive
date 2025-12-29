@@ -7,8 +7,7 @@ import { ChevronRight, ChevronLeft, Star, Heart, Bookmark, Calendar, MapPin, Bot
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 import type { Log } from '../types';
-import { getBoolean } from 'firebase/remote-config';
-import { remoteConfig } from '../lib/firebase';
+import { FEATURE_FLAGS } from '../config/features';
 
 export const Home = () => {
   const { logs, points, creatures, areas, currentUser, toggleFavorite, recentLogs } = useApp();
@@ -52,7 +51,8 @@ export const Home = () => {
   return (
     <div className="pb-24 space-y-16">
       {/* 0. AI Concierge Promo */}
-      {(getBoolean(remoteConfig, 'enable_ai_concierge') || currentUser?.role === 'admin') && (
+      {(FEATURE_FLAGS.ENABLE_V2_AI_CONCIERGE || currentUser?.role === 'admin') && (
+
         <section className="max-w-[1280px] mx-auto px-4 pt-12 animate-fade-in">
           <Link to="/concierge" className="block group">
             <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-r from-ocean-600 to-indigo-600 p-[1px]">

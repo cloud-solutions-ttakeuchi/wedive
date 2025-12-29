@@ -8,6 +8,7 @@ import {
 import { getAnalytics, isSupported } from "firebase/analytics";
 import { getRemoteConfig, fetchAndActivate } from "firebase/remote-config";
 import { getFunctions } from "firebase/functions";
+import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -27,18 +28,21 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 export const functions = getFunctions(app, "asia-northeast1");
+export const storage = getStorage(app);
 
 // ---------------------------------------------------------
 // 2. Emulator Connection (MUST BE DONE BEFORE INITIALIZING FIRESTORE)
 // ---------------------------------------------------------
 if (import.meta.env.DEV) {
   const { connectFunctionsEmulator } = await import("firebase/functions");
+  const { connectStorageEmulator } = await import("firebase/storage");
 
   // @ts-ignore
   if (!window._firebaseEmulatorsStarted) {
     console.log("Connecting to Firebase Emulators...");
     // connectAuthEmulator(auth, "http://localhost:9099"); // Keep cloud auth for easier Google Login if preferred
     connectFunctionsEmulator(functions, "localhost", 5001);
+    connectStorageEmulator(storage, "localhost", 9199);
     // @ts-ignore
     window._firebaseEmulatorsStarted = true;
   }
