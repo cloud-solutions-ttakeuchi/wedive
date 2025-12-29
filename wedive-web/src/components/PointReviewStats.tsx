@@ -371,11 +371,12 @@ const ComparisonBar = ({ label, official, actual, unit, color }: { label: string
 };
 
 const ReviewCard = ({ review }: { review: Review }) => {
-  const { currentUser, deleteReview } = useApp();
+  const { currentUser, deleteReview, isAuthenticated } = useApp();
   const navigate = useNavigate();
-  const isAdmin = currentUser.role === 'admin' || currentUser.role === 'moderator';
-  const isOwner = review.userId === currentUser.id;
-  const canEdit = isAdmin || isOwner;
+
+  const isAdmin = isAuthenticated && (currentUser.role === 'admin' || currentUser.role === 'moderator');
+  const isOwner = isAuthenticated && currentUser.id && review.userId && currentUser.id !== 'guest' && review.userId === currentUser.id;
+  const canModify = isAdmin || isOwner;
 
   const handleEdit = () => {
     navigate(`/edit-review/${review.id}`);
@@ -481,7 +482,7 @@ const ReviewCard = ({ review }: { review: Review }) => {
               )}
             </div>
             <div className="flex items-center gap-3">
-              {canEdit && (
+              {canModify && (
                 <div className="flex gap-1">
                   <button
                     onClick={handleEdit}
