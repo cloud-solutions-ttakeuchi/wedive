@@ -1,8 +1,9 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { storage } from '../lib/firebase';
+import { storage, db as firestore } from '../lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { doc, getDoc } from 'firebase/firestore';
 import ReactDatePicker, { registerLocale } from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { ja } from 'date-fns/locale/ja';
@@ -36,8 +37,6 @@ export const AddReviewPage = () => {
   const { points, logs, currentUser, addReview, updateReview, isAuthenticated, updateUser, reviews, proposalReviews } = useApp();
   const isEdit = !!reviewId;
   const existingReview = isEdit ? (reviews.find(r => r.id === reviewId) || proposalReviews.find(r => r.id === reviewId)) : null;
-
-  const point = points.find(p => p.id === (isEdit ? existingReview?.pointId : pointId));
 
   const [step, setStep] = useState(1);
   const [uploading, setUploading] = useState(false);
@@ -82,8 +81,16 @@ export const AddReviewPage = () => {
     userLogsCount: logs.length || 0,
   });
 
+  // Derive point from available data (URL params or loaded review data)
+  const point = useMemo(() => {
+    const pid = isEdit ? (existingReview?.pointId || formData.pointId) : pointId;
+    if (!pid) return null;
+    return points.find(p => p.id === pid);
+  }, [isEdit, existingReview?.pointId, formData.pointId, pointId, points]);
+
   // Ensure existingReview is loaded (including direct fetch if not in context)
   useEffect(() => {
+    let active = true;
     if (isEdit && reviewId && !isDataLoaded) {
       const found = reviews.find(r => r.id === reviewId) || proposalReviews.find(r => r.id === reviewId);
       if (found) {
@@ -91,10 +98,27 @@ export const AddReviewPage = () => {
         setIsDataLoaded(true);
         setLoadingReview(false);
       } else {
-        // Fallback: If not in context yet, it might be loading or in another collection
-        setLoadingReview(true);
+        // Fallback: Fetch directly from Firestore
+        const fetchReview = async () => {
+          setLoadingReview(true);
+          try {
+            const docRef = doc(firestore, 'reviews', reviewId);
+            const docSnap = await getDoc(docRef);
+            if (active && docSnap.exists()) {
+              const data = { ...docSnap.data(), id: docSnap.id } as Review;
+              setFormData({ ...data, pointId: data.pointId });
+              setIsDataLoaded(true);
+            }
+          } catch (e) {
+            console.error("Failed to fetch review directly:", e);
+          } finally {
+            if (active) setLoadingReview(false);
+          }
+        };
+        fetchReview();
       }
     }
+    return () => { active = false; };
   }, [isEdit, reviewId, reviews, proposalReviews, isDataLoaded]);
 
   // Pre-fill from log if available (only on create)
