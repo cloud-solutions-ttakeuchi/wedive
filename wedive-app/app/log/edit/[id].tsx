@@ -48,7 +48,7 @@ import { useAuth } from '../../../src/context/AuthContext';
 import { db, storage } from '../../../src/firebase';
 import { LogService } from '../../../src/services/LogService';
 import { DiveLog, Point } from '../../../src/types';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { FEATURE_FLAGS } from '../../../src/constants/features';
 import { PointSelectorModal } from '../../../src/components/PointSelectorModal';
@@ -73,6 +73,7 @@ export default function EditLogScreen() {
   const [spotSearchTerm, setSpotSearchTerm] = useState('');
   const [creatureSearchTerm, setCreatureSearchTerm] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('');
+  const [originalLog, setOriginalLog] = useState<DiveLog | null>(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -153,9 +154,12 @@ export default function EditLogScreen() {
 
       const snap = await Promise.race([getDoc(logRef), timeoutPromise]) as any;
 
+      // ... inside fetchLogData
       if (snap && snap.exists()) {
         const data = snap.data() as DiveLog;
+        setOriginalLog(data);
         setFormData({
+
           title: data.title || '',
           date: data.date || '',
           diveNumber: data.diveNumber?.toString() || '',
@@ -371,6 +375,19 @@ export default function EditLogScreen() {
         };
 
         await LogService.updateLog(user.id, id as string, logData);
+
+        // [New] If pointId changed and log has a review, update the review's pointId as well
+        if (originalLog && originalLog.reviewId && originalLog.location.pointId !== formData.pointId) {
+          console.log(`[EditLog] Point changed from ${originalLog.location.pointId} to ${formData.pointId}. Updating linked review ${originalLog.reviewId}...`);
+          try {
+            const reviewRef = doc(db, 'reviews', originalLog.reviewId);
+            await updateDoc(reviewRef, { pointId: formData.pointId });
+            console.log("[EditLog] Linked review updated successfully.");
+          } catch (e) {
+            console.error("[EditLog] Failed to update linked review pointId:", e);
+          }
+        }
+
         return true;
       })();
 

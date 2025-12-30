@@ -6,6 +6,8 @@ import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import type { DiveLog } from '../types';
 import { compressImage } from '../utils/imageUtils';
+import { db as firestore } from '../lib/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 import { HierarchicalPointSelector } from '../components/HierarchicalPointSelector';
 import { SearchableCreatureSelector } from '../components/SearchableCreatureSelector';
 import { FEATURE_FLAGS } from '../config/features';
@@ -249,6 +251,20 @@ export const EditLogPage = () => {
 
       console.log("[EditLog] Updating log with:", logData);
       await updateLog(id as string, logData);
+
+      // [New] If pointId changed and log has a review, update the review's pointId as well
+      const originalLog = logs.find(l => l.id === id);
+      if (originalLog && originalLog.reviewId && originalLog.location.pointId !== formData.pointId) {
+        console.log(`[EditLog] Point changed from ${originalLog.location.pointId} to ${formData.pointId}. Updating linked review ${originalLog.reviewId}...`);
+        try {
+          const reviewRef = doc(firestore, 'reviews', originalLog.reviewId);
+          await updateDoc(reviewRef, { pointId: formData.pointId });
+          console.log("[EditLog] Linked review updated successfully.");
+        } catch (e) {
+          console.error("[EditLog] Failed to update linked review pointId:", e);
+        }
+      }
+
       alert('ログが正常に更新されました！');
 
       const updatedLog = logs.find(l => l.id === id);
