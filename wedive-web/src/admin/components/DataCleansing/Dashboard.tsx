@@ -79,11 +79,12 @@ export const CleansingDashboard = () => {
 
     // 2. Then, filter WITHIN that scope using the search keyword
     if (pointSearch) {
-      const s = pointSearch.toLowerCase();
+      const s = (pointSearch || '').toLowerCase();
       list = list.filter(p => {
-        const name = (p.name || '').toLowerCase();
-        const area = (p.area || '').toLowerCase();
-        const zone = (p.zone || '').toLowerCase();
+        if (!p) return false;
+        const name = String(p.name || '').toLowerCase();
+        const area = String(p.area || '').toLowerCase();
+        const zone = String(p.zone || '').toLowerCase();
         return name.includes(s) || area.includes(s) || zone.includes(s);
       });
     }
@@ -93,12 +94,13 @@ export const CleansingDashboard = () => {
   const filteredCreatures = useMemo(() => {
     let list = allCreatures;
     if (creatureSearch) {
-      const s = creatureSearch.toLowerCase();
-      list = list.filter(c =>
-        c.name.toLowerCase().includes(s) ||
-        (c.scientificName || '').toLowerCase().includes(s) ||
-        (c.family || '').toLowerCase().includes(s)
-      );
+      const s = (creatureSearch || '').toLowerCase();
+      list = list.filter(c => {
+        if (!c) return false;
+        return String(c.name || '').toLowerCase().includes(s) ||
+          String(c.scientificName || '').toLowerCase().includes(s) ||
+          String(c.family || '').toLowerCase().includes(s);
+      });
     }
     return list;
   }, [allCreatures, creatureSearch]);

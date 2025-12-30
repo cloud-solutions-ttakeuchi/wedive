@@ -23,23 +23,22 @@ export const Pokedex = () => {
 
     // 1. Direct Text Properties
     const matchesProperty =
-      (creature.name && creature.name.toLowerCase().includes(term)) ||
-      (creature.scientificName && creature.scientificName.toLowerCase().includes(term)) ||
-      (creature.family && creature.family.toLowerCase().includes(term)) ||
-      (creature.tags && creature.tags.some(tag => tag.toLowerCase().includes(term))) ||
-      (creature.specialAttributes && creature.specialAttributes.some(attr => attr.toLowerCase().includes(term)));
+      (creature.name && String(creature.name).toLowerCase().includes(term)) ||
+      (creature.scientificName && String(creature.scientificName).toLowerCase().includes(term)) ||
+      (creature.family && String(creature.family).toLowerCase().includes(term)) ||
+      (creature.tags && creature.tags.some(tag => tag && String(tag).toLowerCase().includes(term))) ||
+      (creature.specialAttributes && creature.specialAttributes.some(attr => attr && String(attr).toLowerCase().includes(term)));
 
     if (matchesProperty) return true;
 
     // 2. Area/Location Search
-    // Find points that match the search term (Area, Zone, Region, Name)
     const matchedPointIds = points
-      .filter(p =>
-        (p.name && p.name.toLowerCase().includes(term)) ||
-        (p.area && p.area.toLowerCase().includes(term)) ||
-        (p.zone && p.zone.toLowerCase().includes(term)) ||
-        (p.region && p.region.toLowerCase().includes(term))
-      )
+      .filter(p => p && (
+        (p.name && String(p.name).toLowerCase().includes(term)) ||
+        (p.area && String(p.area).toLowerCase().includes(term)) ||
+        (p.zone && String(p.zone).toLowerCase().includes(term)) ||
+        (p.region && String(p.region).toLowerCase().includes(term))
+      ))
       .map(p => p.id);
 
     // Check if this creature is linked to any of those points

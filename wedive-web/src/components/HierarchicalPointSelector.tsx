@@ -134,16 +134,16 @@ export const HierarchicalPointSelector: React.FC<HierarchicalPointSelectorProps>
   const filteredPoints = useMemo(() => {
     let pts = points;
     if (hierarchy.areaId) {
-      pts = pts.filter((p: { areaId: string }) => p.areaId === hierarchy.areaId);
+      pts = pts.filter(p => p && p.areaId === hierarchy.areaId);
     } else if (hierarchy.zoneId) {
-      pts = pts.filter((p: { zoneId: string }) => p.zoneId === hierarchy.zoneId);
+      pts = pts.filter(p => p && p.zoneId === hierarchy.zoneId);
     } else if (hierarchy.regionId) {
-      pts = pts.filter((p: { regionId: string }) => p.regionId === hierarchy.regionId);
+      pts = pts.filter(p => p && p.regionId === hierarchy.regionId);
     }
 
     if (searchTerm) {
-      const s = searchTerm.toLowerCase();
-      pts = pts.filter((p: { name: string }) => (p?.name || '').toLowerCase().includes(s));
+      const s = (searchTerm || '').toLowerCase();
+      pts = pts.filter((p: any) => p && String(p.name || '').toLowerCase().includes(s));
     }
 
     return pts;
