@@ -251,9 +251,12 @@ export const EditLogPage = () => {
       await updateLog(id as string, logData);
       alert('ログが正常に更新されました！');
 
-      const log = logs.find(l => l.id === id);
-      const reviewPath = (log && log.reviewId)
-        ? `/add-review/${formData.pointId}/${log.reviewId}?logId=${id}`
+      const updatedLog = logs.find(l => l.id === id);
+      // Use logical OR to fallback to current log's reviewId if find result is stale/optimistic
+      const currentReviewId = updatedLog?.reviewId || (logs.find(l => l.id === id)?.reviewId);
+
+      const reviewPath = currentReviewId
+        ? `/add-review/${formData.pointId}/${currentReviewId}?logId=${id}`
         : `/add-review/${formData.pointId}?logId=${id}`;
 
       if (formData.alsoReview && formData.pointId && FEATURE_FLAGS.ENABLE_V6_REVIEW_LOG_LINKING) {

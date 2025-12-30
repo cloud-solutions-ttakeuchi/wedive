@@ -88,13 +88,40 @@ export const AddReviewPage = () => {
     return points.find(p => p.id === pid);
   }, [isEdit, existingReview?.pointId, formData.pointId, pointId, points]);
 
-  // Ensure existingReview is loaded (including direct fetch if not in context)
+  // Ensure existingReview is loaded (including direct fetch if not in context) & Merge Log Data
   useEffect(() => {
     let active = true;
+
+    const mergeLogData = (baseData: Partial<Review>) => {
+      if (!logId || logs.length === 0) return baseData;
+      const log = logs.find(l => l.id === logId);
+      if (!log) return baseData;
+
+      console.log("Merging latest log data into review form");
+      return {
+        ...baseData,
+        date: log.date,
+        condition: {
+          ...baseData.condition!,
+          weather: log.condition?.weather || baseData.condition!.weather,
+          wave: log.condition?.wave || baseData.condition!.wave,
+          airTemp: log.condition?.airTemp || baseData.condition!.airTemp,
+          waterTemp: log.condition?.waterTemp?.surface || baseData.condition!.waterTemp,
+        },
+        metrics: {
+          ...baseData.metrics!,
+          visibility: log.condition?.transparency || baseData.metrics!.visibility,
+          flow: log.condition?.current || baseData.metrics!.flow as any,
+          depthAvg: log.depth?.average || baseData.metrics!.depthAvg,
+          depthMax: log.depth?.max || baseData.metrics!.depthMax,
+        }
+      };
+    };
+
     if (isEdit && reviewId && !isDataLoaded) {
       const found = reviews.find(r => r.id === reviewId) || proposalReviews.find(r => r.id === reviewId);
       if (found) {
-        setFormData({ ...found, pointId: found.pointId });
+        setFormData(mergeLogData({ ...found, pointId: found.pointId }));
         setIsDataLoaded(true);
         setLoadingReview(false);
       } else {
@@ -106,7 +133,7 @@ export const AddReviewPage = () => {
             const docSnap = await getDoc(docRef);
             if (active && docSnap.exists()) {
               const data = { ...docSnap.data(), id: docSnap.id } as Review;
-              setFormData({ ...data, pointId: data.pointId });
+              setFormData(mergeLogData({ ...data, pointId: data.pointId }));
               setIsDataLoaded(true);
             }
           } catch (e) {
@@ -137,6 +164,12 @@ export const AddReviewPage = () => {
             const foundId = snap.docs[0].id;
             console.log("Found existing review in Firestore for log, redirecting:", foundId);
             navigate(`/add-review/${pointId || snap.docs[0].data().pointId}/${foundId}?logId=${logId}`, { replace: true });
+            return;
+          }
+
+          // If really new, merge log data to initial form
+          if (active) {
+            setFormData(prev => mergeLogData(prev));
           }
         } catch (e) {
           console.error("Failed to check existing review:", e);
@@ -145,34 +178,7 @@ export const AddReviewPage = () => {
       checkExisting();
     }
     return () => { active = false; };
-  }, [isEdit, reviewId, reviews, proposalReviews, isDataLoaded, logId, navigate, pointId, loadingReview]);
-
-  // Pre-fill from log if available (only on create)
-  useEffect(() => {
-    if (!isEdit && logId) {
-      const log = logs.find(l => l.id === logId);
-      if (log) {
-        setFormData(prev => ({
-          ...prev,
-          date: log.date,
-          condition: {
-            ...prev.condition!,
-            weather: log.condition?.weather || prev.condition!.weather,
-            wave: log.condition?.wave || prev.condition!.wave,
-            airTemp: log.condition?.airTemp || prev.condition!.airTemp,
-            waterTemp: log.condition?.waterTemp?.surface || prev.condition!.waterTemp,
-          },
-          metrics: {
-            ...prev.metrics!,
-            visibility: log.condition?.transparency || prev.metrics!.visibility,
-            flow: log.condition?.current || prev.metrics!.flow as any,
-            depthAvg: log.depth?.average || prev.metrics!.depthAvg,
-            depthMax: log.depth?.max || prev.metrics!.depthMax,
-          }
-        }));
-      }
-    }
-  }, [isEdit, logId, logs]);
+  }, [isEdit, reviewId, reviews, proposalReviews, isDataLoaded, logId, navigate, pointId, loadingReview, logs]);
 
   if (isEdit && loadingReview) return (
     <div className="flex flex-col items-center justify-center p-20 gap-4">
