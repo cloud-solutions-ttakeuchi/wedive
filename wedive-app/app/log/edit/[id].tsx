@@ -240,9 +240,11 @@ export default function EditLogScreen() {
     if (spotSearchTerm) {
       const s = spotSearchTerm.toLowerCase();
       results = results.filter(p =>
-        (p.name && p.name.toLowerCase().includes(s)) ||
-        (p.area && p.area.toLowerCase().includes(s)) ||
-        (p.zone && p.zone.toLowerCase().includes(s))
+        p && (
+          String(p.name || '').toLowerCase().includes(s) ||
+          String(p.area || '').toLowerCase().includes(s) ||
+          String(p.zone || '').toLowerCase().includes(s)
+        )
       );
     }
     return results.slice(0, 50);
@@ -252,8 +254,10 @@ export default function EditLogScreen() {
     if (!creatureSearchTerm) return [];
     const s = creatureSearchTerm.toLowerCase();
     return masterCreatures.filter(c =>
-      (c.name && c.name.toLowerCase().includes(s)) ||
-      (c.category && c.category.toLowerCase().includes(s))
+      c && (
+        String(c.name || '').toLowerCase().includes(s) ||
+        String(c.category || '').toLowerCase().includes(s)
+      )
     ).slice(0, 50);
   }, [masterCreatures, creatureSearchTerm]);
 
