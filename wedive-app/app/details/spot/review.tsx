@@ -294,53 +294,29 @@ export default function AddReviewScreen() {
           setIsLoadingReview(false);
         }
       } else if (!isEdit && logId) {
-        // [New] Check if a review already exists for this log (Recovery for broken links)
-        try {
-          const q = query(collection(db, 'reviews'), where('logId', '==', logId));
-          const snap = await getDocs(q);
-          if (!snap.empty) {
-            const foundId = snap.docs[0].id;
-            console.log("Found existing review for log, redirecting to edit mode:", foundId);
-
-            // Redirect to same page but with reviewId to trigger Edit Mode
-            router.replace({
-              pathname: '/details/spot/review',
-              params: {
-                pointId: pointIdFromParams,
-                logId: logId,
-                reviewId: foundId
+        // Pre-fill from log if creating a new review from a log
+        if (logs.length > 0) {
+          const log = logs.find(l => l.id === logId);
+          if (log) {
+            setFormData(prev => ({
+              ...prev,
+              date: log.date,
+              condition: {
+                ...prev.condition!,
+                weather: (log.condition?.weather as any) || prev.condition!.weather,
+                wave: log.condition?.wave ? (log.condition.wave === 'none' ? 'none' : 'low' as any) : prev.condition!.wave,
+                airTemp: log.condition?.airTemp || prev.condition!.airTemp,
+                waterTemp: log.condition?.waterTemp?.surface || prev.condition!.waterTemp,
+              },
+              metrics: {
+                ...prev.metrics!,
+                visibility: log.condition?.transparency || prev.metrics!.visibility,
+                flow: (log.condition?.current as any) || prev.metrics!.flow,
+                depthAvg: log.depth?.average || prev.metrics!.depthAvg,
+                depthMax: log.depth?.max || prev.metrics!.depthMax,
               }
-            });
-            return;
+            }));
           }
-
-          // If new review, Pre-fill from log
-          if (logs.length > 0) {
-            const log = logs.find(l => l.id === logId);
-            if (log) {
-              setFormData(prev => ({
-                ...prev,
-                date: log.date,
-                condition: {
-                  ...prev.condition!,
-                  weather: (log.condition?.weather as any) || prev.condition!.weather,
-                  wave: log.condition?.wave ? (log.condition.wave === 'none' ? 'none' : 'low' as any) : prev.condition!.wave,
-                  airTemp: log.condition?.airTemp || prev.condition!.airTemp,
-                  waterTemp: log.condition?.waterTemp?.surface || prev.condition!.waterTemp,
-                },
-                metrics: {
-                  ...prev.metrics!,
-                  visibility: log.condition?.transparency || prev.metrics!.visibility,
-                  flow: (log.condition?.current as any) || prev.metrics!.flow,
-                  depthAvg: log.depth?.average || prev.metrics!.depthAvg,
-                  depthMax: log.depth?.max || prev.metrics!.depthMax,
-                }
-              }));
-            }
-          }
-
-        } catch (e) {
-          console.error("Failed to check existing review:", e);
         }
       }
     }
