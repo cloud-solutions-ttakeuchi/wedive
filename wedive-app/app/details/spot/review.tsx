@@ -241,21 +241,52 @@ export default function AddReviewScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingReview, setIsLoadingReview] = useState(isEdit);
 
-  // Fetch Existing Review for Edit Mode
+  // Fetch Existing Review for Edit Mode & Sync Log Data
   useEffect(() => {
-    async function fetchReview() {
+    async function fetchAndMergeData() {
       if (isEdit && reviewId) {
         setIsLoadingReview(true);
         try {
           const q = query(collection(db, 'reviews'), where('id', '==', reviewId));
           const snap = await getDocs(q);
+          let data: Partial<Review> = {};
+
           if (!snap.empty) {
-            const data = snap.docs[0].data() as Review;
-            setFormData({ ...data });
+            data = snap.docs[0].data() as Review;
           } else {
             Alert.alert('Error', 'Review not found');
             router.back();
+            return;
           }
+
+          // Merge Log Data if available (Log data takes precedence for conditions)
+          if (logId && logs.length > 0) {
+            const log = logs.find(l => l.id === logId);
+            if (log) {
+              console.log("Merging latest log data into review form");
+              data = {
+                ...data,
+                date: log.date,
+                condition: {
+                  ...data.condition!,
+                  weather: (log.condition?.weather as any) || data.condition!.weather,
+                  wave: log.condition?.wave ? (log.condition.wave === 'none' ? 'none' : 'low' as any) : data.condition!.wave,
+                  airTemp: log.condition?.airTemp || data.condition!.airTemp,
+                  waterTemp: log.condition?.waterTemp?.surface || data.condition!.waterTemp,
+                },
+                metrics: {
+                  ...data.metrics!,
+                  visibility: log.condition?.transparency || data.metrics!.visibility,
+                  flow: (log.condition?.current as any) || data.metrics!.flow,
+                  depthAvg: log.depth?.average || data.metrics!.depthAvg,
+                  depthMax: log.depth?.max || data.metrics!.depthMax,
+                }
+              };
+            }
+          }
+
+          setFormData(data);
+
         } catch (e) {
           console.error(e);
           Alert.alert('Error', 'Failed to load review');
@@ -280,41 +311,41 @@ export default function AddReviewScreen() {
                 reviewId: foundId
               }
             });
+            return;
           }
+
+          // If new review, Pre-fill from log
+          if (logs.length > 0) {
+            const log = logs.find(l => l.id === logId);
+            if (log) {
+              setFormData(prev => ({
+                ...prev,
+                date: log.date,
+                condition: {
+                  ...prev.condition!,
+                  weather: (log.condition?.weather as any) || prev.condition!.weather,
+                  wave: log.condition?.wave ? (log.condition.wave === 'none' ? 'none' : 'low' as any) : prev.condition!.wave,
+                  airTemp: log.condition?.airTemp || prev.condition!.airTemp,
+                  waterTemp: log.condition?.waterTemp?.surface || prev.condition!.waterTemp,
+                },
+                metrics: {
+                  ...prev.metrics!,
+                  visibility: log.condition?.transparency || prev.metrics!.visibility,
+                  flow: (log.condition?.current as any) || prev.metrics!.flow,
+                  depthAvg: log.depth?.average || prev.metrics!.depthAvg,
+                  depthMax: log.depth?.max || prev.metrics!.depthMax,
+                }
+              }));
+            }
+          }
+
         } catch (e) {
           console.error("Failed to check existing review:", e);
         }
       }
     }
-    fetchReview();
-  }, [isEdit, reviewId, logId, pointIdFromParams]);
-
-  // Sync Log Data if logId is provided
-  useEffect(() => {
-    if (logId && logs.length > 0) {
-      const log = logs.find(l => l.id === logId);
-      if (log) {
-        setFormData(prev => ({
-          ...prev,
-          date: log.date,
-          condition: {
-            ...prev.condition!,
-            weather: (log.condition?.weather as any) || prev.condition!.weather,
-            wave: log.condition?.wave ? (log.condition.wave === 'none' ? 'none' : 'low' as any) : prev.condition!.wave,
-            airTemp: log.condition?.airTemp || prev.condition!.airTemp,
-            waterTemp: log.condition?.waterTemp?.surface || prev.condition!.waterTemp,
-          },
-          metrics: {
-            ...prev.metrics!,
-            visibility: log.condition?.transparency || prev.metrics!.visibility,
-            flow: (log.condition?.current as any) || prev.metrics!.flow,
-            depthAvg: log.depth?.average || prev.metrics!.depthAvg,
-            depthMax: log.depth?.max || prev.metrics!.depthMax,
-          }
-        }));
-      }
-    }
-  }, [logId, logs]);
+    fetchAndMergeData();
+  }, [isEdit, reviewId, logId, pointIdFromParams, logs]); // Added logs to dependency to ensure we have latest data
 
   const handlePickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({

@@ -102,7 +102,7 @@ export const EditLogPage = () => {
 
     // eslint-disable-next-line
     setFormData({
-      title: log.title || '',
+      title: log.title || log.location.pointName || points.find(p => p.id === log.location.pointId)?.name || '',
       date: log.date,
       diveNumber: String(log.diveNumber),
       pointId: log.location.pointId || '',
@@ -138,7 +138,7 @@ export const EditLogPage = () => {
       photos: log.photos || [],
       alsoReview: false,
     });
-  }, [id, isAuthenticated, logs, navigate]);
+  }, [id, isAuthenticated, logs, navigate, points]);
 
   // Creature Search State
   const [creatureSearchTerm, setCreatureSearchTerm] = useState('');
