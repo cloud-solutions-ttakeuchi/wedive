@@ -25,9 +25,9 @@ export const SearchableCreatureSelector: React.FC<SearchableCreatureSelectorProp
     if (!searchTerm) return creatures;
     const s = searchTerm.toLowerCase();
     return creatures.filter(c =>
-      c.name.toLowerCase().includes(s) ||
-      c.scientificName?.toLowerCase().includes(s) ||
-      c.category?.toLowerCase().includes(s)
+      (c?.name || '').toLowerCase().includes(s) ||
+      (c?.scientificName || '').toLowerCase().includes(s) ||
+      (c?.category || '').toLowerCase().includes(s)
     );
   }, [creatures, searchTerm]);
 

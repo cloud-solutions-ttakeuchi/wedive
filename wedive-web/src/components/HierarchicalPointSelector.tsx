@@ -143,7 +143,7 @@ export const HierarchicalPointSelector: React.FC<HierarchicalPointSelectorProps>
 
     if (searchTerm) {
       const s = searchTerm.toLowerCase();
-      pts = pts.filter((p: { name: string }) => p.name.toLowerCase().includes(s));
+      pts = pts.filter((p: { name: string }) => (p?.name || '').toLowerCase().includes(s));
     }
 
     return pts;

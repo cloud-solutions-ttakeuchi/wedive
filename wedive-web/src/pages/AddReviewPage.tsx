@@ -923,7 +923,7 @@ const Step3Evaluation = ({ data, onChange, onRadarChange, onImageUpload, uploadi
                 onChange={e => onChange({ userRank: e.target.value })}
                 className="w-full h-8 bg-transparent text-[10px] font-black outline-none cursor-pointer"
               >
-                {CERTIFICATIONS.find(o => o.id.toLowerCase() === data.userOrgId?.toLowerCase())?.ranks.map(rank => (
+                {CERTIFICATIONS.find(o => o.id.toLowerCase() === (data.userOrgId || '').toLowerCase())?.ranks.map(rank => (
                   <option key={rank.id} value={rank.id}>{rank.name}</option>
                 ))}
               </select>

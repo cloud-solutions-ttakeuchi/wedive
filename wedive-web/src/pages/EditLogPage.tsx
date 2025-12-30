@@ -153,18 +153,20 @@ export const EditLogPage = () => {
     // Find all creatures linked to this point
     const linkedCreatureIds = new Set(
       pointCreatures
-        .filter(pc => pc.pointId === formData.pointId && pc.status === 'approved')
+        .filter(pc => pc && pc.pointId === formData.pointId && pc.status === 'approved')
         .map(pc => pc.creatureId)
     );
 
-    return creatures.filter(c => linkedCreatureIds.has(c.id));
+    return creatures.filter(c => c && linkedCreatureIds.has(c.id));
   }, [formData.pointId, pointCreatures, creatures]);
 
   // Filtered Creatures for Search
   const searchResults = useMemo(() => {
     if (!creatureSearchTerm) return [];
     return creatures.filter(c =>
-      c.name.includes(creatureSearchTerm) || c.scientificName?.includes(creatureSearchTerm) || c.tags?.some(tag => tag.includes(creatureSearchTerm))
+      (c?.name || '').includes(creatureSearchTerm) ||
+      (c?.scientificName || '').includes(creatureSearchTerm) ||
+      (c?.tags || []).some(tag => (tag || '').includes(creatureSearchTerm))
     ).slice(0, 10); // Limit results
   }, [creatureSearchTerm, creatures]);
 
