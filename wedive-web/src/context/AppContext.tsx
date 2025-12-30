@@ -266,7 +266,24 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       ? query(collection(firestore, 'creature_proposals'), where('status', '==', 'pending'))
       : query(collection(firestore, 'creature_proposals'), where('submitterId', '==', userId), where('status', '==', 'pending'));
     const unsubC = onSnapshot(qC, (snapshot) => {
-      setProposalCreatures(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Creature)));
+      const proposals = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Creature));
+
+      // If Admin, also include 'pending' creatures from the master collection
+      if (isAdmin) {
+        setProposalCreatures(prev => {
+          // We can't rely on 'creatures' state here directly inside snapshot callback cleanly without deps issues.
+          // Instead, we'll let a separate effect handle the merging of master-pending items,
+          // OR we set the 'pure' proposals here and merge later.
+          // To keep it simple, we will set the proposals here, and have a separate Effect update the final state list.
+          // BUT 'proposalCreatures' is used by Admin Page directly.
+
+          // Let's store pure proposals in a temp state or just use the current approach
+          // but strictly speaking, we need access to the latest 'creatures' state.
+          return proposals;
+        });
+      } else {
+        setProposalCreatures(proposals);
+      }
     }, (err) => console.error("Snapshot error (creature proposals):", err));
 
     // Points Proposals (Pending)
@@ -274,7 +291,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       ? query(collection(firestore, 'point_proposals'), where('status', '==', 'pending'))
       : query(collection(firestore, 'point_proposals'), where('submitterId', '==', userId), where('status', '==', 'pending'));
     const unsubP = onSnapshot(qP, (snapshot) => {
-      setProposalPoints(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Point)));
+      const proposals = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Point));
+      if (isAdmin) {
+        // Same strategy as creatures
+        setProposalPoints(proposals); // Just set the database proposals first
+      } else {
+        setProposalPoints(proposals);
+      }
     }, (err) => console.error("Snapshot error (point proposals):", err));
 
     // Reviews (Pending for Admin, Own for User)
@@ -292,6 +315,33 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       unsubR();
     };
   }, [isAuthenticated, currentUser.id, currentUser.role]);
+
+  // [New] Effect to merge Master Pending Data into Proposal Lists for Admins
+  useEffect(() => {
+    if (!isAuthenticated || (currentUser.role !== 'admin' && currentUser.role !== 'moderator')) return;
+
+    // Merge pending points from Master into Proposal Points
+    const pendingMasterPoints = points.filter(p => p.status === 'pending');
+    if (pendingMasterPoints.length > 0) {
+      setProposalPoints(prev => {
+        // avoid duplicates
+        const prevIds = new Set(prev.map(p => p.id));
+        const newItems = pendingMasterPoints.filter(p => !prevIds.has(p.id));
+        return [...prev, ...newItems].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+      });
+    }
+
+    // Merge pending creatures from Master into Proposal Creatures
+    const pendingMasterCreatures = creatures.filter(c => c.status === 'pending');
+    if (pendingMasterCreatures.length > 0) {
+      setProposalCreatures(prev => {
+        const prevIds = new Set(prev.map(c => c.id));
+        const newItems = pendingMasterCreatures.filter(c => !prevIds.has(c.id));
+        return [...prev, ...newItems].sort((a, b) => (b.id || '').localeCompare(a.id || ''));
+      });
+    }
+
+  }, [isAuthenticated, currentUser.role, points, creatures]);
 
   // Admin Specific: Fetch All Users
   useEffect(() => {
@@ -524,7 +574,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const rejectProposal = async (type: 'creature' | 'point', id: string) => {
-    await updateDoc(doc(firestore, type === 'creature' ? 'creature_proposals' : 'point_proposals', id), { status: 'rejected' });
+    // If id exists in master list, it means it's a direct pending item, so we reject it there.
+    const isMasterItem = type === 'creature'
+      ? creatures.some(c => c.id === id)
+      : points.some(p => p.id === id);
+
+    if (isMasterItem) {
+      await updateDoc(doc(firestore, type === 'creature' ? 'creatures' : 'points', id), { status: 'rejected' });
+    } else {
+      await updateDoc(doc(firestore, type === 'creature' ? 'creature_proposals' : 'point_proposals', id), { status: 'rejected' });
+    }
   };
 
   const approveReview = async (reviewId: string) => {
