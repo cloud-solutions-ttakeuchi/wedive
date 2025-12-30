@@ -7,10 +7,10 @@ import {
   TextInput,
   FlatList,
   TouchableOpacity,
-  SafeAreaView,
   ActivityIndicator,
   Platform
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Search, X, ChevronRight } from 'lucide-react-native';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -83,6 +83,8 @@ export const CreatureSelectorModal: React.FC<CreatureSelectorModalProps> = ({
     </TouchableOpacity>
   );
 
+  const insets = useSafeAreaInsets();
+
   return (
     <Modal
       visible={isVisible}
@@ -90,7 +92,7 @@ export const CreatureSelectorModal: React.FC<CreatureSelectorModalProps> = ({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <SafeAreaView style={styles.container}>
+      <View style={[styles.container, { paddingTop: Platform.OS === 'ios' ? 0 : insets.top }]}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>生物を選択</Text>
           <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
@@ -126,7 +128,7 @@ export const CreatureSelectorModal: React.FC<CreatureSelectorModalProps> = ({
             }
           />
         )}
-      </SafeAreaView>
+      </View>
     </Modal>
   );
 };

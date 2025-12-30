@@ -4,8 +4,7 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
-  SafeAreaView
+  TouchableOpacity
 } from 'react-native';
 import { X, Star } from 'lucide-react-native';
 import { Rarity } from '../types';

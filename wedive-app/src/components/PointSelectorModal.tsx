@@ -7,10 +7,10 @@ import {
   TextInput,
   FlatList,
   TouchableOpacity,
-  SafeAreaView,
   ActivityIndicator,
   Platform
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Search, X, MapPin, ChevronRight } from 'lucide-react-native';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -86,6 +86,8 @@ export const PointSelectorModal: React.FC<PointSelectorModalProps> = ({
     </TouchableOpacity>
   );
 
+  const insets = useSafeAreaInsets();
+
   return (
     <Modal
       visible={isVisible}
@@ -93,7 +95,7 @@ export const PointSelectorModal: React.FC<PointSelectorModalProps> = ({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <SafeAreaView style={styles.container}>
+      <View style={[styles.container, { paddingTop: Platform.OS === 'ios' ? 0 : insets.top }]}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>スポットを選択</Text>
           <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
@@ -129,7 +131,7 @@ export const PointSelectorModal: React.FC<PointSelectorModalProps> = ({
             }
           />
         )}
-      </SafeAreaView>
+      </View>
     </Modal>
   );
 };
