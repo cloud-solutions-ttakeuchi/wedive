@@ -209,3 +209,5 @@ WeDive では、新機能のリリースに際して「フィーチャートグ�
 - **ENABLE_V2_AI_CONCIERGE**: AI コンシェルジュ機能の表示制御。
 - **ENABLE_V2_AI_AUTO_FILL**: スポット・生物登録時の自動下書き生成。
 - **ENABLE_V2_VERTEX_SEARCH**: コンシェルジュの回答エンジン切り替え。
+- **ENABLE_V6_REVIEWS**: v6.0.0 新レビューシステムの有効化。
+- **ENABLE_V6_REVIEW_LOG_LINKING**: v6.2.3 ログとレビューの双方向連携機能。
