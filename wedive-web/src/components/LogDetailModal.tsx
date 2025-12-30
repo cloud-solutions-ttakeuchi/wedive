@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { ImageWithFallback } from './common/ImageWithFallback';
-import { X, Calendar, Clock, MapPin, Heart, Activity, Sun, Settings, Users, Fish, FileText, Camera, Trash2 } from 'lucide-react';
+import { X, Calendar, Clock, MapPin, Heart, Activity, Sun, Settings, Users, Fish, FileText, Camera, Trash2, PenTool } from 'lucide-react';
 import clsx from 'clsx';
 import type { Log } from '../types';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -85,6 +85,23 @@ export const LogDetailModal = ({ log, isOpen, onClose, isOwner }: Props) => {
           {/* Edit & Delete Buttons - Only for Owner */}
           {isOwner && (
             <div className="absolute top-4 right-16 flex gap-2 z-10">
+              {/* Review Button */}
+              {log.location.pointId ? (
+                <Link
+                  to={log.reviewId ? `/add-review/${log.location.pointId}/${log.reviewId}?logId=${log.id}` : `/add-review/${log.location.pointId}?logId=${log.id}`}
+                  className="bg-sky-500 text-white px-3 py-2 rounded-full font-bold text-xs shadow-md hover:bg-sky-600 transition-colors flex items-center gap-1"
+                >
+                  <PenTool size={14} /> {log.reviewId ? 'レビュー編集' : 'レビューを書く'}
+                </Link>
+              ) : (
+                <button
+                  onClick={() => alert('ポイントが選択されていないため、レビューを書くことができません。まずはログを編集してポイントを選択してください。')}
+                  className="bg-slate-200 text-slate-500 px-3 py-2 rounded-full font-bold text-xs shadow-md cursor-not-allowed flex items-center gap-1"
+                >
+                  <PenTool size={14} /> レビューを書く
+                </button>
+              )}
+
               <Link
                 to={`/edit-log/${log.id}`}
                 className="bg-white/90 text-deepBlue-900 px-3 py-2 rounded-full font-bold text-xs shadow-md hover:bg-white transition-colors flex items-center gap-1"

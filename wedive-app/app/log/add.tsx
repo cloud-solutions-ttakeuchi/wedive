@@ -52,6 +52,7 @@ import { parseGarminZip, parseGarminCsv } from '../../src/utils/garminParser';
 import { DiveLog, Point } from '../../src/types';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { FEATURE_FLAGS } from '../../src/constants/features';
 
 const { width } = Dimensions.get('window');
 
@@ -112,6 +113,7 @@ export default function AddLogScreen() {
     entryType: 'boat' as 'boat' | 'beach',
     importProfile: [] as any[],
     garminActivityId: '',
+    alsoReview: true,
   });
 
   // UI Control: Sections
@@ -439,9 +441,26 @@ export default function AddLogScreen() {
         ]);
       } else {
         setSaveStatus('保存に成功しました！');
-        Alert.alert('完了', 'ログを保存しました', [
-          { text: 'OK', onPress: () => router.back() }
-        ]);
+
+        if (formData.alsoReview && formData.pointId && FEATURE_FLAGS.ENABLE_V6_REVIEW_LOG_LINKING) {
+          const logId = await savePromise;
+          Alert.alert('完了', 'ログを保存しました。続いてレビューを投稿します。', [
+            {
+              text: 'OK',
+              onPress: () => router.push({
+                pathname: '/details/spot/review',
+                params: {
+                  pointId: formData.pointId,
+                  logId: logId
+                }
+              })
+            }
+          ]);
+        } else {
+          Alert.alert('完了', 'ログを保存しました', [
+            { text: 'OK', onPress: () => router.back() }
+          ]);
+        }
       }
     } catch (e: any) {
       console.error("Save Error:", e);
@@ -673,6 +692,43 @@ export default function AddLogScreen() {
                   </Text>
                 </View>
               </View>
+
+              {FEATURE_FLAGS.ENABLE_V6_REVIEW_LOG_LINKING && (
+                <View style={styles.inputGroup}>
+                  <View style={styles.visibilityRow}>
+                    <View style={styles.visibilityInfo}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Text style={[styles.label, { marginBottom: 0 }]}>レビュー投稿</Text>
+                      </View>
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                      <View style={[
+                        styles.statusBadge,
+                        { backgroundColor: formData.alsoReview ? '#f0fdf4' : '#f1f5f9' }
+                      ]}>
+                        <Text style={[
+                          styles.statusBadgeText,
+                          { color: formData.alsoReview ? '#16a34a' : '#64748b' }
+                        ]}>
+                          {formData.alsoReview ? '投稿する' : '投稿しない'}
+                        </Text>
+                      </View>
+                      <Switch
+                        value={formData.alsoReview}
+                        onValueChange={(val) => setFormData(p => ({ ...p, alsoReview: val }))}
+                        trackColor={{ false: "#e2e8f0", true: "#bcf0da" }}
+                        thumbColor={formData.alsoReview ? "#16a34a" : "#64748b"}
+                      />
+                    </View>
+                  </View>
+                  <View style={[styles.visibilityNoteBox, { backgroundColor: '#f0fdf4', borderColor: '#dcfce7' }]}>
+                    <Text style={[styles.visibilityNoteText, { color: '#166534' }]}>
+                      このポイントの海況や透明度などのデータをレビューとして共有します。{"\n"}
+                      ログに記載した海況データが自動的に入力されます。
+                    </Text>
+                  </View>
+                </View>
+              )}
             </View>
           )}
         </View>

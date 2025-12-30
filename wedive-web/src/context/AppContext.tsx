@@ -42,7 +42,7 @@ interface AppContextType {
   login: () => void;
   logout: () => void;
   calculateRarity: (creatureId: string) => Rarity;
-  addLog: (logData: Omit<Log, 'id' | 'userId'>) => Promise<void>;
+  addLog: (logData: Omit<Log, 'id' | 'userId'>) => Promise<Log>;
   addCreature: (creatureData: Omit<Creature, 'id'>) => Promise<Creature>;
   addPoint: (pointData: Omit<Point, 'id'>) => Promise<Point>;
   updateLog: (logId: string, logData: Partial<Log>) => Promise<void>;
@@ -355,9 +355,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const newLogId = `l${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
     const newLog: Log = { ...logData, id: newLogId, userId: currentUser.id };
     if (isAuthenticated) {
-      try { await setDoc(doc(firestore, 'users', currentUser.id, 'logs', newLogId), sanitizePayload(newLog)); }
-      catch (e) { console.error(e); }
+      try {
+        await setDoc(doc(firestore, 'users', currentUser.id, 'logs', newLogId), sanitizePayload(newLog));
+      }
+      catch (e) {
+        console.error(e);
+      }
     }
+    return newLog;
   };
 
   const addCreature = async (creatureData: Omit<Creature, 'id'>) => {
@@ -575,10 +580,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       await setDoc(doc(firestore, 'reviews', newReviewId), sanitizePayload(newReview));
+
+      // Link review back to log if it exists
+      if (reviewData.logId) {
+        await updateLog(reviewData.logId, { reviewId: newReviewId });
+      }
     } catch (e) {
       console.error(e);
     }
   };
+
 
   const updateReview = async (reviewId: string, reviewData: Partial<Review>) => {
     if (!isAuthenticated) return;

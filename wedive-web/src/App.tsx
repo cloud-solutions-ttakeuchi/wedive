@@ -61,8 +61,7 @@ function App() {
               <Route path="/points" element={<PointSearchPage />} />
               <Route path="/logs" element={<PublicLogsPage />} />
               <Route path="/point/:id" element={<PointDetailPage />} />
-              <Route path="/add-review/:pointId" element={<AddReviewPage />} />
-              <Route path="/edit-review/:reviewId" element={<AddReviewPage />} />
+              <Route path="/add-review/:pointId/:reviewId?" element={<AddReviewPage />} />
               <Route path="/terms" element={<TermsPage />} />
               <Route path="/privacy" element={<PrivacyPage />} />
             </Routes>

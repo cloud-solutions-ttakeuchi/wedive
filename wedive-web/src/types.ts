@@ -309,7 +309,7 @@ export interface DiveLog {
     hr?: number;
     time: number; // seconds from start
   }[];
-
+  reviewId?: string;
 }
 
 export type Log = DiveLog;

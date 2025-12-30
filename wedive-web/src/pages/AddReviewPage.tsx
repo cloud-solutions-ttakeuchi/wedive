@@ -166,21 +166,24 @@ export const AddReviewPage = () => {
         await updateReview(reviewId, formData);
       } else {
         await addReview(formData as any);
+      }
 
-        // Also update user profile with latest certification
-        if (currentUser && currentUser.id !== 'guest') {
-          await updateUser({
-            certification: {
-              orgId: formData.userOrgId || 'padi',
-              rankId: formData.userRank || 'entry',
-              date: currentUser.certification?.date || new Date().toISOString().split('T')[0]
-            }
-          });
-        }
+      // Also update user profile with latest certification
+      if (currentUser && currentUser.id !== 'guest') {
+        const orgId = formData.userOrgId || 'padi';
+        const rankId = formData.userRank || 'entry';
+
+        await updateUser({
+          certification: {
+            orgId: orgId.toLowerCase(),
+            rankId: rankId.toLowerCase(),
+            date: currentUser.certification?.date || new Date().toISOString().split('T')[0]
+          }
+        });
       }
 
       alert(isEdit ? 'レビューを更新しました！' : 'レビューを投稿しました！');
-      navigate(`/point/${point.id}`);
+      navigate(`/point/${point?.id || pointId}`);
     } catch (error) {
       console.error('Submit failed:', error);
       alert('投稿に失敗しました');
