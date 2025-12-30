@@ -257,6 +257,7 @@ AIによる再構築結果や検索結果を保存し、費用の抑制と高速
  | `logs` | `isPrivate` (Ascending), `date` (Descending), `__name__` (Descending) | モバイル版「マイページ」およびWeb版「マイレビュー」での自身の投稿一覧表示に使用。 |
 | `reviews` | `status` (Ascending), `createdAt` (Descending), `__name__` (Descending) | ポイント詳細表示に使用。 |
  | `reviews` | `userId` (Ascending), `createdAt` (Descending), `__name__` (Descending) | モバイル版「マイページ」およびWeb版「マイレビュー」での自身の投稿一覧表示に使用。 |
+ | `points` | `status` (Ascending), `name` (Ascending), `__name__` (Ascending) | モバイル版・Web版でのポイント選択モーダル検索（名前の部分一致・ソート）に使用。 |
  
  ---
  
