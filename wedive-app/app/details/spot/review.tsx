@@ -247,8 +247,6 @@ export default function AddReviewScreen() {
       if (isEdit && reviewId) {
         setIsLoadingReview(true);
         try {
-          // We need to find by ID. In AddReviewScreen, we might not have 'reviews' state.
-          // Directly fetch from Firestore.
           const q = query(collection(db, 'reviews'), where('id', '==', reviewId));
           const snap = await getDocs(q);
           if (!snap.empty) {
@@ -264,10 +262,32 @@ export default function AddReviewScreen() {
         } finally {
           setIsLoadingReview(false);
         }
+      } else if (!isEdit && logId) {
+        // [New] Check if a review already exists for this log (Recovery for broken links)
+        try {
+          const q = query(collection(db, 'reviews'), where('logId', '==', logId));
+          const snap = await getDocs(q);
+          if (!snap.empty) {
+            const foundId = snap.docs[0].id;
+            console.log("Found existing review for log, redirecting to edit mode:", foundId);
+
+            // Redirect to same page but with reviewId to trigger Edit Mode
+            router.replace({
+              pathname: '/details/spot/review',
+              params: {
+                pointId: pointIdFromParams,
+                logId: logId,
+                reviewId: foundId
+              }
+            });
+          }
+        } catch (e) {
+          console.error("Failed to check existing review:", e);
+        }
       }
     }
     fetchReview();
-  }, [isEdit, reviewId]);
+  }, [isEdit, reviewId, logId, pointIdFromParams]);
 
   // Sync Log Data if logId is provided
   useEffect(() => {
@@ -427,6 +447,17 @@ export default function AddReviewScreen() {
         }
       } else {
         await setDoc(doc(db, 'reviews', reviewData.id), reviewData);
+
+        // Update Log with reviewId if linked
+        if (formData.logId && user) {
+          try {
+            const logRef = doc(db, 'users', user.id, 'logs', formData.logId);
+            await updateDoc(logRef, { reviewId: reviewData.id });
+            console.log("[ReviewSubmit] Successfully linked review to log:", formData.logId);
+          } catch (e) {
+            console.error("[ReviewSubmit] Failed to link review to log:", e);
+          }
+        }
         console.log("[ReviewSubmit] Successfully added to Firestore!");
         Alert.alert('完了', 'レビューを投稿しました！');
       }

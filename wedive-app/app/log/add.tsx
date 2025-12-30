@@ -902,40 +902,200 @@ export default function AddLogScreen() {
         </View >
 
         {/* Conditions */}
-        < View style={styles.sectionCard} >
+        <View style={styles.sectionCard}>
           <SectionHeader title="コンディション" icon={Thermometer} section="conditions" color="#06b6d4" />
-          {
-            openSections.conditions && (
-              <View style={styles.sectionBody}>
-                <View style={styles.row}>
-                  <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-                    <Text style={styles.label}>水温 (水底 ℃)</Text>
-                    <TextInput
-                      style={styles.input}
-                      value={formData.waterTempBottom}
-                      onChangeText={(val) => setFormData(p => ({ ...p, waterTempBottom: val }))}
-                      placeholder="22"
-                      keyboardType="numeric"
-                      placeholderTextColor="#94a3b8"
-                    />
-                  </View>
-                  <View style={[styles.inputGroup, { flex: 1 }]}>
-                    <Text style={styles.label}>透明度 (m)</Text>
-                    <TextInput
-                      style={styles.input}
-                      value={formData.transparency}
-                      onChangeText={(val) => setFormData(p => ({ ...p, transparency: val }))}
-                      placeholder="15"
-                      keyboardType="numeric"
-                      placeholderTextColor="#94a3b8"
-                    />
-                  </View>
+          {openSections.conditions && (
+            <View style={styles.sectionBody}>
+              <View style={styles.row}>
+                <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                  <Text style={styles.label}>天気</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.weather}
+                    onChangeText={(val) => setFormData(p => ({ ...p, weather: val }))}
+                    placeholder="晴れ/曇り/雨"
+                    placeholderTextColor="#94a3b8"
+                  />
                 </View>
-                {/* More condition fields can be added here */}
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.label}>気温 (℃)</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.airTemp}
+                    onChangeText={(val) => setFormData(p => ({ ...p, airTemp: val }))}
+                    keyboardType="numeric"
+                    placeholder="25"
+                    placeholderTextColor="#94a3b8"
+                  />
+                </View>
               </View>
-            )
-          }
-        </View >
+
+              <View style={styles.row}>
+                <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                  <Text style={styles.label}>水面水温 (℃)</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.waterTempSurface}
+                    onChangeText={(val) => setFormData(p => ({ ...p, waterTempSurface: val }))}
+                    keyboardType="numeric"
+                    placeholder="24"
+                    placeholderTextColor="#94a3b8"
+                  />
+                </View>
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.label}>水底水温 (℃)</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.waterTempBottom}
+                    onChangeText={(val) => setFormData(p => ({ ...p, waterTempBottom: val }))}
+                    keyboardType="numeric"
+                    placeholder="22"
+                    placeholderTextColor="#94a3b8"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>透明度 (m)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={formData.transparency}
+                  onChangeText={(val) => setFormData(p => ({ ...p, transparency: val }))}
+                  keyboardType="numeric"
+                  placeholder="15"
+                  placeholderTextColor="#94a3b8"
+                />
+              </View>
+
+              <View style={styles.row}>
+                <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                  <Text style={styles.label}>波</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.wave}
+                    onChangeText={(val) => setFormData(p => ({ ...p, wave: val }))}
+                    placeholder="なし/小/中/大"
+                    placeholderTextColor="#94a3b8"
+                  />
+                </View>
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.label}>うねり</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.surge}
+                    onChangeText={(val) => setFormData(p => ({ ...p, surge: val }))}
+                    placeholder="なし/小/中/大"
+                    placeholderTextColor="#94a3b8"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>流れ</Text>
+                <TextInput
+                  style={styles.input}
+                  value={formData.current}
+                  onChangeText={(val) => setFormData(p => ({ ...p, current: val }))}
+                  placeholder="なし/弱/中/強/激流"
+                  placeholderTextColor="#94a3b8"
+                />
+              </View>
+            </View>
+          )}
+        </View>
+
+        {/* Gear Section */}
+        <View style={styles.sectionCard}>
+          <SectionHeader title="器材・タンク" icon={Settings} section="gear" color="#6366f1" />
+          {openSections.gear && (
+            <View style={styles.sectionBody}>
+              <View style={styles.row}>
+                <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                  <Text style={styles.label}>スーツ</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.suitType}
+                    onChangeText={(val) => setFormData(p => ({ ...p, suitType: val }))}
+                    placeholder="ウェット/ドライ"
+                    placeholderTextColor="#94a3b8"
+                  />
+                </View>
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.label}>厚さ (mm)</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.suitThickness}
+                    onChangeText={(val) => setFormData(p => ({ ...p, suitThickness: val }))}
+                    keyboardType="numeric"
+                    placeholder="5"
+                    placeholderTextColor="#94a3b8"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>ウェイト (kg)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={formData.weight}
+                  onChangeText={(val) => setFormData(p => ({ ...p, weight: val }))}
+                  keyboardType="numeric"
+                  placeholder="4"
+                  placeholderTextColor="#94a3b8"
+                />
+              </View>
+
+              <View style={styles.row}>
+                <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                  <Text style={styles.label}>タンク材質</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.tankMaterial}
+                    onChangeText={(val) => setFormData(p => ({ ...p, tankMaterial: val }))}
+                    placeholder="スチール/アルミ"
+                    placeholderTextColor="#94a3b8"
+                  />
+                </View>
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.label}>容量 (L)</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.tankCapacity}
+                    onChangeText={(val) => setFormData(p => ({ ...p, tankCapacity: val }))}
+                    keyboardType="numeric"
+                    placeholder="10"
+                    placeholderTextColor="#94a3b8"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.row}>
+                <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                  <Text style={styles.label}>開始圧 (bar)</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.pressureStart}
+                    onChangeText={(val) => setFormData(p => ({ ...p, pressureStart: val }))}
+                    keyboardType="numeric"
+                    placeholder="200"
+                    placeholderTextColor="#94a3b8"
+                  />
+                </View>
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.label}>終了圧 (bar)</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.pressureEnd}
+                    onChangeText={(val) => setFormData(p => ({ ...p, pressureEnd: val }))}
+                    keyboardType="numeric"
+                    placeholder="50"
+                    placeholderTextColor="#94a3b8"
+                  />
+                </View>
+              </View>
+            </View>
+          )}
+        </View>
 
         {/* Creatures Section */}
         < View style={styles.sectionCard} >

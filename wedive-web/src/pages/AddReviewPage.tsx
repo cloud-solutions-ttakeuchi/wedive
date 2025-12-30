@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { storage, db as firestore } from '../lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import ReactDatePicker, { registerLocale } from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { ja } from 'date-fns/locale/ja';
@@ -117,9 +117,35 @@ export const AddReviewPage = () => {
         };
         fetchReview();
       }
+    } else if (!isEdit && logId && !loadingReview) {
+      // [New] Check if a review already exists for this log (Recovery for broken links)
+      // Only run if not already loading and not in edit mode
+      const checkExisting = async () => {
+        try {
+          // Check local state first
+          const localFound = reviews.find(r => r.logId === logId);
+          if (localFound) {
+            console.log("Found existing review locally for log, redirecting:", localFound.id);
+            navigate(`/add-review/${pointId || localFound.pointId}/${localFound.id}?logId=${logId}`, { replace: true });
+            return;
+          }
+
+          // Check Firestore
+          const q = query(collection(firestore, 'reviews'), where('logId', '==', logId));
+          const snap = await getDocs(q);
+          if (active && !snap.empty) {
+            const foundId = snap.docs[0].id;
+            console.log("Found existing review in Firestore for log, redirecting:", foundId);
+            navigate(`/add-review/${pointId || snap.docs[0].data().pointId}/${foundId}?logId=${logId}`, { replace: true });
+          }
+        } catch (e) {
+          console.error("Failed to check existing review:", e);
+        }
+      }
+      checkExisting();
     }
     return () => { active = false; };
-  }, [isEdit, reviewId, reviews, proposalReviews, isDataLoaded]);
+  }, [isEdit, reviewId, reviews, proposalReviews, isDataLoaded, logId, navigate, pointId, loadingReview]);
 
   // Pre-fill from log if available (only on create)
   useEffect(() => {
