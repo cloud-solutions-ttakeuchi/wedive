@@ -8,6 +8,7 @@ import type { DiveLog } from '../types';
 import { compressImage } from '../utils/imageUtils';
 import { HierarchicalPointSelector } from '../components/HierarchicalPointSelector';
 import { SearchableCreatureSelector } from '../components/SearchableCreatureSelector';
+import { FEATURE_FLAGS } from '../config/features';
 
 interface LogFormData {
   title: string;
@@ -46,6 +47,7 @@ interface LogFormData {
   comment: string;
   isPrivate: boolean;
   photos: string[];
+  alsoReview?: boolean;
 }
 
 export const AddLogPage = () => {
@@ -116,6 +118,7 @@ export const AddLogPage = () => {
     comment: '',
     isPrivate: false,
     photos: [] as string[],
+    alsoReview: true,
   });
 
   // Default Values from Favorites
@@ -271,9 +274,14 @@ export const AddLogPage = () => {
       };
 
       console.log("[AddLog] Adding log with:", logData);
-      await addLog(logData);
+      const newLog = await addLog(logData);
       alert('ログが正常に保存されました！');
-      navigate('/mypage');
+
+      if (formData.alsoReview && formData.pointId && FEATURE_FLAGS.ENABLE_V6_REVIEW_LOG_LINKING) {
+        navigate(`/add-review/${formData.pointId}?logId=${newLog.id}`);
+      } else {
+        navigate('/mypage');
+      }
     } catch (error) {
       console.error('Log registration failed:', error);
       alert('ログの保存に失敗しました。入力内容を確認してください。');
@@ -891,6 +899,31 @@ export const AddLogPage = () => {
                     </div>
                   )}
                 </div>
+
+                {FEATURE_FLAGS.ENABLE_V6_REVIEW_LOG_LINKING && (
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        name="alsoReview"
+                        checked={formData.alsoReview}
+                        onChange={handleChange}
+                        id="alsoReview"
+                        className="rounded text-sky-500 focus:ring-sky-500"
+                      />
+                      <label htmlFor="alsoReview" className="text-sm font-bold text-gray-700">このポイントのレビューも投稿する</label>
+                      <button type="button" onClick={() => toggleHelp('alsoReview')} className="text-gray-400 hover:text-sky-500 transition-colors">
+                        <Info size={16} />
+                      </button>
+                    </div>
+                    {activeHelp === 'alsoReview' && (
+                      <div className="bg-sky-50 text-sky-800 text-xs p-2 rounded-lg mt-2 animate-fade-in leading-relaxed text-left">
+                        このポイントの海況や透明度などのデータをレビューとして共有します。<br />
+                        ログに記載した海況データが自動的に入力されます。
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </AccordionSection>

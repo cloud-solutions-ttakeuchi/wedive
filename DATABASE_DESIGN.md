@@ -12,7 +12,7 @@
 `points`, `creatures`, `areas`, `zones`, `regions` コレクション。
 - **形式**: `[プレフィックス][数字のみ]` (例: `p1766033814156`)
 - **禁止事項**: **アンダースコア (`_`) は一切含めない。**
-- **プレフィックス**: `p` (Point), `c` (Creature), `a` (Area), `z` (Zone), `r` (Region)
+- **プレフィックス**: `p` (Point), `c` (Creature), `a` (Area), `z` (Zone), `r` (Region), `rv` (Review), `l` (Log), `propp` (PointProposal), `propc` (CreatureProposal), `proppc` (PointCreatureProposal)
 
 ### 1.2 マッピングデータ
 `point_creatures` コレクション。
@@ -52,6 +52,7 @@ erDiagram
     %% --- Proposals (Admin) ---
     USER ||--o{ CREATURE_PROPOSAL : "Ref ID (submitterId)"
     USER ||--o{ POINT_PROPOSAL : "Ref ID (submitterId)"
+    USER ||--o{ POINT_CREATURE_PROPOSAL : "Ref ID (submitterId)"
 
     %% Legend
     %% Sub-collection: Physical nesting in Firestore
@@ -104,7 +105,7 @@ erDiagram
 | `coordinates` | map | `{lat: number, lng: number}` |
 | `googlePlaceId`| string | Google Maps Place ID |
 | `formattedAddress`|string| Google Maps 住所 |
-| `status` | string | pending, approved, rejected |
+| `status` | string | approved（マスタは常に承認済みのみ） |
 | `submitterId` | string | 登録者UID |
 | `createdAt` | string | 作成日時 (ISO8601) |
 | `images` | array(string) | 画像URLリスト |
@@ -130,7 +131,7 @@ erDiagram
 | `depthRange` | map | `{min: number, max: number}` |
 | `specialAttributes`| array(string) | 毒, 擬態, 夜行性 などの属性 |
 | `waterTempRange`| map | `{min: number, max: number}` |
-| `status` | string | pending, approved, rejected |
+| `status` | string | approved（マスタは常に承認済みのみ） |
 | `size` | string | サイズ感 |
 | `season` | array(string) | 見られる季節 |
 | `submitterId` | string | 登録者UID |
@@ -148,7 +149,7 @@ erDiagram
 | `creatureId` | string | 生物ID |
 | `localRarity` | string | その地点固有のレア度 (Common, Rare, Epic, Legendary) |
 | `lastSighted` | string | 最終目撃日 (Option) |
-| `status` | string | approved, pending, deletion_requested |
+| `status` | string | approved または 論理削除の rejected |
 | `reasoning` | string | AIによる紐付け根拠 |
 | `confidence` | number | AI確信度 (0.0-1.0) |
 
@@ -195,17 +196,59 @@ WeDive では、スケーラビリティとクエリ効率を考慮し、ユー�
 | `likeCount` | number | いいね数 |
 | `likedBy` | array(string) | いいねしたユーザーUIDリスト |
 | `garminActivityId` | string | Garmin連携ID (重複防止) |
+| `reviewId` | string | 関連レビューID (双方向リンク用) |
 | `profile` | array(map) | `{depth, temp, hr, time}` ダイブプロファイルデータ |
 
-### 3.7 `creature_proposals`, `point_proposals` (申請データ)
+### 3.7 `creature_proposals`, `point_proposals` (マスタ申請データ)
 各マスタのフィールドに加え、以下を保持：
 | フィールド | 型 | 説明 |
 | :--- | :--- | :--- |
-| `targetId` | string | (更新時) 対象マスタID |
+| `id` | string | `propc` / `propp` + タイムスタンプ |
+| `targetId` | string | (Create時は予約されるID / Update・Delete時は対象マスタID) |
 | `proposalType` | string | create, update, delete |
+| `diffData` | map | (Update時) 変更後のフィールド差分 |
 | `submitterId` | string | 申請者UID |
 | `status` | string | pending, approved, rejected |
 | `createdAt` | string | 申請日時 |
+| `processedAt` | string | 承認・却下日時 |
+
+### 3.8 `point_creature_proposals` (ポイント-生物紐付け申請)
+ポイントと生物の出現関係の追加、更新、削除を管理するコレクション。
+| フィールド | 型 | 説明 |
+| :--- | :--- | :--- |
+| `id` | string | `proppc` + タイムスタンプ |
+| `pointId` | string | 対象ポイントID |
+| `creatureId` | string | 対象生物ID |
+| `localRarity` | string | 提案するレア度 (Common, Rare, Epic, Legendary) |
+| `proposalType` | string | create, update, delete |
+| `targetId` | string | (Create時) 予約ID `pointId_creatureId` / (Delete時) 対象ID |
+| `submitterId` | string | 申請者UID |
+| `status` | string | pending, approved, rejected |
+| `createdAt` | string | 申請日時 |
+| `processedAt` | string | 承認/却下日時 |
+| `reasoning` | string | (Option) 申請理由・根拠 |
+
+#### 3.8.1 提案のライフサイクル定義 (Ideal State)
+データ不整合および「ゾンビデータ（管理不能な未承認データ）」の発生を完璧に防ぐため、以下の原則を徹底します。
+
+**原則: マスタコレクションは「完成データ（承認済み）」のみを保持し、申請時にマスタを汚染してはならない。**
+
+1. **create (新規作成申請)**
+   - **申請時**: 申請用コレクション (`*_proposals`) にのみドキュメントを作成し、全データを保持する。**マスタには一切触れない。**
+   - **承認時**: 申請データに基づき、マスタコレクションに `status: approved` で新規ドキュメントを生成する。
+   - **却下時**: 申請用ドキュメントを `rejected` に更新するだけ。マスタには何も書き込まれていないため、クリーンアップは不要。
+
+2. **update (更新申請)**
+   - **申請時**: マスタには触れず、申請ドキュメントに `targetId` と変更内容を保持する。
+   - **承認時**: 変更内容をマスタに反映（マージ）する。
+   - **却下時**: 申請ドキュメントのみを `rejected` に更新する。
+
+3. **delete (削除申請)**
+   - **申請時**: マスタには触れず、対象IDを指定した申請ドキュメントを作成する。
+   - **承認時**: マスタの該当データの `status` を `rejected`（論理削除）に更新する。
+   - **却下時**: 申請ドキュメントのみを `rejected` に更新する。
+
+※ レビュー (`reviews`) は例外的に、検索・表示の特性上、投稿時に直接マスタへ `status: pending` で書き込むことを許容する。
 
 ### 3.8 `ai_grounding_cache` (AI事実確認キャッシュ)
 AIによる再構築結果や検索結果を保存し、費用の抑制と高速化を図る。
@@ -245,25 +288,41 @@ AIによる再構築結果や検索結果を保存し、費用の抑制と高速
 
 ---
 
-## 4. 外部知識インフラ (Knowledge Infrastructure)
-
-Managed RAG (Vertex AI Search) を連携させるための設定規則です。
-
-| 項目 | 環境変数名 | 説明 |
-| :--- | :--- | :--- |
-| ドラフト生成用 | `VERTEX_AI_DRAFT_DATA_STORE_IDS` | マスタ登録・検証に使用するデータストア群 (カンマ区切り) |
-
----
-
-## 5. オフライン・データ管理 (Offline Data Management)
-
-モバイルアプリ（wedive-app）においては、ネットワークが不安定なダイビングポイントでの利用を想定し、Firestore の **永続的ローカルキャッシュ (Persistent Local Cache)** を有効化しています。
-
-### 5.1 永続化の仕組み
-- **対象データ**: 一度読み込んだマスタデータ (`points`, `creatures` 等) および自身の `logs` サブコレクション。
-- **挙動**: ネットワーク未接続時でも、SDK はローカルキャッシュからデータを読み出します。読み込み時にはオンライン・オフラインを問わず、保存済みのデータが即座に UI に反映され、変更がある場合のみバックグラウンドでサーバーと同期されます。
-
-### 5.2 オフライン保存の整合性
-- **Write Operation**: 圏外でのログ保存・更新は、まずローカルの永続キャッシュに書き込まれます。
-- **後追い同期**: デバイスがオンラインに復帰した際、Firestore SDK が未送信の書き込み（Mutation）を自動的に順序を守ってサーバーへ反映します。
-- **制約**: オフライン中の画像アップロード（Firebase Storage）は、SDK の自動リトライに依存せず、将来的にキュー管理（Phase 4 以降）で対応予定です。
+## 6. インデックス設計 (Index Design)
+ 
+ Firestore のクエリ性能を最適化し、複雑な絞り込み・並べ替えを実現するために以下の複合インデックスを構成します。
+ 
+ ### 6.1 必須複合インデックス
+ 
+ | コレクションID | 対象フィールドと順序 | 用途 |
+ | :--- | :--- | :--- |
+ | `logs` | `isPrivate` (Ascending), `date` (Descending), `__name__` (Descending) | モバイル版「マイページ」およびWeb版「マイレビュー」での自身の投稿一覧表示に使用。 |
+| `reviews` | `status` (Ascending), `createdAt` (Descending), `__name__` (Descending) | ポイント詳細表示に使用。 |
+ | `reviews` | `userId` (Ascending), `createdAt` (Descending), `__name__` (Descending) | モバイル版「マイページ」およびWeb版「マイレビュー」での自身の投稿一覧表示に使用。 |
+ | `points` | `status` (Ascending), `name` (Ascending), `__name__` (Ascending) | モバイル版・Web版でのポイント選択モーダル検索（名前の部分一致・ソート）に使用。 |
+ 
+ ---
+ 
+ ## 7. 外部知識インフラ (Knowledge Infrastructure)
+ 
+ Managed RAG (Vertex AI Search) を連携させるための設定規則です。
+ 
+ | 項目 | 環境変数名 | 説明 |
+ | :--- | :--- | :--- |
+ | ドラフト生成用 | `VERTEX_AI_DRAFT_DATA_STORE_IDS` | マスタ登録・検証に使用するデータストア群 (カンマ区切り) |
+ 
+ ---
+ 
+ ## 8. オフライン・データ管理 (Offline Data Management)
+ 
+ モバイルアプリ（wedive-app）においては、ネットワークが不安定なダイビングポイントでの利用を想定し、Firestore の **永続的ローカルキャッシュ (Persistent Local Cache)** を有効化しています。
+ 
+ ### 8.1 永続化の仕組み
+ - **対象データ**: 一度読み込んだマスタデータ (`points`, `creatures` 等) および自身の `logs` サブコレクション。
+ - **挙動**: ネットワーク未接続時でも、SDK はローカルキャッシュからデータを読み出します。読み込み時にはオンライン・オフラインを問わず、保存済みのデータが即座に UI に反映され、変更がある場合のみバックグラウンドでサーバーと同期されます。
+ 
+ ### 8.2 オフライン保存の整合性
+ - **Write Operation**: 圏外でのログ保存・更新は、まずローカルの永続キャッシュに書き込まれます。
+ - **後追い同期**: デバイスがオンラインに復帰した際、Firestore SDK が未送信の書き込み（Mutation）を自動的に順序を守ってサーバーへ反映します。
+ - **制約**: オフライン中の画像アップロード（Firebase Storage）は、SDK の自動リトライに依存せず、将来的にキュー管理（Phase 4 以降）で対応予定です。
+```

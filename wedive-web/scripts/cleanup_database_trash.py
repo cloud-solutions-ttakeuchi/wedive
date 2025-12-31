@@ -5,19 +5,24 @@ import re
 
 def is_garbage(collection_name, doc_id):
     """
-    判定ロジック:
-    - マスター系 (creatures, points, areas, zones, regions):
-      正解は 'プレフィックス + 数字'。例: c12345, p999.
-      それ以外 (c_abc, p_123_abc) はゴミ。
-    - マッピング系 (point_creatures):
-      正解は 'p数字_c数字'。例: p123_c456.
-      それ以外 (p_123_c_456, など) はゴミ。
+    判定ロジック (統合提案システム対応):
+    - point_creatures: p[数字]_c[数字] (p123_c456)
+    - point_proposals: propp[数字]+
+    - creature_proposals: propc[数字]+
+    - point_creature_proposals: proppc[数字]+
+    - マスター系 (c, p, a, z, r): [プレフィックス1文字][数字]+
     """
     if collection_name == "point_creatures":
         # 正解: ^p\d+_c\d+$
         return not bool(re.match(r"^p\d+_c\d+$", doc_id))
+    elif collection_name == "point_proposals":
+        return not bool(re.match(r"^propp\d+.*$", doc_id))
+    elif collection_name == "creature_proposals":
+        return not bool(re.match(r"^propc\d+.*$", doc_id))
+    elif collection_name == "point_creature_proposals":
+        return not bool(re.match(r"^proppc\d+.*$", doc_id))
     else:
-        # 正解: ^[a-z]\d+$ (プレフィックス1文字 + 数字)
+        # マスター系: c123, p123, a123, z123, r123
         return not bool(re.match(r"^[a-z]\d+$", doc_id))
 
 def cleanup_database_trash(project_id, dry_run=True):
@@ -26,7 +31,11 @@ def cleanup_database_trash(project_id, dry_run=True):
         firebase_admin.initialize_app(cred, {'projectId': project_id})
 
     db = firestore.client()
-    collections = ["creatures", "points", "areas", "zones", "regions", "point_creatures"]
+    collections = [
+        "creatures", "points", "areas", "zones", "regions",
+        "point_creatures",
+        "point_proposals", "creature_proposals", "point_creature_proposals"
+    ]
 
     print(f"🧹 Database Deep Cleaning starting in: {project_id}")
     if dry_run:

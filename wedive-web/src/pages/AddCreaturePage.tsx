@@ -12,7 +12,7 @@ import { functions, auth } from '../lib/firebase';
 export const AddCreaturePage = () => {
   const navigate = useNavigate();
   // Refactor: use points, creatures from context
-  const { addCreature, points } = useApp();
+  const { addCreature, addCreatureProposal, points, currentUser, isAuthenticated } = useApp();
 
   // Note: points are loaded from context
   const [isLoadingAI, setIsLoadingAI] = useState(false);
@@ -68,14 +68,15 @@ export const AddCreaturePage = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
       // Process inputs
       const tags = formData.tagsInput.split(',').map(t => t.trim()).filter(Boolean);
       const specialAttributes = formData.specialAttributesInput.split(',').map(t => t.trim()).filter(Boolean);
-      // const regions = formData.regionsInput.split(',').map(t => t.trim()).filter(Boolean);
+
+      const isAdmin = currentUser.role === 'admin' || currentUser.role === 'moderator';
 
       // Explicitly type the creature data
       const creatureData: Omit<Creature, 'id'> = {
@@ -87,11 +88,10 @@ export const AddCreaturePage = () => {
         imageUrl: formData.imageUrl!,
         tags,
         specialAttributes,
-        // regions,
         size: formData.size,
         season: formData.season,
         locationIds: formData.locationIds,
-        status: 'pending',
+        status: isAdmin ? 'approved' : 'pending',
         depthRange: (formData.depthMin && formData.depthMax) ? {
           min: Number(formData.depthMin),
           max: Number(formData.depthMax)
@@ -100,10 +100,10 @@ export const AddCreaturePage = () => {
           min: Number(formData.waterTempMin),
           max: Number(formData.waterTempMax)
         } : undefined,
-        gallery: [], // Mock gallery: should be string[]
-        submitterId: 'current_user', // Mock submitter
-        imageCredit: undefined,
-        imageLicense: undefined,
+        gallery: [],
+        submitterId: currentUser.id,
+        imageCredit: formData.imageCredit,
+        imageLicense: formData.imageLicense,
         imageKeyword: undefined,
         stats: {
           popularity: 50,
@@ -115,8 +115,13 @@ export const AddCreaturePage = () => {
         }
       };
 
-      addCreature(creatureData);
-      alert('生物の登録申請が完了しました！');
+      if (isAdmin) {
+        await addCreature(creatureData);
+        alert('生物をマスタに登録しました（承認済み）');
+      } else {
+        await addCreatureProposal(creatureData);
+        alert('生物の登録申請が完了しました。管理者の承認をお待ちください。');
+      }
       navigate('/');
     } catch (error) {
       console.error('Registration failed:', error);

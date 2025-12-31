@@ -13,6 +13,7 @@
 - **Edit Mode Data Reliability**: レビュー編集画面（AddReviewPage）において、コンテキストにデータがない場合でも Firestore から直接取得するロジックを強化し、編集不可時間を解消。
 - **Mobile Edit UI Consistency**: モバイル版のスポット詳細ページから直接レビュー編集画面へ遷移できるようボタンアクションを統合。
 - **Review ID Consistency**: モバイルアプリからのレビュー投稿時、FirestoreドキュメントIDが内部ID（`rv...`）と一致せず自動生成されていた問題を修正。Web版と同様に `setDoc` を使用し、ID命名規則を統一。
+- **Search Filter Robustness**: スポット名や生物名での絞り込み時に、データが欠落している場合に発生していた `TypeError` を修正。存在チェックと String 強制変換を導入し、Web版とアプリ版の両方でクラッシュを防止。(Web/App)
 ### Added
 - **Area-wide Comparative Statistics**: ポイント詳細ページにて、同一エリア内の他ポイントの平均値（透明度、レーダーチャート指標）を表示し、相対的なコンディション比較が可能に。(Web/App)
 - **Review Feed Integration (App)**: Web版と同等の詳細レビューフィードをモバイルアプリに統合。承認済みレビューおよび自分の投稿（承知待ち含む）をリアルタイムに閲覧可能。

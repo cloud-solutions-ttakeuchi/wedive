@@ -1,8 +1,9 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { storage } from '../lib/firebase';
+import { storage, db as firestore } from '../lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import ReactDatePicker, { registerLocale } from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { ja } from 'date-fns/locale/ja';
@@ -36,8 +37,6 @@ export const AddReviewPage = () => {
   const { points, logs, currentUser, addReview, updateReview, isAuthenticated, updateUser, reviews, proposalReviews } = useApp();
   const isEdit = !!reviewId;
   const existingReview = isEdit ? (reviews.find(r => r.id === reviewId) || proposalReviews.find(r => r.id === reviewId)) : null;
-
-  const point = points.find(p => p.id === (isEdit ? existingReview?.pointId : pointId));
 
   const [step, setStep] = useState(1);
   const [uploading, setUploading] = useState(false);
@@ -82,47 +81,77 @@ export const AddReviewPage = () => {
     userLogsCount: logs.length || 0,
   });
 
-  // Ensure existingReview is loaded (including direct fetch if not in context)
+  // Derive point from available data (URL params or loaded review data)
+  const point = useMemo(() => {
+    const pid = isEdit ? (existingReview?.pointId || formData.pointId) : pointId;
+    if (!pid) return null;
+    return points.find(p => p.id === pid);
+  }, [isEdit, existingReview?.pointId, formData.pointId, pointId, points]);
+
+  // Ensure existingReview is loaded (including direct fetch if not in context) & Merge Log Data
   useEffect(() => {
+    let active = true;
+
+    const mergeLogData = (baseData: Partial<Review>) => {
+      if (!logId || logs.length === 0) return baseData;
+      const log = logs.find(l => l.id === logId);
+      if (!log) return baseData;
+
+      console.log("Merging latest log data into review form");
+      return {
+        ...baseData,
+        date: log.date,
+        condition: {
+          ...baseData.condition!,
+          weather: log.condition?.weather || baseData.condition!.weather,
+          wave: log.condition?.wave || baseData.condition!.wave,
+          airTemp: log.condition?.airTemp || baseData.condition!.airTemp,
+          waterTemp: log.condition?.waterTemp?.surface || baseData.condition!.waterTemp,
+        },
+        metrics: {
+          ...baseData.metrics!,
+          visibility: log.condition?.transparency || baseData.metrics!.visibility,
+          flow: log.condition?.current || baseData.metrics!.flow as any,
+          depthAvg: log.depth?.average || baseData.metrics!.depthAvg,
+          depthMax: log.depth?.max || baseData.metrics!.depthMax,
+        }
+      };
+    };
+
     if (isEdit && reviewId && !isDataLoaded) {
       const found = reviews.find(r => r.id === reviewId) || proposalReviews.find(r => r.id === reviewId);
       if (found) {
-        setFormData({ ...found, pointId: found.pointId });
+        setFormData(mergeLogData({ ...found, pointId: found.pointId }));
         setIsDataLoaded(true);
         setLoadingReview(false);
       } else {
-        // Fallback: If not in context yet, it might be loading or in another collection
-        setLoadingReview(true);
-      }
-    }
-  }, [isEdit, reviewId, reviews, proposalReviews, isDataLoaded]);
-
-  // Pre-fill from log if available (only on create)
-  useEffect(() => {
-    if (!isEdit && logId) {
-      const log = logs.find(l => l.id === logId);
-      if (log) {
-        setFormData(prev => ({
-          ...prev,
-          date: log.date,
-          condition: {
-            ...prev.condition!,
-            weather: log.condition?.weather || prev.condition!.weather,
-            wave: log.condition?.wave || prev.condition!.wave,
-            airTemp: log.condition?.airTemp || prev.condition!.airTemp,
-            waterTemp: log.condition?.waterTemp?.surface || prev.condition!.waterTemp,
-          },
-          metrics: {
-            ...prev.metrics!,
-            visibility: log.condition?.transparency || prev.metrics!.visibility,
-            flow: log.condition?.current || prev.metrics!.flow as any,
-            depthAvg: log.depth?.average || prev.metrics!.depthAvg,
-            depthMax: log.depth?.max || prev.metrics!.depthMax,
+        // Fallback: Fetch directly from Firestore
+        const fetchReview = async () => {
+          setLoadingReview(true);
+          try {
+            const docRef = doc(firestore, 'reviews', reviewId);
+            const docSnap = await getDoc(docRef);
+            if (active && docSnap.exists()) {
+              const data = { ...docSnap.data(), id: docSnap.id } as Review;
+              setFormData(mergeLogData({ ...data, pointId: data.pointId }));
+              setIsDataLoaded(true);
+            }
+          } catch (e) {
+            console.error("Failed to fetch review directly:", e);
+          } finally {
+            if (active) setLoadingReview(false);
           }
-        }));
+        };
+        fetchReview();
+      }
+    } else if (!isEdit && logId && !loadingReview) {
+      // If new review, merge log data to initial form
+      if (active) {
+        setFormData(prev => mergeLogData(prev));
       }
     }
-  }, [isEdit, logId, logs]);
+    return () => { active = false; };
+  }, [isEdit, reviewId, reviews, proposalReviews, isDataLoaded, logId, navigate, pointId, loadingReview, logs]);
 
   if (isEdit && loadingReview) return (
     <div className="flex flex-col items-center justify-center p-20 gap-4">
@@ -166,21 +195,24 @@ export const AddReviewPage = () => {
         await updateReview(reviewId, formData);
       } else {
         await addReview(formData as any);
+      }
 
-        // Also update user profile with latest certification
-        if (currentUser && currentUser.id !== 'guest') {
-          await updateUser({
-            certification: {
-              orgId: formData.userOrgId || 'padi',
-              rankId: formData.userRank || 'entry',
-              date: currentUser.certification?.date || new Date().toISOString().split('T')[0]
-            }
-          });
-        }
+      // Also update user profile with latest certification
+      if (currentUser && currentUser.id !== 'guest') {
+        const orgId = formData.userOrgId || 'padi';
+        const rankId = formData.userRank || 'entry';
+
+        await updateUser({
+          certification: {
+            orgId: orgId.toLowerCase(),
+            rankId: rankId.toLowerCase(),
+            date: currentUser.certification?.date || new Date().toISOString().split('T')[0]
+          }
+        });
       }
 
       alert(isEdit ? 'レビューを更新しました！' : 'レビューを投稿しました！');
-      navigate(`/point/${point.id}`);
+      navigate(`/point/${point?.id || pointId}`);
     } catch (error) {
       console.error('Submit failed:', error);
       alert('投稿に失敗しました');
@@ -920,7 +952,7 @@ const Step3Evaluation = ({ data, onChange, onRadarChange, onImageUpload, uploadi
                 onChange={e => onChange({ userRank: e.target.value })}
                 className="w-full h-8 bg-transparent text-[10px] font-black outline-none cursor-pointer"
               >
-                {CERTIFICATIONS.find(o => o.id.toLowerCase() === data.userOrgId?.toLowerCase())?.ranks.map(rank => (
+                {CERTIFICATIONS.find(o => o.id.toLowerCase() === (data.userOrgId || '').toLowerCase())?.ranks.map(rank => (
                   <option key={rank.id} value={rank.id}>{rank.name}</option>
                 ))}
               </select>

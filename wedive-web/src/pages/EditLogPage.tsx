@@ -6,8 +6,11 @@ import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import type { DiveLog } from '../types';
 import { compressImage } from '../utils/imageUtils';
+import { db as firestore } from '../lib/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 import { HierarchicalPointSelector } from '../components/HierarchicalPointSelector';
 import { SearchableCreatureSelector } from '../components/SearchableCreatureSelector';
+import { FEATURE_FLAGS } from '../config/features';
 
 export const EditLogPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -68,6 +71,7 @@ export const EditLogPage = () => {
     comment: '',
     isPrivate: false,
     photos: [] as string[],
+    alsoReview: false,
   });
 
   // Accordion State
@@ -100,7 +104,7 @@ export const EditLogPage = () => {
 
     // eslint-disable-next-line
     setFormData({
-      title: log.title || '',
+      title: log.title || log.location.pointName || points.find(p => p.id === log.location.pointId)?.name || '',
       date: log.date,
       diveNumber: String(log.diveNumber),
       pointId: log.location.pointId || '',
@@ -134,8 +138,9 @@ export const EditLogPage = () => {
       comment: log.comment || '',
       isPrivate: log.isPrivate || false,
       photos: log.photos || [],
+      alsoReview: false,
     });
-  }, [id, isAuthenticated, logs, navigate]);
+  }, [id, isAuthenticated, logs, navigate, points]);
 
   // Creature Search State
   const [creatureSearchTerm, setCreatureSearchTerm] = useState('');
@@ -150,18 +155,20 @@ export const EditLogPage = () => {
     // Find all creatures linked to this point
     const linkedCreatureIds = new Set(
       pointCreatures
-        .filter(pc => pc.pointId === formData.pointId && pc.status === 'approved')
+        .filter(pc => pc && pc.pointId === formData.pointId && pc.status === 'approved')
         .map(pc => pc.creatureId)
     );
 
-    return creatures.filter(c => linkedCreatureIds.has(c.id));
+    return creatures.filter(c => c && linkedCreatureIds.has(c.id));
   }, [formData.pointId, pointCreatures, creatures]);
 
   // Filtered Creatures for Search
   const searchResults = useMemo(() => {
     if (!creatureSearchTerm) return [];
     return creatures.filter(c =>
-      c.name.includes(creatureSearchTerm) || c.scientificName?.includes(creatureSearchTerm) || c.tags?.some(tag => tag.includes(creatureSearchTerm))
+      (c?.name || '').includes(creatureSearchTerm) ||
+      (c?.scientificName || '').includes(creatureSearchTerm) ||
+      (c?.tags || []).some(tag => (tag || '').includes(creatureSearchTerm))
     ).slice(0, 10); // Limit results
   }, [creatureSearchTerm, creatures]);
 
@@ -243,10 +250,36 @@ export const EditLogPage = () => {
       };
 
       console.log("[EditLog] Updating log with:", logData);
+      await updateLog(id as string, logData);
 
-      await updateLog(id, logData);
+      // [New] If pointId changed and log has a review, update the review's pointId as well
+      const originalLog = logs.find(l => l.id === id);
+      if (originalLog && originalLog.reviewId && originalLog.location.pointId !== formData.pointId) {
+        console.log(`[EditLog] Point changed from ${originalLog.location.pointId} to ${formData.pointId}. Updating linked review ${originalLog.reviewId}...`);
+        try {
+          const reviewRef = doc(firestore, 'reviews', originalLog.reviewId);
+          await updateDoc(reviewRef, { pointId: formData.pointId });
+          console.log("[EditLog] Linked review updated successfully.");
+        } catch (e) {
+          console.error("[EditLog] Failed to update linked review pointId:", e);
+        }
+      }
+
       alert('ログが正常に更新されました！');
-      navigate('/mypage');
+
+      const updatedLog = logs.find(l => l.id === id);
+      // Use logical OR to fallback to current log's reviewId if find result is stale/optimistic
+      const currentReviewId = updatedLog?.reviewId || (logs.find(l => l.id === id)?.reviewId);
+
+      const reviewPath = currentReviewId
+        ? `/add-review/${formData.pointId}/${currentReviewId}?logId=${id}`
+        : `/add-review/${formData.pointId}?logId=${id}`;
+
+      if (formData.alsoReview && formData.pointId && FEATURE_FLAGS.ENABLE_V6_REVIEW_LOG_LINKING) {
+        navigate(reviewPath);
+      } else {
+        navigate('/mypage');
+      }
     } catch (error) {
       console.error('Log update failed:', error);
       alert('ログの更新に失敗しました。入力内容を確認してください。');
@@ -752,7 +785,6 @@ export const EditLogPage = () => {
                 </div>
               </div>
 
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">コメント</label>
                 <textarea
@@ -810,25 +842,52 @@ export const EditLogPage = () => {
                 </div>
               </div>
 
-              <div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    name="isPrivate"
-                    checked={formData.isPrivate}
-                    onChange={handleChange}
-                    id="isPrivate"
-                    className="rounded text-blue-500 focus:ring-blue-500"
-                  />
-                  <label htmlFor="isPrivate" className="text-sm font-bold text-gray-700">非公開にする</label>
-                  <button type="button" onClick={() => toggleHelp('private')} className="text-gray-400 hover:text-blue-500 transition-colors">
-                    <Info size={16} />
-                  </button>
+              <div className="space-y-4 pt-4 border-t border-gray-100">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      name="isPrivate"
+                      checked={formData.isPrivate}
+                      onChange={handleChange}
+                      id="isPrivate"
+                      className="rounded text-blue-500 focus:ring-blue-500"
+                    />
+                    <label htmlFor="isPrivate" className="text-sm font-bold text-gray-700">非公開にする</label>
+                    <button type="button" onClick={() => toggleHelp('private')} className="text-gray-400 hover:text-blue-500 transition-colors">
+                      <Info size={16} />
+                    </button>
+                  </div>
+                  {activeHelp === 'private' && (
+                    <div className="bg-blue-50 text-blue-800 text-xs p-2 rounded-lg mt-2 animate-fade-in leading-relaxed text-left">
+                      チェックを入れると自分専用のログになります。<br />
+                      公開する場合、「チーム情報」と「ショップ情報」以外のデータが他のユーザーにも公開されます。
+                    </div>
+                  )}
                 </div>
-                {activeHelp === 'private' && (
-                  <div className="bg-blue-50 text-blue-800 text-xs p-2 rounded-lg mt-2 animate-fade-in leading-relaxed text-left">
-                    チェックを入れると自分専用のログになります。<br />
-                    公開する場合、「チーム情報」と「ショップ情報」以外のデータが他のユーザーにも公開されます。
+
+                {FEATURE_FLAGS.ENABLE_V6_REVIEW_LOG_LINKING && (
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        name="alsoReview"
+                        checked={formData.alsoReview}
+                        onChange={handleChange}
+                        id="alsoReview"
+                        className="rounded text-sky-500 focus:ring-sky-500"
+                      />
+                      <label htmlFor="alsoReview" className="text-sm font-bold text-gray-700">このポイントのレビューも更新する</label>
+                      <button type="button" onClick={() => toggleHelp('alsoReview')} className="text-gray-400 hover:text-sky-500 transition-colors">
+                        <Info size={16} />
+                      </button>
+                    </div>
+                    {activeHelp === 'alsoReview' && (
+                      <div className="bg-sky-50 text-sky-800 text-xs p-2 rounded-lg mt-2 animate-fade-in leading-relaxed text-left">
+                        このポイントの海況や透明度などのデータをレビューとして共有します。<br />
+                        ログに記載した海況データが自動的に入力されます。
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

@@ -49,6 +49,12 @@ export const seedFirestore = async (force: boolean = false, targetCollections?: 
 
             const ref = doc(db, name, item.id);
             const safeItem = JSON.parse(JSON.stringify(item));
+
+            // [SECURE] Ensure master records are always 'approved' when seeded
+            if (['points', 'creatures', 'point_creatures'].includes(name)) {
+              safeItem.status = 'approved';
+            }
+
             batch.set(ref, safeItem, { merge: true });
             operationCount++;
             count++;

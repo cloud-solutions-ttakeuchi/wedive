@@ -396,11 +396,35 @@ export default function LogDetailScreen() {
       {/* Action FABs (If owner) */}
       {user?.id === log.userId && (
         <View style={styles.fabContainer}>
+          {/* Review FAB */}
+          <TouchableOpacity
+            style={[styles.fab, styles.reviewFab]}
+            onPress={() => {
+              if (log.location.pointId) {
+                router.push({
+                  pathname: '/details/spot/review',
+                  params: {
+                    pointId: log.location.pointId,
+                    logId: log.id,
+                    reviewId: log.reviewId
+                  }
+                });
+              } else {
+                Alert.alert('ポイント未選択', 'ポイントが選択されていないため、レビューを書くことができません。まずはログを編集してポイントを選択してください。');
+              }
+            }}
+          >
+            <Edit3 size={24} color="#fff" />
+            <View style={styles.fabBadge}>
+              <Text style={styles.fabBadgeText}>R</Text>
+            </View>
+          </TouchableOpacity>
+
           <TouchableOpacity
             style={[styles.fab, styles.editFab]}
             onPress={() => router.push(`/log/edit/${id}`)}
           >
-            <Edit3 size={24} color="#fff" />
+            <Settings size={24} color="#fff" />
           </TouchableOpacity>
         </View>
       )}
@@ -749,6 +773,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 30,
     right: 20,
+    gap: 12,
   },
   fab: {
     width: 56,
@@ -761,9 +786,31 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 5,
+    position: 'relative',
   },
   editFab: {
+    backgroundColor: '#64748b',
+  },
+  reviewFab: {
     backgroundColor: '#0ea5e9',
+  },
+  fabBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#ef4444',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  fabBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '900',
   },
   center: {
     flex: 1,

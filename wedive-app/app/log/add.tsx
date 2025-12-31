@@ -52,6 +52,7 @@ import { parseGarminZip, parseGarminCsv } from '../../src/utils/garminParser';
 import { DiveLog, Point } from '../../src/types';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { FEATURE_FLAGS } from '../../src/constants/features';
 
 const { width } = Dimensions.get('window');
 
@@ -112,6 +113,7 @@ export default function AddLogScreen() {
     entryType: 'boat' as 'boat' | 'beach',
     importProfile: [] as any[],
     garminActivityId: '',
+    alsoReview: true,
   });
 
   // UI Control: Sections
@@ -439,9 +441,26 @@ export default function AddLogScreen() {
         ]);
       } else {
         setSaveStatus('保存に成功しました！');
-        Alert.alert('完了', 'ログを保存しました', [
-          { text: 'OK', onPress: () => router.back() }
-        ]);
+
+        if (formData.alsoReview && formData.pointId && FEATURE_FLAGS.ENABLE_V6_REVIEW_LOG_LINKING) {
+          const logId = await savePromise;
+          Alert.alert('完了', 'ログを保存しました。続いてレビューを投稿します。', [
+            {
+              text: 'OK',
+              onPress: () => router.push({
+                pathname: '/details/spot/review',
+                params: {
+                  pointId: formData.pointId,
+                  logId: logId
+                }
+              })
+            }
+          ]);
+        } else {
+          Alert.alert('完了', 'ログを保存しました', [
+            { text: 'OK', onPress: () => router.back() }
+          ]);
+        }
       }
     } catch (e: any) {
       console.error("Save Error:", e);
@@ -468,9 +487,11 @@ export default function AddLogScreen() {
     if (spotSearchTerm) {
       const s = spotSearchTerm.toLowerCase();
       results = results.filter(p =>
-        p.name.toLowerCase().includes(s) ||
-        p.area.toLowerCase().includes(s) ||
-        p.zone.toLowerCase().includes(s)
+        p && (
+          String(p.name || '').toLowerCase().includes(s) ||
+          String(p.area || '').toLowerCase().includes(s) ||
+          String(p.zone || '').toLowerCase().includes(s)
+        )
       );
     }
     return results.slice(0, 50);
@@ -535,8 +556,10 @@ export default function AddLogScreen() {
     if (!creatureSearchTerm) return [];
     const s = creatureSearchTerm.toLowerCase();
     return masterCreatures.filter(c =>
-      (c.name && c.name.toLowerCase().includes(s)) ||
-      (c.category && c.category.toLowerCase().includes(s))
+      c && (
+        String(c.name || '').toLowerCase().includes(s) ||
+        String(c.category || '').toLowerCase().includes(s)
+      )
     ).slice(0, 50);
   }, [masterCreatures, creatureSearchTerm]);
 
@@ -673,6 +696,43 @@ export default function AddLogScreen() {
                   </Text>
                 </View>
               </View>
+
+              {FEATURE_FLAGS.ENABLE_V6_REVIEW_LOG_LINKING && (
+                <View style={styles.inputGroup}>
+                  <View style={styles.visibilityRow}>
+                    <View style={styles.visibilityInfo}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Text style={[styles.label, { marginBottom: 0 }]}>レビュー投稿</Text>
+                      </View>
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                      <View style={[
+                        styles.statusBadge,
+                        { backgroundColor: formData.alsoReview ? '#f0fdf4' : '#f1f5f9' }
+                      ]}>
+                        <Text style={[
+                          styles.statusBadgeText,
+                          { color: formData.alsoReview ? '#16a34a' : '#64748b' }
+                        ]}>
+                          {formData.alsoReview ? '投稿する' : '投稿しない'}
+                        </Text>
+                      </View>
+                      <Switch
+                        value={formData.alsoReview}
+                        onValueChange={(val) => setFormData(p => ({ ...p, alsoReview: val }))}
+                        trackColor={{ false: "#e2e8f0", true: "#bcf0da" }}
+                        thumbColor={formData.alsoReview ? "#16a34a" : "#64748b"}
+                      />
+                    </View>
+                  </View>
+                  <View style={[styles.visibilityNoteBox, { backgroundColor: '#f0fdf4', borderColor: '#dcfce7' }]}>
+                    <Text style={[styles.visibilityNoteText, { color: '#166534' }]}>
+                      このポイントの海況や透明度などのデータをレビューとして共有します。{"\n"}
+                      ログに記載した海況データが自動的に入力されます。
+                    </Text>
+                  </View>
+                </View>
+              )}
             </View>
           )}
         </View>
@@ -842,40 +902,200 @@ export default function AddLogScreen() {
         </View >
 
         {/* Conditions */}
-        < View style={styles.sectionCard} >
+        <View style={styles.sectionCard}>
           <SectionHeader title="コンディション" icon={Thermometer} section="conditions" color="#06b6d4" />
-          {
-            openSections.conditions && (
-              <View style={styles.sectionBody}>
-                <View style={styles.row}>
-                  <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-                    <Text style={styles.label}>水温 (水底 ℃)</Text>
-                    <TextInput
-                      style={styles.input}
-                      value={formData.waterTempBottom}
-                      onChangeText={(val) => setFormData(p => ({ ...p, waterTempBottom: val }))}
-                      placeholder="22"
-                      keyboardType="numeric"
-                      placeholderTextColor="#94a3b8"
-                    />
-                  </View>
-                  <View style={[styles.inputGroup, { flex: 1 }]}>
-                    <Text style={styles.label}>透明度 (m)</Text>
-                    <TextInput
-                      style={styles.input}
-                      value={formData.transparency}
-                      onChangeText={(val) => setFormData(p => ({ ...p, transparency: val }))}
-                      placeholder="15"
-                      keyboardType="numeric"
-                      placeholderTextColor="#94a3b8"
-                    />
-                  </View>
+          {openSections.conditions && (
+            <View style={styles.sectionBody}>
+              <View style={styles.row}>
+                <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                  <Text style={styles.label}>天気</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.weather}
+                    onChangeText={(val) => setFormData(p => ({ ...p, weather: val }))}
+                    placeholder="晴れ/曇り/雨"
+                    placeholderTextColor="#94a3b8"
+                  />
                 </View>
-                {/* More condition fields can be added here */}
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.label}>気温 (℃)</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.airTemp}
+                    onChangeText={(val) => setFormData(p => ({ ...p, airTemp: val }))}
+                    keyboardType="numeric"
+                    placeholder="25"
+                    placeholderTextColor="#94a3b8"
+                  />
+                </View>
               </View>
-            )
-          }
-        </View >
+
+              <View style={styles.row}>
+                <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                  <Text style={styles.label}>水面水温 (℃)</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.waterTempSurface}
+                    onChangeText={(val) => setFormData(p => ({ ...p, waterTempSurface: val }))}
+                    keyboardType="numeric"
+                    placeholder="24"
+                    placeholderTextColor="#94a3b8"
+                  />
+                </View>
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.label}>水底水温 (℃)</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.waterTempBottom}
+                    onChangeText={(val) => setFormData(p => ({ ...p, waterTempBottom: val }))}
+                    keyboardType="numeric"
+                    placeholder="22"
+                    placeholderTextColor="#94a3b8"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>透明度 (m)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={formData.transparency}
+                  onChangeText={(val) => setFormData(p => ({ ...p, transparency: val }))}
+                  keyboardType="numeric"
+                  placeholder="15"
+                  placeholderTextColor="#94a3b8"
+                />
+              </View>
+
+              <View style={styles.row}>
+                <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                  <Text style={styles.label}>波</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.wave}
+                    onChangeText={(val) => setFormData(p => ({ ...p, wave: val }))}
+                    placeholder="なし/小/中/大"
+                    placeholderTextColor="#94a3b8"
+                  />
+                </View>
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.label}>うねり</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.surge}
+                    onChangeText={(val) => setFormData(p => ({ ...p, surge: val }))}
+                    placeholder="なし/小/中/大"
+                    placeholderTextColor="#94a3b8"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>流れ</Text>
+                <TextInput
+                  style={styles.input}
+                  value={formData.current}
+                  onChangeText={(val) => setFormData(p => ({ ...p, current: val }))}
+                  placeholder="なし/弱/中/強/激流"
+                  placeholderTextColor="#94a3b8"
+                />
+              </View>
+            </View>
+          )}
+        </View>
+
+        {/* Gear Section */}
+        <View style={styles.sectionCard}>
+          <SectionHeader title="器材・タンク" icon={Settings} section="gear" color="#6366f1" />
+          {openSections.gear && (
+            <View style={styles.sectionBody}>
+              <View style={styles.row}>
+                <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                  <Text style={styles.label}>スーツ</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.suitType}
+                    onChangeText={(val) => setFormData(p => ({ ...p, suitType: val }))}
+                    placeholder="ウェット/ドライ"
+                    placeholderTextColor="#94a3b8"
+                  />
+                </View>
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.label}>厚さ (mm)</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.suitThickness}
+                    onChangeText={(val) => setFormData(p => ({ ...p, suitThickness: val }))}
+                    keyboardType="numeric"
+                    placeholder="5"
+                    placeholderTextColor="#94a3b8"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>ウェイト (kg)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={formData.weight}
+                  onChangeText={(val) => setFormData(p => ({ ...p, weight: val }))}
+                  keyboardType="numeric"
+                  placeholder="4"
+                  placeholderTextColor="#94a3b8"
+                />
+              </View>
+
+              <View style={styles.row}>
+                <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                  <Text style={styles.label}>タンク材質</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.tankMaterial}
+                    onChangeText={(val) => setFormData(p => ({ ...p, tankMaterial: val }))}
+                    placeholder="スチール/アルミ"
+                    placeholderTextColor="#94a3b8"
+                  />
+                </View>
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.label}>容量 (L)</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.tankCapacity}
+                    onChangeText={(val) => setFormData(p => ({ ...p, tankCapacity: val }))}
+                    keyboardType="numeric"
+                    placeholder="10"
+                    placeholderTextColor="#94a3b8"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.row}>
+                <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                  <Text style={styles.label}>開始圧 (bar)</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.pressureStart}
+                    onChangeText={(val) => setFormData(p => ({ ...p, pressureStart: val }))}
+                    keyboardType="numeric"
+                    placeholder="200"
+                    placeholderTextColor="#94a3b8"
+                  />
+                </View>
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.label}>終了圧 (bar)</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.pressureEnd}
+                    onChangeText={(val) => setFormData(p => ({ ...p, pressureEnd: val }))}
+                    keyboardType="numeric"
+                    placeholder="50"
+                    placeholderTextColor="#94a3b8"
+                  />
+                </View>
+              </View>
+            </View>
+          )}
+        </View>
 
         {/* Creatures Section */}
         < View style={styles.sectionCard} >

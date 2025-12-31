@@ -48,8 +48,11 @@ import { useAuth } from '../../../src/context/AuthContext';
 import { db, storage } from '../../../src/firebase';
 import { LogService } from '../../../src/services/LogService';
 import { DiveLog, Point } from '../../../src/types';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { FEATURE_FLAGS } from '../../../src/constants/features';
+import { PointSelectorModal } from '../../../src/components/PointSelectorModal';
+import { CreatureSelectorModal } from '../../../src/components/CreatureSelectorModal';
 
 const { width } = Dimensions.get('window');
 
@@ -57,6 +60,10 @@ export default function EditLogScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const { user } = useAuth();
+
+  // Selector Modal Visibility
+  const [pointModalVisible, setPointModalVisible] = useState(false);
+  const [creatureModalVisible, setCreatureModalVisible] = useState(false);
 
   const [isLoading, setIsLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState('');
@@ -66,6 +73,7 @@ export default function EditLogScreen() {
   const [spotSearchTerm, setSpotSearchTerm] = useState('');
   const [creatureSearchTerm, setCreatureSearchTerm] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('');
+  const [originalLog, setOriginalLog] = useState<DiveLog | null>(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -106,6 +114,8 @@ export default function EditLogScreen() {
     entryType: 'boat' as 'boat' | 'beach',
     importProfile: [] as any[],
     garminActivityId: '',
+    alsoReview: false,
+    reviewId: '',
   });
 
   // UI Control: Sections
@@ -126,35 +136,10 @@ export default function EditLogScreen() {
 
   useEffect(() => {
     if (user && id) {
-      fetchMasterData();
       fetchLogData();
     }
   }, [id, user]);
 
-  const fetchMasterData = async () => {
-    try {
-      // オフラインを考慮してタイムアウトを30秒に延長
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('TIMEOUT')), 30000)
-      );
-
-      const pointsPromise = getDocs(query(collection(db, 'points'), where('status', '==', 'approved')));
-      const creaturesPromise = getDocs(query(collection(db, 'creatures'), where('status', '==', 'approved')));
-      const pointCreaturesPromise = getDocs(collection(db, 'point_creatures'));
-
-      const [pointsSnap, creaturesSnap, pointCreaturesSnap] = await Promise.race([
-        Promise.all([pointsPromise, creaturesPromise, pointCreaturesPromise]),
-        timeoutPromise
-      ]) as [any, any, any];
-
-      setMasterPoints(pointsSnap.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as Point)));
-      setMasterCreatures(creaturesSnap.docs.map((doc: any) => ({ id: doc.id, ...doc.data() })));
-      setPointCreatures(pointCreaturesSnap.docs.map((doc: any) => ({ id: doc.id, ...doc.data() })));
-    } catch (e) {
-      console.error("Master data fetch error:", e);
-      // オフライン時はキャッシュから読める可能性があるため、エラーでも続行可能にする
-    }
-  };
 
   const fetchLogData = async () => {
     if (!id || !user) return;
@@ -169,9 +154,12 @@ export default function EditLogScreen() {
 
       const snap = await Promise.race([getDoc(logRef), timeoutPromise]) as any;
 
+      // ... inside fetchLogData
       if (snap && snap.exists()) {
         const data = snap.data() as DiveLog;
+        setOriginalLog(data);
         setFormData({
+
           title: data.title || '',
           date: data.date || '',
           diveNumber: data.diveNumber?.toString() || '',
@@ -209,6 +197,8 @@ export default function EditLogScreen() {
           entryType: data.entryType || 'boat',
           importProfile: data.profile || [],
           garminActivityId: data.garminActivityId || '',
+          alsoReview: false,
+          reviewId: data.reviewId || '',
         });
       } else {
         Alert.alert('エラー', 'ログが見つかりませんでした');
@@ -227,38 +217,8 @@ export default function EditLogScreen() {
     }
   };
 
-  const filteredPoints = useMemo(() => {
-    let results = masterPoints;
-    if (selectedRegion) {
-      results = results.filter(p => p.region === selectedRegion);
-    }
-    if (spotSearchTerm) {
-      const s = spotSearchTerm.toLowerCase();
-      results = results.filter(p =>
-        (p.name && p.name.toLowerCase().includes(s)) ||
-        (p.area && p.area.toLowerCase().includes(s)) ||
-        (p.zone && p.zone.toLowerCase().includes(s))
-      );
-    }
-    return results.slice(0, 50);
-  }, [masterPoints, spotSearchTerm, selectedRegion]);
-
-  const filteredCreatures = useMemo(() => {
-    if (!creatureSearchTerm) return [];
-    const s = creatureSearchTerm.toLowerCase();
-    return masterCreatures.filter(c =>
-      (c.name && c.name.toLowerCase().includes(s)) ||
-      (c.category && c.category.toLowerCase().includes(s))
-    ).slice(0, 50);
-  }, [masterCreatures, creatureSearchTerm]);
-
-  const pointSpecificCreatures = useMemo(() => {
-    if (!formData.pointId || !pointCreatures.length) return [];
-    const relatedIds = pointCreatures
-      .filter(pc => pc.pointId === formData.pointId)
-      .map(pc => pc.creatureId);
-    return masterCreatures.filter(c => relatedIds.includes(c.id));
-  }, [formData.pointId, pointCreatures, masterCreatures]);
+  // Points/Creatures are now handled by reusable Modals
+  // Inline filters are removed to save cost and memory
 
   const handlePickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -344,7 +304,7 @@ export default function EditLogScreen() {
 
     try {
       const updatePromise = (async () => {
-        const selectedPoint = masterPoints.find(p => p.id === formData.pointId);
+        // Validation: just use pointName for fallback
 
         const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
         const entry = timeRegex.test(formData.entryTime) ? formData.entryTime.split(':').map(Number) : [0, 0];
@@ -362,8 +322,8 @@ export default function EditLogScreen() {
           diveNumber: Number(formData.diveNumber) || 0,
           location: {
             pointId: formData.pointId,
-            pointName: formData.pointName || selectedPoint?.name || '不明',
-            region: formData.region || selectedPoint?.region || '',
+            pointName: formData.pointName || '不明',
+            region: formData.region || '',
             shopName: formData.shopName,
           },
           team: {
@@ -415,6 +375,19 @@ export default function EditLogScreen() {
         };
 
         await LogService.updateLog(user.id, id as string, logData);
+
+        // [New] If pointId changed and log has a review, update the review's pointId as well
+        if (originalLog && originalLog.reviewId && originalLog.location.pointId !== formData.pointId) {
+          console.log(`[EditLog] Point changed from ${originalLog.location.pointId} to ${formData.pointId}. Updating linked review ${originalLog.reviewId}...`);
+          try {
+            const reviewRef = doc(db, 'reviews', originalLog.reviewId);
+            await updateDoc(reviewRef, { pointId: formData.pointId });
+            console.log("[EditLog] Linked review updated successfully.");
+          } catch (e) {
+            console.error("[EditLog] Failed to update linked review pointId:", e);
+          }
+        }
+
         return true;
       })();
 
@@ -445,7 +418,24 @@ export default function EditLogScreen() {
         ]);
       } else {
         setSaveStatus('保存に成功しました！');
-        Alert.alert('完了', 'ログを更新しました', [{ text: 'OK', onPress: () => router.back() }]);
+
+        if (formData.alsoReview && formData.pointId && FEATURE_FLAGS.ENABLE_V6_REVIEW_LOG_LINKING) {
+          Alert.alert('完了', 'ログを更新しました。続いてレビューを更新します。', [
+            {
+              text: 'OK',
+              onPress: () => router.push({
+                pathname: '/details/spot/review',
+                params: {
+                  pointId: formData.pointId,
+                  logId: id,
+                  reviewId: formData.reviewId
+                }
+              })
+            }
+          ]);
+        } else {
+          Alert.alert('完了', 'ログを更新しました', [{ text: 'OK', onPress: () => router.back() }]);
+        }
       }
     } catch (e: any) {
       console.error("Update Error:", e);
@@ -509,6 +499,23 @@ export default function EditLogScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Modals for high-performance searching */}
+      <PointSelectorModal
+        isVisible={pointModalVisible}
+        onClose={() => setPointModalVisible(false)}
+        onSelect={(p) => {
+          setFormData(prev => ({ ...prev, pointId: p.id, pointName: p.name, region: p.region }));
+          setPointModalVisible(false);
+        }}
+      />
+      <CreatureSelectorModal
+        isVisible={creatureModalVisible}
+        onClose={() => setCreatureModalVisible(false)}
+        onSelect={(c) => {
+          toggleSightedCreature(c.id);
+          setCreatureModalVisible(false);
+        }}
+      />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <ChevronLeft size={24} color="#0f172a" />
@@ -592,6 +599,43 @@ export default function EditLogScreen() {
                   </Text>
                 </View>
               </View>
+
+              {FEATURE_FLAGS.ENABLE_V6_REVIEW_LOG_LINKING && (
+                <View style={styles.inputGroup}>
+                  <View style={styles.visibilityRow}>
+                    <View style={styles.visibilityInfo}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Text style={[styles.label, { marginBottom: 0 }]}>レビュー更新</Text>
+                      </View>
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                      <View style={[
+                        styles.statusBadge,
+                        { backgroundColor: formData.alsoReview ? '#f0fdf4' : '#f1f5f9' }
+                      ]}>
+                        <Text style={[
+                          styles.statusBadgeText,
+                          { color: formData.alsoReview ? '#16a34a' : '#64748b' }
+                        ]}>
+                          {formData.alsoReview ? '更新する' : '更新しない'}
+                        </Text>
+                      </View>
+                      <Switch
+                        value={formData.alsoReview}
+                        onValueChange={(val) => setFormData(p => ({ ...p, alsoReview: val }))}
+                        trackColor={{ false: "#e2e8f0", true: "#bcf0da" }}
+                        thumbColor={formData.alsoReview ? "#16a34a" : "#64748b"}
+                      />
+                    </View>
+                  </View>
+                  <View style={[styles.visibilityNoteBox, { backgroundColor: '#f0fdf4', borderColor: '#dcfce7' }]}>
+                    <Text style={[styles.visibilityNoteText, { color: '#166534' }]}>
+                      このポイントの海況や透明度などのデータをレビューとして共有します。{"\n"}
+                      ログに記載した海況データが自動的に入力されます。
+                    </Text>
+                  </View>
+                </View>
+              )}
             </View>
           )}
         </View>
@@ -604,33 +648,16 @@ export default function EditLogScreen() {
               <View style={styles.sectionBody}>
                 <View style={styles.inputGroup}>
                   <Text style={styles.label}>ポイントを選択</Text>
-                  <View style={styles.searchWrapper}>
+                  <TouchableOpacity
+                    style={styles.searchWrapper}
+                    onPress={() => setPointModalVisible(true)}
+                  >
                     <Search size={16} color="#94a3b8" style={styles.searchIcon} />
-                    <TextInput
-                      style={styles.searchInput}
-                      placeholder="ポイント名で検索..."
-                      value={spotSearchTerm}
-                      onChangeText={setSpotSearchTerm}
-                    />
-                  </View>
-                  {spotSearchTerm.length > 0 && (
-                    <View style={styles.searchResults}>
-                      {filteredPoints.map(p => (
-                        <TouchableOpacity
-                          key={p.id}
-                          style={styles.searchResultItem}
-                          onPress={() => {
-                            setFormData(prev => ({ ...prev, pointId: p.id, pointName: p.name, region: p.region }));
-                            setSpotSearchTerm('');
-                          }}
-                        >
-                          <Text style={styles.searchResultName}>{p.name}</Text>
-                          <Text style={styles.searchResultSub}>{p.region} - {p.area}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  )}
-                  {formData.pointName ? (
+                    <Text style={styles.searchInput}>
+                      {formData.pointName || "ポイントを検索..."}
+                    </Text>
+                  </TouchableOpacity>
+                  {formData.pointId ? (
                     <View style={styles.selectedBadge}>
                       <Text style={styles.selectedBadgeText}>{formData.pointName} ({formData.region})</Text>
                       <TouchableOpacity onPress={() => setFormData(p => ({ ...p, pointId: '', pointName: '', region: '' }))}>
@@ -692,7 +719,193 @@ export default function EditLogScreen() {
               </View>
             )
           }
+        </View>
+
+        {/* Condition Section */}
+        <View style={styles.sectionCard}>
+          <SectionHeader title="コンディション" icon={Thermometer} section="conditions" color="#06b6d4" />
+          {
+            openSections.conditions && (
+              <View style={styles.sectionBody}>
+                <View style={styles.row}>
+                  <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                    <Text style={styles.label}>天気</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.weather}
+                      onChangeText={(val) => setFormData(p => ({ ...p, weather: val }))}
+                      placeholder="晴れ/曇り/雨"
+                    />
+                  </View>
+                  <View style={[styles.inputGroup, { flex: 1 }]}>
+                    <Text style={styles.label}>気温 (℃)</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.airTemp}
+                      onChangeText={(val) => setFormData(p => ({ ...p, airTemp: val }))}
+                      keyboardType="numeric"
+                      placeholder="25"
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.row}>
+                  <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                    <Text style={styles.label}>水面水温 (℃)</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.waterTempSurface}
+                      onChangeText={(val) => setFormData(p => ({ ...p, waterTempSurface: val }))}
+                      keyboardType="numeric"
+                      placeholder="24"
+                    />
+                  </View>
+                  <View style={[styles.inputGroup, { flex: 1 }]}>
+                    <Text style={styles.label}>水底水温 (℃)</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.waterTempBottom}
+                      onChangeText={(val) => setFormData(p => ({ ...p, waterTempBottom: val }))}
+                      keyboardType="numeric"
+                      placeholder="22"
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>透明度 (m)</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.transparency}
+                    onChangeText={(val) => setFormData(p => ({ ...p, transparency: val }))}
+                    keyboardType="numeric"
+                    placeholder="15"
+                  />
+                </View>
+
+                <View style={styles.row}>
+                  <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                    <Text style={styles.label}>波</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.wave}
+                      onChangeText={(val) => setFormData(p => ({ ...p, wave: val }))}
+                      placeholder="なし/小/中/大"
+                    />
+                  </View>
+                  <View style={[styles.inputGroup, { flex: 1 }]}>
+                    <Text style={styles.label}>うねり</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.surge}
+                      onChangeText={(val) => setFormData(p => ({ ...p, surge: val }))}
+                      placeholder="なし/小/中/大"
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>流れ</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.current}
+                    onChangeText={(val) => setFormData(p => ({ ...p, current: val }))}
+                    placeholder="なし/弱/中/強/激流"
+                  />
+                </View>
+              </View>
+            )
+          }
         </View >
+
+        {/* Gear Section */}
+        < View style={styles.sectionCard} >
+          <SectionHeader title="器材・タンク" icon={Settings} section="gear" color="#6366f1" />
+          {
+            openSections.gear && (
+              <View style={styles.sectionBody}>
+                <View style={styles.row}>
+                  <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                    <Text style={styles.label}>スーツ</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.suitType}
+                      onChangeText={(val) => setFormData(p => ({ ...p, suitType: val }))}
+                      placeholder="ウェット/ドライ"
+                    />
+                  </View>
+                  <View style={[styles.inputGroup, { flex: 1 }]}>
+                    <Text style={styles.label}>厚さ (mm)</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.suitThickness}
+                      onChangeText={(val) => setFormData(p => ({ ...p, suitThickness: val }))}
+                      keyboardType="numeric"
+                      placeholder="5"
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>ウェイト (kg)</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.weight}
+                    onChangeText={(val) => setFormData(p => ({ ...p, weight: val }))}
+                    keyboardType="numeric"
+                    placeholder="4"
+                  />
+                </View>
+
+                <View style={styles.row}>
+                  <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                    <Text style={styles.label}>タンク材質</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.tankMaterial}
+                      onChangeText={(val) => setFormData(p => ({ ...p, tankMaterial: val }))}
+                      placeholder="スチール/アルミ"
+                    />
+                  </View>
+                  <View style={[styles.inputGroup, { flex: 1 }]}>
+                    <Text style={styles.label}>容量 (L)</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.tankCapacity}
+                      onChangeText={(val) => setFormData(p => ({ ...p, tankCapacity: val }))}
+                      keyboardType="numeric"
+                      placeholder="10"
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.row}>
+                  <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                    <Text style={styles.label}>開始圧 (bar)</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.pressureStart}
+                      onChangeText={(val) => setFormData(p => ({ ...p, pressureStart: val }))}
+                      keyboardType="numeric"
+                      placeholder="200"
+                    />
+                  </View>
+                  <View style={[styles.inputGroup, { flex: 1 }]}>
+                    <Text style={styles.label}>終了圧 (bar)</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.pressureEnd}
+                      onChangeText={(val) => setFormData(p => ({ ...p, pressureEnd: val }))}
+                      keyboardType="numeric"
+                      placeholder="50"
+                    />
+                  </View>
+                </View>
+              </View>
+            )
+          }
+        </View >
+
 
         {/* Creatures Section */}
         < View style={styles.sectionCard} >
@@ -702,90 +915,57 @@ export default function EditLogScreen() {
               <View style={styles.sectionBody}>
                 <View style={styles.inputGroup}>
                   <Text style={styles.label}>生物を検索（図鑑から追加）</Text>
-                  <View style={styles.searchWrapper}>
+                  <TouchableOpacity
+                    style={styles.searchWrapper}
+                    onPress={() => setCreatureModalVisible(true)}
+                  >
                     <Search size={16} color="#94a3b8" style={styles.searchIcon} />
-                    <TextInput
-                      style={styles.searchInput}
-                      placeholder="生物名で検索..."
-                      value={creatureSearchTerm}
-                      onChangeText={setCreatureSearchTerm}
-                    />
-                  </View>
+                    <Text style={styles.searchInput}>生物を検索...</Text>
+                  </TouchableOpacity>
 
-                  {creatureSearchTerm.length > 0 && (
-                    <View style={styles.searchResults}>
-                      {filteredCreatures.map(c => (
-                        <TouchableOpacity
-                          key={c.id}
-                          style={styles.searchResultItem}
-                          onPress={() => {
-                            toggleSightedCreature(c.id);
-                            setCreatureSearchTerm('');
-                          }}
-                        >
-                          <Text style={styles.searchResultName}>{c.name}</Text>
-                          <Text style={styles.searchResultSub}>{c.category}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  )}
-
-                  {pointSpecificCreatures.length > 0 && !creatureSearchTerm && (
-                    <View style={styles.pointCreaturesSection}>
-                      <Text style={styles.subLabel}>このポイントの生物</Text>
-                      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalTags}>
-                        {pointSpecificCreatures.map(c => {
-                          const isSelected = formData.sightedCreatures.includes(c.id);
-                          return (
-                            <TouchableOpacity
-                              key={c.id}
-                              style={[styles.pointCreatureTag, isSelected && styles.pointCreatureTagActive]}
-                              onPress={() => toggleSightedCreature(c.id)}
-                            >
-                              <Text style={[styles.pointCreatureText, isSelected && styles.pointCreatureTextActive]}>{c.name}</Text>
-                            </TouchableOpacity>
-                          );
-                        })}
-                      </ScrollView>
-                    </View>
-                  )}
-
-                  <View style={styles.tagGrid}>
-                    {formData.sightedCreatures.map(id => {
-                      const creature = masterCreatures.find(c => c.id === id);
-                      return (
-                        <View key={id} style={styles.tag}>
-                          <Text style={styles.tagText}>{creature?.name || '不明'}</Text>
-                          <TouchableOpacity onPress={() => toggleSightedCreature(id)}>
+                  {/* Selected Creatures List */}
+                  {formData.sightedCreatures.length > 0 && (
+                    <View style={styles.tagGrid}>
+                      {formData.sightedCreatures.map(cid => (
+                        <View key={cid} style={styles.tag}>
+                          <Text style={styles.tagText}>{cid}</Text>
+                          <TouchableOpacity onPress={() => toggleSightedCreature(cid)}>
                             <X size={14} color="#3b82f6" />
                           </TouchableOpacity>
                         </View>
-                      );
-                    })}
-                  </View>
-                </View>
-
-                <View style={styles.inputGroup}>
-                  <Text style={styles.label}>メインの生物</Text>
-                  <View style={styles.searchWrapper}>
-                    <TextInput
-                      style={styles.searchInput}
-                      placeholder="メインで見つけた生物名..."
-                      value={masterCreatures.find(c => c.id === formData.creatureId)?.name || ''}
-                      editable={false}
-                    />
-                    {formData.creatureId ? (
-                      <TouchableOpacity onPress={() => setFormData(prev => ({ ...prev, creatureId: '' }))}>
-                        <X size={18} color="#94a3b8" />
-                      </TouchableOpacity>
-                    ) : null}
-                  </View>
-                  <Text style={styles.helpTextSmall}>※上の検索から追加されたものが「目撃した生物」に入ります。メインに設定したい場合は、個別に選択してください（現状はリストから選択）。</Text>
+                      ))}
+                    </View>
+                  )}
                 </View>
               </View>
             )
           }
         </View >
+
+        <View style={styles.sectionCard}>
+          <SectionHeader title="その他" icon={Info} section="comment" color="#64748b" />
+          {openSections.comment && (
+            <View style={styles.sectionBody}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>メインの生物</Text>
+                <View style={styles.searchWrapper}>
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="メインで見つけた生物名..."
+                    value={formData.creatureId || ''}
+                    onChangeText={(val) => setFormData(p => ({ ...p, creatureId: val }))}
+                  />
+                  {formData.creatureId ? (
+                    <TouchableOpacity onPress={() => setFormData(prev => ({ ...prev, creatureId: '' }))}>
+                      <X size={18} color="#94a3b8" />
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+                <Text style={styles.helpTextSmall}>※ログのトップに表示される代表的な生物名を入力してください。</Text>
+              </View>
+            </View>
+          )}
+        </View>
 
         {/* Photos Section */}
         < View style={styles.sectionCard} >

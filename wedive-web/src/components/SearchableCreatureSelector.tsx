@@ -23,11 +23,13 @@ export const SearchableCreatureSelector: React.FC<SearchableCreatureSelectorProp
 
   const filteredCreatures = useMemo(() => {
     if (!searchTerm) return creatures;
-    const s = searchTerm.toLowerCase();
+    const s = (searchTerm || '').toLowerCase();
     return creatures.filter(c =>
-      c.name.toLowerCase().includes(s) ||
-      c.scientificName?.toLowerCase().includes(s) ||
-      c.category?.toLowerCase().includes(s)
+      c && (
+        String(c.name || '').toLowerCase().includes(s) ||
+        String(c.scientificName || '').toLowerCase().includes(s) ||
+        String(c.category || '').toLowerCase().includes(s)
+      )
     );
   }, [creatures, searchTerm]);
 
