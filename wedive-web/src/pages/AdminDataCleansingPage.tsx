@@ -16,7 +16,7 @@ import { ReviewListView } from '../admin/components/DataCleansing/ReviewListView
 import clsx from 'clsx';
 
 export const AdminDataCleansingPage = () => {
-  const { currentUser, pointCreatures } = useApp();
+  const { currentUser, pointCreatures, proposalPointCreatures } = useApp();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'review'>('dashboard');
 
@@ -24,7 +24,7 @@ export const AdminDataCleansingPage = () => {
     return <div className="p-8 text-center">Access Denied. Admins Only.</div>;
   }
 
-  const pendingCount = pointCreatures.filter(pc => pc.status === 'pending').length;
+  const pendingCount = proposalPointCreatures.length;
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">

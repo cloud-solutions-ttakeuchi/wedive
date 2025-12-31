@@ -1,141 +1,142 @@
 import { db } from '../firebase';
-import { doc, setDoc, updateDoc, collection, addDoc, deleteDoc } from 'firebase/firestore';
-import { Creature, Point, CreatureProposal, PointProposal } from '../types';
-import { sanitizePayload } from './LogService';
+import {
+  collection,
+  doc,
+  setDoc,
+  serverTimestamp,
+  deleteDoc
+} from 'firebase/firestore';
+import { Point, Creature, PointCreature, PointCreatureProposal, Rarity } from '../types';
 
-export class ProposalService {
+/**
+ * ProposalService
+ * Processes user proposals and direct admin actions.
+ * Separated at the function level for maximum integrity.
+ */
+export const ProposalService = {
+  // --- Admin Direct Writes (Master Data) ---
+
   /**
-   * Submit a creature proposal (create or update)
+   * Directly add a new point to the master collection.
    */
-  static async addCreatureProposal(
-    userId: string,
-    data: any,
-    proposalType: 'create' | 'update' | 'delete',
-    targetId?: string
-  ): Promise<string> {
-    const proposalRef = collection(db, 'creature_proposals');
-    const now = new Date().toISOString();
+  async addPoint(data: Omit<Point, 'id'>): Promise<string> {
+    const id = `p${Date.now()}`;
+    const ref = doc(db, 'points', id);
+    await setDoc(ref, {
+      ...data,
+      id,
+      status: 'approved',
+      createdAt: new Date().toISOString()
+    });
+    return id;
+  },
 
-    console.log(`[ProposalService] Submitting creature proposal: type=${proposalType}, targetId=${targetId}`);
+  /**
+   * Directly add a new creature to the master collection.
+   */
+  async addCreature(data: Omit<Creature, 'id'>): Promise<string> {
+    const id = `c${Date.now()}`;
+    const ref = doc(db, 'creatures', id);
+    await setDoc(ref, {
+      ...data,
+      id,
+      status: 'approved',
+      createdAt: new Date().toISOString()
+    });
+    return id;
+  },
 
-    const proposalData: any = {
-      proposalType,
-      targetId: targetId || "",
-      submitterId: userId,
+  /**
+   * Directly link a creature to a point.
+   */
+  async addPointCreature(pointId: string, creatureId: string, localRarity: Rarity): Promise<void> {
+    const id = `${pointId}_${creatureId}`;
+    const ref = doc(db, 'point_creatures', id);
+    await setDoc(ref, {
+      id,
+      pointId,
+      creatureId,
+      localRarity,
+      status: 'approved',
+      createdAt: new Date().toISOString()
+    });
+  },
+
+  // --- User Proposal Submissions ---
+
+  /**
+   * Submit a proposal for a new point.
+   */
+  async addPointProposal(data: Omit<Point, 'id'>): Promise<string> {
+    const id = `propp_${Date.now()}`;
+    const ref = doc(db, 'point_proposals', id);
+    await setDoc(ref, {
+      ...data,
+      id,
       status: 'pending',
-      createdAt: now,
-      isDeletionRequest: proposalType === 'delete',
-      // Explicit title for easier detection on admin side
-      proposalTitle: proposalType === 'delete' ? `【削除申請】${data.name || ''}` :
-        proposalType === 'update' ? `【変更申請】${data.name || ''}` :
-          `【新規登録】${data.name || ''}`
+      proposalType: 'create',
+      createdAt: new Date().toISOString()
+    });
+    return id;
+  },
+
+  /**
+   * Submit a proposal for a new creature.
+   */
+  async addCreatureProposal(data: Omit<Creature, 'id'>): Promise<string> {
+    const id = `propc_${Date.now()}`;
+    const ref = doc(db, 'creature_proposals', id);
+    await setDoc(ref, {
+      ...data,
+      id,
+      status: 'pending',
+      proposalType: 'create',
+      createdAt: new Date().toISOString()
+    });
+    return id;
+  },
+
+  /**
+   * Submit a proposal to link or unlink a creature to a point.
+   */
+  async addPointCreatureProposal(params: {
+    pointId: string;
+    creatureId: string;
+    localRarity: Rarity;
+    submitterId: string;
+    proposalType?: 'create' | 'delete';
+  }): Promise<string> {
+    const id = `proppc_${Date.now()}`;
+    const targetId = `${params.pointId}_${params.creatureId}`;
+
+    const proposal: PointCreatureProposal = {
+      id,
+      targetId,
+      pointId: params.pointId,
+      creatureId: params.creatureId,
+      localRarity: params.localRarity,
+      proposalType: params.proposalType || 'create',
+      submitterId: params.submitterId,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      processedAt: undefined
     };
 
-    if (proposalType === 'create') {
-      Object.assign(proposalData, data);
-    } else if (proposalType === 'update') {
-      proposalData.diffData = data;
-      if (data.name) proposalData.name = data.name;
-    } else if (proposalType === 'delete') {
-      proposalData.diffData = { requestedDeletion: true, ...data };
-      if (data.name) proposalData.name = data.name;
-    }
-
-    const sanitizedData = sanitizePayload(proposalData);
-    console.log("[ProposalService] Final sanitized creature data:", JSON.stringify(sanitizedData, null, 2));
-    const docRef = await addDoc(proposalRef, sanitizedData);
-    return docRef.id;
-  }
+    const ref = doc(db, 'point_creature_proposals', id);
+    await setDoc(ref, proposal);
+    return id;
+  },
 
   /**
-   * Submit a point proposal (create or update)
+   * Submit a deletion proposal for a point-creature relationship.
    */
-  static async addPointProposal(
-    userId: string,
-    data: any,
-    proposalType: 'create' | 'update' | 'delete',
-    targetId?: string
-  ): Promise<string> {
-    const proposalRef = collection(db, 'point_proposals');
-    const now = new Date().toISOString();
-
-    console.log(`[ProposalService] Submitting point proposal: type=${proposalType}, targetId=${targetId}`);
-
-    const proposalData: any = {
-      proposalType,
-      targetId: targetId || "",
-      submitterId: userId,
-      status: 'pending',
-      createdAt: now,
-      isDeletionRequest: proposalType === 'delete',
-      proposalTitle: proposalType === 'delete' ? `【削除申請】${data.name || ''}` :
-        proposalType === 'update' ? `【変更申請】${data.name || ''}` :
-          `【新規登録】${data.name || ''}`
-    };
-
-    if (proposalType === 'create') {
-      Object.assign(proposalData, data);
-    } else if (proposalType === 'update') {
-      proposalData.diffData = data;
-      if (data.name) proposalData.name = data.name;
-      if (data.region) proposalData.region = data.region;
-      if (data.area) proposalData.area = data.area;
-      if (data.zone) proposalData.zone = data.zone;
-    } else if (proposalType === 'delete') {
-      proposalData.diffData = { requestedDeletion: true, ...data };
-      if (data.name) proposalData.name = data.name;
-      if (data.region) proposalData.region = data.region;
-      if (data.area) proposalData.area = data.area;
-      if (data.zone) proposalData.zone = data.zone;
-    }
-
-    const sanitizedData = sanitizePayload(proposalData);
-    console.log("[ProposalService] Final sanitized point data:", JSON.stringify(sanitizedData, null, 2));
-    const docRef = await addDoc(proposalRef, sanitizedData);
-    return docRef.id;
+  async removePointCreatureProposal(pointId: string, creatureId: string, submitterId: string): Promise<string> {
+    return this.addPointCreatureProposal({
+      pointId,
+      creatureId,
+      localRarity: 'Common', // Default rarity, but proposalType is delete
+      submitterId,
+      proposalType: 'delete'
+    });
   }
-
-  /**
-   * Admin/Moderator: Approve a proposal
-   */
-  static async approveCreatureProposal(proposalId: string, proposal: CreatureProposal): Promise<void> {
-    const type = proposal.proposalType;
-    const targetId = proposal.targetId || `c${Date.now()}`;
-    const creatureRef = doc(db, 'creatures', targetId);
-
-    if (type === 'create') {
-      const { id, proposalType, targetId: _tid, submitterId, status, createdAt, ...finalData } = proposal;
-      await setDoc(creatureRef, sanitizePayload({ ...finalData, id: targetId, status: 'approved' }));
-    } else if (type === 'update') {
-      await updateDoc(creatureRef, sanitizePayload({ ...proposal.diffData, status: 'approved' }));
-    } else if (type === 'delete') {
-      // Soft delete
-      await updateDoc(creatureRef, { status: 'rejected' });
-    }
-
-    await updateDoc(doc(db, 'creature_proposals', proposalId), { status: 'approved' });
-  }
-
-  static async approvePointProposal(proposalId: string, proposal: PointProposal): Promise<void> {
-    const type = proposal.proposalType;
-    const targetId = proposal.targetId || `p${Date.now()}`;
-    const pointRef = doc(db, 'points', targetId);
-
-    if (type === 'create') {
-      const { id, proposalType, targetId: _tid, submitterId, status, createdAt, ...finalData } = proposal;
-      await setDoc(pointRef, sanitizePayload({ ...finalData, id: targetId, status: 'approved' }));
-    } else if (type === 'update') {
-      await updateDoc(pointRef, sanitizePayload({ ...proposal.diffData, status: 'approved' }));
-    } else if (type === 'delete') {
-      // Soft delete
-      await updateDoc(pointRef, { status: 'rejected' });
-    }
-
-    await updateDoc(doc(db, 'point_proposals', proposalId), { status: 'approved' });
-  }
-
-  static async rejectProposal(type: 'creature' | 'point', proposalId: string): Promise<void> {
-    const colName = type === 'creature' ? 'creature_proposals' : 'point_proposals';
-    await updateDoc(doc(db, colName, proposalId), { status: 'rejected' });
-  }
-}
+};

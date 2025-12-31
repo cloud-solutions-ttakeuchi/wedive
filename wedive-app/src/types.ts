@@ -322,6 +322,7 @@ export interface EditProposal {
   submitterId: string;
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
+  processedAt?: string; // Added for tracking approval/rejection timestamp
   // For 'create', we might just store the full data in root or diffData?
   // Current implementation stores full data in root of doc.
   // We'll keep compatibility by allowing the doc to have Creature/Point fields directly for 'create'.
@@ -330,6 +331,21 @@ export interface EditProposal {
 
 export type CreatureProposal = Creature & EditProposal;
 export type PointProposal = Point & EditProposal;
+
+export interface PointCreatureProposal {
+  id: string;
+  targetId: string;
+  pointId: string;
+  creatureId: string;
+  localRarity: Rarity;
+  proposalType: 'create' | 'delete';
+  submitterId: string;
+  status: 'pending' | 'approved' | 'rejected';
+  reasoning?: string;
+  confidence?: number;
+  createdAt: string;
+  processedAt?: string;
+}
 
 // --- Review Types (v6.0.0+) ---
 export interface ReviewRadar {

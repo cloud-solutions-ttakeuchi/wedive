@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react';
-import type { User, Log, Rarity, Creature, Point, PointCreature, Review } from '../types';
+import type { User, Log, Rarity, Creature, Point, PointCreature, Review, PointCreatureProposal } from '../types';
 import { INITIAL_DATA } from '../data/initialData';
 import { auth, googleProvider, db as firestore, functions } from '../lib/firebase';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
@@ -60,10 +60,12 @@ interface AppContextType {
   areas: typeof INITIAL_DATA.areas;
   addPointCreature: (pointId: string, creatureId: string, localRarity: Rarity) => Promise<void>;
   removePointCreature: (pointId: string, creatureId: string) => Promise<void>;
-  approveProposal: (type: 'creature' | 'point', id: string, data: any) => Promise<void>;
-  rejectProposal: (type: 'creature' | 'point', id: string) => Promise<void>;
+  approveProposal: (type: 'creature' | 'point' | 'point-creature', id: string, data: any) => Promise<void>;
+  rejectProposal: (type: 'creature' | 'point' | 'point-creature', id: string) => Promise<void>;
   addCreatureProposal: (data: any) => Promise<void>;
   addPointProposal: (data: any) => Promise<void>;
+  addPointCreatureProposal: (data: any) => Promise<void>;
+  removePointCreatureProposal: (pointId: string, creatureId: string) => Promise<void>;
   addReview: (reviewData: Omit<Review, 'id' | 'userId' | 'userName' | 'userProfileImage' | 'trustLevel' | 'createdAt' | 'status' | 'helpfulCount' | 'helpfulBy'>) => Promise<void>;
 
   // Expose data directly
@@ -76,6 +78,7 @@ interface AppContextType {
   recentLogs: Log[];
   proposalCreatures: (Creature & { proposalType?: string, diffData?: any, targetId?: string, reason?: string })[];
   proposalPoints: (Point & { proposalType?: string, diffData?: any, targetId?: string, reason?: string })[];
+  proposalPointCreatures: PointCreatureProposal[];
   regions: typeof INITIAL_DATA.regions;
   zones: typeof INITIAL_DATA.zones;
 
@@ -114,6 +117,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [pointCreatures, setPointCreatures] = useState<PointCreature[]>(INITIAL_DATA.pointCreatures);
   const [proposalCreatures, setProposalCreatures] = useState<Creature[]>([]);
   const [proposalPoints, setProposalPoints] = useState<Point[]>([]);
+  const [proposalPointCreatures, setProposalPointCreatures] = useState<PointCreatureProposal[]>([]);
   const [allLogs, setAllLogs] = useState<Log[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [proposalReviews, setProposalReviews] = useState<Review[]>([]);
@@ -308,11 +312,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setProposalReviews(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Review)));
     }, (err) => console.error("Snapshot error (personal/pending reviews):", err));
 
+    // Point-Creature Proposals (New)
+    const qPPC = isAdmin
+      ? query(collection(firestore, 'point_creature_proposals'), where('status', '==', 'pending'))
+      : query(collection(firestore, 'point_creature_proposals'), where('submitterId', '==', userId), where('status', '==', 'pending'));
+    const unsubPPC = onSnapshot(qPPC, (snapshot) => {
+      setProposalPointCreatures(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as PointCreatureProposal)));
+    }, (err) => console.error("Snapshot error (point-creature proposals):", err));
+
     return () => {
       unsubLogs();
       unsubC();
       unsubP();
       unsubR();
+      unsubPPC();
     };
   }, [isAuthenticated, currentUser.id, currentUser.role]);
 
@@ -416,33 +429,35 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addCreature = async (creatureData: Omit<Creature, 'id'>) => {
-    const newCreature: Creature = { ...creatureData, id: `c${Date.now()}` };
+    const newCreature: Creature = { ...creatureData, id: `c${Date.now()}`, status: 'approved' };
     if (isAuthenticated) { await setDoc(doc(firestore, 'creatures', newCreature.id), sanitizePayload(newCreature)); }
     return newCreature;
   };
 
   const addPoint = async (pointData: Omit<Point, 'id'>) => {
-    const newPoint: Point = { ...pointData, id: `p${Date.now()}` };
+    const newPoint: Point = { ...pointData, id: `p${Date.now()}`, status: 'approved' };
     if (isAuthenticated) { await setDoc(doc(firestore, 'points', newPoint.id), sanitizePayload(newPoint)); }
     return newPoint;
   };
 
   const addPointCreature = async (pointId: string, creatureId: string, localRarity: Rarity) => {
     const relId = `${pointId}_${creatureId}`;
-    const pointCreatureData: PointCreature = { id: relId, pointId, creatureId, localRarity, status: (currentUser.role === 'admin' || currentUser.role === 'moderator') ? 'approved' : 'pending' };
-    setPointCreatures(prev => [...prev.filter(p => p.id !== relId), pointCreatureData]);
-    try { await setDoc(doc(firestore, 'point_creatures', relId), sanitizePayload(pointCreatureData)); }
-    catch (e) { console.error(e); }
+    const pointCreatureData: PointCreature = { id: relId, pointId, creatureId, localRarity, status: 'approved' };
+    try {
+      await setDoc(doc(firestore, 'point_creatures', relId), sanitizePayload(pointCreatureData));
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
   };
 
   const removePointCreature = async (pointId: string, creatureId: string) => {
     const relId = `${pointId}_${creatureId}`;
-    if (currentUser.role === 'admin' || currentUser.role === 'moderator') {
-      setPointCreatures(prev => prev.filter(p => p.id !== relId));
-      try { await deleteDoc(doc(firestore, 'point_creatures', relId)); }
-      catch (e) { console.error(e); }
-    } else {
-      await updateDoc(doc(firestore, 'point_creatures', relId), { status: 'deletion_requested' });
+    try {
+      await deleteDoc(doc(firestore, 'point_creatures', relId));
+    } catch (e) {
+      console.error(e);
+      throw e;
     }
   };
 
@@ -520,69 +535,69 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const addCreatureProposal = async (data: any) => {
     if (!isAuthenticated) return;
-    await setDoc(doc(firestore, 'creature_proposals', `propc${Date.now()}`), { ...data, status: 'pending', submitterId: currentUser.id, createdAt: new Date().toISOString() });
+    const proposal = { ...data, submitterId: currentUser.id, status: 'pending', createdAt: new Date().toISOString() };
+    await setDoc(doc(firestore, 'creature_proposals', `propc${Date.now()}`), sanitizePayload(proposal));
   };
 
   const addPointProposal = async (data: any) => {
     if (!isAuthenticated) return;
-    await setDoc(doc(firestore, 'point_proposals', `propp${Date.now()}`), { ...data, status: 'pending', submitterId: currentUser.id, createdAt: new Date().toISOString() });
+    const proposal = { ...data, submitterId: currentUser.id, status: 'pending', createdAt: new Date().toISOString() };
+    await setDoc(doc(firestore, 'point_proposals', `propp${Date.now()}`), sanitizePayload(proposal));
   };
 
-  const approveProposal = async (type: 'creature' | 'point', id: string, data: any) => {
-    const targetCol = type === 'creature' ? 'creatures' : 'points';
-    const list = type === 'creature' ? creatures : points;
+  const addPointCreatureProposal = async (data: any) => {
+    if (!isAuthenticated) return;
+    const relId = `${data.pointId}_${data.creatureId}`;
+    const proposal = { ...data, targetId: relId, submitterId: currentUser.id, status: 'pending', createdAt: new Date().toISOString() };
+    await setDoc(doc(firestore, 'point_creature_proposals', `proppc${Date.now()}`), sanitizePayload(proposal));
+  };
 
-    // Use targetId from proposal data, fall back to ID if it's not a 'prop_' ID
-    const tid = data.targetId || (id.startsWith('prop') ? null : id);
-    if (!tid && data.proposalType !== 'create') {
-      alert('エラー: 更新対象のIDが見つかりません');
-      return;
-    }
+  const removePointCreatureProposal = async (pointId: string, creatureId: string) => {
+    if (!isAuthenticated) return;
+    await addPointCreatureProposal({ pointId, creatureId, proposalType: 'delete' });
+  };
 
-    const existing = list.find(x => x.id === tid || x.id.replace(/_/g, '') === tid?.replace(/_/g, ''));
-    const realId = existing ? existing.id : tid;
-
-    const propType = (data.proposalType || data.type || '').toLowerCase();
-    const isDelete = propType === 'delete' || data.isDeletionRequest === true;
-    const isUpdate = (propType === 'update' || (!!data.targetId && propType !== 'delete')) && !isDelete;
-
+  const approveProposal = async (type: 'creature' | 'point' | 'point-creature', id: string, data: any) => {
+    if (currentUser.role !== 'admin' && currentUser.role !== 'moderator') return;
+    const now = new Date().toISOString();
     try {
-      if (isDelete) {
-        // Physical delete vs logical delete. Keeping logical delete (rejected status) for safety.
-        await updateDoc(doc(firestore, targetCol, realId), { status: 'rejected' });
-      } else if (isUpdate && realId) {
-        const payload = { ...data.diffData, status: 'approved' };
-        await updateDoc(doc(firestore, targetCol, realId), sanitizePayload(payload));
-      } else {
-        const finalData = { ...data, id: realId || `p${Date.now()}`, status: 'approved' };
-        delete finalData.targetId;
-        delete finalData.proposalType;
-        delete finalData.type;
-        delete finalData.diffData;
-        await setDoc(doc(firestore, targetCol, finalData.id), sanitizePayload(finalData));
+      if (type === 'creature') {
+        const targetId = data.targetId || `c${Date.now()}`;
+        const { id: fid, proposalType, targetId: ftid, submitterId, status, createdAt, ...finalData } = data;
+        await setDoc(doc(firestore, 'creatures', targetId), sanitizePayload({ ...finalData, id: targetId, status: 'approved' }));
+        await updateDoc(doc(firestore, 'creature_proposals', id), { status: 'approved', processedAt: now });
+      } else if (type === 'point') {
+        const targetId = data.targetId || `p${Date.now()}`;
+        const { id: fid, proposalType, targetId: ftid, submitterId, status, createdAt, ...finalData } = data;
+        await setDoc(doc(firestore, 'points', targetId), sanitizePayload({ ...finalData, id: targetId, status: 'approved' }));
+        await updateDoc(doc(firestore, 'point_proposals', id), { status: 'approved', processedAt: now });
+      } else if (type === 'point-creature') {
+        const targetId = data.targetId || `${data.pointId}_${data.creatureId}`;
+        const { id: fid, proposalType, targetId: ftid, submitterId, status, createdAt, ...finalData } = data;
+        if (proposalType === 'delete') {
+          await deleteDoc(doc(firestore, 'point_creatures', targetId));
+        } else {
+          await setDoc(doc(firestore, 'point_creatures', targetId), sanitizePayload({ ...finalData, id: targetId, status: 'approved' }));
+        }
+        await updateDoc(doc(firestore, 'point_creature_proposals', id), { status: 'approved', processedAt: now });
       }
-
-      // Mark the proposal itself as approved
-      const propCol = type === 'creature' ? 'creature_proposals' : 'point_proposals';
-      await updateDoc(doc(firestore, propCol, id), { status: 'approved', processedAt: new Date().toISOString() });
-
-      alert(`承認完了: ${targetCol}/${realId} を更新しました。`);
+      alert('承認完了しました');
     } catch (e: any) {
       console.error(e);
       alert(`承認エラー: ${e.message}`);
     }
   };
 
-  const rejectProposal = async (type: 'creature' | 'point', id: string) => {
-    // If id exists in master list, it means it's a direct pending item, so we reject it there.
-    const isMasterItem = type === 'creature'
-      ? creatures.some(c => c.id === id)
-      : points.some(p => p.id === id);
-
-    if (isMasterItem) {
-      await updateDoc(doc(firestore, type === 'creature' ? 'creatures' : 'points', id), { status: 'rejected' });
-    } else {
-      await updateDoc(doc(firestore, type === 'creature' ? 'creature_proposals' : 'point_proposals', id), { status: 'rejected' });
+  const rejectProposal = async (type: 'creature' | 'point' | 'point-creature', id: string) => {
+    if (currentUser.role !== 'admin' && currentUser.role !== 'moderator') return;
+    const now = new Date().toISOString();
+    try {
+      const colName = type === 'creature' ? 'creature_proposals' : type === 'point' ? 'point_proposals' : 'point_creature_proposals';
+      await updateDoc(doc(firestore, colName, id), { status: 'rejected', processedAt: now });
+      alert('却下しました');
+    } catch (e: any) {
+      console.error(e);
+      alert(`却下エラー: ${e.message}`);
     }
   };
 
@@ -703,9 +718,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (currentUser.role === 'admin') await updateDoc(doc(firestore, 'users', uid), { role: newRole });
   };
 
-  const value = {
+  const value: AppContextType = {
     currentUser, isAuthenticated, isLoading, login, logout, calculateRarity, addLog, addCreature, addPoint, addPointCreature, removePointCreature, updateLog, updateCreature, updatePoint, deleteLog, deleteLogs, updateLogs, updateUser, toggleLikeLog, toggleFavorite, toggleWanted, toggleBookmarkPoint,
-    creatures, points, pointCreatures, logs: allLogs, reviews, proposalReviews, recentLogs, proposalCreatures, proposalPoints, regions, zones, areas, addCreatureProposal, addPointProposal, approveProposal, rejectProposal, allUsers, updateUserRole, deleteAccount, addReview, approveReview, rejectReview, updateReview, deleteReview
+    creatures, points, pointCreatures, logs: allLogs, reviews, proposalReviews, recentLogs, proposalCreatures, proposalPoints, proposalPointCreatures, regions, zones, areas, addCreatureProposal, addPointProposal, addPointCreatureProposal, removePointCreatureProposal, approveProposal, rejectProposal, allUsers, updateUserRole, deleteAccount, addReview, approveReview, rejectReview, updateReview, deleteReview
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

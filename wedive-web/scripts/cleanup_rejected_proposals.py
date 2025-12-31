@@ -26,7 +26,8 @@ def cleanup_rejected_proposals(project_id, dry_run=True):
     # ==========================================
     proposal_collections = [
         ('point_proposals', 'points'),
-        ('creature_proposals', 'creatures')
+        ('creature_proposals', 'creatures'),
+        ('point_creature_proposals', 'point_creatures')
     ]
 
     for prop_col, master_col in proposal_collections:
@@ -83,7 +84,7 @@ def cleanup_rejected_proposals(project_id, dry_run=True):
     # ==========================================
     # 2. Clean up Orphaned/Zombie Master Data (Pending/Rejected)
     # ==========================================
-    master_collections = ['points', 'creatures']
+    master_collections = ['points', 'creatures', 'point_creatures']
 
     for master_col in master_collections:
         print(f"\n🔍 Scanning {master_col} for pending/rejected zombies...")

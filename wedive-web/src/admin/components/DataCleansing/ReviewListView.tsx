@@ -20,7 +20,7 @@ interface ReviewListViewProps {
 }
 
 export const ReviewListView: React.FC<ReviewListViewProps> = ({ initialViewMode = 'point' }) => {
-  const { points, creatures, pointCreatures } = useApp();
+  const { points, creatures, proposalPointCreatures, approveProposal, rejectProposal } = useApp();
   const [viewMode, setViewMode] = useState<'point' | 'creature'>(initialViewMode);
   const [filterPending, setFilterPending] = useState(true);
   const [filterRejected, setFilterRejected] = useState(false);
@@ -30,13 +30,7 @@ export const ReviewListView: React.FC<ReviewListViewProps> = ({ initialViewMode 
 
   // 1. Group Data for Review
   const groupedData = useMemo(() => {
-    const pcList = pointCreatures.filter(pc => {
-      // 1. Pending Filter
-      if (filterPending && pc.status === 'pending') return true;
-      // 2. Rejected/Auto-Rejected Filter
-      if (filterRejected && (pc.status === 'rejected' || pc.status === 'deletion_requested')) return true;
-      return false;
-    });
+    const pcList = proposalPointCreatures; // 新しい申請コレクションを使用
 
     if (viewMode === 'point') {
       // Point -> [Creatures]
@@ -65,34 +59,41 @@ export const ReviewListView: React.FC<ReviewListViewProps> = ({ initialViewMode 
         items: items.sort((a, b) => (b.confidence || 0) - (a.confidence || 0))
       })).filter(g => g.parent);
     }
-  }, [pointCreatures, points, creatures, viewMode, filterPending, filterRejected]);
+  }, [proposalPointCreatures, points, creatures, viewMode, filterPending, filterRejected]);
 
   // Bulk Actions
   const handleBulkApprove = async () => {
     if (selectedIds.size === 0) return;
     setProcessing(true);
     try {
-      const batch = writeBatch(db);
-      selectedIds.forEach(id => {
-        batch.update(doc(db, 'point_creatures', id), { status: 'approved' });
-      });
-      await batch.commit();
+      for (const id of Array.from(selectedIds)) {
+        const item = proposalPointCreatures.find(p => p.id === id);
+        if (item) {
+          await approveProposal('point-creature', id, item);
+        }
+      }
       setSelectedIds(new Set());
-    } catch (e) { console.error(e); } finally { setProcessing(false); }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const handleBulkReject = async () => {
     if (selectedIds.size === 0) return;
-    if (!window.confirm(`選択した ${selectedIds.size} 件を削除しますか？`)) return;
+    if (!window.confirm(`選択した ${selectedIds.size} 件を却下しますか？`)) return;
     setProcessing(true);
     try {
-      const batch = writeBatch(db);
-      selectedIds.forEach(id => {
-        batch.delete(doc(db, 'point_creatures', id));
-      });
-      await batch.commit();
+      for (const id of Array.from(selectedIds)) {
+        await rejectProposal('point-creature', id);
+      }
       setSelectedIds(new Set());
-    } catch (e) { console.error(e); } finally { setProcessing(false); }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const toggleSelect = (id: string, checked: boolean) => {

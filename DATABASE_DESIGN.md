@@ -12,7 +12,7 @@
 `points`, `creatures`, `areas`, `zones`, `regions` コレクション。
 - **形式**: `[プレフィックス][数字のみ]` (例: `p1766033814156`)
 - **禁止事項**: **アンダースコア (`_`) は一切含めない。**
-- **プレフィックス**: `p` (Point), `c` (Creature), `a` (Area), `z` (Zone), `r` (Region), `rv` (Review), `l` (Log)
+- **プレフィックス**: `p` (Point), `c` (Creature), `a` (Area), `z` (Zone), `r` (Region), `rv` (Review), `l` (Log), `propp` (PointProposal), `propc` (CreatureProposal), `proppc` (PointCreatureProposal)
 
 ### 1.2 マッピングデータ
 `point_creatures` コレクション。
@@ -52,6 +52,7 @@ erDiagram
     %% --- Proposals (Admin) ---
     USER ||--o{ CREATURE_PROPOSAL : "Ref ID (submitterId)"
     USER ||--o{ POINT_PROPOSAL : "Ref ID (submitterId)"
+    USER ||--o{ POINT_CREATURE_PROPOSAL : "Ref ID (submitterId)"
 
     %% Legend
     %% Sub-collection: Physical nesting in Firestore
@@ -220,11 +221,12 @@ WeDive では、スケーラビリティとクエリ効率を考慮し、ユー�
 | `creatureId` | string | 対象生物ID |
 | `localRarity` | string | 提案するレア度 (Common, Rare, Epic, Legendary) |
 | `proposalType` | string | create, update, delete |
-| `targetId` | string | (更新・削除時) 対象マスタID (`pointId_creatureId`) |
+| `targetId` | string | (Create時) 予約ID `pointId_creatureId` / (Delete時) 対象ID |
 | `submitterId` | string | 申請者UID |
 | `status` | string | pending, approved, rejected |
 | `createdAt` | string | 申請日時 |
 | `processedAt` | string | 承認/却下日時 |
+| `reasoning` | string | (Option) 申請理由・根拠 |
 
 #### 3.8.1 提案のライフサイクル定義 (Ideal State)
 データ不整合および「ゾンビデータ（管理不能な未承認データ）」の発生を完璧に防ぐため、以下の原則を徹底します。

@@ -13,7 +13,7 @@ import { HierarchicalPointSelector } from '../components/HierarchicalPointSelect
 export const CreatureDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   // Remove db, use state directly
-  const { creatures, points, pointCreatures, currentUser, isAuthenticated, toggleFavorite, toggleWanted, addPointCreature } = useApp();
+  const { creatures, points, pointCreatures, currentUser, isAuthenticated, toggleFavorite, toggleWanted, addPointCreature, addPointCreatureProposal } = useApp();
 
   // Calculate Discovery Points
   const discoveryPoints = pointCreatures
@@ -42,11 +42,17 @@ export const CreatureDetailPage = () => {
     if (!selectedSpotId) return;
 
     try {
-      if (currentUser.role === 'admin' || currentUser.role === 'moderator') {
+      const isAdmin = currentUser.role === 'admin' || currentUser.role === 'moderator';
+      if (isAdmin) {
         await addPointCreature(selectedSpotId, creature.id, selectedRarity);
         alert('生物を追加しました！');
       } else {
-        await addPointCreature(selectedSpotId, creature.id, selectedRarity);
+        await addPointCreatureProposal({
+          pointId: selectedSpotId,
+          creatureId: creature.id,
+          localRarity: selectedRarity,
+          submitterId: currentUser.id
+        });
         alert('発見報告を送信しました。\n管理者の承認をお待ちください。');
       }
       setIsDiscoveryModalOpen(false);

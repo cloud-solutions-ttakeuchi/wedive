@@ -322,6 +322,7 @@ export interface EditProposal {
   submitterId: string;
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
+  processedAt?: string;
   // For 'create', we might just store the full data in root or diffData?
   // Current implementation stores full data in root of doc.
   // We'll keep compatibility by allowing the doc to have Creature/Point fields directly for 'create'.
@@ -330,6 +331,7 @@ export interface EditProposal {
 
 export type CreatureProposal = Creature & EditProposal;
 export type PointProposal = Point & EditProposal;
+export type PointCreatureProposal = PointCreature & EditProposal;
 
 // --- Review Types (v6.0.0+) ---
 export interface ReviewRadar {

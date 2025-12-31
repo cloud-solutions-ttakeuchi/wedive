@@ -353,30 +353,60 @@ class CleansingPipeline:
                         logger.info(f"  🌐 AI is unsure. Running Google Search Grounding: {creature['name']}...")
                         s2 = self.run_stage2_grounding(p, creature)
 
-                    # Save result to Firestore
-                    status = "pending" if s2.get("actual_existence") else "rejected"
+                    # Save result to Firestore (Proposal System)
+                    # Logic: AI "Exists" -> Propose Create, "Not Exists" -> Propose Delete if exists in Master
+                    ai_thinks_exists = s2.get("actual_existence")
+
+                    # Final check: if rejected but high confidence in S1, maybe it's just 'Rare'
+                    if not ai_thinks_exists and res.get("confidence", 0) > 0.8:
+                        logger.info(f"  💡 High confidence S1 result kept as 'Exists' despite no web evidence.")
+                        ai_thinks_exists = True
+
                     raw_rarity = s2.get("rarity") or res.get("rarity") or "Rare"
                     local_rarity = self._normalize_rarity(raw_rarity)
 
-                    # Final check: if rejected but high confidence in S1, maybe it's just 'Rare'
-                    if status == "rejected" and res.get("confidence", 0) > 0.8:
-                        logger.info(f"  💡 High confidence S1 result kept as 'pending' despite no web evidence.")
-                        status = "pending"
+                    # Check master state
+                    existing_master = self.db.collection('point_creatures').document(key).get()
+                    master_exists = existing_master.exists and existing_master.to_dict().get('status') == 'approved'
 
-                    new_entry = {
-                        "pointId": p['id'],
-                        "creatureId": creature['id'],
-                        "localRarity": local_rarity,
-                        "status": status,
-                        "reasoning": s2.get("evidence") or res.get("reasoning"),
-                        "confidence": (res.get("confidence", 0.5) + (0.3 if s2.get("actual_existence") else 0)) / 1.3,
-                        "updatedAt": firestore.SERVER_TIMESTAMP,
-                        "method": "python-batch-v1"
-                    }
+                    proposal_type = None
+                    if ai_thinks_exists and not master_exists:
+                        proposal_type = "create"
+                    elif not ai_thinks_exists and master_exists:
+                        proposal_type = "delete"
 
-                    self.db.collection('point_creatures').document(key).set(new_entry)
-                    logger.info(f"  🚀 [STORED] key={key} | {creature['name']} ({creature_id}) -> status:{status}")
-                    processed_count += 1
+                    if proposal_type:
+                        # Check if duplicate pending proposal exists to avoid spam
+                        existing_proposals = self.db.collection('point_creature_proposals')\
+                            .where('targetId', '==', key)\
+                            .where('status', '==', 'pending')\
+                            .where('proposalType', '==', proposal_type)\
+                            .limit(1).get()
+
+                        if existing_proposals:
+                            logger.info(f"  ⏭️ Skipping: Pending {proposal_type} proposal already exists for {key}")
+                            continue
+
+                        # Generate ID (proppc_timestamp_creatureId)
+                        proposal_id = f"proppc_{int(time.time() * 1000)}_{creature_id}"
+                        proposal_entry = {
+                            "targetId": key,
+                            "pointId": p['id'],
+                            "creatureId": creature['id'],
+                            "localRarity": local_rarity,
+                            "proposalType": proposal_type,
+                            "submitterId": "ai_cleansing_pipeline",
+                            "status": "pending",
+                            "reasoning": s2.get("evidence") or res.get("reasoning"),
+                            "confidence": (res.get("confidence", 0.5) + (0.3 if ai_thinks_exists else 0)) / 1.3,
+                            "createdAt": firestore.SERVER_TIMESTAMP,
+                            "processedAt": None
+                        }
+                        self.db.collection('point_creature_proposals').document(proposal_id).set(proposal_entry)
+                        logger.info(f"  🚀 [PROPOSED] type={proposal_type} | {creature['name']} ({creature_id}) -> {proposal_id}")
+                        processed_count += 1
+                    else:
+                        logger.info(f"  ✅ No action needed for {creature['name']} (AI agrees with Master or redundant)")
 
                     # Small sleep to be nice to API quotas (adjust as needed)
                     time.sleep(0.5)

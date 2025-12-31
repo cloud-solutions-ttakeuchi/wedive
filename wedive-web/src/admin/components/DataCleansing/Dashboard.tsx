@@ -21,7 +21,7 @@ interface DashboardStats {
 }
 
 export const CleansingDashboard = () => {
-  const { points: allPoints, creatures: allCreatures, pointCreatures, regions, zones, areas } = useApp();
+  const { points: allPoints, creatures: allCreatures, pointCreatures, proposalPointCreatures, regions, zones, areas } = useApp();
 
   const [isRunning, setIsRunning] = useState(false);
   const [mode, setMode] = useState<'all' | 'new' | 'specific' | 'replace'>('new');
@@ -41,13 +41,13 @@ export const CleansingDashboard = () => {
   // Stats calculation
   const stats = useMemo<DashboardStats>(() => {
     return {
-      total: pointCreatures.length,
+      total: pointCreatures.filter(pc => pc.status === 'approved').length,
       approved: pointCreatures.filter(pc => pc.status === 'approved').length,
-      pending: pointCreatures.filter(pc => pc.status === 'pending').length,
+      pending: proposalPointCreatures.length,
       byPoint: allPoints.length,
       byCreature: allCreatures.length
     };
-  }, [pointCreatures, allPoints, allCreatures]);
+  }, [pointCreatures, proposalPointCreatures, allPoints, allCreatures]);
 
   // Filtered Options Logic
   const filteredZones = useMemo(() =>

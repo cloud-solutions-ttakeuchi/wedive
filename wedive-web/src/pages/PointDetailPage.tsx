@@ -14,7 +14,11 @@ import { PointReviewStats } from '../components/PointReviewStats';
 export const PointDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   // Use pointCreatures from context
-  const { points, creatures, pointCreatures, currentUser, toggleBookmarkPoint, isAuthenticated, removePointCreature, reviews, proposalReviews } = useApp();
+  const {
+    points, creatures, pointCreatures, currentUser, toggleBookmarkPoint,
+    isAuthenticated, removePointCreature, removePointCreatureProposal,
+    reviews, proposalReviews
+  } = useApp();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY || '';
@@ -300,8 +304,14 @@ export const PointDetailPage = () => {
                       <button
                         onClick={(e) => {
                           e.preventDefault();
-                          if (window.confirm('この生物の報告を削除しますか？')) {
-                            removePointCreature(point.id, creature.id);
+                          const isAdmin = currentUser.role === 'admin' || currentUser.role === 'moderator';
+                          if (window.confirm(isAdmin ? 'この生物の報告を削除しますか？' : '削除リクエストを送信しますか？')) {
+                            if (isAdmin) {
+                              removePointCreature(point.id, creature.id);
+                            } else {
+                              removePointCreatureProposal(point.id, creature.id);
+                              alert('削除リクエストを送信しました');
+                            }
                           }
                         }}
                         className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-rose-500 text-white/0 hover:text-white rounded-full transition-all duration-300 backdrop-blur-sm z-30 opacity-0 group-hover:opacity-100"
@@ -437,7 +447,7 @@ const AddCreatureModal = ({
   onClose: () => void,
   onAdd: (id: string, rarity: Rarity) => void
 }) => {
-  const { creatures, points, currentUser, addPointCreature } = useApp();
+  const { creatures, points, currentUser, addPointCreature, addPointCreatureProposal } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [addedIds, setAddedIds] = useState<string[]>([]);
   const [selectedRarity, setSelectedRarity] = useState<Rarity>('Common');
@@ -484,7 +494,12 @@ const AddCreatureModal = ({
         alert('生物を追加しました！');
       } else {
         // Proposal Flow
-        await addPointCreature(pointId, creatureId, selectedRarity);
+        await addPointCreatureProposal({
+          pointId,
+          creatureId,
+          localRarity: selectedRarity,
+          submitterId: currentUser.id
+        });
         alert('追加申請を送信しました');
       }
       setTargetCreatureId(null); // Reset

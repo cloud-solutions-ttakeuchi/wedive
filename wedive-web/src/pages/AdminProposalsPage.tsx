@@ -8,52 +8,40 @@ import { TRUST_RANKS } from '../constants/masterData';
 
 export const AdminProposalsPage = () => {
   const navigate = useNavigate();
-  const { proposalCreatures, proposalPoints, proposalReviews, approveProposal, rejectProposal, approveReview, rejectReview, currentUser, isAuthenticated, allUsers, creatures, points, pointCreatures, removePointCreature, addPointCreature } = useApp();
+  const {
+    proposalCreatures,
+    proposalPoints,
+    proposalPointCreatures,
+    proposalReviews,
+    approveProposal,
+    rejectProposal,
+    approveReview,
+    rejectReview,
+    currentUser,
+    isAuthenticated,
+    allUsers,
+    creatures,
+    points
+  } = useApp();
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [isSeeding, setIsSeeding] = useState(false);
   const [activeCategory, setActiveCategory] = useState<'creature' | 'point' | 'rel' | 'review'>('creature');
 
-  // Filter deletion and addition requests
-  const deletionRequests = pointCreatures.filter(pc => pc.status === 'deletion_requested');
-  const additionRequests = pointCreatures.filter(pc => pc.status === 'pending');
-
-  // Check Admin Role
-  if (!isAuthenticated || (currentUser.role !== 'admin' && currentUser.role !== 'moderator')) {
-    return <div className="p-10 text-center">Access Denied</div>;
-  }
-
-  // Custom handlers for point-creature relationships
-  const handleApproveAddition = async (req: any) => {
-    if (!window.confirm('この生物の追加を承認しますか？')) return;
-    setProcessingId(req.id);
-    // Re-add as admin to force 'approved' status (or just update status)
-    // Using addPointCreature logic which handles 'approved' for admins
-    await addPointCreature(req.pointId, req.creatureId, req.localRarity);
+  // ハンドラを統合
+  const handleApproveRel = async (item: any) => {
+    const action = item.proposalType === 'delete' ? '削除を承認' : '追加を承認';
+    if (!window.confirm(`${action}してもよろしいですか？`)) return;
+    setProcessingId(item.id);
+    await approveProposal('point-creature', item.id, item);
     setProcessingId(null);
-  }
+  };
 
-  const handleRejectAddition = async (req: any) => {
-    if (!window.confirm('この生物の追加を却下（削除）しますか？')) return;
-    setProcessingId(req.id);
-    // Rejecting an addition means deleting the pending record
-    await removePointCreature(req.pointId, req.creatureId);
+  const handleRejectRel = async (id: string) => {
+    if (!window.confirm('却下してもよろしいですか？')) return;
+    setProcessingId(id);
+    await rejectProposal('point-creature', id);
     setProcessingId(null);
-  }
-
-  const handleApproveDeletion = async (req: any) => {
-    if (!window.confirm('削除リクエストを承認（完全に削除）しますか？')) return;
-    setProcessingId(req.id);
-    await removePointCreature(req.pointId, req.creatureId);
-    setProcessingId(null);
-  }
-
-  const handleRejectDeletion = async (req: any) => {
-    if (!window.confirm('削除リクエストを却下（元に戻す）しますか？')) return;
-    setProcessingId(req.id);
-    // Revert status to approved
-    await addPointCreature(req.pointId, req.creatureId, req.localRarity);
-    setProcessingId(null);
-  }
+  };
 
 
   const handleForceSeed = async () => {
@@ -231,7 +219,7 @@ export const AdminProposalsPage = () => {
           {[
             { id: 'creature', label: '生物', icon: <Fish size={18} />, count: proposalCreatures.length },
             { id: 'point', label: 'ポイント', icon: <MapPin size={18} />, count: proposalPoints.length },
-            { id: 'rel', label: 'ポイント_生物', icon: <Database size={18} />, count: additionRequests.length + deletionRequests.length },
+            { id: 'rel', label: 'ポイント_生物', icon: <Database size={18} />, count: proposalPointCreatures.length },
             { id: 'review', label: 'レビュー', icon: <Star size={18} />, count: proposalReviews.length },
           ].map(tab => (
             <button
@@ -332,99 +320,64 @@ export const AdminProposalsPage = () => {
 
         {/* Categories: Point-Creature Relationships */}
         {activeCategory === 'rel' && (
-          <div className="space-y-12">
-            {/* Addition Requests (Pending) */}
-            {additionRequests.length > 0 && (
-              <section>
-                <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-blue-600"><Check className="text-blue-500" /> 追加リクエスト ({additionRequests.length})</h2>
-                <div className="grid gap-4">
-                  {additionRequests.map(req => {
-                    const targetPoint = points.find(p => p.id === req.pointId);
-                    const targetCreature = creatures.find(c => c.id === req.creatureId);
-                    return (
-                      <div key={req.id} className="bg-white p-6 rounded-xl shadow-sm border border-blue-100 flex flex-col md:flex-row gap-6 items-center">
-                        <div className="w-20 h-20 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden border border-gray-100">
-                          <img src={targetCreature?.imageUrl} className="w-full h-full object-cover" alt={targetCreature?.name} />
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="text-lg font-bold text-gray-900">
-                            {targetCreature?.name} <span className="text-sm font-normal text-gray-500">at</span> {targetPoint?.name}
-                          </h3>
-                          <div className="mt-1 flex gap-2 text-xs">
-                            <span className={`px-2 py-0.5 rounded border ${req.localRarity === 'Common' ? 'bg-gray-100 border-gray-300 text-gray-600' :
-                              req.localRarity === 'Rare' ? 'bg-blue-100 border-blue-300 text-blue-600' :
-                                'bg-purple-100 border-purple-300 text-purple-600'}`}>
-                              {req.localRarity}
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-500 mt-1">追加申請されています</p>
-                        </div>
-                        <div className="flex flex-col gap-2 justify-center min-w-[140px]">
-                          <button
-                            onClick={() => handleApproveAddition(req)}
-                            disabled={processingId === req.id}
-                            className="flex items-center justify-center gap-2 bg-blue-500 text-white px-4 py-2.5 rounded-lg font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 shadow-sm"
-                          >
-                            <Check size={16} /> 承認
-                          </button>
-                          <button
-                            onClick={() => handleRejectAddition(req)}
-                            disabled={processingId === req.id}
-                            className="flex items-center justify-center gap-2 bg-white text-gray-600 border border-gray-200 px-4 py-2.5 rounded-lg font-bold hover:bg-gray-50 transition-colors disabled:opacity-50 shadow-sm"
-                          >
-                            <X size={16} /> 却下
-                          </button>
-                        </div>
+          <div className="space-y-6">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-indigo-600">
+              <Database className="text-indigo-500" /> 紐付け提案 ({proposalPointCreatures.length})
+            </h2>
+            {proposalPointCreatures.length > 0 ? (
+              <div className="grid gap-4">
+                {proposalPointCreatures.map(req => {
+                  const targetPoint = points.find(p => p.id === req.pointId);
+                  const targetCreature = creatures.find(c => c.id === req.creatureId);
+                  const isDelete = req.proposalType === 'delete';
+                  return (
+                    <div key={req.id} className={clsx(
+                      "bg-white p-6 rounded-xl shadow-sm border flex flex-col md:flex-row gap-6 items-center",
+                      isDelete ? "border-red-100" : "border-blue-100"
+                    )}>
+                      <div className="w-20 h-20 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden border border-gray-100">
+                        <img src={targetCreature?.imageUrl} className="w-full h-full object-cover" alt={targetCreature?.name} />
                       </div>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
-
-            {/* Deletion Requests */}
-            {
-              deletionRequests.length > 0 && (
-                <section>
-                  <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-red-600"><X className="text-red-500" /> 削除リクエスト ({deletionRequests.length})</h2>
-                  <div className="grid gap-4">
-                    {deletionRequests.map(req => {
-                      const targetPoint = points.find(p => p.id === req.pointId);
-                      const targetCreature = creatures.find(c => c.id === req.creatureId);
-                      return (
-                        <div key={req.id} className="bg-white p-6 rounded-xl shadow-sm border border-red-100 flex flex-col md:flex-row gap-6 items-center">
-                          <div className="flex-1">
-                            <h3 className="text-lg font-bold text-gray-900">
-                              {targetCreature?.name} <span className="text-sm font-normal text-gray-500">at</span> {targetPoint?.name}
-                            </h3>
-                            <p className="text-sm text-gray-500">削除申請されています</p>
-                          </div>
-                          <div className="flex flex-col gap-2 justify-center min-w-[140px]">
-                            <button
-                              onClick={() => handleApproveDeletion(req)}
-                              disabled={processingId === req.id}
-                              className="flex items-center justify-center gap-2 bg-red-500 text-white px-4 py-2.5 rounded-lg font-bold hover:bg-red-600 transition-colors disabled:opacity-50 shadow-sm"
-                            >
-                              <X size={16} /> 削除実行
-                            </button>
-                            <button
-                              onClick={() => handleRejectDeletion(req)}
-                              disabled={processingId === req.id}
-                              className="flex items-center justify-center gap-2 bg-white text-gray-600 border border-gray-200 px-4 py-2.5 rounded-lg font-bold hover:bg-gray-50 transition-colors disabled:opacity-50 shadow-sm"
-                            >
-                              <Check size={16} /> 却下(維持)
-                            </button>
-                          </div>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start">
+                          <h3 className="text-lg font-bold text-gray-900">
+                            {targetCreature?.name} <span className="text-sm font-normal text-gray-400">at</span> {targetPoint?.name}
+                          </h3>
+                          <span className={clsx(
+                            "text-xs px-2 py-1 rounded-full font-medium",
+                            isDelete ? "bg-red-100 text-red-800" : "bg-blue-100 text-blue-800"
+                          )}>
+                            {isDelete ? '紐付け解除申請' : '新規紐付け申請'}
+                          </span>
                         </div>
-                      );
-                    })}
-                  </div>
-                </section>
-              )
-            }
-            {additionRequests.length === 0 && deletionRequests.length === 0 && (
-              <div className="text-center text-gray-400 py-12 bg-white rounded-2xl border border-dashed border-gray-200">
-                関係性の申請はありません
+                        <div className="mt-1 flex gap-2 text-xs">
+                          <span className="px-2 py-0.5 rounded border bg-gray-50 border-gray-200">Rarity: {req.localRarity}</span>
+                        </div>
+                        {getSubmitterInfo(req.submitterId)}
+                      </div>
+                      <div className="flex flex-col gap-2 justify-center min-w-[140px]">
+                        <button
+                          onClick={() => handleApproveRel(req)}
+                          disabled={processingId === req.id}
+                          className="flex items-center justify-center gap-2 bg-indigo-500 text-white px-4 py-2.5 rounded-lg font-bold hover:bg-indigo-600 disabled:opacity-50"
+                        >
+                          <Check size={16} /> 承認
+                        </button>
+                        <button
+                          onClick={() => handleRejectRel(req.id)}
+                          disabled={processingId === req.id}
+                          className="flex items-center justify-center gap-2 bg-white text-red-600 border border-red-200 px-4 py-2.5 rounded-lg font-bold hover:bg-red-50 disabled:opacity-50"
+                        >
+                          <X size={16} /> 却下
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center text-gray-400 py-12 bg-white rounded-2xl border border-dashed">
+                提案はありません
               </div>
             )}
           </div>

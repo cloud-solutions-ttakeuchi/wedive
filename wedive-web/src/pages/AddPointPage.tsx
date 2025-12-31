@@ -11,7 +11,7 @@ import { FEATURE_FLAGS } from '../config/features';
 
 export const AddPointPage = () => {
   const navigate = useNavigate();
-  const { addPoint, isAuthenticated, currentUser, regions, zones, areas } = useApp();
+  const { addPoint, addPointProposal, isAuthenticated, currentUser, regions, zones, areas } = useApp();
 
   // Authentication check moved to render phase to avoid conditional hooks
   const showAccessDenied = !isAuthenticated;
@@ -187,7 +187,7 @@ export const AddPointPage = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!selectedRegionId || !selectedZoneId || !selectedAreaId) {
@@ -205,6 +205,7 @@ export const AddPointPage = () => {
     }
 
     try {
+      const isAdmin = currentUser.role === 'admin' || currentUser.role === 'moderator';
       const pointData: Omit<Point, 'id'> = {
         name: formData.name,
         areaId: selectedAreaId,
@@ -224,18 +225,23 @@ export const AddPointPage = () => {
           lat: Number(formData.lat),
           lng: Number(formData.lng)
         } : undefined,
-        googlePlaceId: formData.googlePlaceId, // New
-        formattedAddress: formData.formattedAddress, // New
+        googlePlaceId: formData.googlePlaceId,
+        formattedAddress: formData.formattedAddress,
         status: 'pending',
-        submitterId: 'current_user',
+        submitterId: currentUser.id,
         createdAt: new Date().toISOString(),
         images: formData.images,
         imageUrl: formData.images[0] || '/images/seascape.png',
         bookmarkCount: 0
       };
 
-      addPoint(pointData);
-      alert('ポイントの登録申請が完了しました！');
+      if (isAdmin) {
+        await addPoint({ ...pointData, status: 'approved' });
+        alert('ポイントを登録しました（マスタ直書き）');
+      } else {
+        await addPointProposal({ ...pointData, status: 'pending', proposalType: 'create' });
+        alert('ポイントの登録申請が完了しました。管理者の承認をお待ちください。');
+      }
       navigate('/');
     } catch (error) {
       console.error('Point registration failed:', error);
