@@ -9,6 +9,24 @@ import {
 import { Point, Creature, PointCreature, PointCreatureProposal, Rarity } from '../types';
 
 /**
+ * Removes undefined values from payload recursivly to prevent Firestore errors.
+ */
+const sanitizePayload = (data: any): any => {
+  if (Array.isArray(data)) {
+    return data.map(item => sanitizePayload(item));
+  }
+  if (data !== null && typeof data === 'object') {
+    return Object.entries(data).reduce((acc, [key, value]) => {
+      if (value !== undefined) {
+        acc[key] = sanitizePayload(value);
+      }
+      return acc;
+    }, {} as any);
+  }
+  return data;
+};
+
+/**
  * ProposalService
  * Processes user proposals and direct admin actions.
  * Separated at the function level for maximum integrity.
@@ -22,12 +40,12 @@ export const ProposalService = {
   async addPoint(data: Omit<Point, 'id'>): Promise<string> {
     const id = `p${Date.now()}`;
     const ref = doc(db, 'points', id);
-    await setDoc(ref, {
+    await setDoc(ref, sanitizePayload({
       ...data,
       id,
       status: 'approved',
       createdAt: new Date().toISOString()
-    });
+    }));
     return id;
   },
 
@@ -37,13 +55,29 @@ export const ProposalService = {
   async addCreature(data: Omit<Creature, 'id'>): Promise<string> {
     const id = `c${Date.now()}`;
     const ref = doc(db, 'creatures', id);
-    await setDoc(ref, {
+    await setDoc(ref, sanitizePayload({
       ...data,
       id,
       status: 'approved',
       createdAt: new Date().toISOString()
-    });
+    }));
     return id;
+  },
+
+  /**
+   * Directly update an existing point in the master collection.
+   */
+  async updatePoint(id: string, data: Partial<Point>): Promise<void> {
+    const ref = doc(db, 'points', id);
+    await setDoc(ref, sanitizePayload({ ...data, status: 'approved' }), { merge: true });
+  },
+
+  /**
+   * Directly update an existing creature in the master collection.
+   */
+  async updateCreature(id: string, data: Partial<Creature>): Promise<void> {
+    const ref = doc(db, 'creatures', id);
+    await setDoc(ref, sanitizePayload({ ...data, status: 'approved' }), { merge: true });
   },
 
   /**
@@ -70,14 +104,31 @@ export const ProposalService = {
   async addPointProposal(data: Omit<Point, 'id'>): Promise<string> {
     const id = `propp_${Date.now()}`;
     const ref = doc(db, 'point_proposals', id);
-    await setDoc(ref, {
+    await setDoc(ref, sanitizePayload({
       ...data,
       id,
       status: 'pending',
       proposalType: 'create',
       createdAt: new Date().toISOString()
-    });
+    }));
     return id;
+  },
+
+  /**
+   * Submit a proposal to update an existing point.
+   */
+  async updatePointProposal(id: string, diffData: Partial<Point>, submitterId: string): Promise<string> {
+    const propId = `propp_${Date.now()}`;
+    const ref = doc(db, 'point_proposals', propId);
+    await setDoc(ref, sanitizePayload({
+      targetId: id,
+      diffData: sanitizePayload(diffData),
+      submitterId,
+      status: 'pending',
+      proposalType: 'update',
+      createdAt: new Date().toISOString()
+    }));
+    return propId;
   },
 
   /**
@@ -86,14 +137,65 @@ export const ProposalService = {
   async addCreatureProposal(data: Omit<Creature, 'id'>): Promise<string> {
     const id = `propc_${Date.now()}`;
     const ref = doc(db, 'creature_proposals', id);
-    await setDoc(ref, {
+    await setDoc(ref, sanitizePayload({
       ...data,
       id,
       status: 'pending',
       proposalType: 'create',
       createdAt: new Date().toISOString()
-    });
+    }));
     return id;
+  },
+
+  /**
+   * Submit a proposal to update an existing creature.
+   */
+  async updateCreatureProposal(id: string, diffData: Partial<Creature>, submitterId: string): Promise<string> {
+    const propId = `propc_${Date.now()}`;
+    const ref = doc(db, 'creature_proposals', propId);
+    await setDoc(ref, {
+      targetId: id,
+      diffData,
+      submitterId,
+      status: 'pending',
+      proposalType: 'update',
+      createdAt: new Date().toISOString()
+    });
+    return propId;
+  },
+
+  /**
+   * Submit a deletion proposal for a point.
+   */
+  async removePointProposal(id: string, submitterId: string, reason?: string): Promise<string> {
+    const propId = `propp_${Date.now()}`;
+    const ref = doc(db, 'point_proposals', propId);
+    await setDoc(ref, {
+      targetId: id,
+      proposalType: 'delete',
+      submitterId,
+      status: 'pending',
+      reason,
+      createdAt: new Date().toISOString()
+    });
+    return propId;
+  },
+
+  /**
+   * Submit a deletion proposal for a creature.
+   */
+  async removeCreatureProposal(id: string, submitterId: string, reason?: string): Promise<string> {
+    const propId = `propc_${Date.now()}`;
+    const ref = doc(db, 'creature_proposals', propId);
+    await setDoc(ref, {
+      targetId: id,
+      proposalType: 'delete',
+      submitterId,
+      status: 'pending',
+      reason,
+      createdAt: new Date().toISOString()
+    });
+    return propId;
   },
 
   /**
@@ -109,7 +211,7 @@ export const ProposalService = {
     const id = `proppc_${Date.now()}`;
     const targetId = `${params.pointId}_${params.creatureId}`;
 
-    const proposal: PointCreatureProposal = {
+    const proposal: any = sanitizePayload({
       id,
       targetId,
       pointId: params.pointId,
@@ -118,9 +220,8 @@ export const ProposalService = {
       proposalType: params.proposalType || 'create',
       submitterId: params.submitterId,
       status: 'pending',
-      createdAt: new Date().toISOString(),
-      processedAt: undefined
-    };
+      createdAt: new Date().toISOString()
+    });
 
     const ref = doc(db, 'point_creature_proposals', id);
     await setDoc(ref, proposal);

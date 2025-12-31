@@ -152,19 +152,16 @@ export default function EditCreatureProposalScreen() {
         return;
       }
 
-      await ProposalService.addCreatureProposal(
-        user.id,
-        {
-          ...diffData,
-          name: creature?.name // Preview info
-        },
-        'update',
-        id as string
-      );
-
-      Alert.alert('ありがとうございます！', '修正案を申請しました。管理者の承認後に反映されます。', [
-        { text: 'OK', onPress: () => router.back() }
-      ]);
+      if (user.role === 'admin' || user.role === 'moderator') {
+        // ADMIN: Direct Master Update
+        await ProposalService.updateCreature(id as string, diffData);
+        Alert.alert('完了', '生物情報を更新しました');
+      } else {
+        // USER: Submit Proposal
+        await ProposalService.updateCreatureProposal(id as string, diffData, user.id);
+        Alert.alert('ありがとうございます！', '修正案を申請しました。管理者の承認後に反映されます。');
+      }
+      router.back();
     } catch (e) {
       console.error(e);
       Alert.alert('エラー', '申請に失敗しました');
@@ -495,10 +492,7 @@ export default function EditCreatureProposalScreen() {
                   text: '申請する', style: 'destructive', onPress: async () => {
                     if (!user || !id) return;
                     try {
-                      await ProposalService.addCreatureProposal(user.id, {
-                        reason: deleteReason,
-                        name: creature?.name
-                      }, 'delete', id as string);
+                      await ProposalService.removeCreatureProposal(id as string, user.id, deleteReason);
                       Alert.alert('完了', '削除の申請を送信しました');
                       router.back();
                     } catch (e) {

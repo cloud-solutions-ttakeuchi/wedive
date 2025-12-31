@@ -15,6 +15,7 @@ import { ImageWithFallback } from '../../../src/components/ImageWithFallback';
 import { useReviews } from '../../../src/hooks/useReviews';
 import { PointReviewStats } from '../../../src/components/PointReviewStats';
 import { ReviewCard } from '../../../src/components/ReviewCard';
+import { ProposalService } from '../../../src/services/ProposalService';
 
 const { width } = Dimensions.get('window');
 
@@ -139,16 +140,18 @@ export default function SpotDetailScreen() {
     setShowRarityModal(false);
 
     try {
-      const relId = `${point.id}_${selectedCreature.id}`;
-      const pointCreatureData: PointCreature = {
-        id: relId,
-        pointId: point.id,
-        creatureId: selectedCreature.id,
-        localRarity: rarity,
-        status: (user.role === 'admin' || user.role === 'moderator') ? 'approved' : 'pending',
-      };
-
-      await setDoc(doc(db, 'point_creatures', relId), pointCreatureData);
+      if (user.role === 'admin' || user.role === 'moderator') {
+        // ADMIN: Direct Master Write
+        await ProposalService.addPointCreature(point.id, selectedCreature.id, rarity);
+      } else {
+        // USER: Submit Proposal
+        await ProposalService.addPointCreatureProposal({
+          pointId: point.id,
+          creatureId: selectedCreature.id,
+          localRarity: rarity,
+          submitterId: user.id
+        });
+      }
 
       Alert.alert(
         'ありがとうございます！',

@@ -62,3 +62,14 @@ export interface PointCreatureProposal {
 
 ## 5. 整合性の保証
 Web版とApp版で関数名と処理ロジックを完全に一致させることで、プラットフォームを跨いだデータの汚染を完全に防止する。
+
+## 6. マスタデータの配信とシードデータの扱い
+読み取りコストの最適化とデータ整合性の両立のため、以下の設計指針を適用する。
+
+### 6.1 真実のソース (Single Source of Truth)
+本番環境での真実のソースは常に **Firestore（実データ）** である。`locations_seed.json` などのシードファイルは環境再構築時のみに使用し、クライアントアプリが直接参照してユーザーに提示することを厳禁とする（不整合による「幻覚」の防止）。
+
+### 6.2 配信アーキテクチャ (GCS Mirroring)
+Firestore の Read コストを削減しつつ最新データを配信するため、Firestore の特定の断面を JSON として GCS にミラーリングし、クライアントはそこからバルク読み取りを行う方式を推奨する。
+
+詳細は [MASTDATA_SYNC_POLICY.md](./MASTDATA_SYNC_POLICY.md) を参照。

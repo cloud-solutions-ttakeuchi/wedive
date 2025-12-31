@@ -169,13 +169,15 @@ export default function EditSpotProposalScreen() {
         diffData.imageUrl = formData.photos[0] || '';
       }
 
-      if (Object.keys(diffData).length === 0) {
-        Alert.alert('通知', '変更箇所がありません');
-        return;
+      if (user.role === 'admin' || user.role === 'moderator') {
+        // ADMIN: Direct Master Update
+        await ProposalService.updatePoint(id as string, diffData);
+        Alert.alert('完了', 'ダイビングポイント情報を更新しました');
+      } else {
+        // USER: Submit Proposal
+        await ProposalService.updatePointProposal(id as string, diffData, user.id);
+        Alert.alert('ありがとうございます！', '修正提案を送信しました。管理者が承認すると反映されます。');
       }
-
-      await ProposalService.addPointProposal(user.id, diffData, 'update', id as string);
-      Alert.alert('完了', '修正提案を送信しました。管理者が承認すると反映されます。');
       router.back();
     } catch (e) {
       console.error(e);
@@ -320,7 +322,7 @@ export default function EditSpotProposalScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <ChevronLeft size={24} color="#0f172a" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>スポット情報の修正提案</Text>
+        <Text style={styles.headerTitle}>ダイビングポイント情報の修正提案</Text>
         <TouchableOpacity onPress={handleSubmit} style={styles.submitBtn} disabled={submitting}>
           {submitting ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.submitBtnText}>提案する</Text>}
         </TouchableOpacity>
@@ -333,7 +335,7 @@ export default function EditSpotProposalScreen() {
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>スポット名</Text>
+          <Text style={styles.label}>ダイビングポイント名</Text>
           <TextInput
             style={styles.input}
             value={formData.name}
@@ -392,7 +394,7 @@ export default function EditSpotProposalScreen() {
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>スポット写真</Text>
+          <Text style={styles.label}>ダイビングポイント写真</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoList}>
             {formData.photos.map((uri, idx) => (
               <View key={idx} style={styles.photoContainer}>
@@ -507,7 +509,7 @@ export default function EditSpotProposalScreen() {
 
         <View style={styles.dangerZone}>
           <Text style={styles.dangerTitle}>削除リクエスト</Text>
-          <Text style={styles.dangerDesc}>このスポットが存在しない、あるいは重複している場合は削除の申請を行ってください。</Text>
+          <Text style={styles.dangerDesc}>このダイビングポイントが存在しない、あるいは重複している場合は削除の申請を行ってください。</Text>
 
           <View style={styles.quickReasons}>
             {DELETE_REASONS.map(r => (
@@ -532,7 +534,7 @@ export default function EditSpotProposalScreen() {
             style={[styles.deleteRequestBtn, !deleteReason && styles.deleteRequestBtnDisabled]}
             disabled={!deleteReason}
             onPress={() => {
-              Alert.alert('確認', 'このスポットの削除申請を送信しますか？', [
+              Alert.alert('確認', 'このダイビングポイントの削除申請を送信しますか？', [
                 { text: 'キャンセル', style: 'cancel' },
                 {
                   text: '送信する',
@@ -540,13 +542,7 @@ export default function EditSpotProposalScreen() {
                   onPress: async () => {
                     if (!user || !id) return;
                     try {
-                      await ProposalService.addPointProposal(user.id, {
-                        reason: deleteReason,
-                        name: point?.name,
-                        region: point?.region,
-                        area: point?.area,
-                        zone: point?.zone
-                      }, 'delete', id as string);
+                      await ProposalService.removePointProposal(id as string, user.id, deleteReason);
                       Alert.alert('完了', '削除の申請を送信しました');
                       router.back();
                     } catch (e) {

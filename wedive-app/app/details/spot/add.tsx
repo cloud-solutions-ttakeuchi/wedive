@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -13,13 +13,16 @@ import {
   Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ChevronLeft, Save, MapPin, Info, Camera, X, Map as MapIcon } from 'lucide-react-native';
+import { ChevronLeft, Save, MapPin, Info, Camera, X, Map as MapIcon, ChevronRight } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import MapView, { Marker } from 'react-native-maps';
 import { useAuth } from '../../../src/context/AuthContext';
 import { db, storage } from '../../../src/firebase';
 import { ProposalService } from '../../../src/services/ProposalService';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { HierarchicalLocationSelector } from '../../../src/components/HierarchicalLocationSelector';
+import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { Point, Region, Zone, Area } from '../../../src/types';
 
 const LEVELS = [
   { label: '初級', value: 'Beginner' },
@@ -56,8 +59,11 @@ export default function AddSpotProposalScreen() {
   const [formData, setFormData] = useState({
     name: '',
     region: '',
+    regionId: '',
     zone: '',
+    zoneId: '',
     area: '',
+    areaId: '',
     description: '',
     maxDepth: '15',
     level: 'Beginner',
@@ -69,6 +75,31 @@ export default function AddSpotProposalScreen() {
     longitude: '',
     photos: [] as string[],
   });
+
+  const [regions, setRegions] = useState<Region[]>([]);
+  const [zones, setZones] = useState<Zone[]>([]);
+  const [areas, setAreas] = useState<Area[]>([]);
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+
+  useEffect(() => {
+    fetchHierarchyData();
+  }, []);
+
+  const fetchHierarchyData = async () => {
+    try {
+      const [rSnap, zSnap, aSnap] = await Promise.all([
+        getDocs(query(collection(db, 'regions'), orderBy('name'))),
+        getDocs(query(collection(db, 'zones'), orderBy('name'))),
+        getDocs(query(collection(db, 'areas'), orderBy('name')))
+      ]);
+
+      setRegions(rSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Region)));
+      setZones(zSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Zone)));
+      setAreas(aSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Area)));
+    } catch (e) {
+      console.error('Error fetching hierarchy data:', e);
+    }
+  };
 
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
   const [mapRegion, setMapRegion] = useState({
@@ -93,34 +124,63 @@ export default function AddSpotProposalScreen() {
       const featureList = formData.features.split(',').map(f => f.trim()).filter(Boolean);
       const coords = (formData.latitude && formData.longitude) ? { lat: Number(formData.latitude), lng: Number(formData.longitude) } : undefined;
 
-      await ProposalService.addPointProposal(
-        user.id,
-        {
+      if (user.role === 'admin' || user.role === 'moderator') {
+        // ADMIN: Direct Master Registration
+        await ProposalService.addPoint({
           name: formData.name,
           region: formData.region,
           zone: formData.zone,
           area: formData.area,
+          regionId: formData.regionId,
+          zoneId: formData.zoneId,
+          areaId: formData.areaId,
           description: formData.description,
           maxDepth: Number(formData.maxDepth) || 0,
-          level: formData.level,
-          entryType: formData.entryType,
-          current: formData.current,
+          level: formData.level as any,
+          entryType: formData.entryType as any,
+          current: formData.current as any,
           topography: formData.topography,
           features: featureList,
           coordinates: coords,
           images: formData.photos,
-          status: 'pending',
           submitterId: user.id,
           createdAt: new Date().toISOString(),
           bookmarkCount: 0,
           imageUrl: formData.photos[0] || '',
-        } as any,
-        'create'
-      );
-
-      Alert.alert('ありがとうございます！', '新規スポットの登録を申請しました。', [
-        { text: 'OK', onPress: () => router.back() }
-      ]);
+          status: 'approved'
+        });
+        Alert.alert('完了', '新規ダイビングポイントをマスタに登録しました。', [
+          { text: 'OK', onPress: () => router.back() }
+        ]);
+      } else {
+        // USER: Submit Proposal
+        await ProposalService.addPointProposal({
+          name: formData.name,
+          region: formData.region,
+          zone: formData.zone,
+          area: formData.area,
+          regionId: formData.regionId,
+          zoneId: formData.zoneId,
+          areaId: formData.areaId,
+          description: formData.description,
+          maxDepth: Number(formData.maxDepth) || 0,
+          level: formData.level as any,
+          entryType: formData.entryType as any,
+          current: formData.current as any,
+          topography: formData.topography,
+          features: featureList,
+          coordinates: coords,
+          images: formData.photos,
+          submitterId: user.id,
+          createdAt: new Date().toISOString(),
+          bookmarkCount: 0,
+          imageUrl: formData.photos[0] || '',
+          status: 'pending'
+        });
+        Alert.alert('ありがとうございます！', '新規ダイビングポイントの登録を申請しました。', [
+          { text: 'OK', onPress: () => router.back() }
+        ]);
+      }
     } catch (e) {
       console.error(e);
       Alert.alert('エラー', '送信に失敗しました');
@@ -245,7 +305,7 @@ export default function AddSpotProposalScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <ChevronLeft size={24} color="#0f172a" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>新規スポットの登録提案</Text>
+        <Text style={styles.headerTitle}>ダイビングポイントの登録提案</Text>
         <TouchableOpacity onPress={handleSubmit} style={styles.submitBtn} disabled={submitting}>
           {submitting ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.submitBtnText}>提案する</Text>}
         </TouchableOpacity>
@@ -254,11 +314,11 @@ export default function AddSpotProposalScreen() {
       <ScrollView style={styles.content}>
         <View style={styles.infoBanner}>
           <Info size={16} color="#0ea5e9" />
-          <Text style={styles.infoText}>まだ登録されていないダイビングスポットを教えてください。管理者が確認後、地図に追加されます。</Text>
+          <Text style={styles.infoText}>まだ登録されていないダイビングポイントを教えてください。管理者が確認後、地図に追加されます。</Text>
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>スポット名</Text>
+          <Text style={styles.label}>ダイビングポイント名</Text>
           <TextInput
             style={styles.input}
             value={formData.name}
@@ -269,26 +329,16 @@ export default function AddSpotProposalScreen() {
 
         <View style={styles.inputGroup}>
           <Text style={styles.label}>地域 (Region / Zone / Area)</Text>
-          <View style={styles.row}>
-            <TextInput
-              style={[styles.input, { flex: 1, marginRight: 8 }]}
-              value={formData.region}
-              onChangeText={(val) => setFormData(p => ({ ...p, region: val }))}
-              placeholder="地域"
-            />
-            <TextInput
-              style={[styles.input, { flex: 1, marginRight: 8 }]}
-              value={formData.zone}
-              onChangeText={(val) => setFormData(p => ({ ...p, zone: val }))}
-              placeholder="エリア"
-            />
-            <TextInput
-              style={[styles.input, { flex: 1 }]}
-              value={formData.area}
-              onChangeText={(val) => setFormData(p => ({ ...p, area: val }))}
-              placeholder="場所"
-            />
-          </View>
+          <TouchableOpacity
+            style={styles.locationSelector}
+            onPress={() => setIsLocationModalOpen(true)}
+          >
+            <MapPin size={18} color="#94a3b8" />
+            <Text style={[styles.locationText, !formData.area && styles.locationPlaceholder]}>
+              {formData.area ? `${formData.region} > ${formData.zone} > ${formData.area}` : '地域を選択してください'}
+            </Text>
+            <ChevronRight size={18} color="#94a3b8" />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.inputGroup}>
@@ -323,7 +373,7 @@ export default function AddSpotProposalScreen() {
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>スポット写真</Text>
+          <Text style={styles.label}>ダイビングポイント写真</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoList}>
             {formData.photos.map((uri, idx) => (
               <View key={idx} style={styles.photoContainer}>
@@ -450,6 +500,25 @@ export default function AddSpotProposalScreen() {
         <View style={{ height: 100 }} />
       </ScrollView>
 
+      <HierarchicalLocationSelector
+        isVisible={isLocationModalOpen}
+        onClose={() => setIsLocationModalOpen(false)}
+        regions={regions}
+        zones={zones}
+        areas={areas}
+        onSelect={(selection) => {
+          setFormData(prev => ({
+            ...prev,
+            ...selection
+          }));
+        }}
+        initialSelection={{
+          region: formData.region,
+          zone: formData.zone,
+          area: formData.area
+        }}
+      />
+
       {/* Map Picker Modal */}
       <Modal visible={isMapModalOpen} animationType="slide">
         <View style={styles.modalContainer}>
@@ -537,4 +606,22 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, backgroundColor: '#f1f5f9', borderRadius: 8, paddingHorizontal: 12, paddingVertical: Platform.OS === 'ios' ? 12 : 8, fontSize: 14, color: '#1e293b' },
   searchBtn: { backgroundColor: '#0ea5e9', paddingHorizontal: 16, justifyContent: 'center', borderRadius: 8 },
   searchBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
+  locationSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderRadius: 12,
+    padding: 12,
+    gap: 8,
+  },
+  locationText: {
+    flex: 1,
+    fontSize: 16,
+    color: '#1e293b',
+  },
+  locationPlaceholder: {
+    color: '#94a3b8',
+  },
 });

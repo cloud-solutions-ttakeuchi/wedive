@@ -72,35 +72,59 @@ export default function AddCreatureProposalScreen() {
     try {
       const tagList = formData.tags.split(',').map(t => t.trim()).filter(Boolean);
 
-      await ProposalService.addCreatureProposal(
-        user.id,
-        {
+      if (user.role === 'admin' || user.role === 'moderator') {
+        // ADMIN: Direct Master Registration
+        await ProposalService.addCreature({
           name: formData.name,
           scientificName: formData.scientificName,
           family: formData.family,
           description: formData.description,
           category: formData.category,
-          rarity: formData.rarity,
+          rarity: formData.rarity as any,
           size: formData.size,
           depthRange: { min: Number(formData.depthMin), max: Number(formData.depthMax) },
           waterTempRange: { min: Number(formData.waterTempMin), max: Number(formData.waterTempMax) },
           season: formData.season,
           specialAttributes: formData.specialAttributes,
           tags: tagList,
-          status: 'pending',
           submitterId: user.id,
           createdAt: new Date().toISOString(),
-          images: formData.imageUrl ? [formData.imageUrl] : [],
           imageUrl: formData.imageUrl || '',
+          gallery: formData.imageUrl ? [formData.imageUrl] : [],
           imageCredit: formData.imageCredit || '',
           imageLicense: formData.imageLicense || '',
-        } as any,
-        'create'
-      );
-
-      Alert.alert('ありがとうございます！', '新規生物の登録を申請しました。', [
-        { text: 'OK', onPress: () => router.back() }
-      ]);
+          status: 'approved'
+        });
+        Alert.alert('完了', '新規生物をマスタに登録しました。', [
+          { text: 'OK', onPress: () => router.back() }
+        ]);
+      } else {
+        // USER: Submit Proposal
+        await ProposalService.addCreatureProposal({
+          name: formData.name,
+          scientificName: formData.scientificName,
+          family: formData.family,
+          description: formData.description,
+          category: formData.category,
+          rarity: formData.rarity as any,
+          size: formData.size,
+          depthRange: { min: Number(formData.depthMin), max: Number(formData.depthMax) },
+          waterTempRange: { min: Number(formData.waterTempMin), max: Number(formData.waterTempMax) },
+          season: formData.season,
+          specialAttributes: formData.specialAttributes,
+          tags: tagList,
+          submitterId: user.id,
+          createdAt: new Date().toISOString(),
+          imageUrl: formData.imageUrl || '',
+          gallery: formData.imageUrl ? [formData.imageUrl] : [],
+          imageCredit: formData.imageCredit || '',
+          imageLicense: formData.imageLicense || '',
+          status: 'pending'
+        });
+        Alert.alert('ありがとうございます！', '新規生物の登録を申請しました。', [
+          { text: 'OK', onPress: () => router.back() }
+        ]);
+      }
     } catch (e) {
       console.error(e);
       Alert.alert('エラー', '申請に失敗しました');

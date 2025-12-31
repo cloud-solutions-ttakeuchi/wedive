@@ -211,6 +211,7 @@ export interface Creature {
   imageCredit?: string;
   imageLicense?: string;
   imageKeyword?: string;
+  createdAt?: string;
 }
 
 export type CreatureStats = {

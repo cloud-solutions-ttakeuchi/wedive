@@ -12,6 +12,7 @@ import { RaritySelectorModal } from '../../../src/components/RaritySelectorModal
 import { Alert } from 'react-native';
 
 import { ImageWithFallback } from '../../../src/components/ImageWithFallback';
+import { ProposalService } from '../../../src/services/ProposalService';
 
 const { width } = Dimensions.get('window');
 
@@ -116,16 +117,18 @@ export default function CreatureDetailScreen() {
     setShowRarityModal(false);
 
     try {
-      const relId = `${selectedPoint.id}_${creature.id}`;
-      const pointCreatureData: PointCreature = {
-        id: relId,
-        pointId: selectedPoint.id,
-        creatureId: creature.id,
-        localRarity: rarity,
-        status: (user.role === 'admin' || user.role === 'moderator') ? 'approved' : 'pending',
-      };
-
-      await setDoc(doc(db, 'point_creatures', relId), pointCreatureData);
+      if (user.role === 'admin' || user.role === 'moderator') {
+        // ADMIN: Direct Master Write
+        await ProposalService.addPointCreature(selectedPoint.id, creature.id, rarity);
+      } else {
+        // USER: Submit Proposal
+        await ProposalService.addPointCreatureProposal({
+          pointId: selectedPoint.id,
+          creatureId: creature.id,
+          localRarity: rarity,
+          submitterId: user.id
+        });
+      }
 
       Alert.alert(
         'ありがとうございます！',
@@ -416,15 +419,6 @@ export default function CreatureDetailScreen() {
         </View>
       </ScrollView>
 
-      {/* 4. Footer Action */}
-      <View style={[styles.footerAction, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-        <TouchableOpacity
-          style={styles.primaryBtn}
-          onPress={() => router.push({ pathname: '/log/add', params: { creatureId: creature.id, creatureName: creature.name } })}
-        >
-          <Text style={styles.primaryBtnText}>この生物の発見レポを書く</Text>
-        </TouchableOpacity>
-      </View>
 
       <PointSelectorModal
         isVisible={showPointModal}
@@ -484,7 +478,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 110,
+    paddingBottom: 40,
   },
   floatingHeader: {
     position: 'absolute',
