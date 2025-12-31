@@ -9,20 +9,37 @@ import { useRouter } from 'expo-router';
 import { ImageWithFallback } from '../../src/components/ImageWithFallback';
 import { usePoints } from '../../src/hooks/usePoints';
 import { useCreatures } from '../../src/hooks/useCreatures';
+import { useHomeData } from '../../src/hooks/useHomeData';
 import { FEATURE_FLAGS } from '../../src/constants/features';
 
 const { width } = Dimensions.get('window');
 
 const NO_IMAGE_POINT = require('../../assets/images/no-image-point.png');
 const NO_IMAGE_CREATURE = require('../../assets/images/no-image-creature.png');
+const NO_IMAGE_USER = require('../../assets/images/no-image-user.png');
 
 export default function TabOneScreen() {
   const router = useRouter();
   const { data: allPoints = [], isLoading: pLoading } = usePoints();
   const { data: allCreatures = [], isLoading: cLoading } = useCreatures();
-  const isLoading = pLoading || cLoading;
+  const { latestReviews, isLoading: rLoading } = useHomeData();
 
-  const points = allPoints.filter(p => p.status === 'approved').slice(0, 5);
+  const isLoading = pLoading || cLoading || rLoading;
+
+  // 評価（rating）が高い順にソートして、評価がついているものを優先
+  const popularPoints = allPoints
+    .filter(p => p.status === 'approved')
+    .sort((a, b) => {
+      // 両方評価ありなら評価順
+      if (a.rating && b.rating) return b.rating - a.rating;
+      // 評価ありを優先
+      if (a.rating) return -1;
+      if (b.rating) return 1;
+      // どちらもなしならID順
+      return 0;
+    })
+    .slice(0, 5);
+
   const creatures = allCreatures.filter(c => c.status === 'approved').slice(0, 10);
 
   /*
@@ -87,32 +104,95 @@ export default function TabOneScreen() {
               <Text style={styles.sectionTitle}>FEATURED SPOTS</Text>
               <TouchableOpacity onPress={() => router.push('/search?tab=spots')}><Text style={styles.seeAll}>See All</Text></TouchableOpacity>
             </View>
-            {points.length === 0 ? (
+            {popularPoints.length === 0 ? (
               <Text style={styles.emptyText}>No spots found.</Text>
             ) : (
-              points.map(point => (
-                <TouchableOpacity
-                  key={point.id}
-                  style={styles.pointCard}
-                  onPress={() => router.push(`/details/spot/${point.id}`)}
-                >
-                  <ImageWithFallback
-                    source={point.imageUrl ? { uri: point.imageUrl } : null}
-                    fallbackSource={NO_IMAGE_POINT}
-                    style={styles.pointImage}
-                  />
-                  <View style={styles.pointInfo}>
-                    <View style={styles.levelBadge}>
-                      <Text style={styles.levelText}>{point.level}</Text>
+              <FlatList
+                data={popularPoints}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={styles.horizontalList}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.popularPointCard}
+                    onPress={() => router.push(`/details/spot/${item.id}`)}
+                  >
+                    <ImageWithFallback
+                      source={item.imageUrl ? { uri: item.imageUrl } : null}
+                      fallbackSource={NO_IMAGE_POINT}
+                      style={styles.popularPointImage}
+                    />
+                    <View style={styles.popularPointOverlay}>
+                      <View style={styles.ratingBadge}>
+                        <Star size={10} color="#fbbf24" fill="#fbbf24" />
+                        <Text style={styles.ratingText}>{item.rating ? item.rating.toFixed(1) : '-'}</Text>
+                      </View>
+                      <Text style={styles.popularPointName} numberOfLines={1}>{item.name}</Text>
+                      <Text style={styles.popularPointLoc} numberOfLines={1}>{item.area}</Text>
                     </View>
-                    <Text style={styles.pointName}>{point.name}</Text>
-                    <View style={styles.locationRow}>
-                      <MapPin size={12} color="#64748b" />
-                      <Text style={styles.pointLocation}>{point.region} • {point.area}</Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              ))
+                  </TouchableOpacity>
+                )}
+              />
+            )}
+          </View>
+
+          {/* Latest Reviews (NEW) */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>LATEST REVIEWS</Text>
+              <TouchableOpacity onPress={() => { }}><Text style={styles.seeAll}>See All</Text></TouchableOpacity>
+            </View>
+            {latestReviews.length === 0 ? (
+              <Text style={styles.emptyText}>No reviews yet.</Text>
+            ) : (
+              <FlatList
+                data={latestReviews}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={styles.horizontalList}
+                renderItem={({ item }) => {
+                  const point = allPoints.find(p => p.id === item.pointId);
+                  return (
+                    <TouchableOpacity
+                      style={styles.reviewCard}
+                      onPress={() => item.pointId && router.push(`/details/spot/${item.pointId}`)}
+                    >
+                      <View style={styles.reviewHeader}>
+                        <ImageWithFallback
+                          source={null}
+                          fallbackSource={NO_IMAGE_USER}
+                          style={styles.reviewUserIcon}
+                        />
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.reviewPointName} numberOfLines={1}>
+                            {point ? point.name : 'Unknown Point'}
+                          </Text>
+                          <View style={styles.ratingRow}>
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                size={10}
+                                color={i < (item.rating || 0) ? "#fbbf24" : "#e2e8f0"}
+                                fill={i < (item.rating || 0) ? "#fbbf24" : "transparent"}
+                              />
+                            ))}
+                          </View>
+                        </View>
+                      </View>
+                      <Text style={styles.reviewComment} numberOfLines={2}>
+                        {item.comment || 'No comment'}
+                      </Text>
+                      <View style={styles.reviewFooter}>
+                        <Text style={styles.reviewDate}>
+                          {item.date ? new Date(item.date).toLocaleDateString() : ''}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                }}
+              />
             )}
           </View>
 
@@ -279,57 +359,111 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#0ea5e9',
   },
-  pointCard: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#f1f5f9',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
-  },
-  pointImage: {
-    width: '100%',
-    height: 180,
-    backgroundColor: '#f1f5f9',
-  },
-  pointInfo: {
-    padding: 16,
+  horizontalList: {
+    paddingRight: 20,
     backgroundColor: 'transparent',
   },
-  levelBadge: {
-    backgroundColor: '#0ea5e9',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    alignSelf: 'flex-start',
-    marginBottom: 8,
+
+  // Popular Point Card (New)
+  popularPointCard: {
+    width: 200,
+    height: 140,
+    marginRight: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#f1f5f9',
   },
-  levelText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: 'bold',
+  popularPointImage: {
+    width: '100%',
+    height: '100%',
   },
-  pointName: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1e293b',
-    marginBottom: 4,
+  popularPointOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    padding: 12,
   },
-  locationRow: {
+  ratingBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+    marginBottom: 4,
   },
-  pointLocation: {
+  ratingText: {
+    color: '#fbbf24',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  popularPointName: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  popularPointLoc: {
+    color: '#cbd5e1',
+    fontSize: 11,
+  },
+
+  // Review Card (New)
+  reviewCard: {
+    width: 260,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    marginRight: 16,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 12,
+  },
+  reviewUserIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#f1f5f9',
+  },
+  reviewPointName: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#1e293b',
+    marginBottom: 2,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    gap: 2,
+  },
+  reviewComment: {
     fontSize: 13,
     color: '#64748b',
-    fontWeight: '500',
+    lineHeight: 18,
+    height: 36, // 2 lines
   },
+  reviewFooter: {
+    marginTop: 12,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  reviewDate: {
+    fontSize: 11,
+    color: '#94a3b8',
+  },
+
+  // Creature Card
   creatureList: {
     paddingRight: 20,
     backgroundColor: 'transparent',

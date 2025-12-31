@@ -63,6 +63,23 @@ export interface Point {
 
   // creatures: string[]; // Removed in favor of PointCreature relation
   bookmarkCount: number;
+  rating?: number;
+  reviewCount?: number;
+}
+
+export interface Review {
+  id: string;
+  pointId: string;
+  userId: string;
+  rating: number; // 1-5
+  title?: string;
+  comment: string;
+  photos?: string[];
+  date: string;
+  createdAt: string;
+  // System
+  status?: 'pending' | 'approved' | 'rejected';
+  likeCount?: number;
 }
 
 export type DivingPoint = Point;

@@ -34,7 +34,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ...config,
     name: getName(),
     slug: "wedive-app",
-    owner: "t.takeuchi",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
@@ -49,6 +48,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ios: {
       supportsTablet: true,
       bundleIdentifier: getIdentifier(),
+      infoPlist: {
+        ITSAppUsesNonExemptEncryption: false
+      }
     },
     android: {
       package: getIdentifier(),
@@ -83,7 +85,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       variant: APP_VARIANT,
       // EASプロジェクトID等が必要な場合は環境変数から読み込む
       eas: {
-        projectId: process.env.EAS_PROJECT_ID || undefined
+        projectId: process.env.EAS_PROJECT_ID || "dfe6116c-6a22-409a-8701-2b041a6e7310"
       }
     }
   };
