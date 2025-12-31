@@ -16,7 +16,7 @@ import { ReviewListView } from '../admin/components/DataCleansing/ReviewListView
 import clsx from 'clsx';
 
 export const AdminDataCleansingPage = () => {
-  const { currentUser, pointCreatures, proposalPointCreatures } = useApp();
+  const { currentUser, proposalPointCreatures } = useApp();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'review'>('dashboard');
 

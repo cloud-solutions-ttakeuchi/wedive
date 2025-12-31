@@ -18,7 +18,6 @@ export const AdminProposalsPage = () => {
     approveReview,
     rejectReview,
     currentUser,
-    isAuthenticated,
     allUsers,
     creatures,
     points

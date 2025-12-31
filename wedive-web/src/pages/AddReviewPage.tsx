@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { storage, db as firestore } from '../lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import ReactDatePicker, { registerLocale } from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { ja } from 'date-fns/locale/ja';
@@ -829,7 +829,7 @@ const Step2Metrics = ({ data, onChange }: any) => {
   );
 };
 
-const Step3Evaluation = ({ data, onChange, onRadarChange, onImageUpload, uploading, fileInputRef, isAdmin, isEdit }: any) => {
+const Step3Evaluation = ({ data, onChange, onRadarChange, onImageUpload, uploading, fileInputRef, isAdmin }: any) => {
   const radarData = useMemo(() => [
     { subject: '透明度', A: data.radar.visibility },
     { subject: '生物遭遇', A: data.radar.encounter },
