@@ -110,9 +110,9 @@ graph TD
 ### 2.2 バッチ処理 (Cloud Run Jobs)
 API タイムアウト（60秒）を超える重い処理や、定期的な一括処理を担当します。
 
-| ジョブ名 | 役割 | トリガー / 実行タイミング | 出力・連携先 (Target) |
+| ジョブ名 | 役割 | トリガー / 実行タイミング |ジョブ実体| 出力・連携先 (Target) |
 | :--- | :--- | :--- | :--- |
-| `cleansing-job` | 生物紐付け整合性チェック & AI生成 | `runDataCleansing` / Schedule | Vertex AI -> **Write**: `point_creatures` |
+| `cleansing-job` | 生物紐付け整合性チェック & AI生成 | `runDataCleansing` / Schedule | scripts/cleansing_pipeline.py| Vertex AI -> **Write**: `point_creatures` |
 
 ---
 
