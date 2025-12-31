@@ -2,6 +2,24 @@
 
 プロジェクトの変更履歴を記録します。
 
+## [6.3.0] - 2025-12-31
+### Added
+- **Mobile App Development Build**:
+    - **Physical Device Verification**: iOS実機（Development Build）でのFirestore接続、画像表示、ログ投稿機能の動作検証を完了。
+    - **Home Screen Enhancement**:
+        - **Top Rated Spots**: 評価の高いポイント（rating順）をカルーセル表示するセクションを実装。
+        - **Latest Reviews**: 承認済みの最新レビューをカルーセル表示し、タップで該当スポット詳細へ遷移する機能を実装。
+    - **Custom Hooks**:
+        - `useHomeData`: 最新レビューを取得・キャッシュ・ソートする専用フックを作成。ステータスによるクライアントサイドフィルタリングなどはサーバーサイドクエリ（`where('status', '==', 'approved')`）へ最適化済み。
+
+### Fixed
+- **Mobile Assets**:
+    - `no-image-user.png` の欠落によりバンドルビルドが失敗していた問題を、プレースホルダー画像の複製により解消。
+- **Search Logic (Mobile)**:
+    - `PointSelectorModal` および `CreatureSelectorModal` における複合インデックス不足による検索失敗エラーを特定。Firebaseコンソールでのインデックス作成手順を確立。
+- **UI/UX**:
+    - ホーム画面のセクション表示ロジックを修正し、データ取得後のレンダリング漏れ（LATEST REVIEWSが表示されない問題）を解決。
+
 ## [6.2.2] - 2025-12-29
 ### Added
 - **Review Editing & Deletion (Web/App)**: 自身が投稿したレビュー、または管理者によるレビューの編集・削除が可能に。編集時は投稿済みの内容をプリセット状態で展開し、スムーズな修正をサポート。
