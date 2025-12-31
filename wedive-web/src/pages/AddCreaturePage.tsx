@@ -12,7 +12,7 @@ import { functions, auth } from '../lib/firebase';
 export const AddCreaturePage = () => {
   const navigate = useNavigate();
   // Refactor: use points, creatures from context
-  const { addCreature, addCreatureProposal, points, currentUser, isAuthenticated } = useApp();
+  const { addCreature, addCreatureProposal, points, currentUser } = useApp();
 
   // Note: points are loaded from context
   const [isLoadingAI, setIsLoadingAI] = useState(false);

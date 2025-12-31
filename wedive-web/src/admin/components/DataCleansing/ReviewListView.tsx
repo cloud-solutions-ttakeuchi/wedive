@@ -11,7 +11,6 @@ import {
   Trash2
 } from 'lucide-react';
 import clsx from 'clsx';
-import { writeBatch, doc } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
 import type { PointCreature, Point, Creature } from '../../../types';
 
@@ -59,7 +58,7 @@ export const ReviewListView: React.FC<ReviewListViewProps> = ({ initialViewMode 
         items: items.sort((a, b) => (b.confidence || 0) - (a.confidence || 0))
       })).filter(g => g.parent);
     }
-  }, [proposalPointCreatures, points, creatures, viewMode, filterPending, filterRejected]);
+  }, [proposalPointCreatures, points, creatures, viewMode]);
 
   // Bulk Actions
   const handleBulkApprove = async () => {

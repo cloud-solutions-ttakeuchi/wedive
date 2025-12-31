@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, useMemo, type ReactNode } from 'react';
 import type { User, Log, Rarity, Creature, Point, PointCreature, Review, PointCreatureProposal } from '../types';
 import { INITIAL_DATA } from '../data/initialData';
 import { auth, googleProvider, db as firestore, functions } from '../lib/firebase';
@@ -115,8 +115,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [creatures, setCreatures] = useState<Creature[]>(INITIAL_DATA.creatures);
   const [points, setPoints] = useState<Point[]>(INITIAL_DATA.points);
   const [pointCreatures, setPointCreatures] = useState<PointCreature[]>(INITIAL_DATA.pointCreatures);
-  const [proposalCreatures, setProposalCreatures] = useState<Creature[]>([]);
-  const [proposalPoints, setProposalPoints] = useState<Point[]>([]);
+  const [dbProposalCreatures, setDbProposalCreatures] = useState<Creature[]>([]);
+  const [dbProposalPoints, setDbProposalPoints] = useState<Point[]>([]);
   const [proposalPointCreatures, setProposalPointCreatures] = useState<PointCreatureProposal[]>([]);
   const [allLogs, setAllLogs] = useState<Log[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -238,8 +238,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setIsLoading(false);
         setCurrentUser(GUEST_USER);
         setAllLogs([]);
-        setProposalCreatures([]);
-        setProposalPoints([]);
+        setDbProposalCreatures([]);
+        setDbProposalPoints([]);
         setProposalReviews([]);
         if (unsubUser) { unsubUser(); unsubUser = undefined; }
       }
@@ -274,19 +274,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
       // If Admin, also include 'pending' creatures from the master collection
       if (isAdmin) {
-        setProposalCreatures(prev => {
-          // We can't rely on 'creatures' state here directly inside snapshot callback cleanly without deps issues.
-          // Instead, we'll let a separate effect handle the merging of master-pending items,
-          // OR we set the 'pure' proposals here and merge later.
-          // To keep it simple, we will set the proposals here, and have a separate Effect update the final state list.
-          // BUT 'proposalCreatures' is used by Admin Page directly.
-
-          // Let's store pure proposals in a temp state or just use the current approach
-          // but strictly speaking, we need access to the latest 'creatures' state.
-          return proposals;
-        });
+        setDbProposalCreatures(proposals);
       } else {
-        setProposalCreatures(proposals);
+        setDbProposalCreatures(proposals);
       }
     }, (err) => console.error("Snapshot error (creature proposals):", err));
 
@@ -297,10 +287,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const unsubP = onSnapshot(qP, (snapshot) => {
       const proposals = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Point));
       if (isAdmin) {
-        // Same strategy as creatures
-        setProposalPoints(proposals); // Just set the database proposals first
+        setDbProposalPoints(proposals); // Just set the database proposals first
       } else {
-        setProposalPoints(proposals);
+        setDbProposalPoints(proposals);
       }
     }, (err) => console.error("Snapshot error (point proposals):", err));
 
@@ -329,32 +318,26 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [isAuthenticated, currentUser.id, currentUser.role]);
 
-  // [New] Effect to merge Master Pending Data into Proposal Lists for Admins
-  useEffect(() => {
-    if (!isAuthenticated || (currentUser.role !== 'admin' && currentUser.role !== 'moderator')) return;
+  // [New] Memoized derived proposal lists to avoid set-state-in-effect
+  const proposalPoints = useMemo(() => {
+    const isAdmin = currentUser.role === 'admin' || currentUser.role === 'moderator';
+    if (!isAdmin) return dbProposalPoints;
 
-    // Merge pending points from Master into Proposal Points
     const pendingMasterPoints = points.filter(p => p.status === 'pending');
-    if (pendingMasterPoints.length > 0) {
-      setProposalPoints(prev => {
-        // avoid duplicates
-        const prevIds = new Set(prev.map(p => p.id));
-        const newItems = pendingMasterPoints.filter(p => !prevIds.has(p.id));
-        return [...prev, ...newItems].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
-      });
-    }
+    const prevIds = new Set(dbProposalPoints.map(p => p.id));
+    const newItems = pendingMasterPoints.filter(p => !prevIds.has(p.id));
+    return [...dbProposalPoints, ...newItems].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+  }, [dbProposalPoints, points, currentUser.role]);
 
-    // Merge pending creatures from Master into Proposal Creatures
+  const proposalCreatures = useMemo(() => {
+    const isAdmin = currentUser.role === 'admin' || currentUser.role === 'moderator';
+    if (!isAdmin) return dbProposalCreatures;
+
     const pendingMasterCreatures = creatures.filter(c => c.status === 'pending');
-    if (pendingMasterCreatures.length > 0) {
-      setProposalCreatures(prev => {
-        const prevIds = new Set(prev.map(c => c.id));
-        const newItems = pendingMasterCreatures.filter(c => !prevIds.has(c.id));
-        return [...prev, ...newItems].sort((a, b) => (b.id || '').localeCompare(a.id || ''));
-      });
-    }
-
-  }, [isAuthenticated, currentUser.role, points, creatures]);
+    const prevIds = new Set(dbProposalCreatures.map(c => c.id));
+    const newItems = pendingMasterCreatures.filter(c => !prevIds.has(c.id));
+    return [...dbProposalCreatures, ...newItems].sort((a, b) => (b.id || '').localeCompare(a.id || ''));
+  }, [dbProposalCreatures, creatures, currentUser.role]);
 
   // Admin Specific: Fetch All Users
   useEffect(() => {
@@ -563,17 +546,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     try {
       if (type === 'creature') {
         const targetId = data.targetId || `c${Date.now()}`;
-        const { id: fid, proposalType, targetId: ftid, submitterId, status, createdAt, ...finalData } = data;
+        const { id: _fid, proposalType: _pt, targetId: _ftid, submitterId: _sid, status: _st, createdAt: _ca, ...finalData } = data;
         await setDoc(doc(firestore, 'creatures', targetId), sanitizePayload({ ...finalData, id: targetId, status: 'approved' }));
         await updateDoc(doc(firestore, 'creature_proposals', id), { status: 'approved', processedAt: now });
       } else if (type === 'point') {
         const targetId = data.targetId || `p${Date.now()}`;
-        const { id: fid, proposalType, targetId: ftid, submitterId, status, createdAt, ...finalData } = data;
+        const { id: _fid, proposalType: _pt, targetId: _ftid, submitterId: _sid, status: _st, createdAt: _ca, ...finalData } = data;
         await setDoc(doc(firestore, 'points', targetId), sanitizePayload({ ...finalData, id: targetId, status: 'approved' }));
         await updateDoc(doc(firestore, 'point_proposals', id), { status: 'approved', processedAt: now });
       } else if (type === 'point-creature') {
         const targetId = data.targetId || `${data.pointId}_${data.creatureId}`;
-        const { id: fid, proposalType, targetId: ftid, submitterId, status, createdAt, ...finalData } = data;
+        const { id: _fid, proposalType, targetId: _ftid, submitterId: _sid, status: _st, createdAt: _ca, ...finalData } = data;
         if (proposalType === 'delete') {
           await deleteDoc(doc(firestore, 'point_creatures', targetId));
         } else {
