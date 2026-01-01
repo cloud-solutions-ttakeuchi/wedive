@@ -39,9 +39,9 @@ def export_to_gcs(local_path, destination_blob_name):
     blob.upload_from_filename(local_path, content_type="application/x-gzip")
     print(f"Uploaded to gs://{BUCKET_NAME}/{destination_blob_name}")
 
-def main(event, context):
+def main(request):
     """
-    Cloud Run Functions エントリポイント
+    Cloud Run Functions エントリポイント (HTTPトリガー)
     - BigQuery からデータを取得
     - SQLite / JSON 生成
     - Gzip 圧縮して GCS へアップロード

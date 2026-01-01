@@ -1,3 +1,4 @@
+
 WITH monthly_metrics AS (
   SELECT
     JSON_VALUE(data, '$.pointId') AS point_id,
@@ -26,7 +27,7 @@ monthly_json AS (
   GROUP BY point_id
 )
 SELECT
-  r.point_id,
+  JSON_VALUE(r.data, '$.pointId') AS point_id,
   AVG(CAST(JSON_VALUE(r.data, '$.rating') AS FLOAT64)) AS avg_rating,
   AVG(CAST(JSON_VALUE(r.data, '$.metrics.visibility') AS FLOAT64)) AS avg_visibility,
   COUNT(*) AS total_reviews,
@@ -42,4 +43,4 @@ SELECT
 FROM `wedive_master_data_v1.reviews_raw_latest` r
 LEFT JOIN monthly_json m ON JSON_VALUE(r.data, '$.pointId') = m.point_id
 WHERE JSON_VALUE(r.data, '$.status') = 'approved'
-GROUP BY r.point_id
+GROUP BY point_id

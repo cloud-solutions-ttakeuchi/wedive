@@ -4,14 +4,12 @@
   "etags": {
     "dive-dex-app-dev": {
       "extensionInstances": {
+        "firestore-bigquery-export": "9492344fddd88a58dc20b1bce6f6744a129153100173b6958cbab7f3d39edeae",
+        "firestore-bigquery-export-2fw6": "1823e9aa318cf850179f52ca4938e2ed7c42e6765cd006b82d267f8932834e93",
+        "firestore-bigquery-export-4m4n": "b372ac694fc8107ccd16287a6afd73157ea2062baec5e524677e0347510f6a81",
         "sync-areas": "71b531c5df78c306e9e60ae4316f9847d9d1d2525e4db61bc476d67cf2b20872",
-        "sync-creatures": "d0f2213d8440190c2426f8cadcefd935b85084a3dbcb6478fab1df884b555cbc",
-        "sync-logs": "8f2451e75c156f56896b8b617ee3e865d859ae9901b172e526a4fa3ede3acc17",
         "sync-point-creatures": "136cb48a014db149678732f576fe91941f16eab1c44794e422440d4aa936e818",
-        "sync-points": "8062dde21cb89e64e986ee3080e45679b03404559c650b55bf4c5326cbb1ba86",
         "sync-regions": "caa99439b01c40f7492ab026d38a7a6b085c029989aec0deaa926fbd096a4d96",
-        "sync-reviews": "8905f6361b313a2a36e438ec5a734bdbbb645f1ec883b198fb3c9b0fce2c6f56",
-        "sync-users": "01d178b2efdfe37e3eed7fb6c1e16b292306e93d1639ca39b96d28463fc20371",
         "sync-zones": "1ae9c31fa355dc6c8a4759eefcc5073d0e331305d0e5b4469ad0904ce0cbc5e8"
       }
     }
