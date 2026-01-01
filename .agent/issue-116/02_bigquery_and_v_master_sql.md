@@ -90,9 +90,9 @@ SELECT
 FROM `wedive_master_data_v1.points_raw_latest` p
 ```
 
-### 3.2 検索特化の加工内容
+### 3.2 検索・詳細表示の加工内容
 - **地理情報の正規化**: `v_app_geography_master` と JOIN することで、名称の不整合を排除した階層情報を取得可能にする。
-- **Statusフィルタ**: 'approved' のもののみを対象とし、pending/rejected は配信バイナリから除外。
+- **Statusの保持**: 'approved', 'pending' 等のステータスを保持し、クライアント側で表示制御を行う。
 
 ## 4. VIEW 定義： `v_app_geography_master`
 地域・ゾーン・エリアの階層構造を1行に集約。セレクター等で使用。
@@ -102,13 +102,16 @@ FROM `wedive_master_data_v1.points_raw_latest` p
 SELECT 
   a.id AS area_id,
   JSON_VALUE(a.data, '$.name') AS area_name,
-  JSON_VALUE(a.data, '$.description') AS area_description, -- 追加
+  JSON_VALUE(a.data, '$.description') AS area_description,
+  JSON_VALUE(a.data, '$.status') AS area_status,         -- 追加
   z.id AS zone_id,
   JSON_VALUE(z.data, '$.name') AS zone_name,
-  JSON_VALUE(z.data, '$.description') AS zone_description, -- 追加
+  JSON_VALUE(z.data, '$.description') AS zone_description,
+  JSON_VALUE(z.data, '$.status') AS zone_status,         -- 追加
   r.id AS region_id,
   JSON_VALUE(r.data, '$.name') AS region_name,
-  JSON_VALUE(r.data, '$.description') AS region_description, -- 追加
+  JSON_VALUE(r.data, '$.description') AS region_description,
+  JSON_VALUE(r.data, '$.status') AS region_status,         -- 追加
   CONCAT(JSON_VALUE(r.data, '$.name'), ' > ', JSON_VALUE(z.data, '$.name'), ' > ', JSON_VALUE(a.data, '$.name')) AS full_path
 FROM `wedive_master_data_v1.areas_raw_latest` a
 LEFT JOIN `wedive_master_data_v1.zones_raw_latest` z ON JSON_VALUE(a.data, '$.zoneId') = z.id
@@ -158,7 +161,7 @@ FROM `wedive_master_data_v1.creatures_raw_latest` c
 ```
 
 ## 6. VIEW 定義： `v_app_point_reviews`
-最新の承認済みレビュー一覧。
+最新のレビュー一覧（全ステータス含む）。
 
 ### 6.1 SQL ロジック概要
 ```sql
@@ -228,21 +231,52 @@ JOIN `v_app_points_master` p ON pc.point_id = p.id
 ```
 
 ## 9. VIEW 定義： `v_app_point_stats`
-ポイントの詳細統計（レーダーチャート等）。
+ポイントの詳細統計（レビューデータからの動的集計）。`onReviewWriteAggregateStats` を代替。
 
 ### 9.1 SQL ロジック概要
 ```sql
+WITH monthly_metrics AS (
+  -- 月別の平均値を事前算出
+  SELECT 
+    JSON_VALUE(data, '$.pointId') AS point_id,
+    EXTRACT(MONTH FROM CAST(JSON_VALUE(data, '$.createdAt') AS TIMESTAMP)) AS month,
+    AVG(CAST(JSON_VALUE(data, '$.metrics.visibility') AS FLOAT64)) AS avg_v,
+    AVG(CAST(JSON_VALUE(data, '$.radar.encounter') AS FLOAT64)) AS avg_e,
+    COUNT(*) AS count
+  FROM `wedive_master_data_v1.reviews_raw_latest`
+  WHERE JSON_VALUE(data, '$.status') = 'approved'
+  GROUP BY point_id, month
+),
+monthly_json AS (
+  -- 12ヶ月分のデータを JSON 配列として整形
+  SELECT 
+    point_id,
+    CONCAT('[', ARRAY_TO_STRING(ARRAY_AGG(
+      FORMAT('{"month": %d, "visibility": %.2f, "encounter": %.2f, "count": %d}', month, avg_v, avg_e, count)
+      ORDER BY month
+    ), ','), ']') AS monthly_stats_json
+  FROM monthly_metrics
+  GROUP BY point_id
+)
 SELECT 
-  p.id AS point_id,
-  CAST(JSON_VALUE(p.data, '$.actualStats.avgVisibility') AS FLOAT64) AS avg_visibility,
-  JSON_VALUE(p.data, '$.actualStats.seasonalRadar') AS seasonal_radar, -- JSON型のまま保持してアプリ側でパース
-  -- 5角形レーダー用平均値
-  CAST(JSON_VALUE(p.data, '$.officialStats.radar.encounter') AS FLOAT64) AS radar_encounter,
-  CAST(JSON_VALUE(p.data, '$.officialStats.radar.excite') AS FLOAT64) AS radar_excite,
-  CAST(JSON_VALUE(p.data, '$.officialStats.radar.macro') AS FLOAT64) AS radar_macro,
-  CAST(JSON_VALUE(p.data, '$.officialStats.radar.comfort') AS FLOAT64) AS radar_comfort,
-  CAST(JSON_VALUE(p.data, '$.officialStats.radar.visibility') AS FLOAT64) AS radar_visibility
-FROM `wedive_master_data_v1.points_raw_latest` p
+  r.point_id,
+  -- 全体平均
+  AVG(CAST(JSON_VALUE(r.data, '$.rating') AS FLOAT64)) AS avg_rating,
+  AVG(CAST(JSON_VALUE(r.data, '$.metrics.visibility') AS FLOAT64)) AS avg_visibility,
+  COUNT(*) AS total_reviews,
+  -- 5角形レーダー評価（各指標の平均）
+  AVG(CAST(JSON_VALUE(r.data, '$.radar.encounter') AS FLOAT64)) AS radar_encounter,
+  AVG(CAST(JSON_VALUE(r.data, '$.radar.excite') AS FLOAT64)) AS radar_excite,
+  AVG(CAST(JSON_VALUE(r.data, '$.radar.macro') AS FLOAT64)) AS radar_macro,
+  AVG(CAST(JSON_VALUE(r.data, '$.radar.comfort') AS FLOAT64)) AS radar_comfort,
+  AVG(CAST(JSON_VALUE(r.data, '$.radar.visibility') AS FLOAT64)) AS radar_visibility,
+  -- 月別分析データ (JSON形式)
+  ANY_VALUE(m.monthly_stats_json) AS monthly_analysis,
+  CURRENT_TIMESTAMP() AS aggregated_at
+FROM `wedive_master_data_v1.reviews_raw_latest` r
+LEFT JOIN monthly_json m ON JSON_VALUE(r.data, '$.pointId') = m.point_id
+WHERE JSON_VALUE(r.data, '$.status') = 'approved'
+GROUP BY r.point_id
 ```
 
 ## 10. VIEW 定義： `v_app_user_logs`
@@ -316,22 +350,31 @@ JOIN `v_app_creatures_master` c ON f_id = c.id
 ```
 
 ## 13. VIEW 定義： `v_app_user_mastery`
-ユーザーのポイント攻略状況（Firebase Cloud Functions で計算済みの mastery ドキュメントを使用）。
+ユーザーのポイント攻略状況（ログデータからの動的集約）。
 
 ### 13.1 SQL ロジック概要
 ```sql
+WITH user_point_logs AS (
+  SELECT 
+    user_id,
+    point_id,
+    point_name,
+    date,
+    -- 遭遇生物の ID リストを展開
+    JSON_VALUE_ARRAY(data, '$.sightedCreatures') AS sighted_creatures
+  FROM `v_app_user_logs`
+)
 SELECT 
-  -- ドキュメントパスからUIDを抽出
-  REGEXP_EXTRACT(document_name, r'users/([^/]+)/stats/mastery') AS user_id,
-  JSON_VALUE(p, '$.pointId') AS point_id,
-  JSON_VALUE(p, '$.pointName') AS point_name,
-  CAST(JSON_VALUE(p, '$.diveCount') AS INT64) AS dive_count,
-  CAST(JSON_VALUE(p, '$.masteryRate') AS FLOAT64) AS mastery_rate,
-  CAST(JSON_VALUE(p, '$.creaturesAtPoint.discoveredCount') AS INT64) AS discovered_creatures_count,
-  JSON_VALUE(data, '$.calculatedAt') AS calculated_at
-FROM `wedive_master_data_v1.stats_raw_latest`,
-UNNEST(JSON_QUERY_ARRAY(data, '$.points')) AS p
-WHERE document_id = 'mastery'
+  user_id,
+  point_id,
+  point_name,
+  COUNT(*) AS dive_count,
+  MAX(date) AS last_visit_date,
+  -- ユニークな遭遇生物数をカウント
+  (SELECT COUNT(DISTINCT c_id) FROM UNNEST(ARRAY_CONCAT_AGG(sighted_creatures)) AS c_id) AS discovered_creatures_count,
+  CURRENT_TIMESTAMP() AS calculated_at
+FROM user_point_logs
+GROUP BY user_id, point_id, point_name
 ```
 
 ## 14. VIEW 定義： `v_app_user_wanted_creatures`

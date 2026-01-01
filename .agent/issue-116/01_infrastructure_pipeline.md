@@ -39,8 +39,8 @@ graph TD
 | :--- | :--- | :--- |
 | **Firestore** | 書き込みの正本 (Source of Truth) | マスタデータの追加・編集はここで行う。 |
 | **BigQuery SDK (Extension)** | ニアリアルタイム同期 | `Stream Firestore to BigQuery` 拡張を使用。 |
-| **BigQuery (View)** | 検索最適化変換 | 複雑なJOINや計算、検索用文字列の整形をSQLで担当。 |
-| **Cloud Run Functions** | エクスポート実行エンジン | BigQueryからデータを引き、SQLiteファイルを生成してGCSへ保存。 |
+| **BigQuery (ETL & Aggregation Engine)** | - 全てのデータ変更履歴から最新のスナップショットを生成。<br>- **[NEW] 統計・集計ロジックの集約** | 従来 Firestore バックグラウンドで行っていた平均透明度、レーダーチャート、マスタリー率、出現頻度等の集計を SQL (VIEW) で実行。これにより Firestore の Read/Write コマンドを大幅に削減。 |
+| **Cloud Run Functions (Exporter)** | エクスポート実行エンジン | BigQueryからデータを引き、SQLiteファイルを生成してGCSへ保存。 |
 | **GCS (Cloud Storage)** | 静的ファイル配信 | 高い可用性と低コストな配信を実現するCDNの源泉。 |
 | **Cloud Scheduler** | 定期実行の管理 | パイプラインの起動（例: 1時間おき）を制御。 |
 
