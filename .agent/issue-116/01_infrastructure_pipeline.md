@@ -25,8 +25,8 @@ graph TD
     %% Client Side
     subgraph "Read Side (Clients)"
         GCS -- "GCS Mirror (Global Master)" --> App
-        FS -- "Backup/Paid Restore (Log Data)" --> App
-        FS -- "Direct Sync (Favorites/Mastery)" --> App[Mobile/Web App]
+        FS -- "Backup/Paid Restore (Log Data/Favorites)" --> App
+        FS -- "Direct Sync (Mastery)" --> App[Mobile/Web App]
         
         App -- "Global Data" --> SQLite[(Local DB)]
         App -- "Private Data (Local First)" --> SQLite
@@ -37,7 +37,7 @@ graph TD
 
 | サービス | 役割 | 備考 |
 | :--- | :--- | :--- |
-| **Firestore** | 1. 書き込みの正本 (Source of Truth)<br>2. **個人データの同期・バックアップ** | マスタデータの追加・編集に加え、個人のログ（非同期バックアップ）、お気に入り、マスタリー統計などを保持。<br>※ログの下り同期（リストア）はコスト抑制のため有料オプション。 |
+| **Firestore** | 1. 書き込みの正本 (Source of Truth)<br>2. **個人データの同期・バックアップ** | マスタデータの追加・編集に加え、個人のログ（非同期バックアップ）、お気に入り、マスタリー統計などを保持。<br>※ログ/お気に入りなどマスタリ以外の下り同期（リストア）はコスト抑制のため有料オプション。 |
 | **BigQuery (ETL & Aggregation Engine)** | - 公共スナップショットの生成<br>- **公共統計・集計ロジックの集約** | 共通マスタおよび、レビュー等から算出される公共統計を担当。 |
 | **Cloud Run Functions (Exporter)** | エクスポート実行エンジン | BigQueryから**公共データのみ**を引き、SQLiteファイルを生成してGCSへ保存。 |
 | **GCS (Cloud Storage)** | 静的ファイル配信 (Global Master) | 全ユーザー共通のデータを低コスト・高速に配信。**個人情報は一切含まない**。 |
