@@ -21,6 +21,7 @@ Firestoreから同期されたRAWデータ（JSON文字列を含むテーブル�
 | **RAWテーブル (PointCreature)** | `point_creatures_raw_latest` | 地域情報の参照用。 |
 | **RAWテーブル (Review)** | `reviews_raw_latest` | 地域情報の参照用。 |
 | **RAWテーブル (Log)** | `logs_raw_latest` | 公開フィードの参照用。 |
+| **RAWテーブル (User)** | `users_raw_latest` | ユーザー情報の参照用。 |
 | **VIEWテーブル** | `v_app_geography_master` | 地域・エリア階層マスタ（Region > Zone > Area） |
 | **VIEWテーブル** | `v_app_points_master` | ダイビングポイントマスター_VIEW |
 | **VIEWテーブル** | `v_app_point_reviews` | ダイビングポイントレビュー_VIEW |
