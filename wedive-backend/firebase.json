@@ -1,0 +1,13 @@
+{
+  "extensions": {
+    "sync-points": "firebase/firestore-bigquery-export@^0.1.50",
+    "sync-creatures": "firebase/firestore-bigquery-export@^0.1.50",
+    "sync-reviews": "firebase/firestore-bigquery-export@^0.1.50",
+    "sync-logs": "firebase/firestore-bigquery-export@^0.1.50",
+    "sync-users": "firebase/firestore-bigquery-export@^0.1.50",
+    "sync-areas": "firebase/firestore-bigquery-export@^0.1.50",
+    "sync-zones": "firebase/firestore-bigquery-export@^0.1.50",
+    "sync-regions": "firebase/firestore-bigquery-export@^0.1.50",
+    "sync-point-creatures": "firebase/firestore-bigquery-export@^0.1.50"
+  }
+}
