@@ -118,7 +118,9 @@ CREATE TABLE master_public_logs (
 
 ### 3.1 ユーザー活動
 ```sql
--- my_logs: 自分のダイビングログ
+-- my_logs: 自分のダイビングログ (Local First)
+-- SQLite が正本であり、Firestore は非同期バックアップとして利用。
+-- Firestore からの下り同期（リストア）は有料プラン限定。
 CREATE TABLE my_logs (
   id TEXT PRIMARY KEY,
   date TEXT NOT NULL,
