@@ -42,4 +42,4 @@ SELECT
 FROM `wedive_master_data_v1.reviews_raw_latest` r
 LEFT JOIN monthly_json m ON JSON_VALUE(r.data, '$.pointId') = m.point_id
 WHERE JSON_VALUE(r.data, '$.status') = 'approved'
-GROUP BY point_id
+GROUP BY r.point_id
