@@ -22,13 +22,13 @@ gsutil mb -l $LOCATION gs://$BUCKET || true
 
 # [NEW] Create Enriched Tables (Schema Definition)
 echo "Creating Enriched Tables..."
-bq query --use_legacy_sql=false "CREATE TABLE IF NOT EXISTS \`$PROJECT_ID.$DATASET.points_enriched\` (
+bq --location=$LOCATION query --use_legacy_sql=false "CREATE TABLE IF NOT EXISTS \`$PROJECT_ID.$DATASET.points_enriched\` (
     id STRING,
     name STRING,
     name_kana STRING,
     updated_at TIMESTAMP
 )"
-bq query --use_legacy_sql=false "CREATE TABLE IF NOT EXISTS \`$PROJECT_ID.$DATASET.creatures_enriched\` (
+bq --location=$LOCATION query --use_legacy_sql=false "CREATE TABLE IF NOT EXISTS \`$PROJECT_ID.$DATASET.creatures_enriched\` (
     id STRING,
     name STRING,
     name_kana STRING,
