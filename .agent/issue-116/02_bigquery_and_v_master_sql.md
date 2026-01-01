@@ -22,6 +22,8 @@ Firestoreから同期されたRAWデータ（JSON文字列を含むテーブル�
 | **RAWテーブル (Review)** | `reviews_raw_latest` | 地域情報の参照用。 |
 | **RAWテーブル (Log)** | `logs_raw_latest` | 公開フィードの参照用。 |
 | **RAWテーブル (User)** | `users_raw_latest` | ユーザー情報の参照用。 |
+| **ENRICHEDテーブル (Point)** | `points_enriched` | カナ変換済みポイント基本情報。 |
+| **ENRICHEDテーブル (Creature)** | `creatures_enriched` | カナ変換済み生物基本情報。 |
 | **VIEWテーブル** | `v_app_geography_master` | 地域・エリア階層マスタ（Region > Zone > Area） |
 | **VIEWテーブル** | `v_app_points_master` | ダイビングポイントマスター_VIEW |
 | **VIEWテーブル** | `v_app_point_reviews` | ダイビングポイントレビュー_VIEW |
@@ -41,8 +43,8 @@ Firestoreから同期されたRAWデータ（JSON文字列を含むテーブル�
 SELECT 
   p.id,
   JSON_VALUE(p.data, '$.name') AS name,
-  -- 検索用かな（Remote Function を利用して自動生成）
-  `wedive_master_data_v1.fn_to_kana`(JSON_VALUE(p.data, '$.name')) AS name_kana,
+  -- エンリッチ済みテーブルからカナを取得（毎回関数を呼ばない）
+  e.name_kana,
   -- 地理階層 ID
   JSON_VALUE(p.data, '$.regionId') AS region_id,
   JSON_VALUE(p.data, '$.zoneId') AS zone_id,
@@ -80,6 +82,7 @@ SELECT
   JSON_VALUE(p.data, '$.status') AS status,
   JSON_VALUE(p.data, '$.createdAt') AS created_at
 FROM `wedive_master_data_v1.points_raw_latest` p
+LEFT JOIN `wedive_master_data_v1.points_enriched` e ON p.id = e.id
 ```
 
 ---
@@ -114,11 +117,11 @@ LEFT JOIN `wedive_master_data_v1.regions_raw_latest` r ON JSON_VALUE(z.data, '$.
 生物図鑑。全属性を網羅。
 
 ### 5.1 SQL ロジック概要
-```sql
 SELECT 
   c.id,
   JSON_VALUE(c.data, '$.name') AS name,
-  `wedive_master_data_v1.fn_to_kana`(JSON_VALUE(c.data, '$.name')) AS name_kana,
+  -- エンリッチ済みテーブルから「かな」と「検索用テキスト」を取得
+  e.name_kana,
   JSON_VALUE(c.data, '$.scientificName') AS scientific_name,
   JSON_VALUE(c.data, '$.englishName') AS english_name,
   JSON_VALUE(c.data, '$.category') AS category,
@@ -138,18 +141,11 @@ SELECT
   JSON_VALUE(c.data, '$.imageCredit') AS image_credit,
   JSON_VALUE(c.data, '$.imageLicense') AS image_license,
   JSON_VALUE(c.data, '$.imageKeyword') AS image_keyword,
-  -- 検索用テキスト（名前、かな、学名、英名、科、属を連結）
-  CONCAT(
-    JSON_VALUE(c.data, '$.name'), ' ', 
-    `wedive_master_data_v1.fn_to_kana`(JSON_VALUE(c.data, '$.name')), ' ',
-    JSON_VALUE(c.data, '$.scientificName'), ' ', 
-    JSON_VALUE(c.data, '$.englishName'), ' ', 
-    JSON_VALUE(c.data, '$.family'), ' ', 
-    JSON_VALUE(c.data, '$.category')
-  ) AS search_text,
+  e.search_text,
   JSON_VALUE(c.data, '$.status') AS status,
   JSON_VALUE(c.data, '$.createdAt') AS created_at
 FROM `wedive_master_data_v1.creatures_raw_latest` c
+LEFT JOIN `wedive_master_data_v1.creatures_enriched` e ON c.id = e.id
 ```
 
 ---
@@ -300,7 +296,50 @@ LIMIT 100
 
 ---
 
-## 11. 運用上の注意点
+## 11. 増分エンリッチメント・ロジック (MERGE)
+エクスポート実行前（または定期更新時）に実行し、リモート関数の呼び出しコストを最小化する。
+
+### 11.1 ポイント情報のエンリッチ
+```sql
+MERGE `wedive_master_data_v1.points_enriched` t
+USING (SELECT id, JSON_VALUE(data, '$.name') as name FROM `wedive_master_data_v1.points_raw_latest`) s
+ON t.id = s.id
+WHEN MATCHED AND t.name != s.name THEN
+  UPDATE SET name = s.name, name_kana = `wedive_master_data_v1.fn_to_kana`(s.name), updated_at = CURRENT_TIMESTAMP()
+WHEN NOT MATCHED THEN
+  INSERT (id, name, name_kana, updated_at) VALUES (s.id, s.name, `wedive_master_data_v1.fn_to_kana`(s.name), CURRENT_TIMESTAMP());
+```
+
+### 11.2 生物情報のエンリッチ
+```sql
+MERGE `wedive_master_data_v1.creatures_enriched` t
+USING (
+  SELECT 
+    id, 
+    JSON_VALUE(data, '$.name') as name,
+    JSON_VALUE(data, '$.scientificName') as s_name,
+    JSON_VALUE(data, '$.englishName') as e_name,
+    JSON_VALUE(data, '$.family') as family,
+    JSON_VALUE(data, '$.category') as cat
+  FROM `wedive_master_data_v1.creatures_raw_latest`
+) s
+ON t.id = s.id
+WHEN MATCHED AND t.name != s.name THEN
+  UPDATE SET 
+    name = s.name, 
+    name_kana = `wedive_master_data_v1.fn_to_kana`(s.name),
+    search_text = CONCAT(s.name, ' ', `wedive_master_data_v1.fn_to_kana`(s.name), ' ', s.s_name, ' ', s.e_name, ' ', s.family, ' ', s.cat),
+    updated_at = CURRENT_TIMESTAMP()
+WHEN NOT MATCHED THEN
+  INSERT (id, name, name_kana, search_text, updated_at) 
+  VALUES (
+    s.id, s.name, `wedive_master_data_v1.fn_to_kana`(s.name),
+    CONCAT(s.name, ' ', `wedive_master_data_v1.fn_to_kana`(s.name), ' ', s.s_name, ' ', s.e_name, ' ', s.family, ' ', s.cat),
+    CURRENT_TIMESTAMP()
+  );
+```
+
+## 12. 運用上の注意点
 - **個人データの保護**: 自分のログ・お気に入り等は Firestore から直接取得する既存ロジックを維持。
 - **データサイズ**: 公開データに絞ったことで GCS 配信ファイルのサイズが最適化される。
 - **マスターデータの信頼性**: BigQuery 側で集計した最新の `v_app_point_stats` を配信することで、アプリ側での重い集計処理を排除。
