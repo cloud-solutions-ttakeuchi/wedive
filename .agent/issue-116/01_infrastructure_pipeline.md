@@ -22,7 +22,7 @@ graph TD
         CF -- "Query" --> BQV
         CF -- "Export" --> GCS[(GCS Bucket)]
         
-        RK[Remote Function (Katakana)] -- "Call on Diff" --> BQE
+        RK[Remote Function Katakana] -- "Call on Diff" --> BQE
     end
 
     %% Client Side
