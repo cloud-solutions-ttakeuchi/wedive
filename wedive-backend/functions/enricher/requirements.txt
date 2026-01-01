@@ -1,6 +1,5 @@
 google-cloud-bigquery
 pandas
-db-data-pandas
 requests
 functions-framework
 pyarrow
