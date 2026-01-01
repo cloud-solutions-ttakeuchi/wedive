@@ -25,11 +25,11 @@ graph TD
     %% Client Side
     subgraph "Read Side (Clients)"
         GCS -- "GCS Mirror (Global Master)" --> App
-        FS -- "Backup/Paid Restore (Log Data/Favorites)" --> App
-        FS -- "Direct Sync (Mastery)" --> App[Mobile/Web App]
         
-        App -- "Global Data" --> SQLite[(Local DB)]
-        App -- "Private Data (Local First)" --> SQLite
+        App <-- "Read/Write (UI Source)" --> SQLite[(Local DB)]
+        
+        App -- "Background Sync / Backup" --> FS
+        FS -. "Paid Restore (Log Data)" .-> App
     end
 ```
 
