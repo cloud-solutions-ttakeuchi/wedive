@@ -54,6 +54,7 @@ gcloud functions deploy kana-converter \
     --region=$LOCATION \
     --trigger-http \
     --project=$PROJECT_ID \
+    --memory=1Gi \
     --allow-unauthenticated
 # URLを取得
 CONVERTER_URL=$(gcloud functions describe kana-converter --project=$PROJECT_ID --region=$LOCATION --gen2 --format='value(serviceConfig.uri)')
@@ -69,6 +70,7 @@ gcloud functions deploy master-data-enricher \
     --region=$LOCATION \
     --trigger-http \
     --project=$PROJECT_ID \
+    --memory=512Mi \
     --set-env-vars GCP_PROJECT=$PROJECT_ID,BQ_DATASET=$DATASET,CONVERTER_URL=$CONVERTER_URL
 cd ../..
 
@@ -91,6 +93,7 @@ gcloud functions deploy master-data-exporter \
     --region=$LOCATION \
     --trigger-http \
     --project=$PROJECT_ID \
+    --memory=512Mi \
     --set-env-vars GCP_PROJECT=$PROJECT_ID,BQ_DATASET=$DATASET,GCS_BUCKET=$BUCKET
 cd ../..
 

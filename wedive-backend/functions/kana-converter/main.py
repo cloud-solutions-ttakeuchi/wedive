@@ -15,9 +15,16 @@ def to_kana(text):
     tokens = tokenizer_obj.tokenize(text, mode)
     kana_list = []
     for m in tokens:
-        # 読みがある場合はそれを使い、無い場合は自身（記号等）を使う
+        pos = m.part_of_speech()[0]
         reading = m.reading_form()
-        kana_list.append(reading if reading else m.surface())
+
+        # 補助記号、空白、または読みが「キゴウ」の場合は元の文字を使う
+        if pos in ["補助記号", "空白"] or reading == "キゴウ":
+            kana_list.append(m.surface())
+        elif reading:
+            kana_list.append(reading)
+        else:
+            kana_list.append(m.surface())
     return "".join(kana_list)
 
 @functions_framework.http
