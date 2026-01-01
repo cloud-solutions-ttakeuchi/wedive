@@ -24,6 +24,7 @@ Firestoreから同期されたRAWデータ（JSON文字列を含むテーブル�
 | **RAWテーブル (PointProposal)** | `point_proposals_raw_latest` | 地域情報の参照用。 |
 | **RAWテーブル (PointCreatureProposal)** | `point_creature_proposals_raw_latest` | 地域情報の参照用。 |
 | **RAWテーブル (Log)** | `logs_raw_latest` | ユーザーログの参照用（サブコレクション同期設定済み想定）。 |
+| **RAWテーブル (UserStats)** | `stats_raw_latest` | ユーザー統計（マスタリー等）の参照用。 |
 | **VIEWテーブル** | `v_app_geography_master` | 地域・エリア階層マスタ（Region > Zone > Area） |
 | **VIEWテーブル** | `v_app_points_master` | ダイビングポイントマスター_VIEW |
 | **VIEWテーブル** | `v_app_point_reviews` | ダイビングポイントレビュー_VIEW |
@@ -196,10 +197,10 @@ FROM `wedive_master_data_v1.logs_raw_latest` l
 ORDER BY date DESC, dive_number DESC
 ```
 
-## 10. VIEW 定義： `v_app_user_bookmark_points`
+## 11. VIEW 定義： `v_app_user_bookmark_points`
 ユーザーがブックマークしたポイント。
 
-### 10.1 SQL ロジック概要
+### 11.1 SQL ロジック概要
 ```sql
 SELECT 
   u.id AS user_id,
@@ -211,10 +212,10 @@ UNNEST(JSON_VALUE_ARRAY(u.data, '$.bookmarkedPointIds')) AS b_id
 JOIN `v_app_points_master` p ON b_id = p.id
 ```
 
-## 11. VIEW 定義： `v_app_user_favorite_creatures`
+## 12. VIEW 定義： `v_app_user_favorite_creatures`
 ユーザーがお気に入り登録した生物。
 
-### 11.1 SQL ロジック概要
+### 12.1 SQL ロジック概要
 ```sql
 SELECT 
   u.id AS user_id,
@@ -226,18 +227,23 @@ UNNEST(JSON_VALUE_ARRAY(u.data, '$.favoriteCreatureIds')) AS f_id
 JOIN `v_app_creatures_master` c ON f_id = c.id
 ```
 
-## 12. VIEW 定義： `v_app_user_mastery`
-ユーザーのポイント攻略状況（ログに基づく）。
+## 13. VIEW 定義： `v_app_user_mastery`
+ユーザーのポイント攻略状況（Firebase Cloud Functions で計算済みの mastery ドキュメントを使用）。
 
-### 12.1 SQL ロジック概要
+### 13.1 SQL ロジック概要
 ```sql
 SELECT 
-  user_id,
-  point_id,
-  COUNT(*) AS visit_count,
-  MAX(date) AS last_visit_date
-FROM `v_app_user_logs`
-GROUP BY user_id, point_id
+  -- ドキュメントパスからUIDを抽出
+  REGEXP_EXTRACT(document_name, r'users/([^/]+)/stats/mastery') AS user_id,
+  JSON_VALUE(p, '$.pointId') AS point_id,
+  JSON_VALUE(p, '$.pointName') AS point_name,
+  CAST(JSON_VALUE(p, '$.diveCount') AS INT64) AS dive_count,
+  CAST(JSON_VALUE(p, '$.masteryRate') AS FLOAT64) AS mastery_rate,
+  CAST(JSON_VALUE(p, '$.creaturesAtPoint.discoveredCount') AS INT64) AS discovered_creatures_count,
+  JSON_VALUE(data, '$.calculatedAt') AS calculated_at
+FROM `wedive_master_data_v1.stats_raw_latest`,
+UNNEST(JSON_QUERY_ARRAY(data, '$.points')) AS p
+WHERE document_id = 'mastery'
 ```
 
 ## 14. VIEW 定義： `v_app_user_wanted_creatures`
@@ -287,6 +293,6 @@ UNNEST(JSON_VALUE_ARRAY(rv.data, '$.helpfulBy')) AS u_id
   - `creatures` テーブルは `category`, `name` でクラスタリング。
 これにより、エクスポート実行時のクエリスキャンコストを削減する。
 
-## 6. 公開ステータスとデータ整合性
+## 18. 公開ステータスとデータ整合性
 - **削除済みデータの扱い**: Firebase Extensionの論理削除フラグ (`operation = 'DELETE'`) を考慮し、最新のスナップショットのみを取得する `latest` テーブルをソースとする。
 - **機密情報の除外**: ユーザーのプライベートなメタデータや、管理者専用メモなどはSELECT句に含まず、バイナリファイルには出力しない。
