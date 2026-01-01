@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity, ScrollView } from 'react-native';
 import Svg, { Polygon, Line, G, Text as SvgText, Circle } from 'react-native-svg';
 import { Info, Sparkles, TrendingUp, Filter } from 'lucide-react-native';
-import { Point, Review, ReviewRadar } from '../types';
+import { Point, Review, ReviewRadar, MonthlyStats } from '../types';
 
 const { width } = Dimensions.get('window');
 
@@ -23,20 +23,49 @@ const CATEGORIES = [
 export const PointReviewStats: React.FC<PointReviewStatsProps> = ({ point, reviews, areaReviews }) => {
   const [selectedSeason, setSelectedSeason] = useState<number | 'all'>('all');
 
-  const filteredReviews = useMemo(() => {
-    if (selectedSeason === 'all') return reviews;
-    return reviews.filter(r => {
-      if (!r.date) return false;
-      const month = new Date(r.date.replace(/\//g, '-')).getMonth() + 1;
-      const seasons: Record<number, number[]> = {
-        1: [3, 4, 5], 2: [6, 7, 8], 3: [9, 10, 11], 4: [12, 1, 2]
-      };
-      return seasons[selectedSeason as number]?.includes(month);
-    });
-  }, [reviews, selectedSeason]);
+  const monthlyStats = useMemo(() => {
+    if (!point.actualStats?.monthly_analysis) return [];
+    try {
+      return JSON.parse(point.actualStats.monthly_analysis) as MonthlyStats[];
+    } catch (e) {
+      console.warn('Failed to parse monthly_analysis', e);
+      return [];
+    }
+  }, [point.actualStats?.monthly_analysis]);
 
   const stats = useMemo(() => {
-    const calcAvg = (revs: Review[]) => {
+    const seasons: Record<number, number[]> = {
+      1: [3, 4, 5], 2: [6, 7, 8], 3: [9, 10, 11], 4: [12, 1, 2]
+    };
+
+    const aggregateFromMonthly = (data: MonthlyStats[], targetSeason: number | 'all') => {
+      const targetMonths = targetSeason === 'all' ? null : seasons[targetSeason];
+      const filtered = targetMonths ? data.filter(d => targetMonths.includes(d.month)) : data;
+
+      if (filtered.length === 0) return null;
+
+      const totalCount = filtered.reduce((acc, d) => acc + d.count, 0);
+      if (totalCount === 0) return null;
+
+      const weightedAvg = (key: keyof MonthlyStats) =>
+        filtered.reduce((acc, d) => acc + (Number(d[key]) || 0) * d.count, 0) / totalCount;
+
+      return {
+        radar: {
+          visibility: weightedAvg('visibility_score'),
+          encounter: weightedAvg('encounter'),
+          excite: weightedAvg('excite'),
+          topography: weightedAvg('topography'),
+          comfort: weightedAvg('comfort'),
+          satisfaction: weightedAvg('satisfaction'),
+        } as ReviewRadar,
+        avgVisibility: weightedAvg('visibility'),
+        count: totalCount
+      };
+    };
+
+    // RAW Fallback for Area (or if no monthly analysis available yet)
+    const calcAvgFromRaw = (revs: Review[]) => {
       if (revs.length === 0) return null;
       const sums: ReviewRadar = { visibility: 0, encounter: 0, excite: 0, topography: 0, comfort: 0, satisfaction: 0 };
       let visSum = 0;
@@ -54,10 +83,10 @@ export const PointReviewStats: React.FC<PointReviewStatsProps> = ({ point, revie
     };
 
     return {
-      current: calcAvg(filteredReviews),
-      area: calcAvg(areaReviews.filter(r => r.pointId !== point.id))
+      current: aggregateFromMonthly(monthlyStats, selectedSeason) || calcAvgFromRaw(reviews),
+      area: calcAvgFromRaw(areaReviews.filter(r => r.pointId !== point.id))
     };
-  }, [filteredReviews, areaReviews, point.id]);
+  }, [monthlyStats, selectedSeason, reviews, areaReviews, point.id]);
 
   // Radar Chart Logic
   const RADIUS = 80;

@@ -75,15 +75,28 @@ export interface Point {
   actualStats?: {
     avgRating: number;
     avgVisibility: number;
-    reviewCount: number;
-    currentCondition?: {
-      weather: string;
-      wave: string;
-    };
-    seasonalRadar?: {
-      [month: number]: ReviewRadar;
-    };
+    totalReviews: number;
+    radar_encounter: number;
+    radar_excite: number;
+    radar_macro: number;
+    radar_comfort: number;
+    radar_topography: number;
+    radar_satisfaction: number;
+    radar_visibility: number;
+    monthly_analysis?: string; // JSON string of MonthlyStats[]
   };
+}
+
+export interface MonthlyStats {
+  month: number;
+  visibility: number;       // 透明度 (m)
+  visibility_score: number; // 透明度スコア (1-5)
+  encounter: number;
+  excite: number;
+  topography: number;
+  comfort: number;
+  satisfaction: number;
+  count: number;
 }
 
 export type DivingPoint = Point;
