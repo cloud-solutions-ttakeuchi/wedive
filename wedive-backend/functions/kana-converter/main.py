@@ -7,25 +7,37 @@ from sudachipy import tokenizer
 tokenizer_obj = dictionary.Dictionary().create()
 mode = tokenizer.Tokenizer.SplitMode.C
 
+import re
+
 def to_kana(text):
     if not text:
         return ""
-    # カタカナ変換ロジック
-    # Sudachiの形態素解析結果から読み（reading）を取得
-    tokens = tokenizer_obj.tokenize(text, mode)
-    kana_list = []
-    for m in tokens:
-        pos = m.part_of_speech()[0]
-        reading = m.reading_form()
 
-        # 補助記号、空白、または読みが「キゴウ」の場合は元の文字を使う
-        if pos in ["補助記号", "空白"] or reading == "キゴウ":
-            kana_list.append(m.surface())
-        elif reading:
-            kana_list.append(reading)
+    # 英数字（全角含む）、漢字、ひらがな、カタカナの塊を単語として認識し、それ以外（記号・空白）を区切りとして保持
+    # () で囲むことで、分割後のリストに区切り文字も含まれる
+    word_pattern = r'[a-zA-Z0-9\uFF10-\uFF19\uFF21-\uFF3A\uFF41-\uFF5A\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]'
+    parts = re.split(f'({word_pattern}+)', text)
+
+    kana_parts = []
+    for part in parts:
+        if not part:
+            continue
+
+        # 単語の部分（正規表現にマッチするもの）のみ Sudachi で解析
+        if re.match(f'^{word_pattern}+$', part):
+            tokens = tokenizer_obj.tokenize(part, mode)
+            for m in tokens:
+                reading = m.reading_form()
+                # 読みがあれば採用、ただし万が一「キゴウ」系が出たら表面文字を採用
+                if reading and "キゴウ" not in reading:
+                    kana_parts.append(reading)
+                else:
+                    kana_parts.append(m.surface())
         else:
-            kana_list.append(m.surface())
-    return "".join(kana_list)
+            # 記号や空白の塊はそのまま通す
+            kana_parts.append(part)
+
+    return "".join(kana_parts)
 
 @functions_framework.http
 def fn_to_kana(request):
