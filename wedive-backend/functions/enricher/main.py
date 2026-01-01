@@ -18,9 +18,9 @@ def run_enrichment_for_table(bq_client, source_table, enriched_table, fields=["n
     change_conditions = " OR ".join([f"t.{f} != JSON_VALUE(s.data, '$.{f}')" for f in fields])
 
     query = f"""
-        SELECT s.id, {field_select}
+        SELECT s.document_id AS id, {field_select}
         FROM `{PROJECT_ID}.{DATASET_ID}.{source_table}` s
-        LEFT JOIN `{PROJECT_ID}.{DATASET_ID}.{enriched_table}` t ON s.id = t.id
+        LEFT JOIN `{PROJECT_ID}.{DATASET_ID}.{enriched_table}` t ON s.document_id = t.id
         WHERE t.id IS NULL OR {change_conditions}
         LIMIT 1000
     """
@@ -90,8 +90,8 @@ def run_enrichment_for_table(bq_client, source_table, enriched_table, fields=["n
     bq_client.query(merge_query).result()
     print(f"Successfully enriched {len(converted_items)} records in {enriched_table}.")
 
-def main(event, context):
-    """Cloud Run Functions エントリポイント"""
+def main(request):
+    """Cloud Run Functions エントリポイント (HTTPトリガー)"""
     bq_client = bigquery.Client()
     if not CONVERTER_URL:
         print("Error: CONVERTER_URL environment variable is not set.")

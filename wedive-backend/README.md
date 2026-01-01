@@ -12,14 +12,28 @@
 
 ## セットアップ手順
 
-### 1. デプロイ
+### 1. Firestore to Bigquery Stream(同期設定)
+
+```
+cd wedive-backend
+# ログイン（必要に応じて）
+firebase login --reauth
+# 対象プロジェクトの選択
+firebase use [PROJECT_ID]
+# 拡張機能の一括デプロイ
+firebase deploy --only extensions
+```
+
+
+
+### 2. デプロイ
 `deploy.sh` を実行して各リソースをデプロイします。
 
 ```bash
 ./deploy.sh [YOUR_GCP_PROJECT_ID]
 ```
 
-### 2. スケジュール設定
+### 3. スケジュール設定
 デプロイ後、Google Cloud Console から以下のスケジュールジョブを設定してください。
 
 -   **Enricher ジョブ**:

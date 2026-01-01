@@ -1,7 +1,7 @@
+
 SELECT
-  c.id,
+  c.document_id AS id,
   JSON_VALUE(c.data, '$.name') AS name,
-  -- エンリッチ済みテーブルから「かな」と「検索用テキスト」を取得
   e.name_kana,
   JSON_VALUE(c.data, '$.scientificName') AS scientific_name,
   JSON_VALUE(c.data, '$.englishName') AS english_name,
@@ -26,4 +26,4 @@ SELECT
   JSON_VALUE(c.data, '$.status') AS status,
   JSON_VALUE(c.data, '$.createdAt') AS created_at
 FROM `wedive_master_data_v1.creatures_raw_latest` c
-LEFT JOIN `wedive_master_data_v1.creatures_enriched` e ON c.id = e.id
+LEFT JOIN `wedive_master_data_v1.creatures_enriched` e ON c.document_id = e.id

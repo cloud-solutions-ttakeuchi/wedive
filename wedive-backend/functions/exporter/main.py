@@ -39,9 +39,9 @@ def export_to_gcs(local_path, destination_blob_name):
     blob.upload_from_filename(local_path, content_type="application/x-gzip")
     print(f"Uploaded to gs://{BUCKET_NAME}/{destination_blob_name}")
 
-def main(event, context):
+def main(request):
     """
-    Cloud Run Functions エントリポイント
+    Cloud Run Functions エントリポイント (HTTPトリガー)
     - BigQuery からデータを取得
     - SQLite / JSON 生成
     - Gzip 圧縮して GCS へアップロード
@@ -66,8 +66,13 @@ def main(event, context):
             # SQLite への書き込み
             df.to_sql(table_name, conn, if_exists="replace", index=False)
 
-            # JSON データの整形
-            json_data[table_name] = df.to_dict(orient="records")
+            # JSON データの整形（日付型を文字列に変換）
+            # SQLite にはそのまま(Timestamp)渡せるが、JSON は文字列にする必要がある
+            df_json = df.copy()
+            for col in df_json.select_dtypes(include=['datetime64', 'datetimetz']).columns:
+                df_json[col] = df_json[col].dt.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+            json_data[table_name] = df_json.to_dict(orient="records")
 
         conn.close()
 
@@ -80,7 +85,7 @@ def main(event, context):
         # GCS へアップロード (latest & history)
         ts = datetime.now().strftime("%Y%m%d_%H%M")
         export_to_gcs(sqlite_gz_path, "v1/master/latest.db.gz")
-        export_to_gcs(sqlite_gz_path, f"v1/master/history/{ts}.db.gz")
+        export_to_gcs(sqlite_gz_path, f"v1/master/history/{ts}_master.db.gz")
 
         # --- 2. JSON エクスポート ---
         json_path = os.path.join(tmp_dir, "master.json")

@@ -1,5 +1,6 @@
+
 SELECT
-  pc.id,
+  pc.document_id AS id,
   JSON_VALUE(pc.data, '$.pointId') AS point_id,
   JSON_VALUE(pc.data, '$.creatureId') AS creature_id,
   c.name AS creature_name,
@@ -10,4 +11,4 @@ SELECT
   CAST(JSON_VALUE(pc.data, '$.confidence') AS FLOAT64) AS confidence,
   JSON_VALUE(pc.data, '$.status') AS status
 FROM `wedive_master_data_v1.point_creatures_raw_latest` pc
-JOIN `v_app_creatures_master` c ON JSON_VALUE(pc.data, '$.creatureId') = c.id
+JOIN `wedive_master_data_v1.v_app_creatures_master` c ON JSON_VALUE(pc.data, '$.creatureId') = c.id

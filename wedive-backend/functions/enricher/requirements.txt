@@ -1,6 +1,5 @@
+functions-framework==3.*
 google-cloud-bigquery
 pandas
-db-data-pandas
+db-dtypes
 requests
-functions-framework
-pyarrow

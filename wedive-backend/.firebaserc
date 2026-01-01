@@ -1,0 +1,17 @@
+{
+  "projects": {},
+  "targets": {},
+  "etags": {
+    "dive-dex-app-dev": {
+      "extensionInstances": {
+        "firestore-bigquery-export": "9492344fddd88a58dc20b1bce6f6744a129153100173b6958cbab7f3d39edeae",
+        "firestore-bigquery-export-2fw6": "1823e9aa318cf850179f52ca4938e2ed7c42e6765cd006b82d267f8932834e93",
+        "firestore-bigquery-export-4m4n": "b372ac694fc8107ccd16287a6afd73157ea2062baec5e524677e0347510f6a81",
+        "sync-areas": "71b531c5df78c306e9e60ae4316f9847d9d1d2525e4db61bc476d67cf2b20872",
+        "sync-point-creatures": "136cb48a014db149678732f576fe91941f16eab1c44794e422440d4aa936e818",
+        "sync-regions": "caa99439b01c40f7492ab026d38a7a6b085c029989aec0deaa926fbd096a4d96",
+        "sync-zones": "1ae9c31fa355dc6c8a4759eefcc5073d0e331305d0e5b4469ad0904ce0cbc5e8"
+      }
+    }
+  }
+}
