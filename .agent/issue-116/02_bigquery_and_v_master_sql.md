@@ -117,6 +117,8 @@ LEFT JOIN `wedive_master_data_v1.regions_raw_latest` r ON JSON_VALUE(z.data, '$.
 生物図鑑。全属性を網羅。
 
 ### 5.1 SQL ロジック概要
+
+```
 SELECT 
   c.id,
   JSON_VALUE(c.data, '$.name') AS name,
