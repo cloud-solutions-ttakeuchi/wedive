@@ -1,0 +1,41 @@
+name: Backend Deploy (Develop)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'wedive-backend/**'
+      - '.github/workflows/backend_deploy_develop.yml'
+      - '!wedive-backend/**/*.md'
+
+jobs:
+  deploy_backend:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    environment: development
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider:  ${{ vars.GCP_WIF_PROVIDER }}
+          service_account:  ${{ vars.GCP_SERVICE_ACCOUNT_EMAIL }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Run Deploy Script
+        shell: bash
+        run: |
+          chmod +x ./deploy.sh
+          # Enable non-interactive mode
+          gcloud config set core/disable_prompts True
+          ./deploy.sh ${{ vars.VITE_FIREBASE_PROJECT_ID }}
+        working-directory: wedive-backend

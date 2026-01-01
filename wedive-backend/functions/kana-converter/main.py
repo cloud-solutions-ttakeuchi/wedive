@@ -1,72 +1,50 @@
 import functions_framework
-from flask import jsonify
+import json
 from sudachipy import dictionary
 from sudachipy import tokenizer
 
-# グローバルスコープで辞書をロード（ウォームスタート時の再利用）
-tokenizer_obj = None
+# Sudachi の初期化（グローバルで行うことでウォームスタート時に再利用）
+tokenizer_obj = dictionary.Dictionary().create()
+mode = tokenizer.Tokenizer.SplitMode.C
 
-def get_tokenizer():
-    global tokenizer_obj
-    if tokenizer_obj is None:
-        try:
-            # SudachiDict-core を使用
-            tokenizer_obj = dictionary.Dictionary().create()
-        except Exception as e:
-            print(f"Error initializing Sudachi: {e}")
-            return None
-    return tokenizer_obj
-
-def convert_to_kana(text, tok):
+def to_kana(text):
     if not text:
         return ""
-
-    # 形態素解析を実行
-    mode = tokenizer.Tokenizer.SplitMode.C
-    morphemes = tok.tokenize(text, mode)
-
-    # 各形態素の読み（カタカナ）を連結
+    # カタカナ変換ロジック
+    # Sudachiの形態素解析結果から読み（reading）を取得
+    tokens = tokenizer_obj.tokenize(text, mode)
     kana_list = []
-    for m in morphemes:
-        # 読み（reading_form）を取得。取得できない場合は辞書引きの表記をそのまま使う
+    for m in tokens:
+        # 読みがある場合はそれを使い、無い場合は自身（記号等）を使う
         reading = m.reading_form()
-        if reading:
-            kana_list.append(reading)
-        else:
-            kana_list.append(m.surface())
-
+        kana_list.append(reading if reading else m.surface())
     return "".join(kana_list)
 
 @functions_framework.http
 def fn_to_kana(request):
-    """BigQuery Remote Function for Katakana conversion.
-    Input format: {"calls": [["漢字"], ["ひらがな"], ...]}
-    Output format: {"replies": ["カンジ", "ヒラガナ", ...]}
     """
+    POST {"items": [{"id": "...", "name": "..."}, ...]}
+    Returns {"results": [{"id": "...", "name_kana": "..."}, ...]}
+    """
+    if request.method == 'OPTIONS':
+        return ('', 204, {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'POST',
+            'Access-Control-Allow-Headers': 'Content-Type',
+        })
+
     request_json = request.get_json(silent=True)
-    if not request_json or 'calls' not in request_json:
-        return jsonify({"replies": []})
+    if not request_json or "items" not in request_json:
+        return ({"error": "Invalid request. 'items' list required."}, 400)
 
-    tok = get_tokenizer()
-    if not tok:
-        # 初期化失敗時は入力値をそのまま返す（縮退運転）
-        return jsonify({"replies": [c[0] for c in request_json['calls']]})
+    items = request_json.get("items", [])
+    results = []
 
-    replies = []
-    calls = request_json['calls']
-
-    for call in calls:
-        if not call or len(call) == 0:
-            replies.append("")
-            continue
-
-        text = call[0]
-        try:
-            # カタカナ変換実行
-            kana = convert_to_kana(text, tok)
-            replies.append(kana)
-        except Exception as e:
-            print(f"Conversion error for '{text}': {e}")
-            replies.append(text)
-
-    return jsonify({"replies": replies})
+    for item in items:
+        processed_item = {}
+        for k, v in item.items():
+            processed_item[k] = v
+            if k != "id" and isinstance(v, str) and v.strip():
+                processed_item[f'{k}_kana'] = to_kana(v)
+        results.append(processed_item)
+    return ({"results": results}, 200, {'Content-Type': 'application/json'})

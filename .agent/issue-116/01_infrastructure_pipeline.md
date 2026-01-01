@@ -15,14 +15,15 @@ graph TD
     %% ETL Pipeline
     subgraph "ETL Pipeline (GCP)"
         FS -- "Stream Sync (All Data)" --> BQ[BigQuery RAW]
-        BQ -- "MERGE (Incremental)" --> BQE[BigQuery Enriched]
+        
+        CS[Cloud Scheduler] -- "Trigger (1. Enrich)" --> CFE[Cloud Run Functions: Enricher]
+        CFE -- "Batch Call" --> CFK[Cloud Run Functions: Converter]
+        CFE -- "MERGE" --> BQE[BigQuery Enriched]
+        
+        CS -- "Trigger (2. Export)" --> CFO[Cloud Run Functions: Exporter]
         BQE -- "SQL (Global Only)" --> BQV[BigQuery View]
-        
-        CS[Cloud Scheduler] -- "Trigger" --> CF[Cloud Run Functions]
-        CF -- "Query" --> BQV
-        CF -- "Export" --> GCS[(GCS Bucket)]
-        
-        RK[Remote Function Katakana] -- "Call on Diff" --> BQE
+        CFO -- "Query" --> BQV
+        CFO -- "Export" --> GCS[(GCS Bucket)]
     end
 
     %% Client Side
@@ -42,7 +43,7 @@ graph TD
 | :--- | :--- | :--- |
 | **Firestore** | 1. 書き込みの正本 (Source of Truth)<br>2. **個人データの同期・バックアップ** | マスタデータの追加・編集に加え、個人のログ（非同期バックアップ）、お気に入り、マスタリー統計などを保持。<br>※ログ/お気に入りなどマスタリ以外の下り同期（リストア）はコスト抑制のため有料オプション。 |
 | **BigQuery (ETL & Aggregation Engine)** | - 公共スナップショットの生成<br>- **[NEW] 増分エンリッチメント**: カナ変換等の重い処理を差分のみ実行し、永続テーブルに保持。<br>- **公共統計・集計ロジックの集約** | 共通マスタおよび、レビュー等から算出される公共統計を担当。コスト最適化のため、毎回のリモート関数呼び出しを避ける設計。 |
-| **Cloud Run Functions (Exporter)** | エクスポート実行エンジン | BigQueryから**公共データのみ**を引き、SQLiteファイルを生成してGCSへ保存。 |
+| **Cloud Run Functions** | **1. Enricher**: 差分変換 & 永続化<br>**2. Converter**: カナ変換エンジン(API)<br>**3. Exporter**: GCS配信用ファイル生成 | 各機能を独立させることで、保守性とコスト効率を最大化。 |
 | **GCS (Cloud Storage)** | 静的ファイル配信 (Global Master) | 全ユーザー共通のデータを低コスト・高速に配信。**個人情報は一切含まない**。 |
 | **Cloud Scheduler** | 定期実行の管理 | パイプラインの起動（例: 1時間おき）を制御。 |
 

@@ -245,7 +245,7 @@ monthly_json AS (
   SELECT 
     point_id,
     CONCAT('[', ARRAY_TO_STRING(ARRAY_AGG(
-      FORMAT('{"month": %d, "visibility": %.2f, "encounter": %.2f, "count": %d}', month, avg_v, avg_e, count)
+      FORMAT('{"month": %d, "visibility": %.2f, "encounter": %.2f, "excite": %.2f, "topography": %.2f, "comfort": %.2f, "count": %d}', month, avg_v, avg_e, avg_ex, avg_to, avg_co, count)
       ORDER BY month
     ), ','), ']') AS monthly_stats_json
   FROM monthly_metrics
@@ -298,48 +298,18 @@ LIMIT 100
 
 ---
 
-## 11. 増分エンリッチメント・ロジック (MERGE)
-エクスポート実行前（または定期更新時）に実行し、リモート関数の呼び出しコストを最小化する。
+## 11. 増分エンリッチメント・ロジック (Python Enricher)
+本ロジックは `master-data-enricher` 関数 (Python) 内で動的に生成・実行され、コストのかかる変換処理を差分のみに限定する。
 
-### 11.1 ポイント情報のエンリッチ
-```sql
-MERGE `wedive_master_data_v1.points_enriched` t
-USING (SELECT id, JSON_VALUE(data, '$.name') as name FROM `wedive_master_data_v1.points_raw_latest`) s
-ON t.id = s.id
-WHEN MATCHED AND t.name != s.name THEN
-  UPDATE SET name = s.name, name_kana = `wedive_master_data_v1.fn_to_kana`(s.name), updated_at = CURRENT_TIMESTAMP()
-WHEN NOT MATCHED THEN
-  INSERT (id, name, name_kana, updated_at) VALUES (s.id, s.name, `wedive_master_data_v1.fn_to_kana`(s.name), CURRENT_TIMESTAMP());
-```
+### 11.1 エンリッチメント・パイプラインの動作
+1. **差分抽出**: `enriched` テーブルに存在しない、または元の RAW データの値と不一致があるレコードの ID と対象フィールド値を抽出。
+2. **バッチ変換**: 抽出されたリストを `kana-converter` (Batch API) へ 1 回の JSON リクエストで送信。
+3. **一括反映**: 返ってきたカナ変換結果を一時テーブルにロードし、`MERGE` 文を用いて `enriched` テーブルを更新。
 
-### 11.2 生物情報のエンリッチ
-```sql
-MERGE `wedive_master_data_v1.creatures_enriched` t
-USING (
-  SELECT 
-    id, 
-    JSON_VALUE(data, '$.name') as name,
-    JSON_VALUE(data, '$.scientificName') as s_name,
-    JSON_VALUE(data, '$.englishName') as e_name,
-    JSON_VALUE(data, '$.family') as family,
-    JSON_VALUE(data, '$.category') as cat
-  FROM `wedive_master_data_v1.creatures_raw_latest`
-) s
-ON t.id = s.id
-WHEN MATCHED AND t.name != s.name THEN
-  UPDATE SET 
-    name = s.name, 
-    name_kana = `wedive_master_data_v1.fn_to_kana`(s.name),
-    search_text = CONCAT(s.name, ' ', `wedive_master_data_v1.fn_to_kana`(s.name), ' ', s.s_name, ' ', s.e_name, ' ', s.family, ' ', s.cat),
-    updated_at = CURRENT_TIMESTAMP()
-WHEN NOT MATCHED THEN
-  INSERT (id, name, name_kana, search_text, updated_at) 
-  VALUES (
-    s.id, s.name, `wedive_master_data_v1.fn_to_kana`(s.name),
-    CONCAT(s.name, ' ', `wedive_master_data_v1.fn_to_kana`(s.name), ' ', s.s_name, ' ', s.e_name, ' ', s.family, ' ', s.cat),
-    CURRENT_TIMESTAMP()
-  );
-```
+### 11.2 生物の search_text 構築ロジック
+生物情報については、単なるカナ変換に加え、以下のフィールドとそのカナ情報を全て結合して検索用インデックスを作成する。
+- 結合対象: `name`, `scientificName`, `englishName`, `family`, `category` (およびそれぞれのカナ)
+- 保存先: `creatures_enriched.search_text`
 
 ## 12. 運用上の注意点
 - **個人データの保護**: 自分のログ・お気に入り等は Firestore から直接取得する既存ロジックを維持。
