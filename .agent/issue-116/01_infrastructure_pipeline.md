@@ -14,22 +14,21 @@ graph TD
 
     %% ETL Pipeline
     subgraph "ETL Pipeline (GCP)"
-        FS -- "Stream Sync" --> BQ[BigQuery RAW]
-        BQ -- "SQL Transform" --> BQV[BigQuery View]
+        FS -- "Stream Sync (All Data)" --> BQ[BigQuery RAW]
+        BQ -- "SQL (Global Only)" --> BQV[BigQuery View]
         
         CS[Cloud Scheduler] -- "Trigger" --> CF[Cloud Run Functions]
         CF -- "Query" --> BQV
-        CF -- "Export (JSON.gz / SQLite.gz)" --> GCS[(GCS Bucket)]
+        CF -- "Export" --> GCS[(GCS Bucket)]
     end
 
     %% Client Side
     subgraph "Read Side (Clients)"
-        GCS -- "HTTP HEAD (ETag)" --> App[Mobile App]
-        GCS -- "HTTP GET (Download)" --> App
-        App -- "Update" --> SQLite[(Local SQLite)]
+        GCS -- "GCS Mirror (Global Master)" --> App
+        FS -- "Direct Sync (Personal Data)" --> App[Mobile/Web App]
         
-        GCS -- "HTTP GET" --> Web[Web App]
-        Web -- "Load" --> IDB[(IndexedDB)]
+        App -- "Global Data" --> SQLite[(Local DB)]
+        App -- "Private Data" --> SQLite
     end
 ```
 
@@ -37,11 +36,10 @@ graph TD
 
 | サービス | 役割 | 備考 |
 | :--- | :--- | :--- |
-| **Firestore** | 書き込みの正本 (Source of Truth) | マスタデータの追加・編集はここで行う。 |
-| **BigQuery SDK (Extension)** | ニアリアルタイム同期 | `Stream Firestore to BigQuery` 拡張を使用。 |
-| **BigQuery (ETL & Aggregation Engine)** | - 全てのデータ変更履歴から最新のスナップショットを生成。<br>- **[NEW] 統計・集計ロジックの集約** | 従来 Firestore バックグラウンドで行っていた平均透明度、レーダーチャート、マスタリー率、出現頻度等の集計を SQL (VIEW) で実行。これにより Firestore の Read/Write コマンドを大幅に削減。 |
-| **Cloud Run Functions (Exporter)** | エクスポート実行エンジン | BigQueryからデータを引き、SQLiteファイルを生成してGCSへ保存。 |
-| **GCS (Cloud Storage)** | 静的ファイル配信 | 高い可用性と低コストな配信を実現するCDNの源泉。 |
+| **Firestore** | 1. 書き込みの正本 (Source of Truth)<br>2. **[重要] ユーザー専用データの同期** | マスタデータの追加・編集に加え、個人のログ、お気に入り、マスタリー統計などを**直接同期**（セキュリティ・プライバシー確保のため）。 |
+| **BigQuery (ETL & Aggregation Engine)** | - 公共スナップショットの生成<br>- **公共統計・集計ロジックの集約** | 共通マスタおよび、レビュー等から算出される公共統計を担当。 |
+| **Cloud Run Functions (Exporter)** | エクスポート実行エンジン | BigQueryから**公共データのみ**を引き、SQLiteファイルを生成してGCSへ保存。 |
+| **GCS (Cloud Storage)** | 静的ファイル配信 (Global Master) | 全ユーザー共通のデータを低コスト・高速に配信。**個人情報は一切含まない**。 |
 | **Cloud Scheduler** | 定期実行の管理 | パイプラインの起動（例: 1時間おき）を制御。 |
 
 ## 4. データ鮮度（レイテンシ）目標
