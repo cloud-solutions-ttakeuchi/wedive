@@ -12,6 +12,7 @@ import { AuthProvider } from '../src/context/AuthContext';
 import { AppProvider } from '../src/context/AppContext';
 import { TermsAgreementModal } from '../components/TermsAgreementModal';
 import { NetworkStatusIndicator } from '../src/components/NetworkStatusIndicator';
+import { MasterDataManager } from '../src/services/MasterDataManager';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -49,6 +50,10 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (loaded) {
+      // マスターデータの同期をバックグラウンドで開始
+      MasterDataManager.syncIfNeeded().catch(err => {
+        console.error('Initial master data sync failed:', err);
+      });
       SplashScreen.hideAsync();
     }
   }, [loaded]);

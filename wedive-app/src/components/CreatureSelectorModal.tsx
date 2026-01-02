@@ -12,10 +12,9 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Search, X, ChevronRight } from 'lucide-react-native';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
-import { db } from '../firebase';
 import { Creature } from '../types';
 import { ImageWithFallback } from './ImageWithFallback';
+import { useMasterSearch } from '../hooks/useMasterSearch';
 
 interface CreatureSelectorModalProps {
   isVisible: boolean;
@@ -30,43 +29,22 @@ export const CreatureSelectorModal: React.FC<CreatureSelectorModalProps> = ({
   onClose,
   onSelect
 }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [creatures, setCreatures] = useState<Creature[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const { keyword, setKeyword, creatures: masterCreatures, isLoading } = useMasterSearch();
 
   useEffect(() => {
     if (isVisible) {
-      handleSearch('');
+      setKeyword('');
     }
-  }, [isVisible]);
+  }, [isVisible, setKeyword]);
 
-  const handleSearch = async (text: string) => {
-    setSearchTerm(text);
-    setIsLoading(true);
-    try {
-      const q = text
-        ? query(
-          collection(db, 'creatures'),
-          where('status', '==', 'approved'),
-          where('name', '>=', text),
-          where('name', '<=', text + '\uf8ff'),
-          limit(20)
-        )
-        : query(
-          collection(db, 'creatures'),
-          where('status', '==', 'approved'),
-          limit(20)
-        );
-
-      const snapshot = await getDocs(q);
-      const results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Creature));
-      setCreatures(results);
-    } catch (error) {
-      console.error('Error searching creatures:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // SQLiteの結果(MasterCreature)をUIが期待するCreature型に変換
+  const creatures = masterCreatures.map(c => ({
+    id: c.id,
+    name: c.name,
+    name_kana: c.name_kana,
+    category: c.category || '',
+    status: 'approved',
+  } as unknown as Creature));
 
   const renderItem = ({ item }: { item: Creature }) => (
     <TouchableOpacity style={styles.item} onPress={() => onSelect(item)}>
@@ -105,8 +83,8 @@ export const CreatureSelectorModal: React.FC<CreatureSelectorModalProps> = ({
           <TextInput
             style={styles.searchInput}
             placeholder="生物名で検索..."
-            value={searchTerm}
-            onChangeText={handleSearch}
+            value={keyword}
+            onChangeText={setKeyword}
             autoFocus
           />
         </View>
