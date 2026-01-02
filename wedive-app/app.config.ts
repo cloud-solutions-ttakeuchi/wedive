@@ -67,6 +67,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       favicon: "./assets/images/favicon.png"
     },
     plugins: [
+      "expo-asset",
       "expo-sqlite",
       "expo-router",
       "expo-image-picker",

@@ -1,7 +1,15 @@
-import * as SQLite from 'expo-sqlite';
 import { collection, query, where, getDocs, limit as firestoreLimit, orderBy, startAt, endAt } from 'firebase/firestore';
 import { db as firestoreDb } from '../firebase';
 import { Point, Creature } from '../types';
+
+// ネイティブモジュール不足時にファイル全体がクラッシュするのを防ぐために
+// ローカルで SQLite を import する
+let SQLite: any = null;
+try {
+  SQLite = require('expo-sqlite');
+} catch (e) {
+  console.warn('ExpoSQLite module not found in this build.');
+}
 
 export interface MasterPoint {
   id: string;
@@ -22,7 +30,7 @@ export interface MasterCreature {
 }
 
 class MasterDataService {
-  private sqliteDb: SQLite.SQLiteDatabase | null = null;
+  private sqliteDb: any = null;
   private isInitializing = false;
 
   /**
@@ -31,6 +39,9 @@ class MasterDataService {
   async initialize(): Promise<boolean> {
     if (this.sqliteDb) return true;
     if (this.isInitializing) return false;
+    if (!SQLite || !SQLite.openDatabaseAsync) {
+      return false; // SQLite が存在しないビルド
+    }
 
     this.isInitializing = true;
     try {
@@ -69,15 +80,17 @@ class MasterDataService {
             name ASC
           LIMIT ?
         `;
-        const results = await this.sqliteDb.getAllAsync<MasterPoint>(sql, [
+        const results = await this.sqliteDb.getAllAsync(sql, [
           `%${normalizedQuery}%`,
           normalizedQuery,
           `${normalizedQuery}%`,
           limitCount
         ]);
 
+        console.log(`[MasterData] Found ${results.length} points from SQLite 🚀`);
+
         if (results.length > 0) {
-          return results.map(p => ({
+          return results.map((p: any) => ({
             id: p.id,
             name: p.name,
             name_kana: p.name_kana,
@@ -86,6 +99,7 @@ class MasterDataService {
             zone: p.zone_name || '',
             latitude: p.latitude,
             longitude: p.longitude,
+            level: p.level || 'Unknown',
             status: 'approved'
           } as unknown as Point));
         }
@@ -95,7 +109,7 @@ class MasterDataService {
     }
 
     // 2. フォールバック: Firestore 検索
-    console.log('Searching from Firestore...');
+    console.log('[MasterData] Falling back to Firestore search... ☁️');
     const q = query(
       collection(firestoreDb, 'points'),
       where('status', '==', 'approved'),
@@ -130,15 +144,17 @@ class MasterDataService {
             name ASC
           LIMIT ?
         `;
-        const results = await this.sqliteDb.getAllAsync<MasterCreature>(sql, [
+        const results = await this.sqliteDb.getAllAsync(sql, [
           `%${normalizedQuery}%`,
           normalizedQuery,
           `${normalizedQuery}%`,
           limitCount
         ]);
 
+        console.log(`[MasterData] Found ${results.length} creatures from SQLite 🚀`);
+
         if (results.length > 0) {
-          return results.map(c => ({
+          return results.map((c: any) => ({
             id: c.id,
             name: c.name,
             name_kana: c.name_kana,
@@ -152,6 +168,7 @@ class MasterDataService {
     }
 
     // 2. フォールバック: Firestore 検索
+    console.log('[MasterData] Falling back to Firestore search... ☁️');
     const q = query(
       collection(firestoreDb, 'creatures'),
       where('status', '==', 'approved'),

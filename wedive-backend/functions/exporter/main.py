@@ -63,6 +63,12 @@ def main(request):
             query = f"SELECT * FROM `{PROJECT_ID}.{DATASET_ID}.{view_name}`"
             df = bq_client.query(query).to_dataframe()
 
+            # 検索最適化: search_text カラムがなければ動的に生成 (name + name_kana)
+            if "name" in df.columns:
+                kana = df["name_kana"] if "name_kana" in df.columns else ""
+                df["search_text"] = df["name"].fillna("").astype(str) + " " + kana.fillna("").astype(str)
+                df["search_text"] = df["search_text"].str.strip()
+
             # SQLite への書き込み
             df.to_sql(table_name, conn, if_exists="replace", index=False)
 

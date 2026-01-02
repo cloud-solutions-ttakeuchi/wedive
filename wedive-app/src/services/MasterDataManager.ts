@@ -1,30 +1,62 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import pako from 'pako';
 import { Buffer } from 'buffer';
+import { getStorage, ref, getMetadata, getDownloadURL } from 'firebase/storage';
+import { app } from '../firebase';
+import { Asset } from 'expo-asset';
 
-// @ts-ignore - SDKバージョンの違いによる型定義不一致を一旦回避
-const documentDirectory = FileSystem.documentDirectory;
-// @ts-ignore
-const cacheDirectory = FileSystem.cacheDirectory;
-// @ts-ignore
-const EncodingType = FileSystem.EncodingType;
+const { documentDirectory, cacheDirectory, EncodingType } = FileSystem;
 
-const GCS_BASE_URL = 'https://storage.googleapis.com/wedive-app-static-master/v1/master';
+const BUNDLED_DB_ASSET = require('../../assets/master.db'); // 同梱アセット
+const STORAGE_PATH = 'v1/master/latest.db.gz';
 const DB_NAME = 'master.db';
 const DB_GZ_NAME = 'latest.db.gz';
 const STORAGE_KEY_LAST_UPDATED = 'master_data_last_updated';
+
+const storage = getStorage(app, 'gs://wedive-app-static-master');
 
 /**
  * モバイルアプリ起動時のマスターデータ同期管理クラス
  */
 export class MasterDataManager {
   private static getDBPath() {
-    return `${FileSystem.documentDirectory}SQLite/${DB_NAME}`;
+    return `${documentDirectory}SQLite/${DB_NAME}`;
   }
 
   private static getTempGzPath() {
-    return `${FileSystem.cacheDirectory}${DB_GZ_NAME}`;
+    return `${cacheDirectory}${DB_GZ_NAME}`;
+  }
+
+  /**
+   * 同梱されているDBアセットを展開する（必要な場合のみ）
+   */
+  private static async ensureDatabaseExists() {
+    const dbPath = this.getDBPath();
+    const dbInfo = await FileSystem.getInfoAsync(dbPath);
+
+    if (!dbInfo.exists) {
+      console.log('No local database found. Extracting bundled asset...');
+
+      // SQLiteディレクトリを作成
+      const sqliteDir = `${documentDirectory}SQLite`;
+      const dirInfo = await FileSystem.getInfoAsync(sqliteDir);
+      if (!dirInfo.exists) {
+        await FileSystem.makeDirectoryAsync(sqliteDir, { intermediates: true });
+      }
+
+      // Bundleされたアセットをスマホのドキュメントにコピー
+      const asset = Asset.fromModule(BUNDLED_DB_ASSET);
+      await asset.downloadAsync(); // キャッシュへのDL
+
+      if (asset.localUri) {
+        await FileSystem.copyAsync({
+          from: asset.localUri,
+          to: dbPath
+        });
+        console.log('Bundled database extracted successfully.');
+      }
+    }
   }
 
   /**
@@ -32,14 +64,17 @@ export class MasterDataManager {
    */
   static async syncIfNeeded(force = false): Promise<boolean> {
     try {
-      console.log('Checking master data sync...');
+      // 1. まず内蔵DBがあるか確認し、なければ展開する
+      await this.ensureDatabaseExists();
+
+      console.log('Checking master data sync via Firebase Storage...');
 
       const lastUpdated = await AsyncStorage.getItem(STORAGE_KEY_LAST_UPDATED);
+      const masterRef = ref(storage, STORAGE_PATH);
 
-      // GCSのファイルのメタデータ（ETagやLast-Modified）を確認するのが理想
-      // 今回はシンプルにHEADリクエストでContent-LengthやLast-Modifiedをチェックする
-      const response = await fetch(`${GCS_BASE_URL}/${DB_GZ_NAME}`, { method: 'HEAD' });
-      const serverLastModified = response.headers.get('last-modified');
+      // 1. メタデータからサーバーの最終更新日時を取得 (403を回避)
+      const metadata = await getMetadata(masterRef);
+      const serverLastModified = metadata.updated;
 
       if (!force && lastUpdated && lastUpdated === serverLastModified) {
         // すでに最新
@@ -50,8 +85,12 @@ export class MasterDataManager {
         }
       }
 
-      console.log('New master data version found. Starting download...');
-      await this.downloadAndUpdate();
+      console.log('New master data version found. Fetching download URL...');
+
+      // 2. 署名付き(認証済み)URLを取得
+      const downloadUrl = await getDownloadURL(masterRef);
+
+      await this.downloadAndUpdate(downloadUrl);
 
       if (serverLastModified) {
         await AsyncStorage.setItem(STORAGE_KEY_LAST_UPDATED, serverLastModified);
@@ -59,8 +98,7 @@ export class MasterDataManager {
 
       return true;
     } catch (error) {
-      console.error('Failed to sync master data:', error);
-      // 通信失敗時はフォールバック（既存のDBを使う）
+      console.warn('Silent fallback: Master data sync failed (Auth/Network error):', error);
       return false;
     }
   }
@@ -68,10 +106,10 @@ export class MasterDataManager {
   /**
    * ダウンロードと解凍、ファイルの差し替えを実行
    */
-  private static async downloadAndUpdate() {
+  private static async downloadAndUpdate(downloadUrl: string) {
     const gzPath = this.getTempGzPath();
     const dbPath = this.getDBPath();
-    const sqliteDir = `${FileSystem.documentDirectory}SQLite`;
+    const sqliteDir = `${documentDirectory}SQLite`;
 
     // 1. ディレクトリ作成 (存在しない場合)
     const dirInfo = await FileSystem.getInfoAsync(sqliteDir);
@@ -79,9 +117,9 @@ export class MasterDataManager {
       await FileSystem.makeDirectoryAsync(sqliteDir, { intermediates: true });
     }
 
-    // 2. GZファイルのダウンロード
+    // 2. GZファイルのダウンロード (署名付きURLを使用)
     const downloadRes = await FileSystem.downloadAsync(
-      `${GCS_BASE_URL}/${DB_GZ_NAME}`,
+      downloadUrl,
       gzPath
     );
 
@@ -91,21 +129,32 @@ export class MasterDataManager {
 
     console.log('Download complete. Decompressing...');
 
-    // 3. pakoで解凍
-    // ExpoのFileSystemでファイルをバイナリ（base64）として読み込む
+    // 3. データの書き出し
+    console.log('Reading downloaded file...');
     const base64Data = await FileSystem.readAsStringAsync(gzPath, {
-      encoding: FileSystem.EncodingType.Base64,
+      encoding: EncodingType.Base64,
     });
     const buffer = Buffer.from(base64Data, 'base64');
 
-    // gz解凍 (Uint8Array)
-    const decompressed = pako.ungzip(new Uint8Array(buffer));
+    // GZIPのマジックナンバー (0x1f 0x8b) をチェック
+    const isGzip = buffer[0] === 0x1f && buffer[1] === 0x8b;
 
-    // 4. 書き出し
-    const decompressedBase64 = Buffer.from(decompressed).toString('base64');
-    await FileSystem.writeAsStringAsync(dbPath, decompressedBase64, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
+    if (isGzip) {
+      try {
+        console.log('Decompressing GZIP data...');
+        const decompressed = pako.ungzip(new Uint8Array(buffer));
+        const decompressedBase64 = Buffer.from(decompressed).toString('base64');
+        await FileSystem.writeAsStringAsync(dbPath, decompressedBase64, {
+          encoding: EncodingType.Base64,
+        });
+      } catch (gzError) {
+        console.error('Ungzip failed, falling back to direct copy:', gzError);
+        await FileSystem.copyAsync({ from: gzPath, to: dbPath });
+      }
+    } else {
+      console.log('Data is already decompressed (automatic transcoding). Saving directly.');
+      await FileSystem.copyAsync({ from: gzPath, to: dbPath });
+    }
 
     // 5. キャッシュ（gz）の削除
     await FileSystem.deleteAsync(gzPath, { idempotent: true });
