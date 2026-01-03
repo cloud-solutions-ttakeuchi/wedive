@@ -44,6 +44,7 @@ export class MasterDataService extends BaseMasterDataService {
       }
     }
 
+    /*
     // フェイルオーバー: Firestore 検索
     console.log('[MasterData] Falling back to Firestore search... ☁️');
     const q = query(
@@ -56,6 +57,8 @@ export class MasterDataService extends BaseMasterDataService {
     );
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Point));
+    */
+    return [];
   }
 
   /**
@@ -77,6 +80,7 @@ export class MasterDataService extends BaseMasterDataService {
       }
     }
 
+    /*
     // フェイルオーバー: Firestore 検索
     console.log('[MasterData] Falling back to Firestore search... ☁️');
     const q = query(
@@ -89,48 +93,53 @@ export class MasterDataService extends BaseMasterDataService {
     );
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Creature));
+    */
+    return [];
   }
 
   /**
    * 最新レビューの取得（ホーム画面用）
    */
   async getLatestReviews(limitCount = 20): Promise<any[]> {
-    const q = query(
-      collection(firestoreDb, 'reviews'),
-      where('status', '==', 'approved'),
-      orderBy('date', 'desc'),
-      firestoreLimit(limitCount)
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    if (await this.initialize()) {
+      try {
+        const sql = 'SELECT * FROM master_point_reviews ORDER BY created_at DESC LIMIT ?';
+        return await appDbEngine.getAllAsync<any>(sql, [limitCount]);
+      } catch (e) {
+        console.error('SQLite getLatestReviews failed:', e);
+      }
+    }
+    return [];
   }
 
   /**
    * 特定ポイントのレビュー取得
    */
   async getReviewsByPoint(pointId: string): Promise<any[]> {
-    const q = query(
-      collection(firestoreDb, 'reviews'),
-      where('pointId', '==', pointId),
-      where('status', '==', 'approved'),
-      orderBy('date', 'desc')
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    if (await this.initialize()) {
+      try {
+        const sql = 'SELECT * FROM master_point_reviews WHERE point_id = ? ORDER BY created_at DESC';
+        return await appDbEngine.getAllAsync<any>(sql, [pointId]);
+      } catch (e) {
+        console.error('SQLite getReviewsByPoint failed:', e);
+      }
+    }
+    return [];
   }
 
   /**
    * エリア全体のレビュー取得（点数計算用等）
    */
   async getReviewsByArea(areaId: string): Promise<any[]> {
-    const q = query(
-      collection(firestoreDb, 'reviews'),
-      where('areaId', '==', areaId),
-      where('status', '==', 'approved'),
-      orderBy('date', 'desc')
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    if (await this.initialize()) {
+      try {
+        const sql = 'SELECT * FROM master_point_reviews WHERE area_id = ? ORDER BY created_at DESC';
+        return await appDbEngine.getAllAsync<any>(sql, [areaId]);
+      } catch (e) {
+        console.error('SQLite getReviewsByArea failed:', e);
+      }
+    }
+    return [];
   }
 
   /**
@@ -162,9 +171,12 @@ export class MasterDataService extends BaseMasterDataService {
         }
       }
     }
+    /*
     const q = query(collection(firestoreDb, 'points'), where('status', '==', 'approved'), orderBy('name'));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Point));
+    */
+    return [];
   }
 
   /**
@@ -188,9 +200,12 @@ export class MasterDataService extends BaseMasterDataService {
         console.error('SQLite getAllCreatures failed:', e);
       }
     }
+    /*
     const q = query(collection(firestoreDb, 'creatures'), where('status', '==', 'approved'), orderBy('name'));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Creature));
+    */
+    return [];
   }
 
   /**
@@ -212,8 +227,11 @@ export class MasterDataService extends BaseMasterDataService {
         console.error('SQLite getAllPointCreatures failed:', e);
       }
     }
+    /*
     const snapshotPointCreatures = await getDocs(collection(firestoreDb, 'point_creatures'));
     return snapshotPointCreatures.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    */
+    return [];
   }
 }
 

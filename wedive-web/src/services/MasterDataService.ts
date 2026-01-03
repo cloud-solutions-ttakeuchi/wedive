@@ -43,6 +43,7 @@ export class MasterDataService extends BaseMasterDataService {
       }
     }
 
+    /*
     // フェイルオーバー: Firestore 検索
     console.log('[MasterData] Falling back to Firestore search... ☁️');
     const q = query(
@@ -55,6 +56,8 @@ export class MasterDataService extends BaseMasterDataService {
     );
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Point));
+    */
+    return [];
   }
 
   async searchCreatures(text: string, limitCount = 50): Promise<Creature[]> {
@@ -73,6 +76,7 @@ export class MasterDataService extends BaseMasterDataService {
       }
     }
 
+    /*
     // フェイルオーバー: Firestore 検索
     console.log('[MasterData] Falling back to Firestore search... ☁️');
     const q = query(
@@ -85,6 +89,8 @@ export class MasterDataService extends BaseMasterDataService {
     );
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Creature));
+    */
+    return [];
   }
 }
 
