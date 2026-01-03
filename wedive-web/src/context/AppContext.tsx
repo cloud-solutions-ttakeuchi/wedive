@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useRef, useMemo, type ReactNode } from 'react';
-import type { User, Log, Rarity, Creature, Point, PointCreature, Review, PointCreatureProposal } from '../types';
-import { INITIAL_DATA } from '../data/initialData';
+import type { User, Log, Rarity, Creature, Point, PointCreature, Review, PointCreatureProposal, Region, Zone, Area } from '../types';
+
 import { auth, googleProvider, db as firestore, functions } from '../lib/firebase';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import {
@@ -59,7 +59,7 @@ interface AppContextType {
   toggleWanted: (creatureId: string) => void;
   toggleBookmarkPoint: (pointId: string) => void;
 
-  areas: typeof INITIAL_DATA.areas;
+  areas: Area[];
   addPointCreature: (pointId: string, creatureId: string, localRarity: Rarity) => Promise<void>;
   removePointCreature: (pointId: string, creatureId: string) => Promise<void>;
   approveProposal: (type: 'creature' | 'point' | 'point-creature', id: string, data: any) => Promise<void>;
@@ -81,8 +81,8 @@ interface AppContextType {
   proposalCreatures: (Creature & { proposalType?: string, diffData?: any, targetId?: string, reason?: string })[];
   proposalPoints: (Point & { proposalType?: string, diffData?: any, targetId?: string, reason?: string })[];
   proposalPointCreatures: PointCreatureProposal[];
-  regions: typeof INITIAL_DATA.regions;
-  zones: typeof INITIAL_DATA.zones;
+  regions: Region[];
+  zones: Zone[];
 
   // Admin
   allUsers: User[];
@@ -114,9 +114,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const isDeletingRef = useRef(false);
 
   // Data State
-  const [creatures, setCreatures] = useState<Creature[]>(INITIAL_DATA.creatures);
-  const [points, setPoints] = useState<Point[]>(INITIAL_DATA.points);
-  const [pointCreatures, setPointCreatures] = useState<PointCreature[]>(INITIAL_DATA.pointCreatures);
+  const [creatures, setCreatures] = useState<Creature[]>([]);
+  const [points, setPoints] = useState<Point[]>([]);
+  const [pointCreatures, setPointCreatures] = useState<PointCreature[]>([]);
   const [dbProposalCreatures, setDbProposalCreatures] = useState<Creature[]>([]);
   const [dbProposalPoints, setDbProposalPoints] = useState<Point[]>([]);
   const [proposalPointCreatures, setProposalPointCreatures] = useState<PointCreatureProposal[]>([]);
@@ -127,9 +127,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [allUsers, setAllUsers] = useState<User[]>([]);
 
   // Master Data State
-  const [regions, setRegions] = useState<typeof INITIAL_DATA.regions>(INITIAL_DATA.regions);
-  const [zones, setZones] = useState<typeof INITIAL_DATA.zones>(INITIAL_DATA.zones);
-  const [areas, setAreas] = useState<typeof INITIAL_DATA.areas>(INITIAL_DATA.areas);
+  const [regions, setRegions] = useState<Region[]>([]);
+  const [zones, setZones] = useState<Zone[]>([]);
+  const [areas, setAreas] = useState<Area[]>([]);
 
   // Emulator connections (development only)
   useEffect(() => {
@@ -153,13 +153,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         // B. SQLite からデータをロード
         await masterDbEngine.initialize();
 
-        const [r, z, a, c, p, pc] = await Promise.all([
+        const [r, z, a, c, p, pc, rv, pl] = await Promise.all([
           masterDbEngine.getAllAsync<any>('SELECT * FROM master_regions'),
           masterDbEngine.getAllAsync<any>('SELECT * FROM master_zones'),
           masterDbEngine.getAllAsync<any>('SELECT * FROM master_areas'),
-          masterDbEngine.getAllAsync<any>('SELECT * FROM master_creatures LIMIT 1000'), // 全件はメモリ負荷を考慮し制限または検索ベースへ
+          masterDbEngine.getAllAsync<any>('SELECT * FROM master_creatures LIMIT 1000'),
           masterDbEngine.getAllAsync<any>('SELECT * FROM master_points LIMIT 1000'),
-          masterDbEngine.getAllAsync<any>('SELECT * FROM master_point_creatures')
+          masterDbEngine.getAllAsync<any>('SELECT * FROM master_point_creatures'),
+          masterDbEngine.getAllAsync<any>('SELECT * FROM master_point_reviews ORDER BY created_at DESC LIMIT 100'),
+          masterDbEngine.getAllAsync<any>('SELECT * FROM master_public_logs ORDER BY date DESC LIMIT 20')
         ]);
 
         if (r.length) setRegions(r);
@@ -168,43 +170,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         if (c.length) setCreatures(c.map(i => ({ ...i, status: 'approved' })));
         if (p.length) setPoints(p.map(i => ({ ...i, status: 'approved' })));
         if (pc.length) setPointCreatures(pc.map(i => ({ ...i, status: 'approved' })));
+        if (rv.length) setReviews(rv.map(i => ({ ...i, status: 'approved' })));
+        if (pl.length) setRecentLogs(pl);
 
-        console.log('[MasterData] Master data loaded from SQLite.');
+        console.log('[MasterData] Master data (including reviews/logs) loaded from SQLite.');
 
       } catch (e) {
-        console.error('[MasterData] Failed to load from SQLite, using initial data:', e);
+        console.error('[MasterData] Failed to load from SQLite:', e);
       }
     };
 
     initMasterData();
 
-    // 変更監視が必要な動的データ（レビュー・パブリックログ）のみ onSnapshot を継続
-    const unsubReviews = onSnapshot(query(
-      collection(firestore, 'reviews'),
-      limit(100)
-    ), (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Review))
-        .filter((r: Review) => r.status === 'approved' || !r.status)
-        .sort((a, b) => {
-          const timeA = new Date(a.date || a.createdAt || 0).getTime();
-          const timeB = new Date(b.date || b.createdAt || 0).getTime();
-          return timeB - timeA;
-        });
-      setReviews(data);
-    }, (err: Error) => console.error("Snapshot error (reviews):", err));
-
-    let unsubPublicLogs = () => { };
-    try {
-      const publicLogsQuery = query(collectionGroup(firestore, 'logs'), where('isPrivate', '==', false), orderBy('date', 'desc'), limit(20));
-      unsubPublicLogs = onSnapshot(publicLogsQuery, (snapshot) => {
-        setRecentLogs(snapshot.docs.map(doc => doc.data() as Log));
-      }, (err: Error) => console.error("Snapshot error (public logs):", err));
-    } catch (e: any) { console.error(e); }
-
-    return () => {
-      unsubReviews();
-      unsubPublicLogs();
-    };
+    // マスタデータの同期とロード
+    initMasterData();
   }, []);
 
   // 3. Auth & User-Specific Sync
