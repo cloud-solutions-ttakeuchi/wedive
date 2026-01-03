@@ -21,7 +21,6 @@ import { connectFunctionsEmulator } from 'firebase/functions';
 
 import { MasterDataSyncService } from '../services/MasterDataSyncService';
 import { masterDbEngine } from '../services/WebSQLiteEngine';
-import { masterDataService } from '../services/MasterDataService';
 // Helper to remove undefined values
 const sanitizePayload = (data: any): any => {
   if (Array.isArray(data)) {
@@ -331,9 +330,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const isAdmin = currentUser.role === 'admin' || currentUser.role === 'moderator';
     if (!isAdmin) return dbProposalPoints;
 
-    const pendingMasterPoints = points.filter(p => p.status === 'pending');
-    const prevIds = new Set(dbProposalPoints.map(p => p.id));
-    const newItems = pendingMasterPoints.filter(p => !prevIds.has(p.id));
+    const pendingMasterPoints = points.filter((p: Point) => p.status === 'pending');
+    const prevIds = new Set(dbProposalPoints.map((p: Point) => p.id));
+    const newItems = pendingMasterPoints.filter((p: Point) => !prevIds.has(p.id));
     return [...dbProposalPoints, ...newItems].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
   }, [dbProposalPoints, points, currentUser.role]);
 
@@ -341,9 +340,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const isAdmin = currentUser.role === 'admin' || currentUser.role === 'moderator';
     if (!isAdmin) return dbProposalCreatures;
 
-    const pendingMasterCreatures = creatures.filter(c => c.status === 'pending');
-    const prevIds = new Set(dbProposalCreatures.map(c => c.id));
-    const newItems = pendingMasterCreatures.filter(c => !prevIds.has(c.id));
+    const pendingMasterCreatures = creatures.filter((c: Creature) => c.status === 'pending');
+    const prevIds = new Set(dbProposalCreatures.map((c: Creature) => c.id));
+    const newItems = pendingMasterCreatures.filter((c: Creature) => !prevIds.has(c.id));
     return [...dbProposalCreatures, ...newItems].sort((a, b) => (b.id || '').localeCompare(a.id || ''));
   }, [dbProposalCreatures, creatures, currentUser.role]);
 
@@ -392,7 +391,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const targetId = currentUser?.id;
     if (!targetId || targetId === 'guest') return;
     const cleanData = sanitizePayload(userData);
-    setCurrentUser(prev => ({ ...prev, ...userData }));
+    setCurrentUser((prev: User) => ({ ...prev, ...userData }));
     if (isAuthenticated) {
       try { await updateDoc(doc(firestore, 'users', targetId), cleanData); }
       catch (e) { console.error(e); }
@@ -554,16 +553,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     try {
       if (type === 'creature') {
         const targetId = data.targetId || `c${Date.now()}`;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { id: _fid, proposalType: _pt, targetId: _ftid, submitterId: _sid, status: _st, createdAt: _ca, ...finalData } = data;
         await setDoc(doc(firestore, 'creatures', targetId), sanitizePayload({ ...finalData, id: targetId, status: 'approved' }));
         await updateDoc(doc(firestore, 'creature_proposals', id), { status: 'approved', processedAt: now });
       } else if (type === 'point') {
         const targetId = data.targetId || `p${Date.now()}`;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { id: _fid, proposalType: _pt, targetId: _ftid, submitterId: _sid, status: _st, createdAt: _ca, ...finalData } = data;
         await setDoc(doc(firestore, 'points', targetId), sanitizePayload({ ...finalData, id: targetId, status: 'approved' }));
         await updateDoc(doc(firestore, 'point_proposals', id), { status: 'approved', processedAt: now });
       } else if (type === 'point-creature') {
         const targetId = data.targetId || `${data.pointId}_${data.creatureId}`;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { id: _fid, proposalType, targetId: _ftid, submitterId: _sid, status: _st, createdAt: _ca, ...finalData } = data;
         if (proposalType === 'delete') {
           await deleteDoc(doc(firestore, 'point_creatures', targetId));

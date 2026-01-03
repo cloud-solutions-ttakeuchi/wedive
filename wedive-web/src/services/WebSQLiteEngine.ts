@@ -34,6 +34,7 @@ export class WebSQLiteEngine implements SQLiteExecutor {
     if (!this.db) await this.initialize();
 
     const results: T[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     await this.api.statements(this.db, sql, (s: any, next: any) => {
       // パラメータのバインド
       for (let i = 0; i < params.length; ++i) {

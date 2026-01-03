@@ -113,6 +113,13 @@ export interface Point {
     radar_visibility?: number;
     monthly_analysis?: string; // JSON string
   };
+  name_kana?: string;
+  region_name?: string;
+  area_name?: string;
+  zone_name?: string;
+  latitude?: number;
+  longitude?: number;
+  rating?: number;
 }
 
 export type DivingPoint = Point;
@@ -184,6 +191,18 @@ export interface User {
   bookmarkedPointIds: string[];
   createdAt?: string;
   status?: UserStatus;
+  certification?: {
+    orgId: string;
+    rankId: string;
+    date: string;
+  };
+  badges?: {
+    badgeId: string;
+    earnedAt: string;
+  }[];
+  agreedTermsVersion?: string;
+  isTermsAgreed?: boolean;
+  agreedAt?: string;
 }
 
 export type UserStatus = 'provisional' | 'active' | 'suspended' | 'withdrawn';
