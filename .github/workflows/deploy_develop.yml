@@ -30,7 +30,7 @@ jobs:
           cache: 'npm'
           cache-dependency-path: package-lock.json
       - name: Install dependencies
-        run: npm install
+        run: npm ci
         working-directory: .
       - name: Build shared library
         run: npm run build -w wedive-shared
@@ -52,7 +52,7 @@ jobs:
       - name: Install and Build Functions
         run: |
           cd functions
-          npm install
+          npm ci
           npm run build
 
       - name: Authenticate to Google Cloud

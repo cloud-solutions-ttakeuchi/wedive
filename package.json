@@ -9,5 +9,8 @@
   "scripts": {
     "web:dev": "npm run dev -w wedive-web",
     "app:start": "npm run start -w wedive-app"
+  },
+  "optionalDependencies": {
+    "lightningcss": "^1.30.2"
   }
 }
