@@ -26,12 +26,12 @@ graph TD
     end
 
     subgraph "Infrastructure Layer (Platform Specific)"
-        Wasm_SQLite[SQLite Wasm + OPFS Implementation]
-        Expo_SQLite[expo-sqlite Implementation]
+        Wasm_SQLite[wedive-web: SQLite Wasm + OPFS]
+        Expo_SQLite[wedive-app: expo-sqlite]
     end
 
-    Web_UI --> Hooks
-    App_UI --> Hooks
+    Web_UI -->|npm workspace| Hooks
+    App_UI -->|npm workspace| Hooks
     Hooks --> DataService
     DataService --> SyncService
     DataService --> SQLite_Repo
@@ -42,9 +42,29 @@ graph TD
 ```
 
 ### 参照する主要クラス・概念
+- **wedive-shared (New Package)**: ドメインロジック (Service) とインターフェース (Repository) を保持する npm ローカルパッケージ。
 - **DataService**: アプリケーションロジックの中核。SQLite と Firestore の優先順位（Local-First 戦略）を管理。
 - **SQLite_Repo**: SQL クエリの発行を担うインターフェース。Web/App ともに全く同じ SQL クエリを利用。
-- **SyncService**: Firebase Storage (`.gz`) や Firestore からの「データの引き込み」を管理。
+
+---
+
+## 2. モノレポ（npm workspaces）構成
+
+ロジックの共有を確実かつクリーンに行うため、以下のディレクトリ構造を採用します。
+
+```text
+/Users/minarai/pgm/wedive/
+├── package.json            (Root: Workspaces 定義)
+├── wedive-shared/          (Core logic: Services, Repositories, Types)
+│   ├── package.json        (package name: "wedive-shared")
+│   └── src/                (TypeScript sources)
+├── wedive-app/             (Expo: mobile app)
+└── wedive-web/             (Vite: web app)
+```
+
+### 共通化のメリット
+- **Single Source of Truth**: `search_text` を使った複雑な SQL クエリや、Firestore との同期ロジックを一箇所で修正すれば、即座に両プラットフォームへ反映されます。
+- **型の一貫性**: `Point` や `Creature` などの型定義が Web/App で乖離するのを防ぎます。
 
 ---
 
@@ -146,14 +166,17 @@ sequenceDiagram
 
 ## 5. ロジック共通化のロードマップ
 
-リポジトリが別々である現状において、段階的に共通化を進めます。
+npm workspaces を活用し、以下のステップでモノレポ環境を構築します。
 
-1.  **Stage 1: SQL/インターフェース共有**
-    - `master_points`, `master_creatures` 等のテーブル定義および、共通の SQL クエリ定数ファイルを定義。
-2.  **Stage 2: 共通サービスクラスの抽出**
-    - `UserDataService` や `MasterDataService` のプラットフォーム非依存部分（何をいつ取得するか、どう Firestore とフォールバックするか）を、npm packages または submodule として切り出し可能なプレーンな TS クラスへリファクタリング。
-3.  **Stage 3: インフラ層を Inject（依存性注入）**
-    - `DataService` が「SQLite を叩くための Executor」をコンストラクタで受け取るようにし、Web 版なら Wasm 実装、App 版なら Native 実装を注入（DI）するように統一。
+1.  **Stage 1: Root Workspaces の構築**
+    - ルートディレクトリに `package.json` を作成し、`workspaces: ["wedive-*"]` を定義。
+    - `wedive-shared` ディレクトリを新設し、共通の `package.json`（name: "wedive-shared"）を配置。
+2.  **Stage 2: 型定義と定数の移行**
+    - `wedive-app` と `wedive-web` で重複している `types.ts` を `wedive-shared/src/types` へ集約。
+    - 両プロジェクトの `package.json` で `"wedive-shared": "*"` を dependency に追加。
+3.  **Stage 3: サービス/リポジトリ層の抽出**
+    - 今回プロトタイプで作成した `MasterDataService` や `UserDataService` を `wedive-shared` へ移動。
+    - プラットフォーム固有の処理（SQLite のオープン等）を `SQLite_Repo` インターフェースで抽象化し、実行時に依存性注入 (DI) する仕組みを完成。
 
 ---
 **設計のハイライト**:
