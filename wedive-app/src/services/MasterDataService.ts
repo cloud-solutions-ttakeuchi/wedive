@@ -1,76 +1,27 @@
 import { collection, query, where, getDocs, limit as firestoreLimit, orderBy, startAt, endAt } from 'firebase/firestore';
 import { db as firestoreDb } from '../firebase';
-import { Point, Creature } from '../types';
+import { BaseMasterDataService } from 'wedive-shared';
+import type { Point, Creature } from 'wedive-shared';
+import { appDbEngine } from './AppSQLiteEngine';
 
-// ネイティブモジュール不足時にファイル全体がクラッシュするのを防ぐために
-// ローカルで SQLite を import する
-let SQLite: any = null;
-try {
-  SQLite = require('expo-sqlite');
-} catch (e) {
-  console.warn('ExpoSQLite module not found in this build.');
-}
+/**
+ * App 版 MasterDataService
+ * wedive-shared の BaseMasterDataService を継承し、App (Expo) 固有の
+ * 初期化処理や Firestore フォールバックを追加。
+ */
+export class MasterDataService extends BaseMasterDataService {
 
-export interface MasterPoint {
-  id: string;
-  name: string;
-  name_kana?: string;
-  region_name?: string;
-  zone_name?: string;
-  area_name?: string;
-  latitude?: number;
-  longitude?: number;
-}
+  private isInitialized = false;
 
-export interface MasterCreature {
-  id: string;
-  name: string;
-  name_kana?: string;
-  category?: string;
-}
-
-// TODO: Phase 2 - 将来の管理画面実装に合わせて有効化
-/*
-export interface MasterCertification {
-  id: string;
-  name: string;
-  organization?: string;
-  ranks?: any[];
-}
-
-export interface MasterBadge {
-  id: string;
-  name: string;
-  icon_url?: string;
-  condition?: any;
-}
-*/
-
-class MasterDataService {
-  private sqliteDb: any = null;
-  private isInitializing = false;
-
-  /**
-   * SQLite接続の初期化
-   */
   async initialize(): Promise<boolean> {
-    if (this.sqliteDb) return true;
-    if (this.isInitializing) return false;
-    if (!SQLite || !SQLite.openDatabaseAsync) {
-      return false; // SQLite が存在しないビルド
-    }
-
-    this.isInitializing = true;
+    if (this.isInitialized) return true;
     try {
-      this.sqliteDb = await SQLite.openDatabaseAsync('master.db');
-      console.log('MasterData SQLite connection established.');
+      await appDbEngine.initialize('master.db');
+      this.isInitialized = true;
       return true;
-    } catch (error) {
-      console.warn('SQLite not available, using Firestore fallback:', error);
-      this.sqliteDb = null;
+    } catch (e) {
+      console.warn('SQLite initialization failed, using Firestore fallback:', e);
       return false;
-    } finally {
-      this.isInitializing = false;
     }
   }
 
@@ -81,50 +32,19 @@ class MasterDataService {
     const normalizedQuery = text.trim();
     if (!normalizedQuery) return [];
 
-    const isAvailable = await this.initialize();
-    if (isAvailable && this.sqliteDb) {
+    if (await this.initialize()) {
       try {
-        const sql = `
-          SELECT * FROM master_points
-          WHERE search_text LIKE ?
-          ORDER BY
-            CASE
-              WHEN name = ? THEN 1
-              WHEN name LIKE ? THEN 2
-              ELSE 3
-            END,
-            name ASC
-          LIMIT ?
-        `;
-        const results = await this.sqliteDb.getAllAsync(sql, [
-          `%${normalizedQuery}%`,
-          normalizedQuery,
-          `${normalizedQuery}%`,
-          limitCount
-        ]);
-
-        console.log(`[MasterData] Found ${results.length} points from SQLite 🚀`);
-
+        const results = await super.searchPoints(normalizedQuery, limitCount);
         if (results.length > 0) {
-          return results.map((p: any) => ({
-            id: p.id,
-            name: p.name,
-            name_kana: p.name_kana,
-            region: p.region_name || '',
-            area: p.area_name || '',
-            zone: p.zone_name || '',
-            latitude: p.latitude,
-            longitude: p.longitude,
-            level: p.level || 'Unknown',
-            status: 'approved'
-          } as unknown as Point));
+          console.log(`[MasterData] Found ${results.length} points from SQLite (App) 🚀`);
+          return results;
         }
       } catch (e) {
-        console.error('SQLite point search failed:', e);
+        console.warn('SQLite point search failed, falling back...', e);
       }
     }
 
-    // 2. フォールバック: Firestore 検索
+    // フェイルオーバー: Firestore 検索
     console.log('[MasterData] Falling back to Firestore search... ☁️');
     const q = query(
       collection(firestoreDb, 'points'),
@@ -145,45 +65,19 @@ class MasterDataService {
     const normalizedQuery = text.trim();
     if (!normalizedQuery) return [];
 
-    const isAvailable = await this.initialize();
-    if (isAvailable && this.sqliteDb) {
+    if (await this.initialize()) {
       try {
-        const sql = `
-          SELECT * FROM master_creatures
-          WHERE search_text LIKE ?
-          ORDER BY
-            CASE
-              WHEN name = ? THEN 1
-              WHEN name LIKE ? THEN 2
-              ELSE 3
-            END,
-            name ASC
-          LIMIT ?
-        `;
-        const results = await this.sqliteDb.getAllAsync(sql, [
-          `%${normalizedQuery}%`,
-          normalizedQuery,
-          `${normalizedQuery}%`,
-          limitCount
-        ]);
-
-        console.log(`[MasterData] Found ${results.length} creatures from SQLite 🚀`);
-
+        const results = await super.searchCreatures(normalizedQuery, limitCount);
         if (results.length > 0) {
-          return results.map((c: any) => ({
-            id: c.id,
-            name: c.name,
-            name_kana: c.name_kana,
-            category: c.category || '',
-            status: 'approved'
-          } as unknown as Creature));
+          console.log(`[MasterData] Found ${results.length} creatures from SQLite (App) 🚀`);
+          return results;
         }
       } catch (e) {
-        console.error('SQLite creature search failed, falling back...', e);
+        console.warn('SQLite creature search failed, falling back...', e);
       }
     }
 
-    // 2. フォールバック: Firestore 検索
+    // フェイルオーバー: Firestore 検索
     console.log('[MasterData] Falling back to Firestore search... ☁️');
     const q = query(
       collection(firestoreDb, 'creatures'),
@@ -201,91 +95,75 @@ class MasterDataService {
    * 最新レビューの取得（ホーム画面用）
    */
   async getLatestReviews(limitCount = 20): Promise<any[]> {
-    const isAvailable = await this.initialize();
-    if (isAvailable && this.sqliteDb) {
-      try {
-        const results = await this.sqliteDb.getAllAsync(
-          'SELECT * FROM master_point_reviews ORDER BY created_at DESC LIMIT ?',
-          [limitCount]
-        );
-        return results;
-      } catch (e) {
-        console.error('SQLite master reviews fetch failed:', e);
-      }
-    }
-    return [];
+    const q = query(
+      collection(firestoreDb, 'reviews'),
+      where('status', '==', 'approved'),
+      orderBy('date', 'desc'),
+      firestoreLimit(limitCount)
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   }
 
   /**
    * 特定ポイントのレビュー取得
    */
   async getReviewsByPoint(pointId: string): Promise<any[]> {
-    const isAvailable = await this.initialize();
-    if (isAvailable && this.sqliteDb) {
-      try {
-        const results = await this.sqliteDb.getAllAsync(
-          'SELECT * FROM master_point_reviews WHERE point_id = ? ORDER BY created_at DESC',
-          [pointId]
-        );
-        return results;
-      } catch (e) {
-        console.error('SQLite point reviews fetch failed:', e);
-      }
-    }
-    return [];
+    const q = query(
+      collection(firestoreDb, 'reviews'),
+      where('pointId', '==', pointId),
+      where('status', '==', 'approved'),
+      orderBy('date', 'desc')
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   }
 
   /**
    * エリア全体のレビュー取得（点数計算用等）
    */
   async getReviewsByArea(areaId: string): Promise<any[]> {
-    const isAvailable = await this.initialize();
-    if (isAvailable && this.sqliteDb) {
-      try {
-        const results = await this.sqliteDb.getAllAsync(
-          'SELECT * FROM master_point_reviews WHERE area_id = ? ORDER BY created_at DESC',
-          [areaId]
-        );
-        return results;
-      } catch (e) {
-        console.error('SQLite area reviews fetch failed:', e);
-      }
-    }
-    return [];
+    const q = query(
+      collection(firestoreDb, 'reviews'),
+      where('areaId', '==', areaId),
+      where('status', '==', 'approved'),
+      orderBy('date', 'desc')
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   }
 
   /**
    * 全ポイントの取得
    */
   async getAllPoints(): Promise<Point[]> {
-    const isAvailable = await this.initialize();
-    if (isAvailable && this.sqliteDb) {
+    if (await this.initialize()) {
       try {
-        const results = await this.sqliteDb.getAllAsync('SELECT * FROM master_points ORDER BY name ASC');
-        return results.map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          name_kana: p.name_kana,
-          region: p.region_name || '',
-          area: p.area_name || '',
-          zone: p.zone_name || '',
-          latitude: p.latitude,
-          longitude: p.longitude,
-          level: p.level || 'Unknown',
-          status: 'approved'
-        } as unknown as Point));
+        const sql = 'SELECT * FROM master_points ORDER BY name ASC';
+        const results = await appDbEngine.getAllAsync<any>(sql);
+        if (results.length > 0) {
+          return results.map(p => ({
+            id: p.id,
+            name: p.name,
+            name_kana: p.name_kana,
+            region: p.region_name || '',
+            area: p.area_name || '',
+            zone: p.zone_name || '',
+            latitude: p.latitude,
+            longitude: p.longitude,
+            status: 'approved'
+          } as unknown as Point));
+        }
       } catch (e: any) {
-        // テーブルがない、あるいはカラムが古い場合はログを出して Firestore へ
         if (e.message?.includes('no such table')) {
-          console.warn('[MasterData] master_points table not found in SQLite. Initial sync might be pending.');
+          console.warn('[MasterData] master_points table not found in SQLite.');
         } else {
           console.error('SQLite getAllPoints failed:', e);
         }
       }
     }
-
-    console.log('[MasterData] Loading all points from Firestore... ☁️');
-    const snapshot = await getDocs(query(collection(firestoreDb, 'points'), where('status', '==', 'approved')));
+    const q = query(collection(firestoreDb, 'points'), where('status', '==', 'approved'), orderBy('name'));
+    const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Point));
   }
 
@@ -293,22 +171,25 @@ class MasterDataService {
    * 全生物の取得
    */
   async getAllCreatures(): Promise<Creature[]> {
-    const isAvailable = await this.initialize();
-    if (isAvailable && this.sqliteDb) {
+    if (await this.initialize()) {
       try {
-        const results = await this.sqliteDb.getAllAsync('SELECT * FROM master_creatures ORDER BY name ASC');
-        return results.map((c: any) => ({
-          id: c.id,
-          name: c.name,
-          name_kana: c.name_kana,
-          category: c.category || '',
-          status: 'approved'
-        } as unknown as Creature));
+        const sql = 'SELECT * FROM master_creatures ORDER BY name ASC';
+        const results = await appDbEngine.getAllAsync<any>(sql);
+        if (results.length > 0) {
+          return results.map(c => ({
+            id: c.id,
+            name: c.name,
+            name_kana: c.name_kana,
+            category: c.category || '',
+            status: 'approved'
+          } as unknown as Creature));
+        }
       } catch (e) {
         console.error('SQLite getAllCreatures failed:', e);
       }
     }
-    const snapshot = await getDocs(query(collection(firestoreDb, 'creatures'), where('status', '==', 'approved')));
+    const q = query(collection(firestoreDb, 'creatures'), where('status', '==', 'approved'), orderBy('name'));
+    const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Creature));
   }
 
@@ -316,10 +197,10 @@ class MasterDataService {
    * 全ポイント生物紐付けデータの取得
    */
   async getAllPointCreatures(): Promise<any[]> {
-    const isAvailable = await this.initialize();
-    if (isAvailable && this.sqliteDb) {
+    if (await this.initialize()) {
       try {
-        const results = await this.sqliteDb.getAllAsync('SELECT * FROM master_point_creatures');
+        const sql = 'SELECT * FROM master_point_creatures';
+        const results = await appDbEngine.getAllAsync<any>(sql);
         return results.map((r: any) => ({
           id: r.id,
           pointId: r.point_id,
@@ -336,4 +217,4 @@ class MasterDataService {
   }
 }
 
-export const masterDataService = new MasterDataService();
+export const masterDataService = new MasterDataService(appDbEngine);
