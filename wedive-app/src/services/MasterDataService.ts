@@ -81,7 +81,6 @@ class MasterDataService {
     const normalizedQuery = text.trim();
     if (!normalizedQuery) return [];
 
-    // 1. SQLite が使えれば SQLite で検索
     const isAvailable = await this.initialize();
     if (isAvailable && this.sqliteDb) {
       try {
@@ -121,7 +120,7 @@ class MasterDataService {
           } as unknown as Point));
         }
       } catch (e) {
-        console.error('SQLite search failed, falling back to Firestore:', e);
+        console.error('SQLite point search failed:', e);
       }
     }
 
@@ -275,10 +274,17 @@ class MasterDataService {
           level: p.level || 'Unknown',
           status: 'approved'
         } as unknown as Point));
-      } catch (e) {
-        console.error('SQLite getAllPoints failed:', e);
+      } catch (e: any) {
+        // テーブルがない、あるいはカラムが古い場合はログを出して Firestore へ
+        if (e.message?.includes('no such table')) {
+          console.warn('[MasterData] master_points table not found in SQLite. Initial sync might be pending.');
+        } else {
+          console.error('SQLite getAllPoints failed:', e);
+        }
       }
     }
+
+    console.log('[MasterData] Loading all points from Firestore... ☁️');
     const snapshot = await getDocs(query(collection(firestoreDb, 'points'), where('status', '==', 'approved')));
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Point));
   }
