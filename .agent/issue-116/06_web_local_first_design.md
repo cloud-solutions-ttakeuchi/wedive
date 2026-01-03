@@ -54,12 +54,16 @@ graph TD
 
 ```text
 /Users/minarai/pgm/wedive/
-├── package.json            (Root: Workspaces 定義)
-├── wedive-shared/          (Core logic: Services, Repositories, Types)
-│   ├── package.json        (package name: "wedive-shared")
-│   └── src/                (TypeScript sources)
-├── wedive-app/             (Expo: mobile app)
-└── wedive-web/             (Vite: web app)
+├── package.json            (npm workspaces 有効化)
+├── wedive-shared/          <-- 【新設】共通パッケージ
+│   ├── src/
+│   │   ├── index.ts        (エントリポイント)
+│   │   ├── types/          (共通の型定義: Region, Point, Log 等を一本化)
+│   │   ├── repository/     (SQLiteExecutor: プラットフォーム抽象化)
+│   │   └── services/       (BaseMasterDataService: 共通検索ロジック)
+│   └── dist/               (ビルド済み成果物)
+├── wedive-app/             (wedive-shared を利用)
+└── wedive-web/             (wedive-shared を利用)
 ```
 
 ### 共通化のメリット
