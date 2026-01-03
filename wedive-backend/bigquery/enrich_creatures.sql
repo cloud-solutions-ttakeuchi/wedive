@@ -1,6 +1,6 @@
 
 -- 生物情報の増分エンリッチメント
-MERGE `{PROJECT_ID}.{DATASET_ID}.creatures_enriched` t
+MERGE `${PROJECT_ID}.${DATASET}.creatures_enriched` t
 USING (
   SELECT
     document_id AS id,
@@ -9,16 +9,16 @@ USING (
     JSON_VALUE(data, '$.englishName') AS e_name,
     JSON_VALUE(data, '$.family') AS family,
     JSON_VALUE(data, '$.category') AS cat
-  FROM `{PROJECT_ID}.{DATASET_ID}.creatures_raw_latest`
+  FROM `${PROJECT_ID}.${DATASET}.creatures_raw_latest`
 ) s
 ON t.id = s.id
 WHEN MATCHED AND (t.name != s.name OR t.search_text IS NULL) THEN
   UPDATE SET
     name = s.name,
-    name_kana = `{PROJECT_ID}.{DATASET_ID}.fn_to_kana`(s.name),
+    name_kana = `${PROJECT_ID}.${DATASET}.fn_to_kana`(s.name),
     search_text = CONCAT(
       s.name, ' ',
-      `{PROJECT_ID}.{DATASET_ID}.fn_to_kana`(s.name), ' ',
+      `${PROJECT_ID}.${DATASET}.fn_to_kana`(s.name), ' ',
       IFNULL(s.s_name, ''), ' ',
       IFNULL(s.e_name, ''), ' ',
       IFNULL(s.family, ''), ' ',
@@ -30,10 +30,10 @@ WHEN NOT MATCHED THEN
   VALUES (
     s.id,
     s.name,
-    `{PROJECT_ID}.{DATASET_ID}.fn_to_kana`(s.name),
+    `${PROJECT_ID}.${DATASET}.fn_to_kana`(s.name),
     CONCAT(
       s.name, ' ',
-      `{PROJECT_ID}.{DATASET_ID}.fn_to_kana`(s.name), ' ',
+      `${PROJECT_ID}.${DATASET}.fn_to_kana`(s.name), ' ',
       IFNULL(s.s_name, ''), ' ',
       IFNULL(s.e_name, ''), ' ',
       IFNULL(s.family, ''), ' ',

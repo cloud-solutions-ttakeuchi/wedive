@@ -24,7 +24,7 @@ SELECT
   JSON_QUERY(l.data, '$.profile') AS profile_json,
   CONCAT(JSON_VALUE(l.data, '$.location.pointName'), ' ', IFNULL(JSON_VALUE(l.data, '$.comment'), '')) AS search_text,
   JSON_VALUE(l.data, '$.createdAt') AS created_at
-FROM `wedive_master_data_v1`.logs_raw_latest l
+FROM `${PROJECT_ID}.${DATASET}`.logs_raw_latest l
 WHERE JSON_VALUE(l.data, '$.isPrivate') = 'false'
 ORDER BY date DESC, dive_number DESC
 LIMIT 100

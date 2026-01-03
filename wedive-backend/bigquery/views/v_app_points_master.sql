@@ -43,5 +43,5 @@ SELECT
   e.search_text AS search_text,
   JSON_VALUE(p.data, '$.status') AS status,
   JSON_VALUE(p.data, '$.createdAt') AS created_at
-FROM `wedive_master_data_v1`.points_raw_latest p
-LEFT JOIN `wedive_master_data_v1`.points_enriched e ON p.document_id = e.id
+FROM `${PROJECT_ID}.${DATASET}`.points_raw_latest p
+LEFT JOIN `${PROJECT_ID}.${DATASET}`.points_enriched e ON p.document_id = e.id

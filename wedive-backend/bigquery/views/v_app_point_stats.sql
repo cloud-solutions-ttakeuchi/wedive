@@ -11,7 +11,7 @@ WITH monthly_metrics AS (
     AVG(CAST(JSON_VALUE(data, '$.radar.comfort') AS FLOAT64)) AS avg_co,
     AVG(CAST(JSON_VALUE(data, '$.radar.satisfaction') AS FLOAT64)) AS avg_sa,
     COUNT(*) AS count
-  FROM `wedive_master_data_v1`.reviews_raw_latest
+  FROM `${PROJECT_ID}.${DATASET}`.reviews_raw_latest
   WHERE JSON_VALUE(data, '$.status') = 'approved'
   GROUP BY point_id, month
 ),
@@ -40,7 +40,7 @@ SELECT
   AVG(CAST(JSON_VALUE(r.data, '$.radar.visibility') AS FLOAT64)) AS radar_visibility,
   ANY_VALUE(m.monthly_stats_json) AS monthly_analysis,
   CURRENT_TIMESTAMP() AS aggregated_at
-FROM `wedive_master_data_v1`.reviews_raw_latest r
+FROM `${PROJECT_ID}.${DATASET}`.reviews_raw_latest r
 LEFT JOIN monthly_json m ON JSON_VALUE(r.data, '$.pointId') = m.point_id
 WHERE JSON_VALUE(r.data, '$.status') = 'approved'
 GROUP BY point_id
