@@ -19,6 +19,9 @@ import {
 } from 'firebase/firestore';
 import { connectFunctionsEmulator } from 'firebase/functions';
 
+import { MasterDataSyncService } from '../services/MasterDataSyncService';
+import { masterDbEngine } from '../services/WebSQLiteEngine';
+import { masterDataService } from '../services/MasterDataService';
 // Helper to remove undefined values
 const sanitizePayload = (data: any): any => {
   if (Array.isArray(data)) {
@@ -139,55 +142,59 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  // 1. Master Data Sync (Regions, Zones, Areas)
+  // 1 & 2. Local-First Master Data Sync & Load
   useEffect(() => {
-    const unsubR = onSnapshot(collection(firestore, 'regions'), (snap) => {
-      if (!snap.empty) setRegions(snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as any)));
-    }, (err) => console.error("Snapshot error (regions):", err));
-    const unsubZ = onSnapshot(collection(firestore, 'zones'), (snap) => {
-      if (!snap.empty) setZones(snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as any)));
-    }, (err) => console.error("Snapshot error (zones):", err));
-    const unsubA = onSnapshot(collection(firestore, 'areas'), (snap) => {
-      if (!snap.empty) setAreas(snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as any)));
-    }, (err) => console.error("Snapshot error (areas):", err));
-    return () => { unsubR(); unsubZ(); unsubA(); };
-  }, []);
+    const initMasterData = async () => {
+      try {
+        console.log('[MasterData] Initializing Local-First engine...');
 
-  // 2. Core Data Sync (Creatures, Points, PointCreatures)
-  useEffect(() => {
-    const creaturesQuery = query(collection(firestore, 'creatures'), where('status', 'in', ['approved', 'pending']));
-    const unsubCreatures = onSnapshot(creaturesQuery, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Creature));
-      setCreatures(data);
-    });
+        // A. SQLite 同期 (Firebase Storage から最新 DB を取得)
+        await MasterDataSyncService.syncMasterData();
 
-    const pointsQuery = query(collection(firestore, 'points'), where('status', 'in', ['approved', 'pending']));
-    const unsubPoints = onSnapshot(pointsQuery, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Point));
-      setPoints(data);
-    });
+        // B. SQLite からデータをロード
+        await masterDbEngine.initialize();
 
-    const unsubPointCreatures = onSnapshot(collection(firestore, 'point_creatures'), (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as PointCreature));
-      setPointCreatures(data);
-    }, (err) => console.error("Snapshot error (point_creatures):", err));
+        const [r, z, a, c, p, pc] = await Promise.all([
+          masterDbEngine.getAllAsync<any>('SELECT * FROM master_regions'),
+          masterDbEngine.getAllAsync<any>('SELECT * FROM master_zones'),
+          masterDbEngine.getAllAsync<any>('SELECT * FROM master_areas'),
+          masterDbEngine.getAllAsync<any>('SELECT * FROM master_creatures LIMIT 1000'), // 全件はメモリ負荷を考慮し制限または検索ベースへ
+          masterDbEngine.getAllAsync<any>('SELECT * FROM master_points LIMIT 1000'),
+          masterDbEngine.getAllAsync<any>('SELECT * FROM master_point_creatures')
+        ]);
 
+        if (r.length) setRegions(r);
+        if (z.length) setZones(z.map(i => ({ ...i, regionId: i.region_id })));
+        if (a.length) setAreas(a.map(i => ({ ...i, zoneId: i.zone_id, regionId: i.region_id })));
+        if (c.length) setCreatures(c.map(i => ({ ...i, status: 'approved' })));
+        if (p.length) setPoints(p.map(i => ({ ...i, status: 'approved' })));
+        if (pc.length) setPointCreatures(pc.map(i => ({ ...i, status: 'approved' })));
+
+        console.log('[MasterData] Master data loaded from SQLite.');
+
+      } catch (e) {
+        console.error('[MasterData] Failed to load from SQLite, using initial data:', e);
+      }
+    };
+
+    initMasterData();
+
+    // 変更監視が必要な動的データ（レビュー・パブリックログ）のみ onSnapshot を継続
     const unsubReviews = onSnapshot(query(
       collection(firestore, 'reviews'),
-      limit(200)
+      limit(100)
     ), (snapshot) => {
       const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Review))
-        .filter(r => r.status === 'approved' || !r.status) // statusがない古いデータも承認済みとして扱う
+        .filter(r => r.status === 'approved' || !r.status)
         .sort((a, b) => {
           const timeA = new Date(a.date || a.createdAt || 0).getTime();
           const timeB = new Date(b.date || b.createdAt || 0).getTime();
           return timeB - timeA;
         });
       setReviews(data);
-    }, (err) => console.error("Snapshot error (reviews/all_public):", err));
+    });
 
-    // Global Recent Public Logs
-    let unsubPublicLogs: () => void = () => { };
+    let unsubPublicLogs = () => { };
     try {
       const publicLogsQuery = query(collectionGroup(firestore, 'logs'), where('isPrivate', '==', false), orderBy('date', 'desc'), limit(20));
       unsubPublicLogs = onSnapshot(publicLogsQuery, (snapshot) => {
@@ -196,7 +203,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     } catch (e) { console.error(e); }
 
     return () => {
-      unsubCreatures(); unsubPoints(); unsubPointCreatures(); unsubReviews(); unsubPublicLogs();
+      unsubReviews();
+      unsubPublicLogs();
     };
   }, []);
 

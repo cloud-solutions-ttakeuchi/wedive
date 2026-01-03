@@ -1,21 +1,24 @@
-import { SQLiteExecutor, masterDbEngine } from './WebSQLiteEngine';
+import { BaseMasterDataService } from 'wedive-shared';
+import type { Point, Creature } from 'wedive-shared';
+import { masterDbEngine } from './WebSQLiteEngine';
 import { collection, query, where, getDocs, limit as firestoreLimit, orderBy, startAt, endAt } from 'firebase/firestore';
 import { db as firestoreDb } from '../lib/firebase';
-import type { Point, Creature } from '../types';
 
 /**
- * Web 版 MasterDataService プロトタイプ
- * モバイル版のロジックを SQLiteExecutor 経由で再利用
+ * Web 版 MasterDataService
+ * wedive-shared の BaseMasterDataService を継承し、Web 固有の
+ * 初期化処理や Firestore フォールバックを追加。
  */
-export class MasterDataService {
+export class MasterDataService extends BaseMasterDataService {
   private isInitialized = false;
-
-  constructor(private sqlite: SQLiteExecutor) { }
 
   async initialize(): Promise<boolean> {
     if (this.isInitialized) return true;
     try {
-      // 本来はここで WebWorker 等の初期化を待つ
+      // エンジンの初期化 (IDBのオープンなど)
+      if ('initialize' in this.sqlite && typeof this.sqlite.initialize === 'function') {
+        await this.sqlite.initialize();
+      }
       this.isInitialized = true;
       return true;
     } catch (e) {
@@ -24,57 +27,23 @@ export class MasterDataService {
     }
   }
 
-  /**
-   * ポイント検索（ハイブリッド）
-   * モバイル版のロジックをほぼそのまま移植可能
-   */
   async searchPoints(text: string, limitCount = 50): Promise<Point[]> {
     const normalizedQuery = text.trim();
     if (!normalizedQuery) return [];
 
     if (await this.initialize()) {
       try {
-        const sql = `
-          SELECT * FROM master_points
-          WHERE search_text LIKE ?
-          ORDER BY
-            CASE
-              WHEN name = ? THEN 1
-              WHEN name LIKE ? THEN 2
-              ELSE 3
-            END,
-            name ASC
-          LIMIT ?
-        `;
-        const results = await this.sqlite.getAllAsync<any>(sql, [
-          `%${normalizedQuery}%`,
-          normalizedQuery,
-          `${normalizedQuery}%`,
-          limitCount
-        ]);
-
-        console.log(`[MasterData] Found ${results.length} points from SQLite (Web) 🚀`);
-
+        const results = await super.searchPoints(normalizedQuery, limitCount);
         if (results.length > 0) {
-          return results.map(p => ({
-            id: p.id,
-            name: p.name,
-            name_kana: p.name_kana,
-            region: p.region_name || '',
-            area: p.area_name || '',
-            zone: p.zone_name || '',
-            latitude: p.latitude,
-            longitude: p.longitude,
-            level: p.level || 'Unknown',
-            status: 'approved'
-          } as unknown as Point));
+          console.log(`[MasterData] Found ${results.length} points from SQLite (Web) 🚀`);
+          return results;
         }
       } catch (e) {
         console.warn('SQLite point search failed, falling back...', e);
       }
     }
 
-    // フェイルオーバー: Firestore 検索 (モバイル版と同一)
+    // フェイルオーバー: Firestore 検索
     console.log('[MasterData] Falling back to Firestore search... ☁️');
     const q = query(
       collection(firestoreDb, 'points'),
@@ -86,6 +55,36 @@ export class MasterDataService {
     );
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Point));
+  }
+
+  async searchCreatures(text: string, limitCount = 50): Promise<Creature[]> {
+    const normalizedQuery = text.trim();
+    if (!normalizedQuery) return [];
+
+    if (await this.initialize()) {
+      try {
+        const results = await super.searchCreatures(normalizedQuery, limitCount);
+        if (results.length > 0) {
+          console.log(`[MasterData] Found ${results.length} creatures from SQLite (Web) 🚀`);
+          return results;
+        }
+      } catch (e) {
+        console.warn('SQLite creature search failed, falling back...', e);
+      }
+    }
+
+    // フェイルオーバー: Firestore 検索
+    console.log('[MasterData] Falling back to Firestore search... ☁️');
+    const q = query(
+      collection(firestoreDb, 'creatures'),
+      where('status', '==', 'approved'),
+      orderBy('name'),
+      startAt(normalizedQuery),
+      endAt(normalizedQuery + '\uf8ff'),
+      firestoreLimit(20)
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Creature));
   }
 }
 

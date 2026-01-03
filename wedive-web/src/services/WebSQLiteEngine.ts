@@ -3,23 +3,17 @@ import * as SQLite from 'wa-sqlite';
 import SQLiteESMFactory from 'wa-sqlite/dist/wa-sqlite-async.mjs';
 // @ts-ignore
 import { IDBBatchAtomicVFS } from 'wa-sqlite/src/vfs/IDBBatchAtomicVFS.js';
-
-/**
- * SQLite 実行インターフェース
- * モバイル版 (expo-sqlite) とロジックを共通化するための抽象レイヤー
- */
-export interface SQLiteExecutor {
-  getAllAsync<T>(sql: string, params?: any[]): Promise<T[]>;
-  runAsync(sql: string, params?: any[]): Promise<void>;
-  close(): Promise<void>;
-}
+import type { SQLiteExecutor } from 'wedive-shared';
 
 export class WebSQLiteEngine implements SQLiteExecutor {
   private db: number | null = null;
   private sqlite: any = null;
   private api: any = null;
+  private dbName: string;
 
-  constructor(private dbName: string) { }
+  constructor(dbName: string) {
+    this.dbName = dbName;
+  }
 
   async initialize() {
     if (this.db) return;
@@ -64,6 +58,35 @@ export class WebSQLiteEngine implements SQLiteExecutor {
     if (this.db) {
       await this.api.close(this.db);
       this.db = null;
+    }
+  }
+
+  /**
+   * バイナリデータ (Uint8Array) からデータベースをインポート
+   */
+  async importDatabase(data: Uint8Array): Promise<void> {
+    if (!this.sqlite || !this.api) await this.initialize();
+
+    // 1. メモリ上に一時的なデータベースを作成
+    const memDb = await this.api.open_v1('temp_mem', SQLite.SQLITE_OPEN_READWRITE | SQLite.SQLITE_OPEN_CREATE | SQLite.SQLITE_OPEN_MEMORY);
+
+    try {
+      // 2. バイナリデータをロード (deserialize)
+      // Note: wa-sqlite の deserialize 実装を確認
+      await this.api.deserialize(memDb, 'main', data, data.length, data.length, 1 | 2); // 1: FREEONCLOSE, 2: RESIZEABLE
+
+      // 3. 永続化データベースを開く
+      if (!this.db) {
+        this.db = await this.api.open_v1(this.dbName);
+      }
+
+      // 4. メモリ DB から永続 DB へ内容をコピー (VACUUM INTO は SQLite 3.27+ で利用可能)
+      // または単純に現在の DB を閉じてファイルを置き換える手法もありますが、
+      // ここでは一番安全な「一時 DB として開き、永続 DB へ移行」するフローを想定
+      await this.api.exec(memDb, `VACUUM INTO '${this.dbName}'`);
+
+    } finally {
+      await this.api.close(memDb);
     }
   }
 }
