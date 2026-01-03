@@ -20,26 +20,26 @@ echo "Creating/Checking BigQuery Dataset and GCS Bucket..."
 bq mk --location=$LOCATION --dataset $PROJECT_ID:$DATASET || true
 gsutil mb -l $LOCATION gs://$BUCKET || true
 
-# [NEW] Create Enriched Tables (Schema Definition)
-echo "Creating Enriched Tables..."
-bq --location=$LOCATION query --use_legacy_sql=false "CREATE TABLE IF NOT EXISTS \`$PROJECT_ID.$DATASET.points_enriched\` (
+# [NEW] Create Tables (Drop and Recreate for schema consistency)
+# Note: Raw tables (*_raw_latest) are managed by Firebase Extensions.
+echo "Initializing Master Data Tables..."
+
+# 1. points_enriched
+bq --location=$LOCATION query --use_legacy_sql=false "DROP TABLE IF EXISTS \`$PROJECT_ID.$DATASET.points_enriched\`"
+bq --location=$LOCATION query --use_legacy_sql=false "CREATE TABLE \`$PROJECT_ID.$DATASET.points_enriched\` (
     id STRING,
     name STRING,
     name_kana STRING,
+    search_text STRING,
     updated_at TIMESTAMP
 )"
-bq --location=$LOCATION query --use_legacy_sql=false "CREATE TABLE IF NOT EXISTS \`$PROJECT_ID.$DATASET.creatures_enriched\` (
+
+# 2. creatures_enriched
+bq --location=$LOCATION query --use_legacy_sql=false "DROP TABLE IF EXISTS \`$PROJECT_ID.$DATASET.creatures_enriched\`"
+bq --location=$LOCATION query --use_legacy_sql=false "CREATE TABLE \`$PROJECT_ID.$DATASET.creatures_enriched\` (
     id STRING,
     name STRING,
     name_kana STRING,
-    scientificName STRING,
-    scientificName_kana STRING,
-    englishName STRING,
-    englishName_kana STRING,
-    family STRING,
-    family_kana STRING,
-    category STRING,
-    category_kana STRING,
     search_text STRING,
     updated_at TIMESTAMP
 )"

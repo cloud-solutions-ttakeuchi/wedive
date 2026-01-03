@@ -1,4 +1,4 @@
-import { collection, query, getDocs, doc, setDoc, updateDoc, deleteDoc, orderBy } from 'firebase/firestore';
+import { collection, query, getDocs, doc, setDoc, updateDoc, deleteDoc, orderBy, where } from 'firebase/firestore';
 import { db as firestoreDb } from '../firebase';
 import { DiveLog, User } from '../types';
 
@@ -238,10 +238,40 @@ export class UserDataService {
       }
 
       // 2. 自分のレビューの取得
-      // TODO: Firestore の reviews コレクションから userId == userId のものを取得して my_reviews に保存
+      const reviewsQuery = query(
+        collection(firestoreDb, 'reviews'),
+        where('userId', '==', userId)
+      );
+      const reviewSnapshot = await getDocs(reviewsQuery);
+      for (const doc of reviewSnapshot.docs) {
+        const data = doc.data();
+        await this.sqliteDb.runAsync(
+          `INSERT OR REPLACE INTO my_reviews (id, point_id, rating, comment, images_json, condition_json, metrics_json, radar_json, tags_json, status, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [doc.id, data.pointId, data.rating, data.comment, JSON.stringify(data.images || []), JSON.stringify(data.condition || {}), JSON.stringify(data.metrics || {}), JSON.stringify(data.radar || {}), JSON.stringify(data.tags || []), data.status, data.createdAt]
+        );
+      }
 
-      // 3. お気に入り、ブックマーク、プロフィールの同期
-      // TODO: 同様に実装
+      // 3. ブックマークの取得
+      const bookmarksSnapshot = await getDocs(collection(firestoreDb, 'users', userId, 'bookmarks'));
+      for (const doc of bookmarksSnapshot.docs) {
+        await this.sqliteDb.runAsync('INSERT OR REPLACE INTO my_bookmarks (point_id) VALUES (?)', [doc.id]);
+      }
+
+      // 4. お気に入りの取得
+      const favoritesSnapshot = await getDocs(collection(firestoreDb, 'users', userId, 'favorites'));
+      for (const doc of favoritesSnapshot.docs) {
+        await this.sqliteDb.runAsync('INSERT OR REPLACE INTO my_favorites (creature_id) VALUES (?)', [doc.id]);
+      }
+
+      // 5. プロフィール（settings）の取得
+      const userDoc = await getDocs(query(collection(firestoreDb, 'users'), where('id', '==', userId)));
+      if (!userDoc.empty) {
+        const userData = userDoc.docs[0].data();
+        await this.saveSetting('profile', userData);
+      }
+
+      console.log('Initial sync completed successfully.');
 
     } catch (error) {
       console.error('Initial sync failed:', error);
