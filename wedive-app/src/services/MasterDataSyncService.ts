@@ -1,6 +1,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Asset } from 'expo-asset';
 import { GzipHelper } from '../utils/GzipHelper';
 import { userDataService } from './UserDataService';
 
@@ -9,6 +10,7 @@ const { cacheDirectory, documentDirectory } = FileSystem;
 const GCS_MASTER_URL = 'https://storage.googleapis.com/wedive-app-static-master/v1/master/latest.db.gz';
 const MASTER_DB_NAME = 'master.db';
 const ETAG_STORAGE_KEY = 'master_db_etag';
+const BUNDLED_DB_ASSET = require('../../assets/master.db');
 
 export class MasterDataSyncService {
   /**
@@ -16,6 +18,9 @@ export class MasterDataSyncService {
    */
   static async syncMasterData(): Promise<void> {
     try {
+      // 0. まず内蔵DBがあるか確認し、なければ展開する
+      await this.ensureDatabaseExists();
+
       console.log('[Sync] Checking master data update...');
 
       // 1. ETag の取得（HEADリクエスト）
@@ -56,6 +61,37 @@ export class MasterDataSyncService {
     } catch (error) {
       console.warn('[Sync] Master data sync failed:', error);
       // 通信エラー等の場合は既存のローカルDBを使用するため、エラーを伝播させない
+    }
+  }
+
+  /**
+   * 同梱されているDBアセットを展開する（必要な場合のみ）
+   */
+  private static async ensureDatabaseExists() {
+    const sqliteDir = (documentDirectory || '') + 'SQLite/';
+    const dbPath = sqliteDir + MASTER_DB_NAME;
+    const dbInfo = await FileSystem.getInfoAsync(dbPath);
+
+    if (!dbInfo.exists) {
+      console.log('[Sync] No local database found. Extracting bundled asset...');
+
+      // SQLiteディレクトリを作成
+      const dirInfo = await FileSystem.getInfoAsync(sqliteDir);
+      if (!dirInfo.exists) {
+        await FileSystem.makeDirectoryAsync(sqliteDir, { intermediates: true });
+      }
+
+      // Bundleされたアセットをスマホのドキュメントにコピー
+      const asset = Asset.fromModule(BUNDLED_DB_ASSET);
+      await asset.downloadAsync();
+
+      if (asset.localUri) {
+        await FileSystem.copyAsync({
+          from: asset.localUri,
+          to: dbPath
+        });
+        console.log('[Sync] Bundled database extracted successfully.');
+      }
     }
   }
 
