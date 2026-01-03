@@ -3,6 +3,12 @@
   "compilerOptions": {
     "strict": true,
     "paths": {
+      "wedive-shared": [
+        "../wedive-shared/src"
+      ],
+      "wedive-shared/*": [
+        "../wedive-shared/src/*"
+      ],
       "@/*": [
         "./*"
       ]
