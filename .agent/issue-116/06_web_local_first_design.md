@@ -187,3 +187,14 @@ npm workspaces を活用し、以下のステップでモノレポ環境を構�
 - **共通化の恩恵**: 検索ロジック（`search_text` ヒット順など）を修正した際、Web と App 両方に一撃で反映されるようになります。
 - **コストの徹底排除**: 常時接続を辞め、マスタも個人ログも「必要な時だけ引っ張る」ストロング・オフライン・スタイルを Web でも実現します。
 - **爆速化**: OPFS + SQLite Wasm により、数千件のログの集計や検索が、サーバーへの往復なしにミリ秒単位で完了します。
+
+
+## ビルドエラー時の対応
+
+```
+# エラーが出ている Tailwind の Linux 用バイナリを直接叩き込む
+npm install @tailwindcss/oxide-linux-x64-gnu --save-optional
+
+# 前回の lightningcss のエラーも念のため同様に処理
+npm install lightningcss-linux-x64-gnu --save-optional
+```

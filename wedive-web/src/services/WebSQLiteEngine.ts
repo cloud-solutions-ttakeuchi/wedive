@@ -2,7 +2,7 @@ import * as SQLite from 'wa-sqlite';
 // @ts-ignore
 import SQLiteESMFactory from 'wa-sqlite/dist/wa-sqlite-async.mjs';
 // @ts-ignore
-import { IDBBatchAtomicVFS } from 'wa-sqlite/src/vfs/IDBBatchAtomicVFS.js';
+import { IDBBatchAtomicVFS } from 'wa-sqlite/src/examples/IDBBatchAtomicVFS.js';
 import type { SQLiteExecutor } from 'wedive-shared';
 
 export class WebSQLiteEngine implements SQLiteExecutor {
