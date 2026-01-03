@@ -1,12 +1,16 @@
-import { SQLiteExecutor } from '../repository/SQLiteExecutor';
-import { Point, Creature } from '../types';
+import type { SQLiteExecutor } from '../repository/SQLiteExecutor';
+import type { Point, Creature } from '../types';
 
 /**
  * Web と App で共有されるマスタデータアクセスの基本クラス
  * 固有のストレージ (SQLite / Firestore) への依存を SQLiteExecutor 経由で抽象化します。
  */
 export class BaseMasterDataService {
-  constructor(protected sqlite: SQLiteExecutor) { }
+  protected sqlite: SQLiteExecutor;
+
+  constructor(sqlite: SQLiteExecutor) {
+    this.sqlite = sqlite;
+  }
 
   /**
    * ポイントの高速検索 (search_text 利用)

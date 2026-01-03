@@ -1,1 +1,21 @@
-export * from 'wedive-shared';
+export type {
+  User,
+  Log,
+  DiveLog,
+  Rarity,
+  Creature,
+  Point,
+  Area,
+  Region,
+  Zone,
+  PointCreature,
+  Review,
+  ReviewRadar,
+  PointCreatureProposal,
+  CreatureProposal,
+  PointProposal,
+  CreatureStats,
+  CertificationMaster,
+  BadgeMaster,
+  RankMaster
+} from 'wedive-shared';

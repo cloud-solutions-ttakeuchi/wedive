@@ -184,22 +184,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       limit(100)
     ), (snapshot) => {
       const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Review))
-        .filter(r => r.status === 'approved' || !r.status)
+        .filter((r: Review) => r.status === 'approved' || !r.status)
         .sort((a, b) => {
           const timeA = new Date(a.date || a.createdAt || 0).getTime();
           const timeB = new Date(b.date || b.createdAt || 0).getTime();
           return timeB - timeA;
         });
       setReviews(data);
-    });
+    }, (err: Error) => console.error("Snapshot error (reviews):", err));
 
     let unsubPublicLogs = () => { };
     try {
       const publicLogsQuery = query(collectionGroup(firestore, 'logs'), where('isPrivate', '==', false), orderBy('date', 'desc'), limit(20));
       unsubPublicLogs = onSnapshot(publicLogsQuery, (snapshot) => {
         setRecentLogs(snapshot.docs.map(doc => doc.data() as Log));
-      });
-    } catch (e) { console.error(e); }
+      }, (err: Error) => console.error("Snapshot error (public logs):", err));
+    } catch (e: any) { console.error(e); }
 
     return () => {
       unsubReviews();
@@ -306,7 +306,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       : query(collection(firestore, 'reviews'), where('userId', '==', userId));
     const unsubR = onSnapshot(qR, (snapshot) => {
       setProposalReviews(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Review)));
-    }, (err) => console.error("Snapshot error (personal/pending reviews):", err));
+    }, (err: Error) => console.error("Snapshot error (personal/pending reviews):", err));
 
     // Point-Creature Proposals (New)
     const qPPC = isAdmin
@@ -314,7 +314,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       : query(collection(firestore, 'point_creature_proposals'), where('submitterId', '==', userId), where('status', '==', 'pending'));
     const unsubPPC = onSnapshot(qPPC, (snapshot) => {
       setProposalPointCreatures(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as PointCreatureProposal)));
-    }, (err) => console.error("Snapshot error (point-creature proposals):", err));
+    }, (err: Error) => console.error("Snapshot error (point-creature proposals):", err));
 
     return () => {
       unsubLogs();
@@ -333,7 +333,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const pendingMasterPoints = points.filter((p: Point) => p.status === 'pending');
     const prevIds = new Set(dbProposalPoints.map((p: Point) => p.id));
     const newItems = pendingMasterPoints.filter((p: Point) => !prevIds.has(p.id));
-    return [...dbProposalPoints, ...newItems].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+    return [...dbProposalPoints, ...newItems].sort((a: Point, b: Point) => (b.createdAt || '').localeCompare(a.createdAt || ''));
   }, [dbProposalPoints, points, currentUser.role]);
 
   const proposalCreatures = useMemo(() => {
@@ -343,7 +343,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const pendingMasterCreatures = creatures.filter((c: Creature) => c.status === 'pending');
     const prevIds = new Set(dbProposalCreatures.map((c: Creature) => c.id));
     const newItems = pendingMasterCreatures.filter((c: Creature) => !prevIds.has(c.id));
-    return [...dbProposalCreatures, ...newItems].sort((a, b) => (b.id || '').localeCompare(a.id || ''));
+    return [...dbProposalCreatures, ...newItems].sort((a: Creature, b: Creature) => (b.id || '').localeCompare(a.id || ''));
   }, [dbProposalCreatures, creatures, currentUser.role]);
 
   // Admin Specific: Fetch All Users
