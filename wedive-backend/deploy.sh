@@ -24,10 +24,7 @@ gsutil mb -l $LOCATION gs://$BUCKET || true
 echo "Deploying BigQuery Tables..."
 for file in bigquery/tables/*.sql; do
     table_name=$(basename "$file" .sql)
-    echo "Creating Table: $table_name"
-    # DROP してから CREATE することでスキーマの強制同期を行う
-    bq query --use_legacy_sql=false "DROP TABLE IF EXISTS \`$PROJECT_ID.$DATASET.$table_name\`"
-
+    echo "Deploying Table: $table_name"
     # envsubst を使用して SQL 内の変数を展開
     sql_content=$(envsubst < "$file")
     bq query --use_legacy_sql=false "$sql_content"
