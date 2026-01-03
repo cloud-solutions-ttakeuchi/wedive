@@ -26,7 +26,7 @@ export class WebSQLiteEngine implements SQLiteExecutor {
     const vfs = new IDBBatchAtomicVFS(this.dbName);
     this.api.vfs_register(vfs, true);
 
-    this.db = await this.api.open_v1(this.dbName);
+    this.db = await this.api.open_v2(this.dbName);
     console.log(`[SQLite Web] Database ${this.dbName} opened via OPFS/IDB.`);
   }
 
@@ -69,7 +69,7 @@ export class WebSQLiteEngine implements SQLiteExecutor {
     if (!this.sqlite || !this.api) await this.initialize();
 
     // 1. メモリ上に一時的なデータベースを作成
-    const memDb = await this.api.open_v1('temp_mem', SQLite.SQLITE_OPEN_READWRITE | SQLite.SQLITE_OPEN_CREATE | SQLite.SQLITE_OPEN_MEMORY);
+    const memDb = await this.api.open_v2('temp_mem', SQLite.SQLITE_OPEN_READWRITE | SQLite.SQLITE_OPEN_CREATE | SQLite.SQLITE_OPEN_MEMORY);
 
     try {
       // 2. バイナリデータをロード (deserialize)
@@ -78,7 +78,7 @@ export class WebSQLiteEngine implements SQLiteExecutor {
 
       // 3. 永続化データベースを開く
       if (!this.db) {
-        this.db = await this.api.open_v1(this.dbName);
+        this.db = await this.api.open_v2(this.dbName);
       }
 
       // 4. メモリ DB から永続 DB へ内容をコピー (VACUUM INTO は SQLite 3.27+ で利用可能)
