@@ -1,110 +1,57 @@
-import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { collection, query, where, onSnapshot, limit, doc, deleteDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { masterDataService } from '../services/MasterDataService';
+import { userDataService } from '../services/UserDataService';
 import { Review } from '../types';
 import { useAuth } from '../context/AuthContext';
 
 export function useReviews(pointId?: string, areaId?: string) {
-  const queryClient = useQueryClient();
   const { user } = useAuth();
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    if (!pointId) {
-      setIsLoading(false);
-      return;
-    }
-
-    // 1. Snapshot for all approved reviews for this point
-    const qApproved = query(
-      collection(db, 'reviews'),
-      where('pointId', '==', pointId),
-      limit(100)
-    );
-
-    const unsubscribeApproved = onSnapshot(qApproved, (snapshot) => {
-      const approvedReviews = snapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() } as Review))
-        .filter(r => r.status === 'approved' || !r.status);
-
-      queryClient.setQueryData(['reviews', pointId, 'approved'], approvedReviews);
-      setIsLoading(false);
-    });
-
-    // 2. Snapshot for personal reviews (including pending)
-    let unsubscribePersonal = () => { };
-    if (user && user.id !== 'guest') {
-      const qPersonal = query(
-        collection(db, 'reviews'),
-        where('pointId', '==', pointId),
-        where('userId', '==', user.id)
-      );
-      unsubscribePersonal = onSnapshot(qPersonal, (snapshot) => {
-        const personalReviews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Review));
-        queryClient.setQueryData(['reviews', pointId, user.id], personalReviews);
-      });
-    }
-
-    // 3. Snapshot for area reviews (to calculate average)
-    let unsubscribeArea = () => { };
-    if (areaId) {
-      const qArea = query(
-        collection(db, 'reviews'),
-        where('areaId', '==', areaId),
-        limit(200)
-      );
-      unsubscribeArea = onSnapshot(qArea, (snapshot) => {
-        const areaReviews = snapshot.docs
-          .map(doc => ({ id: doc.id, ...doc.data() } as Review))
-          .filter(r => r.status === 'approved' || !r.status);
-        queryClient.setQueryData(['reviews', 'area', areaId], areaReviews);
-      });
-    }
-
-    return () => {
-      unsubscribeApproved();
-      unsubscribePersonal();
-      unsubscribeArea();
-    };
-  }, [pointId, areaId, user?.id, queryClient]);
-
+  // 1. Approved reviews from MasterDataService (SQLite)
   const approved = useQuery<Review[]>({
     queryKey: ['reviews', pointId, 'approved'],
     enabled: !!pointId,
-    queryFn: () => [], // Dummy to satisfy TanStack Query v5
-    initialData: []
+    queryFn: async () => {
+      const results = await masterDataService.getReviewsByPoint(pointId!);
+      return results as Review[];
+    },
+    staleTime: 1000 * 60 * 60, // 1 hour
   });
 
+  // 2. Personal reviews from UserDataService (Local SQLite)
   const personal = useQuery<Review[]>({
     queryKey: ['reviews', pointId, user?.id],
     enabled: !!pointId && !!user && user.id !== 'guest',
-    queryFn: () => [], // Dummy to satisfy TanStack Query v5
-    initialData: []
+    queryFn: async () => {
+      // 本来は UserDataService に getReviewsByPoint(userId, pointId) があると良い
+      // 一旦 getLogs のような一括取得からフィルタするか、Serviceに追加する
+      const allMyReviews = await userDataService.getSetting<any[]>('my_reviews') || [];
+      return allMyReviews.filter(r => r.pointId === pointId) as Review[];
+    },
+    staleTime: 1000 * 60 * 5, // 5 mins
   });
 
+  // 3. Area reviews (for average) from MasterDataService
   const area = useQuery<Review[]>({
     queryKey: ['reviews', 'area', areaId],
     enabled: !!areaId,
-    queryFn: () => [], // Dummy to satisfy TanStack Query v5
-    initialData: []
+    queryFn: async () => {
+      const results = await masterDataService.getReviewsByArea(areaId!);
+      return results as Review[];
+    },
+    staleTime: 1000 * 60 * 60,
   });
 
   const deleteReview = async (reviewId: string) => {
-    if (!user || user.id === 'guest') return;
-    try {
-      await deleteDoc(doc(db, 'reviews', reviewId));
-    } catch (e) {
-      console.error('Delete review error:', e);
-      throw e;
-    }
+    // TODO: implement delete in UserDataService if needed
+    console.log('Delete review:', reviewId);
   };
 
   return {
     approved: approved.data || [],
     personal: personal.data || [],
     area: area.data || [],
-    isLoading: isLoading || approved.isLoading,
+    isLoading: approved.isPending || personal.isPending || area.isPending,
     deleteReview
   };
 }

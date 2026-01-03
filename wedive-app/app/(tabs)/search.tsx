@@ -1,12 +1,11 @@
-import { useState, useEffect } from 'react';
-import { StyleSheet, TextInput, TouchableOpacity, FlatList, Dimensions, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, TextInput, TouchableOpacity, FlatList, Dimensions, ActivityIndicator, Platform } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { Search as SearchIcon, MapPin, Star, ChevronRight, Anchor, BookOpen, Clock, Droplets, Plus as PlusIcon } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { collection, query, getDocs, where } from 'firebase/firestore';
-import { db } from '../../src/firebase';
 import { Point, Creature } from '../../src/types';
 import { ImageWithFallback } from '../../src/components/ImageWithFallback';
+import { useMasterSearch } from '../../src/hooks/useMasterSearch';
 
 const { width } = Dimensions.get('window');
 
@@ -19,11 +18,9 @@ export default function SearchScreen() {
   const router = useRouter();
   const { tab } = useLocalSearchParams();
   const [mode, setMode] = useState<SearchMode>((tab as SearchMode) || 'spots');
-  const [searchTerm, setSearchTerm] = useState('');
 
-  const [points, setPoints] = useState<Point[]>([]);
-  const [creatures, setCreatures] = useState<Creature[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // 爆速検索フック！
+  const { keyword, setKeyword, points: masterPoints, creatures: masterCreatures, isLoading } = useMasterSearch();
 
   useEffect(() => {
     if (tab && ['spots', 'creatures', 'logs'].includes(tab as string)) {
@@ -31,38 +28,20 @@ export default function SearchScreen() {
     }
   }, [tab]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const pointsQuery = query(collection(db, 'points'), where('status', 'in', ['approved', 'pending']));
-        const pointsSnapshot = await getDocs(pointsQuery);
-        const pointsData = pointsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Point));
-        setPoints(pointsData);
+  // マスターデータをUI用のPoint型にマッピング
+  const filteredSpots = masterPoints.map(p => ({
+    ...p,
+    region: (p as any).region_name || '',
+    area: (p as any).area_name || '',
+    zone: (p as any).zone_name || '',
+    status: 'approved',
+  } as unknown as Point));
 
-        const creaturesQuery = query(collection(db, 'creatures'), where('status', 'in', ['approved', 'pending']));
-        const creaturesSnapshot = await getDocs(creaturesQuery);
-        const creaturesData = creaturesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Creature));
-        setCreatures(creaturesData);
-      } catch (error) {
-        console.error("Error fetching search data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  const filteredSpots = points.filter(p =>
-    (p.name && p.name.includes(searchTerm)) ||
-    (p.area && p.area.includes(searchTerm)) ||
-    (p.region && p.region.includes(searchTerm))
-  );
-
-  const filteredCreatures = creatures.filter(c =>
-    (c.name && c.name.includes(searchTerm)) ||
-    (c.category && c.category.includes(searchTerm))
-  );
+  // マスターデータをUI用のCreature型にマッピング
+  const filteredCreatures = masterCreatures.map(c => ({
+    ...c,
+    status: 'approved',
+  } as unknown as Creature));
 
   const renderSpotItem = ({ item }: { item: Point }) => (
     <TouchableOpacity
@@ -136,20 +115,11 @@ export default function SearchScreen() {
     </TouchableOpacity>
   );
 
-  // TODO: Log rendering logic with real data
   const renderLogItem = ({ item }: { item: any }) => (
     <View style={styles.emptyState}>
       <Text style={styles.emptyText}>ログ機能は準備中です</Text>
     </View>
   );
-
-  if (isLoading) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color="#0ea5e9" />
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>
@@ -171,8 +141,8 @@ export default function SearchScreen() {
           <TextInput
             style={styles.input}
             placeholder={mode === 'spots' ? "スポットを検索..." : mode === 'creatures' ? "生物を検索..." : "ログを検索..."}
-            value={searchTerm}
-            onChangeText={setSearchTerm}
+            value={keyword || ''}
+            onChangeText={setKeyword}
             placeholderTextColor="#94a3b8"
           />
         </View>
@@ -201,27 +171,33 @@ export default function SearchScreen() {
         </View>
       </View>
 
-      <FlatList
-        data={(mode === 'spots' ? filteredSpots : mode === 'creatures' ? filteredCreatures : []) as any[]}
-        renderItem={(mode === 'spots' ? renderSpotItem : mode === 'creatures' ? renderCreatureItem : renderLogItem) as any}
-        keyExtractor={item => item.id || Math.random().toString()}
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>見つかりませんでした</Text>
-            {mode !== 'logs' && (
-              <TouchableOpacity
-                style={styles.addProposalBtn}
-                onPress={() => router.push(mode === 'spots' ? '/details/spot/add' : '/details/creature/add')}
-              >
-                <Text style={styles.addProposalText}>
-                  新しい{mode === 'spots' ? 'スポット' : '生物'}を登録する
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        }
-      />
+      {isLoading ? (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color="#0ea5e9" />
+        </View>
+      ) : (
+        <FlatList
+          data={(mode === 'spots' ? filteredSpots : mode === 'creatures' ? filteredCreatures : []) as any[]}
+          renderItem={(mode === 'spots' ? renderSpotItem : mode === 'creatures' ? renderCreatureItem : renderLogItem) as any}
+          keyExtractor={item => item.id || Math.random().toString()}
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyText}>見つかりませんでした</Text>
+              {mode !== 'logs' && (
+                <TouchableOpacity
+                  style={styles.addProposalBtn}
+                  onPress={() => router.push(mode === 'spots' ? '/details/spot/add' : '/details/creature/add')}
+                >
+                  <Text style={styles.addProposalText}>
+                    新しい{mode === 'spots' ? 'スポット' : '生物'}を登録する
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          }
+        />
+      )}
     </View>
   );
 }
@@ -312,6 +288,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   center: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -448,80 +425,6 @@ const styles = StyleSheet.create({
   emptyText: {
     color: '#94a3b8',
     fontWeight: '500',
-  },
-  logCard: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    marginBottom: 20,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#f1f5f9',
-  },
-  logHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    gap: 10,
-    backgroundColor: 'transparent',
-  },
-  userAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-  },
-  userInfo: {
-    backgroundColor: 'transparent',
-  },
-  userName: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#1e293b',
-  },
-  logDate: {
-    fontSize: 11,
-    color: '#94a3b8',
-  },
-  logImage: {
-    width: '100%',
-    height: 200,
-    backgroundColor: '#f1f5f9',
-  },
-  logContent: {
-    padding: 16,
-    backgroundColor: 'transparent',
-  },
-  logPointName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1e293b',
-    marginBottom: 4,
-  },
-  logCreatureName: {
-    fontSize: 13,
-    color: '#0ea5e9',
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  logStats: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 12,
-    backgroundColor: 'transparent',
-  },
-  logStat: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'transparent',
-  },
-  logStatText: {
-    fontSize: 12,
-    color: '#64748b',
-    fontWeight: '500',
-  },
-  logComment: {
-    color: '#475569',
-    fontStyle: 'italic',
   },
   addProposalBtn: {
     marginTop: 16,

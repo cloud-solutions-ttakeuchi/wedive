@@ -42,18 +42,16 @@ def run_enrichment_for_table(bq_client, source_table, enriched_table, fields=["n
         print(f"Error calling converter: {e}")
         return
 
-    # 3. 必要に応じて追加ロジック（search_text の組み立てなど）を適用
-    if source_table == "creatures_raw_latest":
-        for item in converted_items:
-            # name, name_kana, scientificName, englishName, family, category など全属性を結合
-            # ※ Converter は元の値も返してくる前提
-            search_parts = []
-            for k in fields:
-                val = item.get(k, "")
-                kana = item.get(f"{k}_kana", "")
-                if val: search_parts.append(str(val))
-                if kana: search_parts.append(str(kana))
-            item["search_text"] = " ".join(search_parts)
+    # 3. 検索用テキスト（search_text）の構築
+    for item in converted_items:
+        # すべての変換対象フィールドとそのカナを結合して、横断検索用インデックスを作成
+        search_parts = []
+        for k in fields:
+            val = item.get(k, "")
+            kana = item.get(f"{k}_kana", "")
+            if val: search_parts.append(str(val))
+            if kana: search_parts.append(str(kana))
+        item["search_text"] = " ".join(search_parts)
 
     # 4. 結果を BigQuery に反映（一時テーブル経由で MERGE）
     job_config = bigquery.LoadJobConfig(write_disposition="WRITE_TRUNCATE")
@@ -97,8 +95,8 @@ def main(request):
         print("Error: CONVERTER_URL environment variable is not set.")
         return
 
-    # ポイント: 名前のみ
-    run_enrichment_for_table(bq_client, "points_raw_latest", "points_enriched", ["name"])
+    # ポイント: 名前とエリア名
+    run_enrichment_for_table(bq_client, "points_raw_latest", "points_enriched", ["name", "area"])
 
     # 生物: 全属性
     run_enrichment_for_table(bq_client, "creatures_raw_latest", "creatures_enriched",

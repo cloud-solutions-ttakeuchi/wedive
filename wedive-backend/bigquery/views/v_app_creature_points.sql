@@ -1,13 +1,10 @@
 
 SELECT
-  cp.id,
-  cp.point_id,
-  cp.creature_id,
-  cp.creature_name,
-  cp.creature_image,
-  cp.local_rarity,
-  cp.last_sighted,
-  cp.reasoning,
-  cp.confidence,
-  cp.status
-FROM `wedive_master_data_v1.v_app_point_creatures` cp
+  pc.creature_id,
+  pc.point_id,
+  p.name AS point_name,
+  p.region_name,
+  p.area_name,
+  pc.local_rarity
+FROM `${PROJECT_ID}.${DATASET}`.v_app_point_creatures pc
+JOIN `${PROJECT_ID}.${DATASET}`.v_app_points_master p ON pc.point_id = p.id

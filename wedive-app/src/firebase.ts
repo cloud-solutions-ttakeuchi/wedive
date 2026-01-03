@@ -19,7 +19,7 @@ const firebaseConfig = {
 import { Platform } from 'react-native';
 
 // 1. Initialize Firebase App
-const app = initializeApp(firebaseConfig);
+export const app = initializeApp(firebaseConfig);
 
 // 2. Auth with Persistence
 // Web: browserLocalPersistence

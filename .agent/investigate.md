@@ -13,9 +13,10 @@
 ### 2.2 【中期】案2: GCS Mirror Architecture via BigQuery Data Factory
 
 ## 3. ロードマップ (Roadmap)
-1. **Phase 1 (即時)**: `EditLogScreen` の全件ロード処理を撤廃し、オンデマンド取得へリファクタリング。
-2. **Phase 2 (設計)**: GCP Cloud Functions / Workflows を用いた Firestore → GCS → BigQuery のエクスポートパイプラインの構築。
-3. **Phase 3 (移行)**: アプリの各マスタデータフェッチを GCS 経由に切り替え。
+1. **Phase 1**: データ・ファクトリー構築（GCP/Backend） #130
+2. **Phase 2**: モバイルアプリ側エンジン実装（Frontend: App） #131
+3. **Phase 3**: Web側エンジン実装（Frontend: Web） #132
+4. **Phase 4**: 機能移行と最終検証 #133
 
 ## 4. 完了定義 (Definition of Done)
 - [x] アプリの初期表示からマスタデータの全件待ちを排除する。

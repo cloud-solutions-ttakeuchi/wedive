@@ -324,6 +324,8 @@ export interface DiveLog {
     time: number; // seconds from start
   }[];
   reviewId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export type Log = DiveLog;

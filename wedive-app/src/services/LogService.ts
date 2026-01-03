@@ -1,6 +1,7 @@
 import { db } from '../firebase';
 import { doc, setDoc, updateDoc, arrayUnion, deleteDoc } from 'firebase/firestore';
 import { DiveLog } from '../types';
+import { userDataService } from './UserDataService';
 
 /**
  * WeDive Database Rules (from DATABASE_DESIGN.md):
@@ -51,25 +52,47 @@ export class LogService {
 
     const sanitizedData = sanitizePayload(finalLogData);
 
-    // Save to sub-collection: users/{userId}/logs/{logId}
-    const logRef = doc(db, 'users', userId, 'logs', logId);
-    await setDoc(logRef, sanitizedData);
+    // SQLite メイン保存（内部で Firestore 非同期同期も実行）
+    await userDataService.saveLog(userId, sanitizedData);
 
     return logId;
   }
 
 
   static async updateLog(userId: string, logId: string, logData: Partial<DiveLog>): Promise<void> {
-    const logRef = doc(db, 'users', userId, 'logs', logId);
-    const sanitizedData = sanitizePayload({
-      ...logData,
-      updatedAt: new Date().toISOString(),
-    });
-    await updateDoc(logRef, sanitizedData);
+    const now = new Date().toISOString();
+
+    // 現在のログを SQLite から取得してマージ
+    const logs = await userDataService.getLogs();
+    const existingLog = logs.find(l => l.id === logId);
+
+    if (existingLog) {
+      const mergedLog = {
+        ...existingLog,
+        ...logData,
+        updatedAt: now
+      };
+      const sanitizedData = sanitizePayload(mergedLog);
+      await userDataService.saveLog(userId, sanitizedData);
+    } else {
+      // ローカルにない場合は Firestore を直接更新（通常はあり得ないケース）
+      const logRef = doc(db, 'users', userId, 'logs', logId);
+      const sanitizedData = sanitizePayload({
+        ...logData,
+        updatedAt: now,
+      });
+      await updateDoc(logRef, sanitizedData);
+    }
   }
 
   static async deleteLog(userId: string, logId: string): Promise<void> {
-    const logRef = doc(db, 'users', userId, 'logs', logId);
-    await deleteDoc(logRef);
+    await userDataService.deleteLog(userId, logId);
+  }
+
+  /**
+   * ログ一覧の取得（SQLiteから）
+   */
+  static async getUserLogs(): Promise<DiveLog[]> {
+    return await userDataService.getLogs();
   }
 }

@@ -1,28 +1,19 @@
-import { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
-import { db } from '../firebase';
+import { useQuery } from '@tanstack/react-query';
+import { masterDataService } from '../services/MasterDataService';
 import { Creature } from '../types';
 
 export const useCreatures = () => {
-  const [data, setData] = useState<Creature[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryInfo = useQuery<Creature[]>({
+    queryKey: ['creatures'],
+    queryFn: async () => {
+      console.log('[useCreatures] Fetching creatures from MasterDataService (SQLite/Hybrid)...');
+      return await masterDataService.getAllCreatures();
+    },
+    staleTime: Infinity,
+  });
 
-  useEffect(() => {
-    const q = query(collection(db, 'creatures'), where('status', '==', 'approved'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const docs = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as Creature));
-      setData(docs);
-      setIsLoading(false);
-    }, (error) => {
-      console.error("useCreatures error:", error);
-      setIsLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  return { data, isLoading };
+  return {
+    data: queryInfo.data || [],
+    isLoading: queryInfo.isLoading
+  };
 };

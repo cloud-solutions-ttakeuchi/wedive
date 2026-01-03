@@ -17,9 +17,10 @@ SELECT
   JSON_QUERY(rv.data, '$.tags') AS tags_json,
   JSON_QUERY(rv.data, '$.images') AS images_json,
   CAST(JSON_VALUE(rv.data, '$.helpfulCount') AS INT64) AS helpful_count,
+  JSON_QUERY(rv.data, '$.helpfulBy') AS helpful_by_json,
   JSON_VALUE(rv.data, '$.comment') AS comment,
   JSON_VALUE(rv.data, '$.createdAt') AS created_at,
   JSON_VALUE(rv.data, '$.status') AS status
-FROM `wedive_master_data_v1.reviews_raw_latest` rv
-LEFT JOIN `wedive_master_data_v1.users_raw_latest` u ON JSON_VALUE(rv.data, '$.userId') = u.document_id
+FROM `${PROJECT_ID}.${DATASET}`.reviews_raw_latest rv
+LEFT JOIN `${PROJECT_ID}.${DATASET}`.users_raw_latest u ON JSON_VALUE(rv.data, '$.userId') = u.document_id
 ORDER BY created_at DESC

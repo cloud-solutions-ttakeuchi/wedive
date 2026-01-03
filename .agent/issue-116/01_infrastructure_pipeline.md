@@ -36,6 +36,9 @@ graph TD
         FS -. "Paid Restore (Log Data)" .-> App
     end
 ```
+- **対象コレクション**: 
+  - マスタ: `points`, `creatures`, `regions`, `zones`, `areas`, `certifications` (TODO), `badges` (TODO)
+  - パブリック抽出: `reviews` (全件), `point_creature` (全件), `logs` (isPrivate=false のみ)
 
 ## 3. 各サービスの役割
 

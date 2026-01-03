@@ -48,24 +48,42 @@ SQL内から呼び出し可能な「かな変換」エンジン。
 
 ---
 
-## 3. クラウドスケジューラー定義 (Exporter Trigger)
+## 3. Cloud Run Functions 仕様 (master-data-enricher)
+コストのかかる「カナ変換」や「検索用テキスト構築」処理を、差分に対してのみ実行し、永続化テーブルに反映させる。
 
-### 3.1 スケジュール設定
-- **実行頻度**: `0 * * * *` (1時間ごと)
-- **タイムゾーン**: `Asia/Tokyo`
+### 3.1 基本構成
+- **言語**: Python 3.11+
+- **実行環境**: Cloud Run (Gen2)
+- **トリガー**: Cloud Scheduler (Exporter 実行の前に動作)
 
-### 3.2 実行設定
-- **ターゲット**: Cloud Pub/Sub トピック (例: `master-export-trigger`)
-- **ペイロード**: `{"type": "full_export"}`
-- **IAM権限**: 
-    - `Cloud Scheduler Service Agent` ロールに、Pub/Subへのパブリッシュ権限。
-    - Functions実行 service account に `BigQuery Data Viewer` および `Storage Object Admin`。
+### 3.2 内部アルゴリズム (差分エンリッチメント)
+1. **差分抽出**: 
+   - `BQE.points_enriched` に ID が存在しない、または RAW データの `status` が変化したレコードの ID リストを BigQuery から取得。
+2. **バッチ変換**:
+   - リストに含まれる名称を `fn_to_kana` (または直接内部ロジック) でカナ変換。
+   - 名前の和名・英名・学名、および地域名を結合した `search_text` を構築。
+3. **MERGE 反映**:
+   - 変換結果を BigQuery の一時テーブルにロード。
+   - `MERGE INTO points_enriched T USING delta...` を実行し、既存レコードの更新または新規挿入を行う。
 
 ---
 
-## 4. 運用・監視・セキュリティ
+## 4. クラウドスケジューラー定義 (Pipeline Triggers)
 
-### 4.1 セキュリティ（最小権限の法則）
+### 4.1 スケジュール設定
+1. **Enricher Trigger**: `50 * * * *` (毎時 50分 - Exporter の直前)
+2. **Exporter Trigger**: `0 * * * *` (毎時 0分)
+
+### 4.2 実行設定
+- **ターゲット**: Cloud Pub/Sub トピック (それぞれのトリガー)
+- **IAM権限**: 
+    - 各 Function の実行サービスアカウントに `BigQuery Job User`, `BigQuery Data Viewer`, `BigQuery Data Editor`。
+
+---
+
+## 5. 運用・監視・セキュリティ
+
+### 5.1 セキュリティ（最小権限の法則）
 Functionsのサービスアカウントは、以下の権限のみに制限する。
 - 参照: 特定のBigQueryデータセット
 - 書き込み: 特定のGCSバケット

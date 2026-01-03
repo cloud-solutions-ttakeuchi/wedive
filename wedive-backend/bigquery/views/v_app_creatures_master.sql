@@ -25,5 +25,5 @@ SELECT
   e.search_text,
   JSON_VALUE(c.data, '$.status') AS status,
   JSON_VALUE(c.data, '$.createdAt') AS created_at
-FROM `wedive_master_data_v1.creatures_raw_latest` c
-LEFT JOIN `wedive_master_data_v1.creatures_enriched` e ON c.document_id = e.id
+FROM `${PROJECT_ID}.${DATASET}`.creatures_raw_latest c
+LEFT JOIN `${PROJECT_ID}.${DATASET}`.creatures_enriched e ON c.document_id = e.id

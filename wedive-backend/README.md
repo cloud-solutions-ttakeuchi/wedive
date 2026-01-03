@@ -93,3 +93,10 @@ gcloud iam service-accounts add-iam-policy-binding "${SERVICE_ACCOUNT_NAME}" \
 - name: Run Deploy Script
   # ... 以降は同じ
 ```
+
+# cloud run 実行
+
+```
+gcloud functions call master-data-enricher --region asia-northeast1 --project dive-dex-app-dev
+gcloud functions call master-data-exporter --region asia-northeast1 --project dive-dex-app-dev
+```

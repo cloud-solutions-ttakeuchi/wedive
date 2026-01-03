@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User as FirebaseUser, onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 import { auth, db } from '../firebase';
-import { doc, onSnapshot, updateDoc, deleteDoc, collection, query, orderBy } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { User, DiveLog } from '../types';
+import { userDataService } from '../services/UserDataService';
 
 type AuthContextType = {
   user: User | null;
@@ -35,47 +36,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    let unsubUser: (() => void) | undefined;
-    let unsubLogs: (() => void) | undefined;
-
-    const unsubscribeAuth = onAuthStateChanged(auth, (fbUser) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (fbUser) => {
       setFirebaseUser(fbUser);
 
       if (fbUser) {
-        // 1. Sync User Profile
-        unsubUser = onSnapshot(doc(db, 'users', fbUser.uid), (snap) => {
-          if (snap.exists()) {
-            setUser({ id: snap.id, ...snap.data() } as User);
-          } else {
-            // Fallback for new users
-            setUser({
-              id: fbUser.uid,
-              name: fbUser.displayName || 'Guest',
-              role: 'user',
-              trustScore: 0,
-              favorites: { points: [], areas: [], shops: [], gear: { tanks: [] } },
-              favoriteCreatureIds: [],
-              wanted: [],
-              bookmarkedPointIds: [],
-            });
-          }
-        });
+        try {
+          // 1. SQLiteの初期化と、必要に応じた初回同期（Firestore -> SQLite）
+          await userDataService.initialize();
+          await userDataService.syncInitialData(fbUser.uid);
 
-        // 2. Sync User Logs (Sub-collection)
-        // Web版の「リストが空」という状態に左右されないよう、サブコレクションを直接監視する
-        const logsQuery = query(
-          collection(db, 'users', fbUser.uid, 'logs'),
-          orderBy('date', 'desc')
-        );
-        unsubLogs = onSnapshot(logsQuery, (snap) => {
-          const logsData = snap.docs.map(d => ({ ...d.data(), id: d.id } as DiveLog));
-          setLogs(logsData);
-          setIsLoading(false); // ログが空の場合でも、読み込み完了とみなす
-        }, (err) => {
-          console.error("Logs sync error:", err);
+          // 2. 常に SQLite を正本としてデータをロード
+          const [localLogs, localProfile] = await Promise.all([
+            userDataService.getLogs(),
+            userDataService.getSetting<User>('profile')
+          ]);
+
+          if (localLogs) setLogs(localLogs);
+          if (localProfile) setUser(localProfile);
+
           setIsLoading(false);
-        });
-
+        } catch (err) {
+          console.error("Initial data load error:", err);
+          setIsLoading(false);
+        }
       } else {
         setUser(null);
         setLogs([]);
@@ -85,8 +68,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return () => {
       unsubscribeAuth();
-      if (unsubUser) unsubUser();
-      if (unsubLogs) unsubLogs();
     };
   }, []);
 
@@ -99,10 +80,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateUser = async (userData: Partial<User>) => {
-    if (!firebaseUser) return;
+    if (!firebaseUser || !user) return;
     try {
+      const updatedUser = { ...user, ...userData };
+      setUser(updatedUser);
+      // SQLite に即時保存
+      await userDataService.saveSetting('profile', updatedUser);
+      // Firestore に非同期で反映
       await updateDoc(doc(db, 'users', firebaseUser.uid), userData);
-      // setUser is handled by onSnapshot
     } catch (error) {
       console.error("Error updating user:", error);
       throw error;

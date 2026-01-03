@@ -3,15 +3,15 @@
 # WeDive Backend Deployment Script
 # Usage: ./deploy.sh [PROJECT_ID]
 
-PROJECT_ID=$1
+export PROJECT_ID=$1
+export LOCATION="asia-northeast1"
+export DATASET="wedive_master_data_v1"
+export BUCKET="wedive-app-static-master"
+
 if [ -z "$PROJECT_ID" ]; then
     echo "Usage: ./deploy.sh [PROJECT_ID]"
     exit 1
 fi
-
-LOCATION="asia-northeast1"
-DATASET="wedive_master_data_v1"
-BUCKET="wedive-app-static-master"
 
 echo "Using Project ID: $PROJECT_ID"
 
@@ -20,29 +20,18 @@ echo "Creating/Checking BigQuery Dataset and GCS Bucket..."
 bq mk --location=$LOCATION --dataset $PROJECT_ID:$DATASET || true
 gsutil mb -l $LOCATION gs://$BUCKET || true
 
-# [NEW] Create Enriched Tables (Schema Definition)
-echo "Creating Enriched Tables..."
-bq --location=$LOCATION query --use_legacy_sql=false "CREATE TABLE IF NOT EXISTS \`$PROJECT_ID.$DATASET.points_enriched\` (
-    id STRING,
-    name STRING,
-    name_kana STRING,
-    updated_at TIMESTAMP
-)"
-bq --location=$LOCATION query --use_legacy_sql=false "CREATE TABLE IF NOT EXISTS \`$PROJECT_ID.$DATASET.creatures_enriched\` (
-    id STRING,
-    name STRING,
-    name_kana STRING,
-    scientificName STRING,
-    scientificName_kana STRING,
-    englishName STRING,
-    englishName_kana STRING,
-    family STRING,
-    family_kana STRING,
-    category STRING,
-    category_kana STRING,
-    search_text STRING,
-    updated_at TIMESTAMP
-)"
+# [NEW] Create Tables (Managed Schemas)
+echo "Deploying BigQuery Tables..."
+for file in bigquery/tables/*.sql; do
+    table_name=$(basename "$file" .sql)
+    echo "Creating Table: $table_name"
+    # DROP してから CREATE することでスキーマの強制同期を行う
+    bq query --use_legacy_sql=false "DROP TABLE IF EXISTS \`$PROJECT_ID.$DATASET.$table_name\`"
+
+    # envsubst を使用して SQL 内の変数を展開
+    sql_content=$(envsubst < "$file")
+    bq query --use_legacy_sql=false "$sql_content"
+done
 
 # 2. Deploy Kana Converter (Standard Web API)
 echo "Deploying kana-converter function..."
@@ -57,7 +46,7 @@ gcloud functions deploy kana-converter \
     --memory=1Gi \
     --allow-unauthenticated
 # URLを取得
-CONVERTER_URL=$(gcloud functions describe kana-converter --project=$PROJECT_ID --region=$LOCATION --gen2 --format='value(serviceConfig.uri)')
+export CONVERTER_URL=$(gcloud functions describe kana-converter --project=$PROJECT_ID --region=$LOCATION --gen2 --format='value(serviceConfig.uri)')
 cd ../..
 
 # 3. Deploy Enricher (Scheduled Job)
@@ -79,7 +68,9 @@ echo "Deploying BigQuery VIEWs..."
 for file in bigquery/views/*.sql; do
     view_name=$(basename "$file" .sql)
     echo "Creating VIEW: $view_name"
-    sql_content=$(sed "s/\`wedive_master_data_v1/\`$PROJECT_ID.$DATASET/g" "$file")
+
+    # envsubst を使用して SQL 内の変数を展開
+    sql_content=$(envsubst < "$file")
     bq query --use_legacy_sql=false "CREATE OR REPLACE VIEW \`$PROJECT_ID.$DATASET.$view_name\` AS $sql_content"
 done
 

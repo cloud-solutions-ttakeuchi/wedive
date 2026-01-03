@@ -21,7 +21,9 @@ Firestoreから同期されたRAWデータ（JSON文字列を含むテーブル�
 | **RAWテーブル (PointCreature)** | `point_creatures_raw_latest` | 地域情報の参照用。 |
 | **RAWテーブル (Review)** | `reviews_raw_latest` | 地域情報の参照用。 |
 | **RAWテーブル (Log)** | `logs_raw_latest` | 公開フィードの参照用。 |
-| **RAWテーブル (User)** | `users_raw_latest` | ユーザー情報の参照用。 |
+| **RAWテーブル (User)** | `users_raw_latest` | ユーザー情報の参照用（名称・画像等の Denormalize 用）。 |
+| **RAWテーブル (Certification)** | `certifications_raw_latest` | (TODO) 入力画面実装後に同期開始。 |
+| **RAWテーブル (Badge)** | `badges_raw_latest` | (TODO) 同上。 |
 | **ENRICHEDテーブル (Point)** | `points_enriched` | カナ変換済みポイント基本情報。 |
 | **ENRICHEDテーブル (Creature)** | `creatures_enriched` | カナ変換済み生物基本情報。 |
 | **VIEWテーブル** | `v_app_geography_master` | 地域・エリア階層マスタ（Region > Zone > Area） |
@@ -32,6 +34,25 @@ Firestoreから同期されたRAWデータ（JSON文字列を含むテーブル�
 | **VIEWテーブル** | `v_app_creature_points` | ダイビング生物ポイント_VIEW |
 | **VIEWテーブル** | `v_app_point_stats` | ポイント詳細統計_VIEW |
 | **VIEWテーブル** | `v_app_user_public_logs` | 公開ダイビングログ_VIEW（フィード用） |
+| **VIEWテーブル** | `v_app_certifications_master`| (TODO) 認定資格マスター_VIEW |
+| **VIEWテーブル** | `v_app_badges_master` | (TODO) バッジマスター_VIEW |
+
+---
+
+## 2.1 ENRICHED テーブル定義
+コストのかかる変換処理（カナ変換・検索テキスト構築）の結果を永続化するテーブル。
+
+### `points_enriched`
+- `id` (STRING, PRIMARY KEY): `points` のドキュメントID
+- `name_kana` (STRING): `name` をカナ変換したもの
+- `search_text` (STRING): `name`, `name_kana`, `area_name` 等を結合した検索用文字列
+- `updated_at` (TIMESTAMP): 最終更新日時
+
+### `creatures_enriched`
+- `id` (STRING, PRIMARY KEY): `creatures` のドキュメントID
+- `name_kana` (STRING): `name` をカナ変換したもの
+- `search_text` (STRING): `name`, `scientific_name`, `english_name`, `family`, `category` および各カナを結合した検索用文字列
+- `updated_at` (TIMESTAMP): 最終更新日時
 
 ---
 
@@ -66,6 +87,8 @@ SELECT
   JSON_QUERY(p.data, '$.coordinates') AS coordinates_json,
   JSON_VALUE(p.data, '$.googlePlaceId') AS google_place_id,
   JSON_VALUE(p.data, '$.formattedAddress') AS formatted_address,
+  CAST(JSON_VALUE(p.data, '$.coordinates.lat') AS FLOAT64) AS latitude,
+  CAST(JSON_VALUE(p.data, '$.coordinates.lng') AS FLOAT64) AS longitude,
   -- 画像・登録情報
   JSON_VALUE(p.data, '$.imageUrl') AS image_url,
   JSON_QUERY(p.data, '$.images') AS images_json,
@@ -79,6 +102,7 @@ SELECT
   JSON_QUERY(p.data, '$.officialStats') AS official_stats_json,
   JSON_QUERY(p.data, '$.actualStats') AS actual_stats_json,
   -- メタデータ
+  e.search_text AS search_text,
   JSON_VALUE(p.data, '$.status') AS status,
   JSON_VALUE(p.data, '$.createdAt') AS created_at
 FROM `wedive_master_data_v1.points_raw_latest` p
@@ -174,8 +198,9 @@ SELECT
   JSON_QUERY(rv.data, '$.radar') AS radar_json,
   JSON_QUERY(rv.data, '$.tags') AS tags_json,
   JSON_QUERY(rv.data, '$.images') AS images_json,
-  CAST(JSON_VALUE(rv.data, '$.helpfulCount') AS INT64) AS helpful_count,
   JSON_VALUE(rv.data, '$.comment') AS comment,
+  CAST(JSON_VALUE(rv.data, '$.helpfulCount') AS INT64) AS helpful_count,
+  JSON_QUERY(rv.data, '$.helpfulBy') AS helpful_by_json,
   JSON_VALUE(rv.data, '$.createdAt') AS created_at,
   JSON_VALUE(rv.data, '$.status') AS status
 FROM `wedive_master_data_v1.reviews_raw_latest` rv
@@ -284,11 +309,22 @@ SELECT
   JSON_QUERY(l.data, '$.location') AS location_json,
   JSON_VALUE(l.data, '$.location.pointId') AS point_id,
   JSON_VALUE(l.data, '$.location.pointName') AS point_name,
+  JSON_QUERY(l.data, '$.team') AS team_json,
+  JSON_QUERY(l.data, '$.time') AS time_json,
   JSON_QUERY(l.data, '$.depth') AS depth_info_json,
   JSON_QUERY(l.data, '$.condition') AS condition_info_json,
+  JSON_QUERY(l.data, '$.gear') AS gear_json,
+  JSON_VALUE(l.data, '$.entryType') AS entry_type,
+  JSON_VALUE(l.data, '$.creatureId') AS creature_id,
+  JSON_QUERY(l.data, '$.sightedCreatures') AS sighted_creatures_json,
   JSON_QUERY(l.data, '$.photos') AS photos_json,
   JSON_VALUE(l.data, '$.comment') AS comment,
   CAST(JSON_VALUE(l.data, '$.likeCount') AS INT64) AS like_count,
+  JSON_QUERY(l.data, '$.likedBy') AS liked_by_json,
+  JSON_VALUE(l.data, '$.garminActivityId') AS garmin_activity_id,
+  JSON_VALUE(l.data, '$.reviewId') AS review_id,
+  JSON_QUERY(l.data, '$.profile') AS profile_json,
+  CONCAT(JSON_VALUE(l.data, '$.location.pointName'), ' ', IFNULL(JSON_VALUE(l.data, '$.comment'), '')) AS search_text,
   JSON_VALUE(l.data, '$.createdAt') AS created_at
 FROM `wedive_master_data_v1.logs_raw_latest` l
 WHERE JSON_VALUE(l.data, '$.isPrivate') = 'false'
@@ -298,7 +334,41 @@ LIMIT 100
 
 ---
 
-## 11. 増分エンリッチメント・ロジック (Python Enricher)
+## 11. VIEW 定義： `v_app_certifications_master` (TODO: 将来実装予定)
+認定資格（PADI, NAUI等）およびランク情報。
+※現状 Firestore コレクションがないためコメントアウト。
+
+```sql
+/*
+SELECT 
+  id,
+  JSON_VALUE(data, '$.name') AS name,
+  JSON_VALUE(data, '$.organization') AS organization,
+  JSON_QUERY(data, '$.ranks') AS ranks_json
+FROM `wedive_master_data_v1.certifications_raw_latest`
+*/
+```
+
+---
+
+## 12. VIEW 定義： `v_app_badges_master` (TODO: 将来実装予定)
+バッジ情報。
+※現状 Firestore コレクションがないためコメントアウト。
+
+```sql
+/*
+SELECT 
+  id,
+  JSON_VALUE(data, '$.name') AS name,
+  JSON_VALUE(data, '$.iconUrl') AS icon_url,
+  JSON_QUERY(data, '$.condition') AS condition_json
+FROM `wedive_master_data_v1.badges_raw_latest`
+*/
+```
+
+---
+
+## 13. 増分エンリッチメント・ロジック (Python Enricher)
 本ロジックは `master-data-enricher` 関数 (Python) 内で動的に生成・実行され、コストのかかる変換処理を差分のみに限定する。
 
 ### 11.1 エンリッチメント・パイプラインの動作

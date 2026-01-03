@@ -23,7 +23,39 @@
 
 ---
 
-## 2. エンティティ関連図 (Database Structure)
+## 3. コレクション・SQLite テーブル対応一覧
+
+| Firestore コレクション | FS カラム数 | Master SQLite Table | Master カラム数 | Personal SQLite Table (my_) | Personal カラム数 |
+| :--- | :---: | :--- | :---: | :--- | :---: |
+| `regions` / `zones` / `areas` | 3 / 4 / 5 | `master_geography` | 13 | － | － |
+| `points` | 28 | `master_points` | 34 | `my_bookmarks` / `my_mastery` | 2 / 5 |
+| `creatures` | 23 | `master_creatures` | 25 | `my_favorites` | 2 |
+| `point_creatures` | 8 | `master_point_creatures` | 10 | － | － |
+| `reviews` | 19 | `master_point_reviews` | 21 | `my_reviews` | 12 |
+| `users` | 16 | － | － | `my_settings` | 2 |
+| `users/{uid}/logs` | 21 | `master_public_logs` | 24 | `my_logs` | 24 |
+| `certifications` (TODO) | 4 | `master_certifications` | 4 | － | － |
+| `badges` (TODO) | 4 | `master_badges` | 4 | － | － |
+| `*_proposals` | 8 | － | － | `my_proposals` | 6 |
+
+### **カラム数に差異がある主な理由 (Rationale)**
+
+Firestore のドキュメント構造と SQLite のテーブル定義でカラム数が異なるのは、モバイルアプリでの「オフライン性能」と「検索速度」を最大化するための意図的な設計によるものです。
+
+1. **ネスト構造のフラット化 (Flattening)**:
+   - Firestore では `map` 型（例: `coordinates`, `depth`）で保持しているデータを、SQLite では個別の物理カラム（例: `latitude`, `longitude`, `depth_max`）として分解しています。これにより、SQL の `WHERE` 句や `ORDER BY` でのインデックス利用が可能になります。
+2. **高速検索用のインデックス追加 (Pellucid Search)**:
+   - マスタデータには、BigQuery 側で事前計算した `search_text`（和名・学名・英名・地域名を結合したもの）や `name_kana` カラムを追加しています。これにより、アプリ側で重い文字列結合処理を行わずに高速な部分一致検索を実現しています。
+3. **結合排除のための非正規化 (Denormalization)**:
+   - SQLite でのテーブル結合（JOIN）はコストが高いため、あらかじめ参照先の名称（例: `point_name`, `region_name`）をカラムとして重複保持しています。
+4. **将来の互換性とフォールバック (Compatibility)**:
+   - `my_logs` 等の個人データには `data_json` カラムを設けており、Firestore の生ドキュメントをそのまま保持しています。これにより、アプリのバージョンアップで新しいフィールドが追加された際も、マイグレーションなしでデータを保持・復元できます。
+5. **管理用メタデータの付与 (Management)**:
+   - 同期状態を管理するための `synced_at` や、ローカルでのソート順を保証するための `created_at`（Firestore の `serverTimestamp` とは別の、アプリ保存時のタイムスタンプ）を追加しています。
+
+---
+
+## 4. エンティティ関連図 (Database Structure)
 
 ```mermaid
 erDiagram
@@ -238,7 +270,49 @@ WeDive では、スケーラビリティとクエリ効率を考慮し、ユー�
    - **承認時**: 申請データに基づき、マスタコレクションに `status: approved` で新規ドキュメントを生成する。
    - **却下時**: 申請用ドキュメントを `rejected` に更新するだけ。マスタには何も書き込まれていないため、クリーンアップは不要。
 
-2. **update (更新申請)**
+### 3.10 `certifications` (認定資格マスタ) - 【将来実装予定 / TODO】
+| フィールド | 型 | 説明 |
+| :--- | :--- | :--- |
+| `id` | string | `cert` + 文字列 |
+| `name` | string | 資格名 (例: Open Water Diver) |
+| `organization` | string | 団体名 (PADI, NAUI, etc.) |
+| `ranks` | array(map) | `{rankId, name}` ランク情報のリスト |
+
+### 3.11 `badges` (バッジマスタ) - 【将来実装予定 / TODO】
+| フィールド | 型 | 説明 |
+| :--- | :--- | :--- |
+| `id` | string | `bdg` + 文字列 |
+| `name` | string | バッジ名称 |
+| `iconUrl` | string | アイコン画像URL |
+| `condition` | map | 獲得条件定義 |
+
+
+### 8.3 SQLite ハイブリッド・ストレージ戦略 (Issue 116)
+
+モバイルアプリのパフォーマンス、オフライン性能、および **Firestore 運用コスト**を最適化するため、Firestore を「バックアップ（正本）」、SQLite を「プライマリ・ストレージ」とする Local-First 構成を採用します。
+
+1. **Global Master (`master.db`)**:
+   - GCS 経由で `latest.db.gz` を配信。
+   - 共通マスタ（ポイント、生物、ショップ等）を保持。
+   - アプリ起動時に Firebase Storage の **更新日時 (updated)** を比較し、更新がある場合のみバックグラウンドでダウンロード。
+
+2. **Internal Personal (`user.db`)**:
+   - 自分のログ (`my_logs`)、レビュー (`my_reviews`)、設定（プロフィール等）を保持。
+   - **書き込み**: UI操作時は SQLite に即時書き込みを行い、その後 Firestore へ非同期で 1回だけ保存する。
+   - **読み取り**: **常に SQLite からのみ取得する。** コスト削減のため、Firestore の `onSnapshot`（常時監視）は一切使用しない。
+   - **初期同期 (`syncInitialData`)**: 
+     - アプリインストール後、SQLite 内に **プロフィール情報が存在しない場合のみ** 実行。
+     - Firestore から全データを 1回だけ一括取得 (`getDocs`) して SQLite を満たす。
+     - 一度プロフィールが作成された後は、他のテーブルが空であっても自動的な同期（Read）は行わない。
+
+3. **反映済みプロポーザルのクリーンアップ**:
+   - 自分が申請した `my_proposals` が `master.db` に取り込まれたことを検知した際、ローカルデータを自動削除する自浄作用を持つ。
+
+4. **データの整合性**:
+   - SQLite 上のカラムは、検索性のために Firestore の嵌套 Map をフラット化（例: `coordinates.lat` -> `latitude`）している。
+   - `data_json` カラムを設けることで、将来のスキーマ変更に対する互換性を維持する。
+
+### 3.12 `reviews` (ポイントレビュー)
    - **申請時**: マスタには触れず、申請ドキュメントに `targetId` と変更内容を保持する。
    - **承認時**: 変更内容をマスタに反映（マージ）する。
    - **却下時**: 申請ドキュメントのみを `rejected` に更新する。
@@ -314,15 +388,15 @@ AIによる再構築結果や検索結果を保存し、費用の抑制と高速
  ---
  
  ## 8. オフライン・データ管理 (Offline Data Management)
- 
- モバイルアプリ（wedive-app）においては、ネットワークが不安定なダイビングポイントでの利用を想定し、Firestore の **永続的ローカルキャッシュ (Persistent Local Cache)** を有効化しています。
- 
- ### 8.1 永続化の仕組み
- - **対象データ**: 一度読み込んだマスタデータ (`points`, `creatures` 等) および自身の `logs` サブコレクション。
- - **挙動**: ネットワーク未接続時でも、SDK はローカルキャッシュからデータを読み出します。読み込み時にはオンライン・オフラインを問わず、保存済みのデータが即座に UI に反映され、変更がある場合のみバックグラウンドでサーバーと同期されます。
- 
- ### 8.2 オフライン保存の整合性
- - **Write Operation**: 圏外でのログ保存・更新は、まずローカルの永続キャッシュに書き込まれます。
- - **後追い同期**: デバイスがオンラインに復帰した際、Firestore SDK が未送信の書き込み（Mutation）を自動的に順序を守ってサーバーへ反映します。
- - **制約**: オフライン中の画像アップロード（Firebase Storage）は、SDK の自動リトライに依存せず、将来的にキュー管理（Phase 4 以降）で対応予定です。
+
+モバイルアプリ（wedive-app）では、通信環境の悪い海辺での利用を前提とし、Firestore を「同期・バックアップ用」、SQLite を「プライマリ・ストレージ」として使い分ける **Local-First** 設計を採用しています。
+
+### 8.1 永続化の仕組み
+- **対象データ**: マスタデータ (`master.db`) および個人の記録・設定 (`user.db`)。
+- **挙動**: ネットワーク未接続時でも、アプリは SQLite から直接データを読み出します。Firestore SDK のキャッシュ機能に依存せず、独自のアプリロジックで高速に表示・検索（FTS5利用）を行います。
+
+### 8.2 オフライン保存の整合性
+- **Write Operation**: ログの保存や編集は、まずローカル SQLite に即時実行されます。
+- **Firestore 同期**: 保存成功後、Firestore へ 1回だけデータが送信されます。コスト削減のため、Firestore 側の `onSnapshot`（常時監視）は全廃しており、サーバーからの不要なプッシュ通知による課金や無限ループを防止しています。
+- **画像管理**: 画像アップロードは Firebase Storage を利用し、オフライン時は将来的なバックグラウンドキュー管理（Phase 4 以降）で対応予定です。
 ```

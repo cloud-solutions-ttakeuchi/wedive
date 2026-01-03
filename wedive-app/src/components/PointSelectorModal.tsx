@@ -12,10 +12,9 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Search, X, MapPin, ChevronRight } from 'lucide-react-native';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
-import { db } from '../firebase';
 import { Point } from '../types';
 import { ImageWithFallback } from './ImageWithFallback';
+import { useMasterSearch } from '../hooks/useMasterSearch';
 
 interface PointSelectorModalProps {
   isVisible: boolean;
@@ -30,43 +29,24 @@ export const PointSelectorModal: React.FC<PointSelectorModalProps> = ({
   onClose,
   onSelect
 }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [points, setPoints] = useState<Point[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const { keyword, setKeyword, points: masterPoints, isLoading } = useMasterSearch();
 
   useEffect(() => {
     if (isVisible) {
-      handleSearch('');
+      setKeyword('');
     }
-  }, [isVisible]);
+  }, [isVisible, setKeyword]);
 
-  const handleSearch = async (text: string) => {
-    setSearchTerm(text);
-    setIsLoading(true);
-    try {
-      const q = text
-        ? query(
-          collection(db, 'points'),
-          where('status', '==', 'approved'),
-          where('name', '>=', text),
-          where('name', '<=', text + '\uf8ff'),
-          limit(20)
-        )
-        : query(
-          collection(db, 'points'),
-          where('status', '==', 'approved'),
-          limit(20)
-        );
-
-      const snapshot = await getDocs(q);
-      const results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Point));
-      setPoints(results);
-    } catch (error) {
-      console.error('Error searching points:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // SQLiteの結果(MasterPoint)をUIが期待するPoint型に変換
+  const points = masterPoints.map(p => ({
+    id: p.id,
+    name: p.name,
+    name_kana: p.name_kana,
+    region: p.region_name || '',
+    area: p.area_name || '',
+    zone: p.zone_name || '',
+    status: 'approved',
+  } as unknown as Point));
 
   const renderItem = ({ item }: { item: Point }) => (
     <TouchableOpacity style={styles.item} onPress={() => onSelect(item)}>
@@ -108,8 +88,8 @@ export const PointSelectorModal: React.FC<PointSelectorModalProps> = ({
           <TextInput
             style={styles.searchInput}
             placeholder="スポット名で検索..."
-            value={searchTerm}
-            onChangeText={handleSearch}
+            value={keyword}
+            onChangeText={setKeyword}
             autoFocus
           />
         </View>
