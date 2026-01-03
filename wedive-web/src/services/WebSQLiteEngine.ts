@@ -3,12 +3,15 @@ import * as SQLite from 'wa-sqlite';
 import SQLiteESMFactory from 'wa-sqlite/dist/wa-sqlite-async.mjs';
 // @ts-ignore
 import { IDBBatchAtomicVFS } from 'wa-sqlite/src/examples/IDBBatchAtomicVFS.js';
+// @ts-ignore
+import { MemoryVFS } from 'wa-sqlite/src/examples/MemoryVFS.js';
 import type { SQLiteExecutor } from 'wedive-shared';
 
 export class WebSQLiteEngine implements SQLiteExecutor {
   private db: number | null = null;
   private sqlite: any = null;
   private api: any = null;
+  private vfs: any = null;
   private dbName: string;
 
   constructor(dbName: string) {
@@ -23,8 +26,8 @@ export class WebSQLiteEngine implements SQLiteExecutor {
 
     // Web では IDBBatchAtomicVFS または OPFS (Origin Private File System) を使用可能
     // ここでは永続化のために IDB または OPFS VFS を登録
-    const vfs = new IDBBatchAtomicVFS(this.dbName);
-    this.api.vfs_register(vfs, true);
+    this.vfs = new IDBBatchAtomicVFS(this.dbName);
+    this.api.vfs_register(this.vfs, true);
 
     this.db = await this.api.open_v2(this.dbName);
     console.log(`[SQLite Web] Database ${this.dbName} opened via OPFS/IDB.`);
@@ -68,26 +71,46 @@ export class WebSQLiteEngine implements SQLiteExecutor {
   async importDatabase(data: Uint8Array): Promise<void> {
     if (!this.sqlite || !this.api) await this.initialize();
 
-    // 1. メモリ上に一時的なデータベースを作成
-    const memDb = await this.api.open_v2('temp_mem', SQLite.SQLITE_OPEN_READWRITE | SQLite.SQLITE_OPEN_CREATE | SQLite.SQLITE_OPEN_MEMORY);
+    const tempVfs = new MemoryVFS();
+    const tempName = `temp_${Date.now()}.db`;
+    this.api.vfs_register(tempVfs);
 
     try {
-      // 2. バイナリデータをロード (deserialize)
-      // Note: wa-sqlite の deserialize 実装を確認
-      await this.api.deserialize(memDb, 'main', data, data.length, data.length, 1 | 2); // 1: FREEONCLOSE, 2: RESIZEABLE
+      // MemoryVFS の内部データ構造に合わせて直接データを流し込む
+      (tempVfs as any).mapNameToFile.set(tempName, {
+        name: tempName,
+        flags: SQLite.SQLITE_OPEN_CREATE | SQLite.SQLITE_OPEN_READWRITE,
+        size: data.byteLength,
+        data: data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)
+      });
 
-      // 3. 永続化データベースを開く
-      if (!this.db) {
+      const srcDb = await this.api.open_v2(tempName, SQLite.SQLITE_OPEN_READWRITE, tempVfs.name);
+
+      try {
+        // メイン DB を一旦閉じる (上書きするため)
+        if (this.db) {
+          await this.api.close(this.db);
+          this.db = null;
+        }
+
+        // 永続ストレージ上の既存ファイルを削除
+        if (this.vfs) {
+          await this.vfs.xDelete(this.dbName, 0);
+        }
+
+        // データを転送 (VACUUM INTO は対象ファイルが存在しない必要があるため、先に実行)
+        await this.api.exec(srcDb, `VACUUM INTO '${this.dbName}'`);
+
+        // 書き出し終わったファイルを、検索用に開く
         this.db = await this.api.open_v2(this.dbName);
+
+        console.log(`[SQLite Web] ${this.dbName} has been updated successfully.`);
+      } finally {
+        await this.api.close(srcDb);
       }
-
-      // 4. メモリ DB から永続 DB へ内容をコピー (VACUUM INTO は SQLite 3.27+ で利用可能)
-      // または単純に現在の DB を閉じてファイルを置き換える手法もありますが、
-      // ここでは一番安全な「一時 DB として開き、永続 DB へ移行」するフローを想定
-      await this.api.exec(memDb, `VACUUM INTO '${this.dbName}'`);
-
-    } finally {
-      await this.api.close(memDb);
+    } catch (e) {
+      console.error('[SQLite Web] Import failed:', e);
+      throw e;
     }
   }
 }
