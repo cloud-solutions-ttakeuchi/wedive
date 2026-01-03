@@ -213,10 +213,10 @@ export class UserDataService {
     if (!isAvailable) return;
 
     try {
-      // ローカルの件数確認
-      const row: any = await this.sqliteDb.getFirstAsync('SELECT COUNT(*) as count FROM my_logs');
-      if (row && row.count > 0) {
-        console.log('Local user data already exists (my_logs). Skipping initial sync.');
+      // ローカルのセットアップ状況を確認（プロフィールの有無をマスターフラグとする）
+      const localProfile = await this.getSetting('profile');
+      if (localProfile) {
+        console.log('[Sync] Local user profile exists. Skipping initial sync.');
         return;
       }
 

@@ -17,8 +17,19 @@ export class GzipHelper {
         encoding: EncodingType.Base64,
       });
 
-      // 2. Buffer に変換して pako で解凍
+      // 2. Buffer に変換して判別
       const binaryData = Buffer.from(base64Data, 'base64');
+
+      // すでに解凍済みの SQLite ファイルであるかチェック（OS/CDN の自動解凍対策）
+      const header = binaryData.slice(0, 15).toString();
+      if (header === 'SQLite format 3') {
+        console.log('[Sync] File is already decompressed (SQLite header detected). Skipping pako.');
+        await FileSystem.writeAsStringAsync(targetPath, base64Data, {
+          encoding: EncodingType.Base64,
+        });
+        return;
+      }
+
       const decompressedData = pako.ungzip(binaryData);
 
       // 3. 解凍後のデータを Base64 で書き込む（expo-file-system は binary 直書きに制限があるため Base64 経由）

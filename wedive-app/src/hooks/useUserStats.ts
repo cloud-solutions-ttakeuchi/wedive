@@ -1,7 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '../firebase';
+import { useQuery } from '@tanstack/react-query';
+import { userDataService } from '../services/UserDataService';
 import { useAuth } from '../context/AuthContext';
 
 const QUERY_KEY = ['userStatsMastery'];
@@ -28,38 +26,19 @@ export interface UserMasteryStats {
 
 export function useUserStats() {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const [isFirestoreLoading, setFirestoreLoading] = useState(true);
-
-  useEffect(() => {
-    if (!user?.id) {
-      setFirestoreLoading(false);
-      return;
-    }
-
-    const unsubscribe = onSnapshot(doc(db, `users/${user.id}/stats/mastery`), (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data() as UserMasteryStats;
-        queryClient.setQueryData(QUERY_KEY, data);
-      } else {
-        queryClient.setQueryData(QUERY_KEY, null);
-      }
-      setFirestoreLoading(false);
-    }, (error) => {
-      console.error('Error fetching user stats:', error);
-      setFirestoreLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [user?.id, queryClient]);
 
   const queryInfo = useQuery<UserMasteryStats | null>({
     queryKey: QUERY_KEY,
-    staleTime: Infinity,
-    enabled: false,
-    queryFn: () => null,
-    initialData: null
+    enabled: !!user?.id && user.id !== 'guest',
+    queryFn: async () => {
+      console.log('[useUserStats] Loading stats from UserDataService (SQLite)...');
+      return await userDataService.getSetting<UserMasteryStats>('mastery_stats');
+    },
+    staleTime: 1000 * 60 * 10, // 10 mins
   });
 
-  return { ...queryInfo, isLoading: isFirestoreLoading };
+  return {
+    ...queryInfo,
+    isLoading: queryInfo.isLoading
+  };
 }

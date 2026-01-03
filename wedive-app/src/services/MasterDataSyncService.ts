@@ -1,61 +1,71 @@
 import * as FileSystem from 'expo-file-system/legacy';
-import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Asset } from 'expo-asset';
+import { app } from '../firebase';
+import { ref, getDownloadURL, getMetadata, getStorage } from 'firebase/storage';
 import { GzipHelper } from '../utils/GzipHelper';
 import { userDataService } from './UserDataService';
 
 const { cacheDirectory, documentDirectory } = FileSystem;
 
-const GCS_MASTER_URL = 'https://storage.googleapis.com/wedive-app-static-master/v1/master/latest.db.gz';
+// マスターデータ専用のバケット（gs://...）を指定
+const MASTER_BUCKET = 'gs://wedive-app-static-master';
+const storage = getStorage(app, MASTER_BUCKET);
+
+const MASTER_STORAGE_PATH = 'v1/master/latest.db.gz';
 const MASTER_DB_NAME = 'master.db';
-const ETAG_STORAGE_KEY = 'master_db_etag';
+const LAST_UPDATED_KEY = 'master_db_last_updated';
 const BUNDLED_DB_ASSET = require('../../assets/master.db');
 
 export class MasterDataSyncService {
   /**
-   * 同期実行（ETagチェック -> DL -> 解凍 -> クリーンアップ）
+   * 同期実行（Firebase Storage メタデータチェック -> DL -> 解凍 -> クリーンアップ）
    */
   static async syncMasterData(): Promise<void> {
     try {
       // 0. まず内蔵DBがあるか確認し、なければ展開する
       await this.ensureDatabaseExists();
 
-      console.log('[Sync] Checking master data update...');
+      console.log('[Sync] Checking master data update via Firebase Storage...');
 
-      // 1. ETag の取得（HEADリクエスト）
-      const response = await axios.head(GCS_MASTER_URL);
-      const newEtag = response.headers['etag'];
-      const cachedEtag = await AsyncStorage.getItem(ETAG_STORAGE_KEY);
+      const masterRef = ref(storage, MASTER_STORAGE_PATH);
 
-      if (cachedEtag === newEtag) {
+      // 1. メタデータの取得（更新日時のチェック）
+      const metadata = await getMetadata(masterRef);
+      const serverUpdated = metadata.updated; // ISO8601 string
+      const cachedUpdated = await AsyncStorage.getItem(LAST_UPDATED_KEY);
+
+      if (cachedUpdated === serverUpdated) {
         console.log('[Sync] Master data is up to date.');
         return;
       }
 
       console.log('[Sync] New master data version detected. Downloading...');
 
-      // 2. ダウンロード
+      // 2. 署名付き（トークン付き）URLの取得
+      const downloadUrl = await getDownloadURL(masterRef);
+
+      // 3. ダウンロード
       const tempPath = (cacheDirectory || '') + 'latest_master.db.gz';
-      const downloadResult = await FileSystem.downloadAsync(GCS_MASTER_URL, tempPath);
+      const downloadResult = await FileSystem.downloadAsync(downloadUrl, tempPath);
 
       if (downloadResult.status !== 200) {
         throw new Error(`Download failed with status ${downloadResult.status}`);
       }
 
-      // 3. 解凍
+      // 4. 解凍
       const sqliteDir = (documentDirectory || '') + 'SQLite/';
       const targetPath = sqliteDir + MASTER_DB_NAME;
       await GzipHelper.decompressGzipFile(tempPath, targetPath);
 
-      // 4. ETag の保存
-      if (newEtag) {
-        await AsyncStorage.setItem(ETAG_STORAGE_KEY, newEtag);
+      // 5. 更新日時の保存
+      if (serverUpdated) {
+        await AsyncStorage.setItem(LAST_UPDATED_KEY, serverUpdated);
       }
 
       console.log('[Sync] Master data updated to latest version.');
 
-      // 5. プロポーザルのクリーンアップ
+      // 6. プロポーザルのクリーンアップ
       await this.cleanupProposals();
 
     } catch (error) {
