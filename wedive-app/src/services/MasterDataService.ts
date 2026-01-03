@@ -29,16 +29,8 @@ export interface MasterCreature {
   category?: string;
 }
 
-export interface MasterShop {
-  id: string;
-  name: string;
-  region_id?: string;
-  area_id?: string;
-  address?: string;
-  phone?: string;
-  url?: string;
-}
-
+// TODO: Phase 2 - 将来の管理画面実装に合わせて有効化
+/*
 export interface MasterCertification {
   id: string;
   name: string;
@@ -52,6 +44,7 @@ export interface MasterBadge {
   icon_url?: string;
   condition?: any;
 }
+*/
 
 class MasterDataService {
   private sqliteDb: any = null;
@@ -205,27 +198,9 @@ class MasterDataService {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Creature));
   }
 
-  /**
-   * ショップ一覧の取得
-   */
-  async getAllShops(): Promise<MasterShop[]> {
-    const isAvailable = await this.initialize();
-    if (isAvailable && this.sqliteDb) {
-      try {
-        const results = await this.sqliteDb.getAllAsync('SELECT * FROM master_shops ORDER BY name ASC');
-        return results;
-      } catch (e) {
-        console.error('SQLite shops fetch failed:', e);
-      }
-    }
-    const snapshot = await getDocs(collection(firestoreDb, 'shops'));
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MasterShop));
-  }
-
-  /**
-   * 認定資格マスタの取得
-   */
-  async getAllCertifications(): Promise<MasterCertification[]> {
+  // TODO: Phase 2 - 認定資格マスタの取得 (管理画面実装後に有効化)
+  /*
+  async getAllCertifications(): Promise<any[]> {
     const isAvailable = await this.initialize();
     if (isAvailable && this.sqliteDb) {
       try {
@@ -239,13 +214,10 @@ class MasterDataService {
       }
     }
     const snapshot = await getDocs(collection(firestoreDb, 'certifications'));
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MasterCertification));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   }
 
-  /**
-   * バッジマスタの取得
-   */
-  async getAllBadges(): Promise<MasterBadge[]> {
+  async getAllBadges(): Promise<any[]> {
     const isAvailable = await this.initialize();
     if (isAvailable && this.sqliteDb) {
       try {
@@ -259,8 +231,9 @@ class MasterDataService {
       }
     }
     const snapshot = await getDocs(collection(firestoreDb, 'badges'));
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MasterBadge));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   }
+  */
 }
 
 export const masterDataService = new MasterDataService();

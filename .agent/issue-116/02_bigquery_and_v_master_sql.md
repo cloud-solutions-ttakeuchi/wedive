@@ -22,9 +22,8 @@ Firestoreから同期されたRAWデータ（JSON文字列を含むテーブル�
 | **RAWテーブル (Review)** | `reviews_raw_latest` | 地域情報の参照用。 |
 | **RAWテーブル (Log)** | `logs_raw_latest` | 公開フィードの参照用。 |
 | **RAWテーブル (User)** | `users_raw_latest` | ユーザー情報の参照用（名称・画像等の Denormalize 用）。 |
-| **RAWテーブル (Shop)** | `shops_raw_latest` | ダイビングショップ情報の参照用。 |
-| **RAWテーブル (Certification)** | `certifications_raw_latest` | 認定資格マスタ情報の参照用。 |
-| **RAWテーブル (Badge)** | `badges_raw_latest` | バッジマスタ情報の参照用。 |
+| **RAWテーブル (Certification)** | `certifications_raw_latest` | (TODO) 入力画面実装後に同期開始。 |
+| **RAWテーブル (Badge)** | `badges_raw_latest` | (TODO) 同上。 |
 | **ENRICHEDテーブル (Point)** | `points_enriched` | カナ変換済みポイント基本情報。 |
 | **ENRICHEDテーブル (Creature)** | `creatures_enriched` | カナ変換済み生物基本情報。 |
 | **VIEWテーブル** | `v_app_geography_master` | 地域・エリア階層マスタ（Region > Zone > Area） |
@@ -35,9 +34,8 @@ Firestoreから同期されたRAWデータ（JSON文字列を含むテーブル�
 | **VIEWテーブル** | `v_app_creature_points` | ダイビング生物ポイント_VIEW |
 | **VIEWテーブル** | `v_app_point_stats` | ポイント詳細統計_VIEW |
 | **VIEWテーブル** | `v_app_user_public_logs` | 公開ダイビングログ_VIEW（フィード用） |
-| **VIEWテーブル** | `v_app_shops_master` | ショップマスター_VIEW |
-| **VIEWテーブル** | `v_app_certifications_master`| 認定資格マスター_VIEW |
-| **VIEWテーブル** | `v_app_badges_master` | バッジマスター_VIEW |
+| **VIEWテーブル** | `v_app_certifications_master`| (TODO) 認定資格マスター_VIEW |
+| **VIEWテーブル** | `v_app_badges_master` | (TODO) バッジマスター_VIEW |
 
 ---
 
@@ -336,56 +334,41 @@ LIMIT 100
 
 ---
 
-## 11. VIEW 定義： `v_app_shops_master`
-ダイビングショップ情報。
-
-### 11.1 SQL ロジック概要
-```sql
-SELECT 
-  s.id,
-  JSON_VALUE(s.data, '$.name') AS name,
-  JSON_VALUE(s.data, '$.regionId') AS region_id,
-  JSON_VALUE(s.data, '$.areaId') AS area_id,
-  JSON_VALUE(s.data, '$.address') AS address,
-  JSON_VALUE(s.data, '$.phone') AS phone,
-  JSON_VALUE(s.data, '$.url') AS url,
-  JSON_VALUE(s.data, '$.status') AS status
-FROM `wedive_master_data_v1.shops_raw_latest` s
-```
-
----
-
-## 12. VIEW 定義： `v_app_certifications_master`
+## 11. VIEW 定義： `v_app_certifications_master` (TODO: 将来実装予定)
 認定資格（PADI, NAUI等）およびランク情報。
+※現状 Firestore コレクションがないためコメントアウト。
 
-### 12.1 SQL ロジック概要
 ```sql
+/*
 SELECT 
   id,
   JSON_VALUE(data, '$.name') AS name,
   JSON_VALUE(data, '$.organization') AS organization,
   JSON_QUERY(data, '$.ranks') AS ranks_json
 FROM `wedive_master_data_v1.certifications_raw_latest`
+*/
 ```
 
 ---
 
-## 13. VIEW 定義： `v_app_badges_master`
+## 12. VIEW 定義： `v_app_badges_master` (TODO: 将来実装予定)
 バッジ情報。
+※現状 Firestore コレクションがないためコメントアウト。
 
-### 13.1 SQL ロジック概要
 ```sql
+/*
 SELECT 
   id,
   JSON_VALUE(data, '$.name') AS name,
   JSON_VALUE(data, '$.iconUrl') AS icon_url,
   JSON_QUERY(data, '$.condition') AS condition_json
 FROM `wedive_master_data_v1.badges_raw_latest`
+*/
 ```
 
 ---
 
-## 14. 増分エンリッチメント・ロジック (Python Enricher)
+## 13. 増分エンリッチメント・ロジック (Python Enricher)
 本ロジックは `master-data-enricher` 関数 (Python) 内で動的に生成・実行され、コストのかかる変換処理を差分のみに限定する。
 
 ### 11.1 エンリッチメント・パイプラインの動作

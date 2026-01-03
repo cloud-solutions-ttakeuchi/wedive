@@ -1,4 +1,6 @@
 
+-- TODO: Phase 2 - ダイビングショップマスタ (Firestore コレクション未作成のためコメントアウト)
+/*
 SELECT
   s.document_id AS id,
   JSON_VALUE(s.data, '$.name') AS name,
@@ -9,3 +11,4 @@ SELECT
   JSON_VALUE(s.data, '$.url') AS url,
   JSON_VALUE(s.data, '$.status') AS status
 FROM `wedive_master_data_v1`.shops_raw_latest s
+*/

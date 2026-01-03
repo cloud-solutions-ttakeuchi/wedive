@@ -11,9 +11,8 @@
 | `reviews` | 19 | `master_point_reviews` | 21 | `my_reviews` | 12 |
 | `users` | 16 | － | － | `my_settings` | 2 |
 | `users/{uid}/logs` | 21 | `master_public_logs` | 24 | `my_logs` | 24 |
-| `shops` | 8 | `master_shops` | 8 | － | － |
-| `certifications` | 4 | `master_certifications` | 4 | － | － |
-| `badges` | 4 | `master_badges` | 4 | － | － |
+| `certifications` (TODO) | 4 | `master_certifications` | 4 | － | － |
+| `badges` (TODO) | 4 | `master_badges` | 4 | － | － |
 | `*_proposals` | 8 | － | － | `my_proposals` | 6 |
 
 ### **カラム数に差異がある主な理由 (Rationale)**
@@ -238,12 +237,12 @@ CREATE TABLE master_public_logs (
   liked_by_json TEXT, -- string[] (User IDs)
   garmin_activity_id TEXT,
   review_id TEXT,
-  profile_json TEXT,  -- array(map) [{depth, temp, hr, time}]
-  search_text TEXT,
   created_at TEXT
 );
 CREATE INDEX idx_master_logs_point ON master_public_logs(point_id);
 
+-- TODO: Phase 2 - 将来実装予定のマスタ
+/*
 -- master_certifications (認定資格マスタ)
 CREATE TABLE master_certifications (
   id TEXT PRIMARY KEY,
@@ -259,18 +258,7 @@ CREATE TABLE master_badges (
   icon_url TEXT,
   condition_json TEXT
 );
-
--- master_shops (ダイビングショップマスタ)
-CREATE TABLE master_shops (
-  id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  region_id TEXT,
-  area_id TEXT,
-  address TEXT,
-  phone TEXT,
-  url TEXT,
-  status TEXT
-);
+*/
 ```
 
 ---

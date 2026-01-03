@@ -24,9 +24,8 @@ TABLE_MAPPING = {
     "v_app_point_stats": "master_point_stats",
     "v_app_point_reviews": "master_point_reviews",
     "v_app_user_public_logs": "master_public_logs",
-    "v_app_shops_master": "master_shops",
-    "v_app_certifications_master": "master_certifications",
-    "v_app_badges_master": "master_badges"
+    # "v_app_certifications_master": "master_certifications", # TODO: Phase 2
+    # "v_app_badges_master": "master_badges"                 # TODO: Phase 2
 }
 
 def export_to_gcs(local_path, destination_blob_name):
