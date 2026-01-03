@@ -3,6 +3,7 @@ import { User as FirebaseUser, onAuthStateChanged, signOut as firebaseSignOut } 
 import { auth, db } from '../firebase';
 import { doc, onSnapshot, updateDoc, deleteDoc, collection, query, orderBy } from 'firebase/firestore';
 import { User, DiveLog } from '../types';
+import { userDataService } from '../services/UserDataService';
 
 type AuthContextType = {
   user: User | null;
@@ -38,17 +39,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let unsubUser: (() => void) | undefined;
     let unsubLogs: (() => void) | undefined;
 
-    const unsubscribeAuth = onAuthStateChanged(auth, (fbUser) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (fbUser) => {
       setFirebaseUser(fbUser);
 
       if (fbUser) {
+        // SQLiteの初期化と必要に応じた初期同期を開始
+        try {
+          await userDataService.initialize();
+          await userDataService.syncInitialData(fbUser.uid);
+
+          // ローカルSQLiteから初期ロード
+          const localLogs = await userDataService.getLogs();
+          if (localLogs.length > 0) {
+            setLogs(localLogs);
+          }
+          const localUser = await userDataService.getSetting<User>('profile');
+          if (localUser) {
+            setUser(localUser);
+          }
+          setIsLoading(false);
+        } catch (err) {
+          console.error("Initial SQLite sync error:", err);
+        }
+
         // 1. Sync User Profile
-        unsubUser = onSnapshot(doc(db, 'users', fbUser.uid), (snap) => {
+        unsubUser = onSnapshot(doc(db, 'users', fbUser.uid), async (snap) => {
           if (snap.exists()) {
-            setUser({ id: snap.id, ...snap.data() } as User);
+            const userData = { id: snap.id, ...snap.data() } as User;
+            setUser(userData);
+            await userDataService.saveSetting('profile', userData);
           } else {
             // Fallback for new users
-            setUser({
+            const guestUser: User = {
               id: fbUser.uid,
               name: fbUser.displayName || 'Guest',
               role: 'user',
@@ -57,20 +79,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               favoriteCreatureIds: [],
               wanted: [],
               bookmarkedPointIds: [],
-            });
+            };
+            setUser(guestUser);
+            await userDataService.saveSetting('profile', guestUser);
           }
         });
 
         // 2. Sync User Logs (Sub-collection)
-        // Web版の「リストが空」という状態に左右されないよう、サブコレクションを直接監視する
         const logsQuery = query(
           collection(db, 'users', fbUser.uid, 'logs'),
           orderBy('date', 'desc')
         );
-        unsubLogs = onSnapshot(logsQuery, (snap) => {
+        unsubLogs = onSnapshot(logsQuery, async (snap) => {
           const logsData = snap.docs.map(d => ({ ...d.data(), id: d.id } as DiveLog));
           setLogs(logsData);
-          setIsLoading(false); // ログが空の場合でも、読み込み完了とみなす
+          setIsLoading(false);
+
+          // Firestoreからの変更をSQLiteにも反映（リアルタイム同期）
+          // 差分のみ更新するのが理想だが、ここでは全件ループで保存
+          for (const log of logsData) {
+            await userDataService.saveLog(fbUser.uid, log, false); // 第3引数は Firestore への二重書き込み防止
+          }
         }, (err) => {
           console.error("Logs sync error:", err);
           setIsLoading(false);
@@ -99,10 +128,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateUser = async (userData: Partial<User>) => {
-    if (!firebaseUser) return;
+    if (!firebaseUser || !user) return;
     try {
+      const updatedUser = { ...user, ...userData };
+      setUser(updatedUser);
+      // SQLite に即時保存
+      await userDataService.saveSetting('profile', updatedUser);
+      // Firestore に非同期で反映
       await updateDoc(doc(db, 'users', firebaseUser.uid), userData);
-      // setUser is handled by onSnapshot
     } catch (error) {
       console.error("Error updating user:", error);
       throw error;

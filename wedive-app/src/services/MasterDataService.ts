@@ -29,6 +29,30 @@ export interface MasterCreature {
   category?: string;
 }
 
+export interface MasterShop {
+  id: string;
+  name: string;
+  region_id?: string;
+  area_id?: string;
+  address?: string;
+  phone?: string;
+  url?: string;
+}
+
+export interface MasterCertification {
+  id: string;
+  name: string;
+  organization?: string;
+  ranks?: any[];
+}
+
+export interface MasterBadge {
+  id: string;
+  name: string;
+  icon_url?: string;
+  condition?: any;
+}
+
 class MasterDataService {
   private sqliteDb: any = null;
   private isInitializing = false;
@@ -179,6 +203,63 @@ class MasterDataService {
     );
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Creature));
+  }
+
+  /**
+   * ショップ一覧の取得
+   */
+  async getAllShops(): Promise<MasterShop[]> {
+    const isAvailable = await this.initialize();
+    if (isAvailable && this.sqliteDb) {
+      try {
+        const results = await this.sqliteDb.getAllAsync('SELECT * FROM master_shops ORDER BY name ASC');
+        return results;
+      } catch (e) {
+        console.error('SQLite shops fetch failed:', e);
+      }
+    }
+    const snapshot = await getDocs(collection(firestoreDb, 'shops'));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MasterShop));
+  }
+
+  /**
+   * 認定資格マスタの取得
+   */
+  async getAllCertifications(): Promise<MasterCertification[]> {
+    const isAvailable = await this.initialize();
+    if (isAvailable && this.sqliteDb) {
+      try {
+        const results = await this.sqliteDb.getAllAsync('SELECT * FROM master_certifications ORDER BY name ASC');
+        return results.map((r: any) => ({
+          ...r,
+          ranks: r.ranks_json ? JSON.parse(r.ranks_json) : []
+        }));
+      } catch (e) {
+        console.error('SQLite certs fetch failed:', e);
+      }
+    }
+    const snapshot = await getDocs(collection(firestoreDb, 'certifications'));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MasterCertification));
+  }
+
+  /**
+   * バッジマスタの取得
+   */
+  async getAllBadges(): Promise<MasterBadge[]> {
+    const isAvailable = await this.initialize();
+    if (isAvailable && this.sqliteDb) {
+      try {
+        const results = await this.sqliteDb.getAllAsync('SELECT * FROM master_badges ORDER BY name ASC');
+        return results.map((r: any) => ({
+          ...r,
+          condition: r.condition_json ? JSON.parse(r.condition_json) : null
+        }));
+      } catch (e) {
+        console.error('SQLite badges fetch failed:', e);
+      }
+    }
+    const snapshot = await getDocs(collection(firestoreDb, 'badges'));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MasterBadge));
   }
 }
 
