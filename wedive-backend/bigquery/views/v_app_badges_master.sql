@@ -1,5 +1,12 @@
 
 -- TODO: Phase 2 - バッジマスタ (将来実装予定: 管理画面からの登録・編集機能の追加に合わせて有効化)
+-- 現状はダミーのクエリを返してスキーマのみ定義
+SELECT
+  CAST(NULL AS STRING) as id,
+  CAST(NULL AS STRING) as name,
+  CAST(NULL AS STRING) as icon_url,
+  CAST(NULL AS STRING) as condition_json
+LIMIT 0
 /*
 SELECT
   id,
