@@ -27,12 +27,17 @@ export class MasterDataSyncService {
       const serverUpdated = metadata.updated; // ISO8601 string
       const cachedUpdated = localStorage.getItem(LAST_UPDATED_KEY);
 
-      if (cachedUpdated === serverUpdated) {
+      // Force sync once for engine migration (wa-sqlite -> official sqlite-wasm)
+      const ENGINE_VERSION = 'v2-opfs';
+      const lastEngineVersion = localStorage.getItem('master_db_engine_version');
+
+      if (cachedUpdated === serverUpdated && lastEngineVersion === ENGINE_VERSION) {
         console.log('[Sync] Master data is up to date.');
         return;
       }
 
-      console.log('[Sync] New master data version detected. Downloading...');
+      console.log('[Sync] New master data or engine version detected. Synchronizing...');
+      localStorage.setItem('master_db_engine_version', ENGINE_VERSION);
 
       // 2. ダウンロード URL の取得
       const downloadUrl = await getDownloadURL(masterRef);
@@ -47,6 +52,11 @@ export class MasterDataSyncService {
       // 4. 解凍 (Gzip)
       console.log('[Sync] Decompressing master data...');
       const decompressed = pako.ungzip(new Uint8Array(arrayBuffer));
+
+      // Debug: Check header
+      const header = new TextDecoder().decode(decompressed.slice(0, 16));
+      console.log('[Sync] DB Header (Text):', header);
+      console.log('[Sync] DB Header (Hex):', Array.from(decompressed.slice(0, 16)).map(b => b.toString(16).padStart(2, '0')).join(' '));
 
       // 5. SQLite への反映
       // Web 版ではバイナリデータをメモリにロードしてから永続化ストレージへ保存する

@@ -1,152 +1,166 @@
-import * as SQLite from 'wa-sqlite';
-// @ts-ignore
-import SQLiteESMFactory from 'wa-sqlite/dist/wa-sqlite-async.mjs';
-// @ts-ignore
-import { IDBBatchAtomicVFS } from 'wa-sqlite/src/examples/IDBBatchAtomicVFS.js';
-// @ts-ignore
-import { MemoryVFS } from 'wa-sqlite/src/examples/MemoryVFS.js';
+// WebSQLiteEngine.ts – Official SQLite WASM implementation with OPFS
 import type { SQLiteExecutor } from 'wedive-shared';
 
-// 共有の WASM インスタンス管理
-let sharedSqlite: any = null;
-let sharedApi: any = null;
-const registeredVFS = new Set<string>();
-let memoryVfsInstance: any = null; // メモリ VFS のインスタンスを保持
+// Shared promiser instance and lock
+let sharedPromiser: any = null;
+let initializationPromise: Promise<any> | null = null;
 
 export class WebSQLiteEngine implements SQLiteExecutor {
-  private db: number | null = null;
-  private api: any = null;
-  private vfs: any = null;
+  private dbPath: string;
+  private promiser: any = null;
   private dbName: string;
 
   constructor(dbName: string) {
     this.dbName = dbName;
+    this.dbPath = `/${dbName}`;
   }
 
-  async initialize() {
-    if (this.db) return;
+  /** Initialise the SQLite WASM Promiser and open the DB via OPFS */
+  async initialize(): Promise<void> {
+    if (this.promiser) return;
 
-    // WASM インスタンスを一度だけ作成
-    if (!sharedSqlite) {
-      sharedSqlite = await SQLiteESMFactory();
-      sharedApi = SQLite.Factory(sharedSqlite);
-    }
-    this.api = sharedApi;
-
-    // VFS の登録 (一度だけ)
-    if (!registeredVFS.has(this.dbName)) {
-      this.vfs = new IDBBatchAtomicVFS(this.dbName);
-      this.api.vfs_register(this.vfs, true);
-      registeredVFS.add(this.dbName);
+    if (initializationPromise) {
+      this.promiser = await initializationPromise;
+      return;
     }
 
-    this.db = await this.api.open_v2(this.dbName);
-    console.log(`[SQLite Web] Database ${this.dbName} initialized.`);
-  }
+    initializationPromise = (async () => {
+      if (!sharedPromiser) {
+        console.log('[SQLite Web] Initializing Official SQLite WASM Promiser...');
 
-  async getAllAsync<T>(sql: string, params: any[] = []): Promise<T[]> {
-    if (!this.db) await this.initialize();
+        // Wait a bit if the script is still loading (module scripts are deferred)
+        let promiserFactory = (globalThis as any).sqlite3Worker1Promiser;
+        if (!promiserFactory) {
+          console.log('[SQLite Web] Promiser not found yet, waiting...');
+          await new Promise(resolve => setTimeout(resolve, 100));
+          promiserFactory = (globalThis as any).sqlite3Worker1Promiser;
+        }
 
-    const results: T[] = [];
-    await this.api.statements(this.db, sql, (s: any) => {
-      for (let i = 0; i < params.length; ++i) {
-        this.api.bind(s, i + 1, params[i]);
+        if (!promiserFactory) {
+          throw new Error('sqlite3Worker1Promiser not found. Ensure script tag is in index.html with type="module"');
+        }
+
+        sharedPromiser = await new Promise((resolve, reject) => {
+          try {
+            const _promiser = promiserFactory({
+              // Use direct path for the worker in public folder
+              worker: () => new Worker('/sqlite3/sqlite3-worker1.mjs', { type: 'module' }),
+              onready: () => {
+                console.log('[SQLite Web] Worker ready.');
+                resolve(_promiser);
+              },
+              onerror: (err: any) => {
+                console.error('[SQLite Web] Worker error:', err);
+                reject(err);
+              },
+            });
+          } catch (e) {
+            reject(e);
+          }
+        });
       }
-      while (this.api.step(s) === SQLite.SQLITE_ROW) {
-        results.push(this.api.row(s) as T);
-      }
+      return sharedPromiser;
+    })();
+
+    this.promiser = await initializationPromise;
+
+    console.log(`[SQLite Web] Opening database: ${this.dbName}...`);
+    await this.promiser('open', {
+      filename: `file:${this.dbName}?vfs=opfs`,
     });
-    return results;
+
+    console.log(`[SQLite Web] Database ${this.dbName} opened via OPFS successfully.`);
   }
 
+  /** Execute a SELECT and return rows as objects */
+  async getAllAsync<T>(sql: string, params: any[] = []): Promise<T[]> {
+    if (!this.promiser) await this.initialize();
+
+    try {
+      const response = await this.promiser('exec', {
+        sql,
+        bind: params,
+        rowMode: 'object',
+      });
+
+      // Promiser returns { type: 'exec', result: { resultRows: [...] } }
+      const rows = response.result.resultRows || [];
+      return rows as T[];
+    } catch (e) {
+      console.error(`[SQLite Web] getAllAsync error for ${sql}:`, e);
+      throw e;
+    }
+  }
+
+  /** Execute a non‑SELECT statement */
   async runAsync(sql: string, params: any[] = []): Promise<void> {
-    if (!this.db) await this.initialize();
-    await this.api.exec(this.db, sql, null, params);
+    if (!this.promiser) await this.initialize();
+
+    try {
+      await this.promiser('exec', {
+        sql,
+        bind: params,
+      });
+    } catch (e) {
+      console.error(`[SQLite Web] runAsync error for ${sql}:`, e);
+      throw e;
+    }
   }
 
+  /** Close the database */
   async close(): Promise<void> {
-    if (this.db && this.api) {
-      await this.api.close(this.db);
-      this.db = null;
+    if (this.promiser) {
+      await this.promiser('close', {
+        filename: `file:${this.dbName}?vfs=opfs`,
+      });
+      this.promiser = null;
     }
   }
 
   /**
-   * バイナリデータ (Uint8Array) からデータベースをインポート
+   * Import a SQLite database from a Uint8Array.
+   * In OPFS, we simply write the bytes to the virtual file system.
    */
   async importDatabase(data: Uint8Array): Promise<void> {
-    if (!this.api) await this.initialize();
+    console.log(`[SQLite Web] Importing database into OPFS: ${this.dbName}...`);
 
-    // 1. メモリ VFS を一度だけ登録
-    const memoryVfsName = 'memory-import';
-    if (!registeredVFS.has(memoryVfsName)) {
-      memoryVfsInstance = new MemoryVFS();
-      (memoryVfsInstance as any).name = memoryVfsName;
-      this.api.vfs_register(memoryVfsInstance);
-      registeredVFS.add(memoryVfsName);
-    }
-
-    const tempName = `import_${Date.now()}.db`;
-    const buffer = data.slice().buffer;
-
-    // 2. メモリ VFS 内にバイナリデータを配置
-    (memoryVfsInstance as any).mapNameToFile.set(tempName, {
-      name: tempName,
-      flags: SQLite.SQLITE_OPEN_CREATE | SQLite.SQLITE_OPEN_READWRITE,
-      size: buffer.byteLength,
-      data: buffer
-    });
-
-    let srcDb: number | null = null;
     try {
-      // 3. メモリ上の DB を開く
-      srcDb = await this.api.open_v2(tempName, SQLite.SQLITE_OPEN_READWRITE, memoryVfsName);
-
-      // 4. 現在の DB を閉じる（上書きするため）
-      if (this.db) {
-        await this.api.close(this.db);
-        this.db = null;
+      // 1. Close current connection if any to release file lock
+      if (this.promiser) {
+        await this.close();
       }
 
-      // 5. 永続ストレージ上の既存ファイルを削除
-      if (this.vfs) {
-        try {
-          await this.vfs.xDelete(this.dbName, 0);
-        } catch (delErr) {
-          console.warn('[SQLite Web] Old DB file may not exist (OK):', delErr);
-        }
+      // 2. Write directly to OPFS using the browser's FileSystem API
+      // Note: OPFS is available via navigator.storage.getDirectory()
+      const root = await navigator.storage.getDirectory();
+
+      // Delete existing file if any to be clean
+      try {
+        await root.removeEntry(this.dbName);
+        // Also remove journal/wal files if they exist
+        await root.removeEntry(`${this.dbName}-journal`).catch(() => { });
+        await root.removeEntry(`${this.dbName}-wal`).catch(() => { });
+      } catch (e) {
+        // Ignore if file doesn't exist
       }
 
-      // 6. メモリから永続ストレージへデータを転送
-      await this.api.exec(srcDb, `VACUUM INTO '${this.dbName}'`);
+      const fileHandle = await root.getFileHandle(this.dbName, { create: true });
+      const writable = await (fileHandle as any).createWritable();
+      await writable.write(data);
+      await writable.close();
 
-      // 7. 新しい DB を開く
-      this.db = await this.api.open_v2(this.dbName);
+      console.log(`[SQLite Web] Successfully wrote ${data.byteLength} bytes to OPFS file: ${this.dbName}`);
 
-      console.log(`[SQLite Web] ${this.dbName} updated successfully.`);
+      // 3. Re-open the database
+      await this.initialize();
+
+      // Verify schema (optional debug)
+      const tables = await this.getAllAsync<{ name: string }>("SELECT name FROM sqlite_master WHERE type='table'");
+      console.log('[SQLite Web] Imported tables:', tables.map(t => t.name).join(', '));
+
     } catch (e) {
-      console.error('[SQLite Web] Import failed:', e);
-      // エラーが発生した場合でも DB を開き直す試み
-      if (!this.db) {
-        try {
-          this.db = await this.api.open_v2(this.dbName);
-        } catch (reopenErr) {
-          console.error('[SQLite Web] Failed to reopen DB after error:', reopenErr);
-        }
-      }
+      console.error('[SQLite Web] importDatabase error:', e);
       throw e;
-    } finally {
-      // 8. クリーンアップ
-      if (srcDb !== null) {
-        try {
-          await this.api.close(srcDb);
-        } catch (closeErr) {
-          console.warn('[SQLite Web] Failed to close source DB:', closeErr);
-        }
-      }
-      if (memoryVfsInstance) {
-        (memoryVfsInstance as any).mapNameToFile.delete(tempName);
-      }
     }
   }
 }
