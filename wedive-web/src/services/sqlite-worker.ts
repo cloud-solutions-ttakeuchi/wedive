@@ -1,7 +1,10 @@
 // @ts-ignore
 import sqlite3InitModule from '@sqlite.org/sqlite-wasm';
 // @ts-ignore
-import wasmUrl from '../assets/sqlite3.wasm?url';
+import sqlite3InitModule from '@sqlite.org/sqlite-wasm';
+// @ts-ignore
+// import wasmUrl from '../assets/sqlite3.wasm?url';
+const wasmUrl = 'https://unpkg.com/@sqlite.org/sqlite-wasm@3.46.0/sqlite-wasm/jswasm/sqlite3.wasm';
 
 /**
  * SQLite WASM をバックグラウンドで初期化するためのワーカー
