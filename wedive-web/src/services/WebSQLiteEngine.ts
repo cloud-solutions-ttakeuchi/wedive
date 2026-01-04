@@ -1,21 +1,24 @@
-// WebSQLiteEngine.ts – Official SQLite WASM implementation with OPFS
-// @ts-ignore
-import sqlite3Worker1Promiser from '@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm/sqlite3-worker1-promiser-bundler-friendly.mjs';
+// WebSQLiteEngine.ts – Robust SQLite WASM implementation via Worker
 import type { SQLiteExecutor } from 'wedive-shared';
 
-// Shared promiser instance and lock
+// Vite-native 方式で Worker を読み込む
+const workerUrl = new URL('./sqlite-worker.ts', import.meta.url);
+
 let sharedPromiser: any = null;
 let initializationPromise: Promise<any> | null = null;
 
 export class WebSQLiteEngine implements SQLiteExecutor {
-  private promiser: any = null;
   private dbName: string;
+  private promiser: any = null;
 
   constructor(dbName: string) {
     this.dbName = dbName;
   }
 
-  /** Initialise the SQLite WASM Promiser and open the DB via OPFS */
+  /**
+   * SQLite WASM を Worker 経由で初期化します。
+   * これが「唯一の正攻法」であり、OPFS へのアクセスと Vite のビルド問題を同時に解決します。
+   */
   async initialize(): Promise<void> {
     if (this.promiser) return;
 
@@ -25,39 +28,45 @@ export class WebSQLiteEngine implements SQLiteExecutor {
     }
 
     initializationPromise = (async () => {
-      if (!sharedPromiser) {
-        console.log('[SQLite Web] Initializing Official SQLite WASM Promiser (Bundler Friendly)...');
+      console.log('[SQLite Web] Setting up SQLite Worker Promiser...');
 
-        // sqlite3Worker1Promiser.v2() returns a promise that resolves to the promiser function
-        sharedPromiser = await sqlite3Worker1Promiser.v2({
-          // By using the bundler version, we don't need to manually provide the worker
-          // but we can if the default path resolution fails.
-          // For now, let's try the default provided by the bundler-friendly mjs.
-        });
+      // 公式ライブラリから Promiser ファクトリをインポート
+      const { sqlite3Worker1Promiser } = await import('@sqlite.org/sqlite-wasm') as any;
 
-        console.log('[SQLite Web] Worker ready.');
-      }
-      return sharedPromiser;
+      return new Promise((resolve, reject) => {
+        try {
+          const _promiser = sqlite3Worker1Promiser({
+            // Vite でビルドされた Worker を指定
+            worker: () => new Worker(workerUrl, { type: 'module' }),
+            onready: () => {
+              console.log('[SQLite Web] Worker is ready and connected.');
+              resolve(_promiser);
+            },
+            onerror: (err: any) => {
+              console.error('[SQLite Web] Worker initialization failed:', err);
+              reject(err);
+            }
+          });
+        } catch (e) {
+          reject(e);
+        }
+      });
     })();
 
     this.promiser = await initializationPromise;
 
-    console.log(`[SQLite Web] Opening database: ${this.dbName}...`);
-    try {
-      await this.promiser('open', {
-        filename: `file:${this.dbName}?vfs=opfs`,
-      });
-      console.log(`[SQLite Web] Database ${this.dbName} opened via OPFS successfully.`);
-    } catch (e) {
-      console.error(`[SQLite Web] Failed to open database ${this.dbName}:`, e);
-      throw e;
-    }
+    // データベースを OPFS (高速モード) で開く
+    console.log(`[SQLite Web] Opening database: ${this.dbName} (VFS: opfs)`);
+    await this.promiser('open', {
+      filename: this.dbName,
+      vfs: 'opfs',
+    });
 
-    // Log database summary
+    console.log(`[SQLite Web] Database ${this.dbName} is now open.`);
     await this.logDatabaseSummary();
   }
 
-  /** Execute a SELECT and return rows as objects */
+  /** SELECT クエリを実行し、結果をオブジェクトの配列として返す */
   async getAllAsync<T>(sql: string, params: any[] = []): Promise<T[]> {
     if (!this.promiser) await this.initialize();
 
@@ -67,109 +76,91 @@ export class WebSQLiteEngine implements SQLiteExecutor {
         bind: params,
         rowMode: 'object',
       });
-
-      const rows = response.result.resultRows || [];
-      return rows as T[];
-    } catch (e) {
-      console.error(`[SQLite Web] getAllAsync error for ${sql}:`, e);
+      return (response.result.resultRows || []) as T[];
+    } catch (e: any) {
+      console.error(`[SQLite Web] Query failed: ${sql}`, e);
+      // 詳細なエラー情報をログ出力
+      if (e.result?.message) {
+        console.error(`[SQLite Web] SQLite Message: ${e.result.message}`);
+      }
       throw e;
     }
   }
 
-  /** Execute a non‑SELECT statement */
+  /** INSERT/UPDATE/DELETE などの更新クエリを実行する */
   async runAsync(sql: string, params: any[] = []): Promise<void> {
     if (!this.promiser) await this.initialize();
-
     try {
-      await this.promiser('exec', {
-        sql,
-        bind: params,
-      });
-    } catch (e) {
-      console.error(`[SQLite Web] runAsync error for ${sql}:`, e);
+      await this.promiser('exec', { sql, bind: params });
+    } catch (e: any) {
+      console.error(`[SQLite Web] Execution failed: ${sql}`, e);
       throw e;
     }
   }
 
-  /** Close the database */
+  /** 接続を解除する */
   async close(): Promise<void> {
     if (this.promiser) {
       try {
-        await this.promiser('close', {
-          filename: `file:${this.dbName}?vfs=opfs`,
-        });
-      } catch (_) {
-        // Ignore if error during close
-      }
+        await this.promiser('close');
+      } catch (_) { }
       this.promiser = null;
     }
   }
 
   /**
-   * Import a SQLite database from a Uint8Array.
-   * In OPFS, we simply write the bytes to the virtual file system.
+   * 外部から取得したデータベース（Uint8Array）を SQLite 側に流し込む
    */
   async importDatabase(data: Uint8Array): Promise<void> {
-    console.log(`[SQLite Web] Importing database into OPFS: ${this.dbName}...`);
+    console.log(`[SQLite Web] Importing binary data into SQLite: ${data.byteLength} bytes`);
+
+    // 1. 既存の接続を完全に削除してリセット（重要）
+    await this.close();
+    initializationPromise = null;
+
+    // 2. ブラウザ側の OPFS も一旦掃除する（ゴミが残らないように）
+    const root = await navigator.storage.getDirectory();
+    try {
+      await root.removeEntry(this.dbName).catch(() => { });
+      await root.removeEntry(`${this.dbName}-journal`).catch(() => { });
+      await root.removeEntry(`${this.dbName}-wal`).catch(() => { });
+    } catch (_) { }
+
+    // 3. SQLite の 'open' コマンドで 'buffer' を渡してインポート！
+    // こうすることで SQLite が内部で最適な OPFS 管理ファイルとして保存してくれます
+    console.log('[SQLite Web] Performing native import via open(buffer)...');
+
+    // まず Promiser を再取得（初期化）
+    await this.initialize(); // これで promiser がセットされる
 
     try {
-      // 1. Close current connection if any to release file lock
-      if (this.promiser) {
-        await this.close();
-      }
-
-      // 2. Write directly to OPFS using the browser's FileSystem API
-      const root = await navigator.storage.getDirectory();
-
-      // Delete existing file if any to be clean
-      try {
-        await root.removeEntry(this.dbName);
-        await root.removeEntry(`${this.dbName}-journal`).catch(() => { });
-        await root.removeEntry(`${this.dbName}-wal`).catch(() => { });
-      } catch (_) {
-        // Ignore if file doesn't exist
-      }
-
-      const fileHandle = await root.getFileHandle(this.dbName, { create: true });
-      const writable = await (fileHandle as any).createWritable();
-      await writable.write(data);
-      await writable.close();
-
-      console.log(`[SQLite Web] Successfully wrote ${data.byteLength} bytes to OPFS file: ${this.dbName}`);
-
-      // 3. Re-open the database
-      await this.initialize();
-
+      // 既存の空DBを一度閉じてから、バッファを指定して開き直すことでインポートを実現
+      await this.promiser('close');
+      await this.promiser('open', {
+        filename: this.dbName,
+        vfs: 'opfs',
+        buffer: data.buffer, // これが決め手！
+      });
+      console.log('[SQLite Web] Native import successful.');
+      await this.logDatabaseSummary();
     } catch (err) {
-      console.error('[SQLite Web] importDatabase error:', err);
+      console.error('[SQLite Web] Native import failed:', err);
       throw err;
     }
   }
 
-  /**
-   * Log all tables and their row counts to the console for debugging.
-   */
+  /** テーブル件数をログ出力（検証用） */
   async logDatabaseSummary(): Promise<void> {
     try {
       const tables = await this.getAllAsync<{ name: string }>("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
-
-      console.group(`[SQLite Web] Database Summary: ${this.dbName}`);
-      if (tables.length === 0) {
-        console.log('No tables found.');
-      }
-
+      console.group(`[SQLite Web] Summary: ${this.dbName}`);
       for (const table of tables) {
-        try {
-          const countResult = await this.getAllAsync<any>(`SELECT count(*) as count FROM ${table.name}`);
-          const count = countResult[0]?.count ?? 0;
-          console.log(`- ${table.name.padEnd(25)}: ${count.toLocaleString()} rows`);
-        } catch (e) {
-          console.error(`- ${table.name.padEnd(25)}: Error getting count`, e);
-        }
+        const result = await this.getAllAsync<any>(`SELECT count(*) as count FROM ${table.name}`);
+        console.log(`- ${table.name.padEnd(20)}: ${result[0]?.count?.toLocaleString()} rows`);
       }
       console.groupEnd();
     } catch (e) {
-      console.error('[SQLite Web] Failed to get database summary:', e);
+      console.error('[SQLite Web] Could not log summary', e);
     }
   }
 }

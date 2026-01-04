@@ -151,36 +151,48 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         // B. SQLite からデータをロード
         await masterDbEngine.initialize();
 
-        const [r, z, a, c, p, pc, rv, pl] = await Promise.all([
-          masterDbEngine.getAllAsync<any>('SELECT * FROM master_regions'),
-          masterDbEngine.getAllAsync<any>('SELECT * FROM master_zones'),
-          masterDbEngine.getAllAsync<any>('SELECT * FROM master_areas'),
-          masterDbEngine.getAllAsync<any>('SELECT * FROM master_creatures LIMIT 1000'),
-          masterDbEngine.getAllAsync<any>('SELECT * FROM master_points LIMIT 1000'),
-          masterDbEngine.getAllAsync<any>('SELECT * FROM master_point_creatures'),
-          masterDbEngine.getAllAsync<any>('SELECT * FROM master_point_reviews ORDER BY created_at DESC LIMIT 100'),
-          masterDbEngine.getAllAsync<any>('SELECT * FROM master_public_logs ORDER BY date DESC LIMIT 20')
+        const loadTable = async <T,>(tableName: string, query: string): Promise<T[]> => {
+          try {
+            return await masterDbEngine.getAllAsync<T>(query);
+          } catch (err) {
+            console.warn(`[MasterData] Table ${tableName} not found or query failed, skipping.`);
+            return [];
+          }
+        };
+
+        const [geo, c, p, pc, rv, pl] = await Promise.all([
+          loadTable<any>('master_geography', 'SELECT * FROM master_geography'),
+          loadTable<any>('master_creatures', 'SELECT * FROM master_creatures LIMIT 1000'),
+          loadTable<any>('master_points', 'SELECT * FROM master_points LIMIT 1000'),
+          loadTable<any>('master_point_creatures', 'SELECT * FROM master_point_creatures'),
+          loadTable<any>('master_point_reviews', 'SELECT * FROM master_point_reviews ORDER BY created_at DESC LIMIT 100'),
+          loadTable<any>('master_public_logs', 'SELECT * FROM master_public_logs ORDER BY date DESC LIMIT 20')
         ]);
 
-        if (r.length) setRegions(r);
-        if (z.length) setZones(z.map(i => ({ ...i, regionId: i.region_id })));
-        if (a.length) setAreas(a.map(i => ({ ...i, zoneId: i.zone_id, regionId: i.region_id })));
+        // Geography (Region / Zone / Area) の振り分け
+        if (geo.length) {
+          const regionsObj = geo.filter((i: any) => i.type === 'region');
+          const zonesObj = geo.filter((i: any) => i.type === 'zone');
+          const areasObj = geo.filter((i: any) => i.type === 'area');
+
+          if (regionsObj.length) setRegions(regionsObj);
+          if (zonesObj.length) setZones(zonesObj.map((i: any) => ({ ...i, regionId: i.region_id })));
+          if (areasObj.length) setAreas(areasObj.map((i: any) => ({ ...i, zoneId: i.zone_id, regionId: i.region_id })));
+        }
+
         if (c.length) setCreatures(c.map(i => ({ ...i, status: 'approved' })));
         if (p.length) setPoints(p.map(i => ({ ...i, status: 'approved' })));
         if (pc.length) setPointCreatures(pc.map(i => ({ ...i, status: 'approved' })));
         if (rv.length) setReviews(rv.map(i => ({ ...i, status: 'approved' })));
         if (pl.length) setRecentLogs(pl);
 
-        console.log('[MasterData] Master data (including reviews/logs) loaded from SQLite.');
+        console.log('[MasterData] Master data loaded from SQLite (using unified geography).');
 
       } catch (e) {
-        console.error('[MasterData] Failed to load from SQLite:', e);
+        console.error('[MasterData] Fatal error loading master data:', e);
       }
     };
 
-    initMasterData();
-
-    // マスタデータの同期とロード
     initMasterData();
   }, []);
 
