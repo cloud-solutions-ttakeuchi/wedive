@@ -17,7 +17,7 @@ export default defineConfig({
       manifest: {
         name: 'Wedive',
         short_name: 'Wedive',
-        description: 'Wedive Web App',
+        description: 'Wedive Web App v1', // Update description to force SW update
         theme_color: '#ffffff',
         icons: [
           {

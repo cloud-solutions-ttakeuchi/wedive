@@ -114,42 +114,40 @@ export class WebSQLiteEngine implements SQLiteExecutor {
   async importDatabase(data: Uint8Array): Promise<void> {
     console.log(`[SQLite Web] Importing binary data into SQLite: ${data.byteLength} bytes`);
 
-    // 1. 既存の接続を完全に削除してリセット（重要）
+    // 1. 既存の接続を閉じる
     await this.close();
     initializationPromise = null;
 
-    // 2. ブラウザ側の OPFS も一旦掃除する（ゴミが残らないように）
-    const root = await navigator.storage.getDirectory();
+    // 2. ブラウザの OPFS (Origin Private File System) に直接書き込む
+    // SQLite の API に頼らず、ファイルとして配置してしまうのが最も確実
     try {
-      // 既存ファイルを削除
-      await root.removeEntry(this.dbName).catch(() => { /* ignore */ });
-      await root.removeEntry(`${this.dbName}-journal`).catch(() => { /* ignore */ });
-      await root.removeEntry(`${this.dbName}-wal`).catch(() => { /* ignore */ });
-    } catch {
-      // Ignore removal errors
-    }
+      const root = await navigator.storage.getDirectory();
 
-    // 3. SQLite の 'open' コマンドで 'buffer' を渡してインポート！
-    // こうすることで SQLite が内部で最適な OPFS 管理ファイルとして保存してくれます
-    console.log('[SQLite Web] Performing native import via open(buffer)...');
+      // 既存ファイルを削除（クリーンアップ）
+      await root.removeEntry(this.dbName).catch(() => { });
+      await root.removeEntry(`${this.dbName}-journal`).catch(() => { });
+      await root.removeEntry(`${this.dbName}-wal`).catch(() => { });
 
-    // まず Promiser を再取得（初期化）
-    await this.initialize(); // これで promiser がセットされる
+      // 新しいファイルを作成して書き込み
+      const fileHandle = await root.getFileHandle(this.dbName, { create: true });
+      const writable = await fileHandle.createWritable();
+      // SharedArrayBuffer の可能性があるため、slice() でコピーして純粋な ArrayBuffer にする
+      await writable.write(data.slice().buffer);
+      await writable.close();
 
-    try {
-      // 既存の空DBを一度閉じてから、バッファを指定して開き直すことでインポートを実現
-      await this.promiser('close');
-      await this.promiser('open', {
-        filename: this.dbName,
-        vfs: 'opfs',
-        buffer: data.buffer, // これが決め手！
-      });
-      console.log('[SQLite Web] Native import successful.');
-      await this.logDatabaseSummary();
+      console.log('[SQLite Web] Written database directly to OPFS.');
     } catch (err) {
-      console.error('[SQLite Web] Native import failed:', err);
+      console.error('[SQLite Web] Failed to write to OPFS:', err);
       throw err;
     }
+
+    // 3. 改めて普通に開く
+    console.log('[SQLite Web] Re-opening database...');
+    // initialize を呼べば、先ほど配置したファイルを読み込んでくれる
+    await this.initialize();
+
+    // 検証
+    await this.logDatabaseSummary();
   }
 
   /** テーブル件数をログ出力（検証用） */
