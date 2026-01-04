@@ -12,11 +12,13 @@ export default defineConfig({
     viteStaticCopy({
       targets: [
         {
-          src: '../../node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm/sqlite3.wasm',
+          // 1. モノレポのルート（1階層上）にある node_modules を参照
+          src: '../node_modules/@sqlite.org/sqlite-wasm/jswasm/sqlite3.wasm',
           dest: './',
         },
         {
-          src: 'node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm/sqlite3.wasm',
+          // 2. ローカル（現在のディレクトリ）にある node_modules を参照（保険）
+          src: 'node_modules/@sqlite.org/sqlite-wasm/jswasm/sqlite3.wasm',
           dest: './',
         }
       ]
