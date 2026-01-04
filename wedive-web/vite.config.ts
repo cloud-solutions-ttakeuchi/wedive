@@ -68,7 +68,7 @@ export default defineConfig({
   // @ts-ignore
   configureServer(server: any) {
     server.middlewares.use((req: any, res: any, next: any) => {
-      if (req.url && req.url.endsWith('.wasm')) {
+      if (req.url && req.url.includes('.wasm')) {
         res.setHeader('Content-Type', 'application/wasm');
       }
       next();

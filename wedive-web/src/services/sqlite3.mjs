@@ -78,12 +78,12 @@ async function sqlite3InitModule(moduleArg = {}) {
       };
       const loadWasm = WebAssembly.instantiateStreaming
         ? async () =>
-            WebAssembly.instantiateStreaming(wfetch(), imports).then(finalThen)
+          WebAssembly.instantiateStreaming(wfetch(), imports).then(finalThen)
         : async () =>
-            wfetch()
-              .then((response) => response.arrayBuffer())
-              .then((bytes) => WebAssembly.instantiate(bytes, imports))
-              .then(finalThen);
+          wfetch()
+            .then((response) => response.arrayBuffer())
+            .then((bytes) => WebAssembly.instantiate(bytes, imports))
+            .then(finalThen);
       return loadWasm();
     }.bind(sIMS);
   })(Module);
@@ -109,7 +109,7 @@ async function sqlite3InitModule(moduleArg = {}) {
   if (ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER) {
     try {
       scriptDirectory = new URL('.', _scriptName).href;
-    } catch {}
+    } catch { }
 
     {
       if (ENVIRONMENT_IS_WORKER) {
@@ -243,14 +243,14 @@ async function sqlite3InitModule(moduleArg = {}) {
 
   var wasmBinaryFile;
 
-  function findWasmBinary() {
-    if (Module['locateFile']) {
-      return locateFile('sqlite3.wasm');
+  function findWasmBinary(file = 'sqlite3.wasm') {
+    if (typeof Module['locateFile'] === 'function') {
+      return Module['locateFile'](file);
     }
-
-    return new URL('sqlite3.wasm', import.meta.url).href;
+    // Antigravity Patch: Force hardcoded path to avoid Vite asset bundling issues
+    return "/sqlite3.wasm";
+    // return new URL(file, import.meta.url).href;
   }
-
   function getBinarySync(file) {
     if (file == wasmBinaryFile && wasmBinary) {
       return new Uint8Array(wasmBinary);
@@ -267,7 +267,7 @@ async function sqlite3InitModule(moduleArg = {}) {
       try {
         var response = await readAsync(binaryFile);
         return new Uint8Array(response);
-      } catch {}
+      } catch { }
     }
 
     return getBinarySync(binaryFile);
@@ -652,8 +652,8 @@ async function sqlite3InitModule(moduleArg = {}) {
   };
   var TTY = {
     ttys: [],
-    init() {},
-    shutdown() {},
+    init() { },
+    shutdown() { },
     register(dev, ops) {
       TTY.ttys[dev] = { input: [], output: [], ops: ops };
       FS.registerDevice(dev, TTY.stream_ops);
@@ -877,7 +877,7 @@ async function sqlite3InitModule(moduleArg = {}) {
         newCapacity,
         (prevCapacity *
           (prevCapacity < CAPACITY_DOUBLING_MAX ? 2.0 : 1.125)) >>>
-          0,
+        0,
       );
       if (prevCapacity != 0) newCapacity = Math.max(newCapacity, 256);
       var oldContents = node.contents;
@@ -954,7 +954,7 @@ async function sqlite3InitModule(moduleArg = {}) {
         var new_node;
         try {
           new_node = FS.lookupNode(new_dir, new_name);
-        } catch (e) {}
+        } catch (e) { }
         if (new_node) {
           if (FS.isDir(old_node.mode)) {
             for (var i in new_node.contents) {
@@ -971,7 +971,7 @@ async function sqlite3InitModule(moduleArg = {}) {
           new_dir.mtime =
           old_node.parent.ctime =
           old_node.parent.mtime =
-            Date.now();
+          Date.now();
       },
       unlink(parent, name) {
         delete parent.contents[name];
@@ -1514,7 +1514,7 @@ async function sqlite3InitModule(moduleArg = {}) {
       try {
         var node = FS.lookupNode(dir, name);
         return 20;
-      } catch (e) {}
+      } catch (e) { }
       return FS.nodePermissions(dir, 'wx');
     },
     mayDelete(dir, name, isdir) {
@@ -1883,7 +1883,7 @@ async function sqlite3InitModule(moduleArg = {}) {
       var new_node;
       try {
         new_node = FS.lookupNode(new_dir, new_name);
-      } catch (e) {}
+      } catch (e) { }
 
       if (old_node === new_node) {
         return;
@@ -2496,7 +2496,7 @@ async function sqlite3InitModule(moduleArg = {}) {
       try {
         var lookup = FS.lookupPath(path, { follow: !dontResolveLastLink });
         path = lookup.path;
-      } catch (e) {}
+      } catch (e) { }
       var ret = {
         isRoot: false,
         exists: false,
@@ -2679,10 +2679,10 @@ async function sqlite3InitModule(moduleArg = {}) {
             if (from > to)
               abort(
                 'invalid range (' +
-                  from +
-                  ', ' +
-                  to +
-                  ') or no bytes requested!',
+                from +
+                ', ' +
+                to +
+                ') or no bytes requested!',
               );
             if (to > datalength - 1)
               abort(
@@ -3451,7 +3451,7 @@ async function sqlite3InitModule(moduleArg = {}) {
       wasmMemory.grow(pages);
       updateMemoryViews();
       return 1;
-    } catch (e) {}
+    } catch (e) { }
   };
   var _emscripten_resize_heap = (requestedSize) => {
     var oldSize = HEAPU8.length;
@@ -4773,7 +4773,7 @@ async function sqlite3InitModule(moduleArg = {}) {
           xStep,
           xFinal,
           xDestroy,
-        ) => {},
+        ) => { },
 
         sqlite3_create_function: (
           pDb,
@@ -4784,7 +4784,7 @@ async function sqlite3InitModule(moduleArg = {}) {
           xFunc,
           xStep,
           xFinal,
-        ) => {},
+        ) => { },
 
         sqlite3_create_window_function: (
           pDb,
@@ -4797,7 +4797,7 @@ async function sqlite3InitModule(moduleArg = {}) {
           xValue,
           xInverse,
           xDestroy,
-        ) => {},
+        ) => { },
 
         sqlite3_prepare_v3: (
           dbPtr,
@@ -4806,7 +4806,7 @@ async function sqlite3InitModule(moduleArg = {}) {
           prepFlags,
           stmtPtrPtr,
           strPtrPtr,
-        ) => {},
+        ) => { },
 
         sqlite3_prepare_v2: (
           dbPtr,
@@ -4814,11 +4814,11 @@ async function sqlite3InitModule(moduleArg = {}) {
           sqlByteLen,
           stmtPtrPtr,
           strPtrPtr,
-        ) => {},
+        ) => { },
 
-        sqlite3_exec: (pDb, sql, callback, pVoid, pErrMsg) => {},
+        sqlite3_exec: (pDb, sql, callback, pVoid, pErrMsg) => { },
 
-        sqlite3_randomness: (n, outPtr) => {},
+        sqlite3_randomness: (n, outPtr) => { },
       });
 
       const util = {
@@ -5077,7 +5077,7 @@ async function sqlite3InitModule(moduleArg = {}) {
           } catch (e) {
             config.error(
               'Highly unexpected (and ignored!) ' +
-                'exception in sqlite3_randomness():',
+              'exception in sqlite3_randomness():',
               e,
             );
           } finally {
@@ -5107,12 +5107,12 @@ async function sqlite3InitModule(moduleArg = {}) {
           if (
             pdir &&
             0 ===
-              wasm.xCallWrapped(
-                'sqlite3__wasm_init_wasmfs',
-                'i32',
-                ['string'],
-                pdir,
-              )
+            wasm.xCallWrapped(
+              'sqlite3__wasm_init_wasmfs',
+              'i32',
+              ['string'],
+              pdir,
+            )
           ) {
             return (__wasmfsOpfsDir = pdir);
           } else {
@@ -5202,10 +5202,10 @@ async function sqlite3InitModule(moduleArg = {}) {
           capi.sqlite3_aggregate_context(pCtx, n) ||
           (n
             ? WasmAllocError.toss(
-                'Cannot allocate',
-                n,
-                'bytes for sqlite3_aggregate_context()',
-              )
+              'Cannot allocate',
+              n,
+              'bytes for sqlite3_aggregate_context()',
+            )
             : 0)
         );
       };
@@ -5996,7 +5996,7 @@ async function sqlite3InitModule(moduleArg = {}) {
         if ('string' !== typeof sig || !(func instanceof Function)) {
           toss(
             'Invalid arguments: expecting (function,signature) ' +
-              'or (signature,function).',
+            'or (signature,function).',
           );
         }
         const ft = target.functionTable();
@@ -6195,13 +6195,13 @@ async function sqlite3InitModule(moduleArg = {}) {
         ptr = Number(ptr);
         const h = heapWrappers().HEAP8U;
         let pos = ptr;
-        for (; h[pos] !== 0; ++pos) {}
+        for (; h[pos] !== 0; ++pos) { }
         return Number(pos - ptr);
       };
 
       const __SAB =
         'undefined' === typeof SharedArrayBuffer
-          ? function () {}
+          ? function () { }
           : SharedArrayBuffer;
 
       const isSharedTypedArray = (aTypedArray) =>
@@ -6230,10 +6230,10 @@ async function sqlite3InitModule(moduleArg = {}) {
         const n = target.cstrlen(ptr);
         return n
           ? typedArrayToString(
-              heapWrappers().HEAP8U,
-              Number(ptr),
-              Number(ptr) + n,
-            )
+            heapWrappers().HEAP8U,
+            Number(ptr),
+            Number(ptr) + n,
+          )
           : null === n
             ? n
             : '';
@@ -6381,7 +6381,7 @@ async function sqlite3InitModule(moduleArg = {}) {
         if (n < 0) toss('Invalid state object for scopedAllocPop().');
         if (0 === arguments.length) state = cache.scopedAlloc[n];
         cache.scopedAlloc.splice(n, 1);
-        for (let p; (p = state.pop()); ) {
+        for (let p; (p = state.pop());) {
           if (target.functionEntry(p)) {
             target.uninstallFunction(p);
           } else {
@@ -6544,7 +6544,7 @@ async function sqlite3InitModule(moduleArg = {}) {
         xResult.set(
           t,
           xArg.get(t) ||
-            toss('Maintenance required: missing arg converter for', t),
+          toss('Maintenance required: missing arg converter for', t),
         );
       }
 
@@ -6611,11 +6611,11 @@ async function sqlite3InitModule(moduleArg = {}) {
           if (FuncPtrAdapter.bindScopes.indexOf(opt.bindScope) < 0) {
             toss(
               'Invalid options.bindScope (' +
-                opt.bindMod +
-                ') for FuncPtrAdapter. ' +
-                'Expecting one of: (' +
-                FuncPtrAdapter.bindScopes.join(', ') +
-                ')',
+              opt.bindMod +
+              ') for FuncPtrAdapter. ' +
+              'Expecting one of: (' +
+              FuncPtrAdapter.bindScopes.join(', ') +
+              ')',
             );
           }
           this.isTransient = 'transient' === this.bindScope;
@@ -6687,7 +6687,7 @@ async function sqlite3InitModule(moduleArg = {}) {
                 }
                 try {
                   cache.scopedAlloc.pushPtr(pair[1]);
-                } catch (e) {}
+                } catch (e) { }
               }
               pair[0] = arguments[0] || __NullPtr;
               pair[1] = fp;
@@ -6706,18 +6706,18 @@ async function sqlite3InitModule(moduleArg = {}) {
               }
               try {
                 cache.scopedAlloc.pushPtr(pair[1]);
-              } catch (e) {}
+              } catch (e) { }
               pair[0] = pair[1] = v || __NullPtr;
             }
             return v || __NullPtr;
           } else {
             throw new TypeError(
               'Invalid FuncPtrAdapter argument type. ' +
-                'Expecting a function pointer or a ' +
-                (this.name ? this.name + ' ' : '') +
-                'function matching signature ' +
-                this.signature +
-                '.',
+              'Expecting a function pointer or a ' +
+              (this.name ? this.name + ' ' : '') +
+              'function matching signature ' +
+              this.signature +
+              '.',
             );
           }
         }
@@ -6916,17 +6916,17 @@ async function sqlite3InitModule(moduleArg = {}) {
       };
       const loadWasm = WebAssembly.instantiateStreaming
         ? () =>
-            WebAssembly.instantiateStreaming(
-              wfetch(),
-              config.imports || {},
-            ).then(finalThen)
+          WebAssembly.instantiateStreaming(
+            wfetch(),
+            config.imports || {},
+          ).then(finalThen)
         : () =>
-            wfetch()
-              .then((response) => response.arrayBuffer())
-              .then((bytes) =>
-                WebAssembly.instantiate(bytes, config.imports || {}),
-              )
-              .then(finalThen);
+          wfetch()
+            .then((response) => response.arrayBuffer())
+            .then((bytes) =>
+              WebAssembly.instantiate(bytes, config.imports || {}),
+            )
+            .then(finalThen);
       return loadWasm;
     }.bind(globalThis.WhWasmUtilInstaller);
 
@@ -7240,8 +7240,8 @@ async function sqlite3InitModule(moduleArg = {}) {
         const p = this.pointer;
         return p
           ? new Uint8Array(
-              heap().slice(Number(p), Number(p) + this.structInfo.sizeof),
-            )
+            heap().slice(Number(p), Number(p) + this.structInfo.sizeof),
+          )
           : null;
       };
 
@@ -7304,7 +7304,7 @@ async function sqlite3InitModule(moduleArg = {}) {
 
       const __SAB =
         'undefined' === typeof SharedArrayBuffer
-          ? function () {}
+          ? function () { }
           : SharedArrayBuffer;
       const __utf8Decode = function (arrayBuffer, begin, end) {
         if (8 === ptrSize) {
@@ -7345,7 +7345,7 @@ async function sqlite3InitModule(moduleArg = {}) {
         if (!addr) return null;
         let pos = addr;
         const mem = heap();
-        for (; mem[pos] !== 0; ++pos) {}
+        for (; mem[pos] !== 0; ++pos) { }
 
         return addr === pos ? '' : __utf8Decode(mem, addr, pos);
       };
@@ -7635,7 +7635,7 @@ async function sqlite3InitModule(moduleArg = {}) {
           isA: rop((v) => v instanceof StructCtor),
           memberKey: __memberKeyProp,
           memberKeys: __structMemberKeys,
-          methodInfoForKey: rop(function (mKey) {}),
+          methodInfoForKey: rop(function (mKey) { }),
           structInfo: rop(structInfo),
           structName: rop(structName),
         });
@@ -7874,10 +7874,10 @@ async function sqlite3InitModule(moduleArg = {}) {
               true
                 ? '*'
                 : new wasm.xWrap.FuncPtrAdapter({
-                    name: 'xDestroyAuxData',
-                    signature: 'v(p)',
-                    contextKey: (argv, argIndex) => argv[0],
-                  }),
+                  name: 'xDestroyAuxData',
+                  signature: 'v(p)',
+                  contextKey: (argv, argIndex) => argv[0],
+                }),
             ],
           ],
           ['sqlite3_set_errmsg', 'int', 'sqlite3*', 'int', 'string'],
@@ -8554,7 +8554,7 @@ async function sqlite3InitModule(moduleArg = {}) {
         );
 
         const __xArgPtr = wasm.xWrap.argAdapter('*');
-        const nilType = function () {};
+        const nilType = function () { };
         wasm.xWrap.argAdapter('sqlite3_filename', __xArgPtr)(
           'sqlite3_context*',
           __xArgPtr,
@@ -8616,10 +8616,10 @@ async function sqlite3InitModule(moduleArg = {}) {
           capi[e[0]] = wasm.bigIntEnabled
             ? wasm.xWrap.apply(null, e)
             : () =>
-                toss(
-                  e[0] + '() is unavailable due to lack',
-                  'of BigInt support in this build.',
-                );
+              toss(
+                e[0] + '() is unavailable due to lack',
+                'of BigInt support in this build.',
+              );
         }
 
         delete bindingSignatures.core;
@@ -8838,7 +8838,7 @@ async function sqlite3InitModule(moduleArg = {}) {
                 0,
                 0,
               );
-            } catch (e) {}
+            } catch (e) { }
           }
           delete m.collation;
         }
@@ -8858,7 +8858,7 @@ async function sqlite3InitModule(moduleArg = {}) {
               try {
                 fargs[2] = arity;
                 func.apply(null, fargs);
-              } catch (e) {}
+              } catch (e) { }
             }
             arities.clear();
           }
@@ -8880,7 +8880,7 @@ async function sqlite3InitModule(moduleArg = {}) {
           if (pDb) {
             try {
               __dbCleanupMap.cleanup(pDb);
-            } catch (e) {}
+            } catch (e) { }
           }
           return __sqlite3CloseV2(pDb);
         };
@@ -8976,13 +8976,13 @@ async function sqlite3InitModule(moduleArg = {}) {
         ) => {
           return 5 === arguments.length
             ? capi.sqlite3_create_collation_v2(
-                pDb,
-                zName,
-                eTextRep,
-                pArg,
-                xCompare,
-                0,
-              )
+              pDb,
+              zName,
+              eTextRep,
+              pArg,
+              xCompare,
+              0,
+            )
             : __dbArgcMismatch(pDb, 'sqlite3_create_collation', 5);
         };
       }
@@ -9090,32 +9090,32 @@ async function sqlite3InitModule(moduleArg = {}) {
         const __sqlite3CreateWindowFunction = wasm.exports
           .sqlite3_create_window_function
           ? wasm.xWrap('sqlite3_create_window_function', 'int', [
-              'sqlite3*',
-              'string',
-              'int',
-              'int',
-              '*',
-              new wasm.xWrap.FuncPtrAdapter({
-                name: 'xStep',
-                ...__cfProxy.xInverseAndStep,
-              }),
-              new wasm.xWrap.FuncPtrAdapter({
-                name: 'xFinal',
-                ...__cfProxy.xFinalAndValue,
-              }),
-              new wasm.xWrap.FuncPtrAdapter({
-                name: 'xValue',
-                ...__cfProxy.xFinalAndValue,
-              }),
-              new wasm.xWrap.FuncPtrAdapter({
-                name: 'xInverse',
-                ...__cfProxy.xInverseAndStep,
-              }),
-              new wasm.xWrap.FuncPtrAdapter({
-                name: 'xDestroy',
-                ...__cfProxy.xDestroy,
-              }),
-            ])
+            'sqlite3*',
+            'string',
+            'int',
+            'int',
+            '*',
+            new wasm.xWrap.FuncPtrAdapter({
+              name: 'xStep',
+              ...__cfProxy.xInverseAndStep,
+            }),
+            new wasm.xWrap.FuncPtrAdapter({
+              name: 'xFinal',
+              ...__cfProxy.xFinalAndValue,
+            }),
+            new wasm.xWrap.FuncPtrAdapter({
+              name: 'xValue',
+              ...__cfProxy.xFinalAndValue,
+            }),
+            new wasm.xWrap.FuncPtrAdapter({
+              name: 'xInverse',
+              ...__cfProxy.xInverseAndStep,
+            }),
+            new wasm.xWrap.FuncPtrAdapter({
+              name: 'xDestroy',
+              ...__cfProxy.xDestroy,
+            }),
+          ])
           : undefined;
 
         capi.sqlite3_create_function_v2 = function f(
@@ -9184,16 +9184,16 @@ async function sqlite3InitModule(moduleArg = {}) {
         ) {
           return f.length === arguments.length
             ? capi.sqlite3_create_function_v2(
-                pDb,
-                funcName,
-                nArg,
-                eTextRep,
-                pApp,
-                xFunc,
-                xStep,
-                xFinal,
-                0,
-              )
+              pDb,
+              funcName,
+              nArg,
+              eTextRep,
+              pApp,
+              xFunc,
+              xStep,
+              xFinal,
+              0,
+            )
             : __dbArgcMismatch(pDb, 'sqlite3_create_function', f.length);
         };
 
@@ -9267,7 +9267,7 @@ async function sqlite3InitModule(moduleArg = {}) {
 
         capi.sqlite3_create_function_v2.udfConvertArgs =
           capi.sqlite3_create_function.udfConvertArgs =
-            capi.sqlite3_values_to_js;
+          capi.sqlite3_values_to_js;
         if (capi.sqlite3_create_window_function) {
           capi.sqlite3_create_window_function.udfConvertArgs =
             capi.sqlite3_values_to_js;
@@ -9275,7 +9275,7 @@ async function sqlite3InitModule(moduleArg = {}) {
 
         capi.sqlite3_create_function_v2.udfSetError =
           capi.sqlite3_create_function.udfSetError =
-            capi.sqlite3_result_error_js;
+          capi.sqlite3_result_error_js;
         if (capi.sqlite3_create_window_function) {
           capi.sqlite3_create_window_function.udfSetError =
             capi.sqlite3_result_error_js;
@@ -9354,7 +9354,7 @@ async function sqlite3InitModule(moduleArg = {}) {
                 pDb,
                 capi.SQLITE_MISUSE,
                 'Invalid SQL argument type for sqlite3_prepare_v2/v3(). typeof=' +
-                  typeof xSql,
+                typeof xSql,
               );
           }
         };
@@ -9648,9 +9648,9 @@ async function sqlite3InitModule(moduleArg = {}) {
                 toss(
                   'Argument mismatch for',
                   tgt.structInfo.name +
-                    '::' +
-                    funcName +
-                    ': Native signature is:',
+                  '::' +
+                  funcName +
+                  ': Native signature is:',
                   sig,
                 );
               }
@@ -9664,7 +9664,7 @@ async function sqlite3InitModule(moduleArg = {}) {
                 if (wasm.isPtr(v)) {
                   try {
                     wasm.uninstallFunction(v);
-                  } catch (e) {}
+                  } catch (e) { }
                 }
               });
               delete this.ondispose.__removeFuncList;
@@ -9816,11 +9816,11 @@ async function sqlite3InitModule(moduleArg = {}) {
           const isWorkerThread =
             'function' === typeof importScripts
               ? (n) =>
-                  toss3(
-                    'The VFS for',
-                    n,
-                    'is only available in the main window thread.',
-                  )
+                toss3(
+                  'The VFS for',
+                  n,
+                  'is only available in the main window thread.',
+                )
               : false;
           ctor._name2vfs[':localStorage:'] = {
             vfs: 'kvvfs',
@@ -9926,7 +9926,7 @@ async function sqlite3InitModule(moduleArg = {}) {
         if (!(callback instanceof Function)) {
           toss3(
             'dbCtorHelper.setVfsPostOpenCallback() should not be used with ' +
-              'a non-function argument.',
+            'a non-function argument.',
             arguments,
           );
         }
@@ -10088,10 +10088,10 @@ async function sqlite3InitModule(moduleArg = {}) {
                   const rc = stmt.get(Object.create(null))[$colName];
                   return undefined === rc
                     ? toss3(
-                        capi.SQLITE_NOTFOUND,
-                        'exec(): unknown result column:',
-                        $colName,
-                      )
+                      capi.SQLITE_NOTFOUND,
+                      'exec(): unknown result column:',
+                      $colName,
+                    )
                     : rc;
                 };
                 break;
@@ -10138,13 +10138,13 @@ async function sqlite3InitModule(moduleArg = {}) {
             if (this.onclose && this.onclose.before instanceof Function) {
               try {
                 this.onclose.before(this);
-              } catch (e) {}
+              } catch (e) { }
             }
             Object.keys(__stmtMap.get(this)).forEach((k, s) => {
               if (s && s.pointer) {
                 try {
                   s.finalize();
-                } catch (e) {}
+                } catch (e) { }
               }
             });
             __ptrMap.delete(this);
@@ -10155,7 +10155,7 @@ async function sqlite3InitModule(moduleArg = {}) {
             if (this.onclose && this.onclose.after instanceof Function) {
               try {
                 this.onclose.after(this);
-              } catch (e) {}
+              } catch (e) { }
             }
             delete this.filename;
           }
@@ -10792,7 +10792,7 @@ async function sqlite3InitModule(moduleArg = {}) {
           } finally {
             try {
               this.finalize();
-            } catch (e) {}
+            } catch (e) { }
           }
         },
 
@@ -10817,9 +10817,9 @@ async function sqlite3InitModule(moduleArg = {}) {
           }
           affirmColIndex(this, ndx);
           switch (
-            undefined === asType
-              ? capi.sqlite3_column_type(this.pointer, ndx)
-              : asType
+          undefined === asType
+            ? capi.sqlite3_column_type(this.pointer, ndx)
+            : asType
           ) {
             case capi.SQLITE_NULL:
               return null;
@@ -11432,7 +11432,7 @@ async function sqlite3InitModule(moduleArg = {}) {
             f.errorReporter(
               'sqlite3_module::' + methodName + '(): ' + err.message,
             );
-          } catch (e) {}
+          } catch (e) { }
         }
         let rc;
         if (err instanceof sqlite3.WasmAllocError) rc = capi.SQLITE_NOMEM;
@@ -11557,15 +11557,15 @@ async function sqlite3InitModule(moduleArg = {}) {
           return Promise.reject(
             new Error(
               'Cannot install OPFS: Missing SharedArrayBuffer and/or Atomics. ' +
-                'The server must emit the COOP/COEP response headers to enable those. ' +
-                'See https://sqlite.org/wasm/doc/trunk/persistence.md#coop-coep',
+              'The server must emit the COOP/COEP response headers to enable those. ' +
+              'See https://sqlite.org/wasm/doc/trunk/persistence.md#coop-coep',
             ),
           );
         } else if ('undefined' === typeof WorkerGlobalScope) {
           return Promise.reject(
             new Error(
               'The OPFS sqlite3_vfs cannot run in the main thread ' +
-                'because it requires Atomics.wait().',
+              'because it requires Atomics.wait().',
             ),
           );
         } else if (
@@ -11721,7 +11721,7 @@ async function sqlite3InitModule(moduleArg = {}) {
             opfsVfs.$xDlError =
             opfsVfs.$xDlSym =
             opfsVfs.$xDlClose =
-              null;
+            null;
           opfsVfs.addOnDispose(
             '$zName',
             opfsVfs.$zName,
@@ -11833,7 +11833,7 @@ async function sqlite3InitModule(moduleArg = {}) {
             const t = performance.now();
             while (
               'not-equal' !== Atomics.wait(state.sabOPView, state.opIds.rc, -1)
-            ) {}
+            ) { }
 
             const rc = Atomics.load(state.sabOPView, state.opIds.rc);
             metrics[op].wait += performance.now() - t;
@@ -12385,7 +12385,7 @@ async function sqlite3InitModule(moduleArg = {}) {
             } catch (e) {
               await sah.close();
               sah = undefined;
-              await hDir.removeEntry(fnamePart).catch(() => {});
+              await hDir.removeEntry(fnamePart).catch(() => { });
               throw e;
             } finally {
               if (sah) await sah.close();
@@ -12425,7 +12425,7 @@ async function sqlite3InitModule(moduleArg = {}) {
                 await sah.close();
                 sah = undefined;
               }
-              await hDir.removeEntry(fnamePart).catch(() => {});
+              await hDir.removeEntry(fnamePart).catch(() => { });
               throw e;
             } finally {
               if (sah) await sah.close();
@@ -12985,8 +12985,8 @@ async function sqlite3InitModule(moduleArg = {}) {
             return this.getCapacity()
               ? Promise.resolve(undefined)
               : this.addCapacity(
-                  options.initialCapacity || optionDefaults.initialCapacity,
-                );
+                options.initialCapacity || optionDefaults.initialCapacity,
+              );
           });
         }
 
@@ -13528,7 +13528,7 @@ async function sqlite3InitModule(moduleArg = {}) {
                 return poolUtil;
               })
               .catch(async (e) => {
-                await thePool.removeVfs().catch(() => {});
+                await thePool.removeVfs().catch(() => { });
                 throw e;
               });
           })
@@ -13545,7 +13545,7 @@ async function sqlite3InitModule(moduleArg = {}) {
       );
       throw new Error(
         'sqlite3-api-cleanup.js expects to be running in the ' +
-          'context of its Emscripten module loader.',
+        'context of its Emscripten module loader.',
       );
     }
     try {
@@ -13563,9 +13563,9 @@ async function sqlite3InitModule(moduleArg = {}) {
             'undefined' !== typeof wasmExports
               ? wasmExports
               : Object.prototype.hasOwnProperty.call(
-                    EmscriptenModule,
-                    'wasmExports',
-                  )
+                EmscriptenModule,
+                'wasmExports',
+              )
                 ? EmscriptenModule['wasmExports']
                 : EmscriptenModule['asm'],
         },
@@ -13623,7 +13623,7 @@ const toExportForESM = (function () {
   ));
   sIMS.debugModule = sIMS.urlParams.has('sqlite3.debugModule')
     ? (...args) => console.warn('sqlite3.debugModule:', ...args)
-    : () => {};
+    : () => { };
 
   if (sIMS.urlParams.has('sqlite3.dir')) {
     sIMS.sqlite3Dir = sIMS.urlParams.get('sqlite3.dir') + '/';
