@@ -11,6 +11,7 @@ import type { SQLiteExecutor } from 'wedive-shared';
 let sharedSqlite: any = null;
 let sharedApi: any = null;
 const registeredVFS = new Set<string>();
+let memoryVfsInstance: any = null; // メモリ VFS のインスタンスを保持
 
 export class WebSQLiteEngine implements SQLiteExecutor {
   private db: number | null = null;
@@ -76,46 +77,55 @@ export class WebSQLiteEngine implements SQLiteExecutor {
   async importDatabase(data: Uint8Array): Promise<void> {
     if (!this.api) await this.initialize();
 
-    // 1. メモリ上に一時的なソース DB を作成
+    // 1. メモリ VFS を一度だけ登録
     const memoryVfsName = 'memory-import';
     if (!registeredVFS.has(memoryVfsName)) {
-      const memoryVfs = new MemoryVFS();
-      (memoryVfs as any).name = memoryVfsName;
-      this.api.vfs_register(memoryVfs);
+      memoryVfsInstance = new MemoryVFS();
+      (memoryVfsInstance as any).name = memoryVfsName;
+      this.api.vfs_register(memoryVfsInstance);
       registeredVFS.add(memoryVfsName);
     }
 
     const tempName = `import_${Date.now()}.db`;
-    const tempVfs = this.api.vfs_find(memoryVfsName);
     const buffer = data.slice().buffer;
-    (tempVfs as any).mapNameToFile.set(tempName, {
+
+    // 2. メモリ VFS 内にバイナリデータを配置
+    (memoryVfsInstance as any).mapNameToFile.set(tempName, {
       name: tempName,
       flags: SQLite.SQLITE_OPEN_CREATE | SQLite.SQLITE_OPEN_READWRITE,
       size: buffer.byteLength,
       data: buffer
     });
 
+    let srcDb: number | null = null;
     try {
-      const srcDb = await this.api.open_v2(tempName, SQLite.SQLITE_OPEN_READONLY, memoryVfsName);
+      // 3. メモリ上の DB を開く
+      srcDb = await this.api.open_v2(tempName, SQLite.SQLITE_OPEN_READONLY, memoryVfsName);
 
-      try {
-        // 現在の DB 接続が開いていなければ初期化
-        if (!this.db) await this.initialize();
+      // 4. 現在の DB 接続が開いていなければ初期化
+      if (!this.db) await this.initialize();
 
-        // 2. Backup API を使用してメモリから永続ストレージへコピー
-        // これにより、既存のハンドルを維持したまま中身を入れ替えられる
-        const backup = await this.api.backup_init(this.db, 'main', srcDb, 'main');
-        await this.api.backup_step(backup, -1);
-        await this.api.backup_finish(backup);
+      // 5. Backup API を使用してメモリから永続ストレージへコピー
+      const backup = await this.api.backup_init(this.db, 'main', srcDb, 'main');
+      await this.api.backup_step(backup, -1);
+      await this.api.backup_finish(backup);
 
-        console.log(`[SQLite Web] ${this.dbName} updated via Backup API.`);
-      } finally {
-        await this.api.close(srcDb);
-        (tempVfs as any).mapNameToFile.delete(tempName);
-      }
+      console.log(`[SQLite Web] ${this.dbName} updated via Backup API.`);
     } catch (e) {
       console.error('[SQLite Web] Import failed:', e);
       throw e;
+    } finally {
+      // 6. クリーンアップ
+      if (srcDb !== null) {
+        try {
+          await this.api.close(srcDb);
+        } catch (closeErr) {
+          console.warn('[SQLite Web] Failed to close source DB:', closeErr);
+        }
+      }
+      if (memoryVfsInstance) {
+        (memoryVfsInstance as any).mapNameToFile.delete(tempName);
+      }
     }
   }
 }
