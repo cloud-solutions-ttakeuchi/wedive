@@ -1,11 +1,18 @@
 // sqlite-worker.ts - SQLite WASM 用のバックグラウンドワーカー
 import sqlite3InitModule from '@sqlite.org/sqlite-wasm';
+// @ts-ignore - Vite special import to get the hashed URL of the WASM file
+import wasmUrl from '@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm/sqlite3.wasm?url';
 
 /**
- * SQLite WASM をバックグラウンドで初期化します。
- * 画面側（メインスレッド）からは Promiser API を介してこのワーカーへ命令を送ります。
+ * SQLite WASM をバックグラウンドで初期化するためのワーカー
+ * locateFile を使用して Vite がビルドした WASM ファイルの正確な場所を伝えます
  */
-sqlite3InitModule().then((sqlite3) => {
+sqlite3InitModule({
+  locateFile: (path) => {
+    if (path.endsWith('.wasm')) return wasmUrl;
+    return path;
+  }
+}).then((sqlite3) => {
   try {
     // 公式の Worker1 API を有効にする
     // @ts-ignore

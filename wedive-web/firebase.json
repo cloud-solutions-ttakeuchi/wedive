@@ -48,7 +48,7 @@
         "region": "asia-northeast1"
       },
       {
-        "source": "!**/*.{js,css,wasm,png,jpg,jpeg,gif,svg,ico,json,webmanifest}",
+        "source": "**",
         "function": "basicAuth",
         "region": "asia-northeast1"
       }
