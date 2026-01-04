@@ -1,37 +1,37 @@
-import { defineConfig, normalizePath } from 'vite';
+import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
-import { viteStaticCopy } from 'vite-plugin-static-copy';
-import fs from 'fs';
+// import { viteStaticCopy } from 'vite-plugin-static-copy';
+// import fs from 'fs';
 import path from 'path';
 
 // SQLite WASM のパスを動的に解決（モノレポの Hoisting に対応）
-const getSqliteWasmPath = () => {
-  const paths = [
-    '../node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm/sqlite3.wasm',
-    'node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm/sqlite3.wasm'
-  ];
-  for (const p of paths) {
-    if (fs.existsSync(path.resolve(process.cwd(), p))) {
-      return normalizePath(p);
-    }
-  }
-  return normalizePath(paths[0]); // Fallback
-};
+// const getSqliteWasmPath = () => {
+//   const paths = [
+//     '../node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm/sqlite3.wasm',
+//     'node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm/sqlite3.wasm'
+//   ];
+//   for (const p of paths) {
+//     if (fs.existsSync(path.resolve(process.cwd(), p))) {
+//       return normalizePath(p);
+//     }
+//   }
+//   return normalizePath(paths[0]); // Fallback
+// };
 
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    viteStaticCopy({
-      targets: [
-        {
-          src: getSqliteWasmPath(),
-          dest: '', // ルート（dist/直下）に配置
-        }
-      ]
-    }),
+    // viteStaticCopy({
+    //   targets: [
+    //     {
+    //       src: getSqliteWasmPath(),
+    //       dest: '', // ルート（dist/直下）に配置
+    //     }
+    //   ]
+    // }),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg', 'sqlite3.wasm'],
