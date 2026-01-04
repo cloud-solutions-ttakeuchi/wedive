@@ -30,7 +30,11 @@ jobs:
           cache: 'npm'
           cache-dependency-path: package-lock.json
       - name: Install dependencies
-        run: npm ci
+        run: |
+          # npm自体を最新版に更新してバグを回避
+          npm install -g npm@latest
+          # CI環境では 'install' よりも 'ci' (Clean Install) が推奨されます
+          npm ci
         working-directory: .
       - name: Build shared library
         run: npm run build -w wedive-shared
