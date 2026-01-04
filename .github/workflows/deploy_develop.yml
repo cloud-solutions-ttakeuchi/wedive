@@ -29,17 +29,14 @@ jobs:
           node-version: 20
           cache: 'npm'
           cache-dependency-path: package-lock.json
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
-
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
-        working-directory: .
+        run: |
+          # npm自体を最新の安定版に更新してバグを回避
+          npm install -g npm@latest
+          # ワークスペース全体の依存関係をルートで一括インストール
+          npm ci
       - name: Build shared library
         run: npm run build -w wedive-shared
-        working-directory: .
       - name: Build web application
         run: npm run build -w wedive-web
         working-directory: .
