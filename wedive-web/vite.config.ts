@@ -60,12 +60,14 @@ export default defineConfig({
       },
     }),
   ],
+  /*
   server: {
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin',
       'Cross-Origin-Embedder-Policy': 'credentialless',
     },
   },
+  */
   // @ts-ignore
   configureServer(server: any) {
     server.middlewares.use((req: any, res: any, next: any) => {
