@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
-import { VitePWA } from 'vite-plugin-pwa';
+// import { VitePWA } from 'vite-plugin-pwa';
 // import { viteStaticCopy } from 'vite-plugin-static-copy';
 // import fs from 'fs';
 import path from 'path';
@@ -33,6 +33,7 @@ export default defineConfig({
     //     }
     //   ]
     // }),
+    /*
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg', 'sqlite3.wasm'],
@@ -59,6 +60,7 @@ export default defineConfig({
         ],
       },
     }),
+    */
   ],
   /*
   server: {
