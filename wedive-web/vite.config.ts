@@ -12,16 +12,14 @@ export default defineConfig({
     viteStaticCopy({
       targets: [
         {
-          // 1. モノレポのルート（1階層上）にある node_modules を参照
-          src: '../node_modules/@sqlite.org/sqlite-wasm/jswasm/sqlite3.wasm',
-          dest: './',
+          // path.resolve(__dirname, ...) を使って絶対パスを作る
+          // normalizePath で Windows/Linux 両方のパス区切りに対応させる
+          src: normalizePath(
+            path.resolve(__dirname, '../node_modules/@sqlite.org/sqlite-wasm/jswasm/sqlite3.wasm')
+          ),
+          dest: './', // dist 直下に配置
         },
-        {
-          // 2. ローカル（現在のディレクトリ）にある node_modules を参照（保険）
-          src: 'node_modules/@sqlite.org/sqlite-wasm/jswasm/sqlite3.wasm',
-          dest: './',
-        }
-      ]
+      ],
     }),
     VitePWA({
       registerType: 'autoUpdate',
