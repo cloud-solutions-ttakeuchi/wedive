@@ -1,8 +1,7 @@
 // WebSQLiteEngine.ts – Robust SQLite WASM implementation via Worker
 import type { SQLiteExecutor } from 'wedive-shared';
-
-// Vite-native 方式で Worker を読み込む
-const workerUrl = new URL('./sqlite-worker.ts', import.meta.url);
+// @ts-ignore - Vite special import
+import SQLiteWorker from './sqlite-worker?worker';
 
 let initializationPromise: Promise<any> | null = null;
 
@@ -35,8 +34,8 @@ export class WebSQLiteEngine implements SQLiteExecutor {
       return new Promise((resolve, reject) => {
         try {
           const _promiser = sqlite3Worker1Promiser({
-            // Vite でビルドされた Worker を指定
-            worker: () => new Worker(workerUrl, { type: 'module' }),
+            // Vite の ?worker 方式で生成した Worker クラスを使用
+            worker: () => new SQLiteWorker(),
             onready: () => {
               console.log('[SQLite Web] Worker is ready and connected.');
               resolve(_promiser);
