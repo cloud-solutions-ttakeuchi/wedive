@@ -44,6 +44,9 @@ export default defineConfig({
     })
   ],
   assetsInclude: ['**/*.wasm'],
+  build: {
+    assetsInlineLimit: 0,
+  },
   optimizeDeps: {
     exclude: ['@sqlite.org/sqlite-wasm'],
   },
