@@ -248,7 +248,7 @@ async function sqlite3InitModule(moduleArg = {}) {
       return Module['locateFile'](file);
     }
     // Antigravity Patch: Force hardcoded path to avoid Vite asset bundling issues
-    return "/sqlite3.wasm";
+    return "/sqlite3/sqlite3.wasm";
     // return new URL(file, import.meta.url).href;
   }
   function getBinarySync(file) {
