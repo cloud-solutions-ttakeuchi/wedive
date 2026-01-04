@@ -1,6 +1,7 @@
 import sqlite3InitModule from '@sqlite.org/sqlite-wasm';
 // @ts-ignore - Bypass package exports restriction AND get the correct hashed URL from Vite
 import wasmUrl from '../../../node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm/sqlite3.wasm?url';
+console.log('[SQLite Web] Top-level WASM URL check:', wasmUrl);
 
 /**
  * SQLite WASM をバックグラウンドで初期化するためのワーカー
