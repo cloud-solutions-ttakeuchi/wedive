@@ -48,7 +48,7 @@
         "region": "asia-northeast1"
       },
       {
-        "source": "**",
+        "source": "!**/*.{js,css,wasm,png,jpg,jpeg,gif,svg,ico,json,webmanifest}",
         "function": "basicAuth",
         "region": "asia-northeast1"
       }
@@ -68,7 +68,7 @@
         ]
       },
       {
-        "source": "**/*.@(jpg|jpeg|gif|png|webp|svg|css|js)",
+        "source": "**/*.@(jpg|jpeg|gif|png|webp|svg|css|js|wasm|webmanifest)",
         "headers": [
           {
             "key": "Cache-Control",
