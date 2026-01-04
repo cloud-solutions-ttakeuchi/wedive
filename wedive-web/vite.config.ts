@@ -68,4 +68,9 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['@sqlite.org/sqlite-wasm'],
   },
+  resolve: {
+    alias: {
+      '@sqlite-wasm': path.resolve(__dirname, '../node_modules/@sqlite.org/sqlite-wasm'),
+    },
+  },
 });
