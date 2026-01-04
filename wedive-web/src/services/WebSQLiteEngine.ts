@@ -4,7 +4,6 @@ import type { SQLiteExecutor } from 'wedive-shared';
 // Vite-native 方式で Worker を読み込む
 const workerUrl = new URL('./sqlite-worker.ts', import.meta.url);
 
-let sharedPromiser: any = null;
 let initializationPromise: Promise<any> | null = null;
 
 export class WebSQLiteEngine implements SQLiteExecutor {
@@ -103,7 +102,9 @@ export class WebSQLiteEngine implements SQLiteExecutor {
     if (this.promiser) {
       try {
         await this.promiser('close');
-      } catch (_) { }
+      } catch {
+        // Ignore close errors
+      }
       this.promiser = null;
     }
   }
@@ -121,10 +122,13 @@ export class WebSQLiteEngine implements SQLiteExecutor {
     // 2. ブラウザ側の OPFS も一旦掃除する（ゴミが残らないように）
     const root = await navigator.storage.getDirectory();
     try {
-      await root.removeEntry(this.dbName).catch(() => { });
-      await root.removeEntry(`${this.dbName}-journal`).catch(() => { });
-      await root.removeEntry(`${this.dbName}-wal`).catch(() => { });
-    } catch (_) { }
+      // 既存ファイルを削除
+      await root.removeEntry(this.dbName).catch(() => { /* ignore */ });
+      await root.removeEntry(`${this.dbName}-journal`).catch(() => { /* ignore */ });
+      await root.removeEntry(`${this.dbName}-wal`).catch(() => { /* ignore */ });
+    } catch {
+      // Ignore removal errors
+    }
 
     // 3. SQLite の 'open' コマンドで 'buffer' を渡してインポート！
     // こうすることで SQLite が内部で最適な OPFS 管理ファイルとして保存してくれます

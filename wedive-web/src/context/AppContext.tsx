@@ -154,7 +154,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         const loadTable = async <T,>(tableName: string, query: string): Promise<T[]> => {
           try {
             return await masterDbEngine.getAllAsync<T>(query);
-          } catch (err) {
+          } catch {
             console.warn(`[MasterData] Table ${tableName} not found or query failed, skipping.`);
             return [];
           }
