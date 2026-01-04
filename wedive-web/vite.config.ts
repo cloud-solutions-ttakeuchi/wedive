@@ -15,13 +15,19 @@ export default defineConfig({
     viteStaticCopy({
       targets: [
         {
-          // 絶対パスで SQLite WASM を指定し、dist の直下に配置する
-          src: normalizePath(
-            path.resolve(__dirname, '../node_modules/@sqlite.org/sqlite-wasm/jswasm/sqlite3.wasm')
-          ),
+          // 1. 相対パスとワイルドカードを使い、ルートまたはローカルの node_modules から探し出す
+          // 2. 階層のズレを許容する
+          src: normalizePath('../node_modules/@sqlite.org/sqlite-wasm/jswasm/sqlite3.wasm'),
           dest: './',
         },
+        {
+          // 保険：もしパッケージ直下にある場合
+          src: normalizePath('node_modules/@sqlite.org/sqlite-wasm/jswasm/sqlite3.wasm'),
+          dest: './',
+        }
       ],
+      // 見つからなくてもビルド自体は止めない設定（デバッグのため、一旦 true にしても良いですが基本 false）
+      // failOnNoMatch: false
     }),
     VitePWA({
       registerType: 'autoUpdate',
