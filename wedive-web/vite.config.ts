@@ -24,14 +24,14 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    // viteStaticCopy({
-    //   targets: [
-    //     {
-    //       src: getSqliteWasmPath(),
-    //       dest: '', // ルート（dist/直下）に配置
-    //     }
-    //   ]
-    // }),
+    viteStaticCopy({
+      targets: [
+        {
+          src: getSqliteWasmPath(),
+          dest: '', // ルート（dist/直下）に配置
+        }
+      ]
+    }),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg', 'sqlite3.wasm'],
