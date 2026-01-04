@@ -71,12 +71,19 @@ export class WebSQLiteEngine implements SQLiteExecutor {
   async importDatabase(data: Uint8Array): Promise<void> {
     if (!this.sqlite || !this.api) await this.initialize();
 
-    const tempVfs = new MemoryVFS();
-    const tempName = `temp_${Date.now()}.db`;
-    this.api.vfs_register(tempVfs);
+    // MemoryVFS が未登録なら登録
+    const vfsName = 'memory'; // MemoryVFS のデフォルト名
+    if (!this.api.vfs_find(vfsName)) {
+      const importVfs = new MemoryVFS();
+      this.api.vfs_register(importVfs);
+    }
+
+    const tempVfs = this.api.vfs_find(vfsName);
+    const tempName = `import_${Date.now()}.db`;
 
     try {
-      // MemoryVFS の内部データ構造に合わせて直接データを流し込む
+      // MemoryVFS 内にバイナリデータを配置
+      // note: MemoryVFS の内部実装に依存
       (tempVfs as any).mapNameToFile.set(tempName, {
         name: tempName,
         flags: SQLite.SQLITE_OPEN_CREATE | SQLite.SQLITE_OPEN_READWRITE,
@@ -84,7 +91,7 @@ export class WebSQLiteEngine implements SQLiteExecutor {
         data: data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)
       });
 
-      const srcDb = await this.api.open_v2(tempName, SQLite.SQLITE_OPEN_READWRITE, tempVfs.name);
+      const srcDb = await this.api.open_v2(tempName, SQLite.SQLITE_OPEN_READWRITE, vfsName);
 
       try {
         // メイン DB を一旦閉じる (上書きするため)
@@ -98,7 +105,7 @@ export class WebSQLiteEngine implements SQLiteExecutor {
           await this.vfs.xDelete(this.dbName, 0);
         }
 
-        // データを転送 (VACUUM INTO は対象ファイルが存在しない必要があるため、先に実行)
+        // データを転送
         await this.api.exec(srcDb, `VACUUM INTO '${this.dbName}'`);
 
         // 書き出し終わったファイルを、検索用に開く
@@ -107,6 +114,8 @@ export class WebSQLiteEngine implements SQLiteExecutor {
         console.log(`[SQLite Web] ${this.dbName} has been updated successfully.`);
       } finally {
         await this.api.close(srcDb);
+        // メモリクリーンアップ
+        (tempVfs as any).mapNameToFile.delete(tempName);
       }
     } catch (e) {
       console.error('[SQLite Web] Import failed:', e);

@@ -9,10 +9,14 @@ const MASTER_STORAGE_PATH = 'v1/master/latest.db.gz';
 const LAST_UPDATED_KEY = 'master_db_last_updated';
 
 export class MasterDataSyncService {
+  private static isSyncing = false;
+
   /**
    * マスターデータの同期実行
    */
   static async syncMasterData(): Promise<void> {
+    if (this.isSyncing) return;
+    this.isSyncing = true;
     try {
       console.log('[Sync] Checking master data update via Firebase Storage...');
 
@@ -55,8 +59,8 @@ export class MasterDataSyncService {
 
       console.log('[Sync] Master data updated to latest version.');
 
-    } catch (error) {
-      console.warn('[Sync] Master data sync failed:', error);
+    } finally {
+      this.isSyncing = false;
     }
   }
 
