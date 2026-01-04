@@ -1,4 +1,3 @@
-import * as SQLite from 'wa-sqlite';
 // @ts-ignore
 import SQLiteESMFactory from 'wa-sqlite/dist/wa-sqlite-async.mjs';
 // @ts-ignore
@@ -7,9 +6,13 @@ import { IDBBatchAtomicVFS } from 'wa-sqlite/src/examples/IDBBatchAtomicVFS.js';
 import { MemoryVFS } from 'wa-sqlite/src/examples/MemoryVFS.js';
 import type { SQLiteExecutor } from 'wedive-shared';
 
+// 共有の WASM インスタンス管理
+let sharedSqlite: any = null;
+let sharedApi: any = null;
+const registeredVFS = new Set<string>();
+
 export class WebSQLiteEngine implements SQLiteExecutor {
   private db: number | null = null;
-  private sqlite: any = null;
   private api: any = null;
   private vfs: any = null;
   private dbName: string;
@@ -21,35 +24,36 @@ export class WebSQLiteEngine implements SQLiteExecutor {
   async initialize() {
     if (this.db) return;
 
-    this.sqlite = await SQLiteESMFactory();
-    this.api = SQLite.Factory(this.sqlite);
+    // WASM インスタンスを一度だけ作成
+    if (!sharedSqlite) {
+      sharedSqlite = await SQLiteESMFactory();
+      sharedApi = SQLite.Factory(sharedSqlite);
+    }
+    this.api = sharedApi;
 
-    // Web では IDBBatchAtomicVFS または OPFS (Origin Private File System) を使用可能
-    // ここでは永続化のために IDB または OPFS VFS を登録
-    this.vfs = new IDBBatchAtomicVFS(this.dbName);
-    this.api.vfs_register(this.vfs, true);
+    // VFS の登録 (一度だけ)
+    if (!registeredVFS.has(this.dbName)) {
+      this.vfs = new IDBBatchAtomicVFS(this.dbName);
+      this.api.vfs_register(this.vfs, true);
+      registeredVFS.add(this.dbName);
+    }
 
     this.db = await this.api.open_v2(this.dbName);
-    console.log(`[SQLite Web] Database ${this.dbName} opened via OPFS/IDB.`);
+    console.log(`[SQLite Web] Database ${this.dbName} initialized.`);
   }
 
   async getAllAsync<T>(sql: string, params: any[] = []): Promise<T[]> {
     if (!this.db) await this.initialize();
 
     const results: T[] = [];
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    await this.api.statements(this.db, sql, (s: any, next: any) => {
-      // パラメータのバインド
+    await this.api.statements(this.db, sql, (s: any) => {
       for (let i = 0; i < params.length; ++i) {
         this.api.bind(s, i + 1, params[i]);
       }
-
-      // 結果のフェッチ
       while (this.api.step(s) === SQLite.SQLITE_ROW) {
         results.push(this.api.row(s) as T);
       }
     });
-
     return results;
   }
 
@@ -59,74 +63,54 @@ export class WebSQLiteEngine implements SQLiteExecutor {
   }
 
   async close(): Promise<void> {
-    if (this.db) {
+    if (this.db && this.api) {
       await this.api.close(this.db);
       this.db = null;
     }
   }
 
   /**
-   * バイナリデータ (Uint8Array) からデータベースをインポート
+   * バイナリデータ (Uint8Array) からデータベースをインポート (Backup API 使用)
    */
   async importDatabase(data: Uint8Array): Promise<void> {
-    if (!this.sqlite || !this.api) await this.initialize();
+    if (!this.api) await this.initialize();
 
-    // MemoryVFS を登録（既に登録されている場合はエラーを無視）
-    const vfsName = 'memory';
-    try {
-      const importVfs = new MemoryVFS();
-      this.api.vfs_register(importVfs);
-    } catch (e) {
-      // 既に登録されている場合は OK
+    // 1. メモリ上に一時的なソース DB を作成
+    const memoryVfsName = 'memory-import';
+    if (!registeredVFS.has(memoryVfsName)) {
+      const memoryVfs = new MemoryVFS();
+      (memoryVfs as any).name = memoryVfsName;
+      this.api.vfs_register(memoryVfs);
+      registeredVFS.add(memoryVfsName);
     }
 
-    const tempVfs = new MemoryVFS(); // 毎回新しいインスタンスを作成して登録を試みるか、既存のものを使う
-    // 実際には api.vfs_register はグローバルなので、上記 try-catch で十分
-
     const tempName = `import_${Date.now()}.db`;
+    const tempVfs = this.api.vfs_find(memoryVfsName);
+    const buffer = data.slice().buffer;
+    (tempVfs as any).mapNameToFile.set(tempName, {
+      name: tempName,
+      flags: SQLite.SQLITE_OPEN_CREATE | SQLite.SQLITE_OPEN_READWRITE,
+      size: buffer.byteLength,
+      data: buffer
+    });
 
     try {
-      // MemoryVFS 内にバイナリデータを配置
-      // Uint8Array の内容を確実にコピーして保持させる
-      const buffer = data.slice().buffer;
-      (tempVfs as any).mapNameToFile.set(tempName, {
-        name: tempName,
-        flags: SQLite.SQLITE_OPEN_CREATE | SQLite.SQLITE_OPEN_READWRITE,
-        size: buffer.byteLength,
-        data: buffer
-      });
-
-      // この一時的な VFS を今回だけ登録（名前を重複させない）
-      const uniqueVfsName = `memory_${Date.now()}`;
-      (tempVfs as any).name = uniqueVfsName;
-      this.api.vfs_register(tempVfs);
-
-      const srcDb = await this.api.open_v2(tempName, SQLite.SQLITE_OPEN_READWRITE, uniqueVfsName);
+      const srcDb = await this.api.open_v2(tempName, SQLite.SQLITE_OPEN_READONLY, memoryVfsName);
 
       try {
-        // メイン DB を一旦閉じる (上書きするため)
-        if (this.db) {
-          await this.api.close(this.db);
-          this.db = null;
-        }
+        // 現在の DB 接続が開いていなければ初期化
+        if (!this.db) await this.initialize();
 
-        // 永続ストレージ上の既存ファイルを削除
-        if (this.vfs) {
-          await this.vfs.xDelete(this.dbName, 0);
-        }
+        // 2. Backup API を使用してメモリから永続ストレージへコピー
+        // これにより、既存のハンドルを維持したまま中身を入れ替えられる
+        const backup = await this.api.backup_init(this.db, 'main', srcDb, 'main');
+        await this.api.backup_step(backup, -1);
+        await this.api.backup_finish(backup);
 
-        // データを転送
-        await this.api.exec(srcDb, `VACUUM INTO '${this.dbName}'`);
-
-        // 書き出し終わったファイルを、検索用に開く
-        this.db = await this.api.open_v2(this.dbName);
-
-        console.log(`[SQLite Web] ${this.dbName} has been updated successfully.`);
+        console.log(`[SQLite Web] ${this.dbName} updated via Backup API.`);
       } finally {
         await this.api.close(srcDb);
-        // メモリクリーンアップ
         (tempVfs as any).mapNameToFile.delete(tempName);
-        // VFS の登録削除は wa-sqlite にはないため、放置しても MemoryVFS ごと GC されるのを期待
       }
     } catch (e) {
       console.error('[SQLite Web] Import failed:', e);
@@ -134,6 +118,9 @@ export class WebSQLiteEngine implements SQLiteExecutor {
     }
   }
 }
+
+export const masterDbEngine = new WebSQLiteEngine('master.db');
+export const userDbEngine = new WebSQLiteEngine('user.db');
 
 export const masterDbEngine = new WebSQLiteEngine('master.db');
 export const userDbEngine = new WebSQLiteEngine('user.db');
