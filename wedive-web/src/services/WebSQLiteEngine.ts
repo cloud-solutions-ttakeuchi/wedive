@@ -71,27 +71,37 @@ export class WebSQLiteEngine implements SQLiteExecutor {
   async importDatabase(data: Uint8Array): Promise<void> {
     if (!this.sqlite || !this.api) await this.initialize();
 
-    // MemoryVFS が未登録なら登録
-    const vfsName = 'memory'; // MemoryVFS のデフォルト名
-    if (!this.api.vfs_find(vfsName)) {
+    // MemoryVFS を登録（既に登録されている場合はエラーを無視）
+    const vfsName = 'memory';
+    try {
       const importVfs = new MemoryVFS();
       this.api.vfs_register(importVfs);
+    } catch (e) {
+      // 既に登録されている場合は OK
     }
 
-    const tempVfs = this.api.vfs_find(vfsName);
+    const tempVfs = new MemoryVFS(); // 毎回新しいインスタンスを作成して登録を試みるか、既存のものを使う
+    // 実際には api.vfs_register はグローバルなので、上記 try-catch で十分
+
     const tempName = `import_${Date.now()}.db`;
 
     try {
       // MemoryVFS 内にバイナリデータを配置
-      // note: MemoryVFS の内部実装に依存
+      // Uint8Array の内容を確実にコピーして保持させる
+      const buffer = data.slice().buffer;
       (tempVfs as any).mapNameToFile.set(tempName, {
         name: tempName,
         flags: SQLite.SQLITE_OPEN_CREATE | SQLite.SQLITE_OPEN_READWRITE,
-        size: data.byteLength,
-        data: data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)
+        size: buffer.byteLength,
+        data: buffer
       });
 
-      const srcDb = await this.api.open_v2(tempName, SQLite.SQLITE_OPEN_READWRITE, vfsName);
+      // この一時的な VFS を今回だけ登録（名前を重複させない）
+      const uniqueVfsName = `memory_${Date.now()}`;
+      (tempVfs as any).name = uniqueVfsName;
+      this.api.vfs_register(tempVfs);
+
+      const srcDb = await this.api.open_v2(tempName, SQLite.SQLITE_OPEN_READWRITE, uniqueVfsName);
 
       try {
         // メイン DB を一旦閉じる (上書きするため)
@@ -116,6 +126,7 @@ export class WebSQLiteEngine implements SQLiteExecutor {
         await this.api.close(srcDb);
         // メモリクリーンアップ
         (tempVfs as any).mapNameToFile.delete(tempName);
+        // VFS の登録削除は wa-sqlite にはないため、放置しても MemoryVFS ごと GC されるのを期待
       }
     } catch (e) {
       console.error('[SQLite Web] Import failed:', e);
