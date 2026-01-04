@@ -1,22 +1,26 @@
 import { defineConfig, normalizePath } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 
 export default defineConfig({
   plugins: [
     react(),
-    // viteStaticCopy({
-    //   targets: [
-    //     {
-    //       // 【修正ポイント】
-    //       // ../node_modules（ルート）と node_modules（パッケージ内）の両方を一気に探す設定
-    //       // これなら GitHub Actions がどちらにインストールしていても捕捉できます
-    //       src: normalizePath('**/node_modules/@sqlite.org/sqlite-wasm/jswasm/sqlite3.wasm'),
-    //       dest: './',
-    //     },
-    //   ],
-    // }),
+    tailwindcss(),
+    viteStaticCopy({
+      targets: [
+        {
+          // モノレポのルートまたはローカルの node_modules から WASM を探す
+          src: normalizePath('../node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm/sqlite3.wasm'),
+          dest: './',
+        },
+        {
+          src: normalizePath('node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm/sqlite3.wasm'),
+          dest: './',
+        }
+      ]
+    }),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg', 'sqlite3.wasm'],

@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "mkdir -p public && cp ../node_modules/@sqlite.org/sqlite-wasm/jswasm/sqlite3.wasm public/ && tsc -b && vite build""lint": "eslint .",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
