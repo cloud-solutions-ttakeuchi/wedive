@@ -72,7 +72,7 @@ export class WebSQLiteEngine implements SQLiteExecutor {
   }
 
   /**
-   * バイナリデータ (Uint8Array) からデータベースをインポート (Backup API 使用)
+   * バイナリデータ (Uint8Array) からデータベースをインポート
    */
   async importDatabase(data: Uint8Array): Promise<void> {
     if (!this.api) await this.initialize();
@@ -100,22 +100,43 @@ export class WebSQLiteEngine implements SQLiteExecutor {
     let srcDb: number | null = null;
     try {
       // 3. メモリ上の DB を開く
-      srcDb = await this.api.open_v2(tempName, SQLite.SQLITE_OPEN_READONLY, memoryVfsName);
+      srcDb = await this.api.open_v2(tempName, SQLite.SQLITE_OPEN_READWRITE, memoryVfsName);
 
-      // 4. 現在の DB 接続が開いていなければ初期化
-      if (!this.db) await this.initialize();
+      // 4. 現在の DB を閉じる（上書きするため）
+      if (this.db) {
+        await this.api.close(this.db);
+        this.db = null;
+      }
 
-      // 5. Backup API を使用してメモリから永続ストレージへコピー
-      const backup = await this.api.backup_init(this.db, 'main', srcDb, 'main');
-      await this.api.backup_step(backup, -1);
-      await this.api.backup_finish(backup);
+      // 5. 永続ストレージ上の既存ファイルを削除
+      if (this.vfs) {
+        try {
+          await this.vfs.xDelete(this.dbName, 0);
+        } catch (delErr) {
+          console.warn('[SQLite Web] Old DB file may not exist (OK):', delErr);
+        }
+      }
 
-      console.log(`[SQLite Web] ${this.dbName} updated via Backup API.`);
+      // 6. メモリから永続ストレージへデータを転送
+      await this.api.exec(srcDb, `VACUUM INTO '${this.dbName}'`);
+
+      // 7. 新しい DB を開く
+      this.db = await this.api.open_v2(this.dbName);
+
+      console.log(`[SQLite Web] ${this.dbName} updated successfully.`);
     } catch (e) {
       console.error('[SQLite Web] Import failed:', e);
+      // エラーが発生した場合でも DB を開き直す試み
+      if (!this.db) {
+        try {
+          this.db = await this.api.open_v2(this.dbName);
+        } catch (reopenErr) {
+          console.error('[SQLite Web] Failed to reopen DB after error:', reopenErr);
+        }
+      }
       throw e;
     } finally {
-      // 6. クリーンアップ
+      // 8. クリーンアップ
       if (srcDb !== null) {
         try {
           await this.api.close(srcDb);
