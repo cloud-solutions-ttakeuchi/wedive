@@ -19,7 +19,10 @@ export default defineConfig({
           src: normalizePath('node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm/sqlite3.wasm'),
           dest: './',
         }
-      ]
+      ],
+      // どちらか片方が見つからなくてもエラーにしない
+      // @ts-ignore - plugin version specific option
+      nonExist: 'silent'
     }),
     VitePWA({
       registerType: 'autoUpdate',
