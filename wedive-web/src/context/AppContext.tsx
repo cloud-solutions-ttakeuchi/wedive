@@ -13,8 +13,6 @@ import {
   deleteDoc,
   doc,
   setDoc,
-  collectionGroup,
-  limit,
   writeBatch
 } from 'firebase/firestore';
 import { connectFunctionsEmulator } from 'firebase/functions';

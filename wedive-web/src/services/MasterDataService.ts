@@ -1,8 +1,6 @@
 import { BaseMasterDataService } from 'wedive-shared';
 import type { Point, Creature } from 'wedive-shared';
 import { masterDbEngine } from './WebSQLiteEngine';
-import { collection, query, where, getDocs, limit as firestoreLimit, orderBy, startAt, endAt } from 'firebase/firestore';
-import { db as firestoreDb } from '../lib/firebase';
 
 /**
  * Web 版 MasterDataService

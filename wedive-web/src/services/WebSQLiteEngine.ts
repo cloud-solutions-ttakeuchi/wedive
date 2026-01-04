@@ -1,4 +1,6 @@
 // WebSQLiteEngine.ts – Official SQLite WASM implementation with OPFS
+// @ts-ignore
+import sqlite3Worker1Promiser from '@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm/sqlite3-worker1-promiser-bundler-friendly.mjs';
 import type { SQLiteExecutor } from 'wedive-shared';
 
 // Shared promiser instance and lock
@@ -6,13 +8,11 @@ let sharedPromiser: any = null;
 let initializationPromise: Promise<any> | null = null;
 
 export class WebSQLiteEngine implements SQLiteExecutor {
-  private dbPath: string;
   private promiser: any = null;
   private dbName: string;
 
   constructor(dbName: string) {
     this.dbName = dbName;
-    this.dbPath = `/${dbName}`;
   }
 
   /** Initialise the SQLite WASM Promiser and open the DB via OPFS */
@@ -26,38 +26,16 @@ export class WebSQLiteEngine implements SQLiteExecutor {
 
     initializationPromise = (async () => {
       if (!sharedPromiser) {
-        console.log('[SQLite Web] Initializing Official SQLite WASM Promiser...');
+        console.log('[SQLite Web] Initializing Official SQLite WASM Promiser (Bundler Friendly)...');
 
-        // Wait a bit if the script is still loading (module scripts are deferred)
-        let promiserFactory = (globalThis as any).sqlite3Worker1Promiser;
-        if (!promiserFactory) {
-          console.log('[SQLite Web] Promiser not found yet, waiting...');
-          await new Promise(resolve => setTimeout(resolve, 100));
-          promiserFactory = (globalThis as any).sqlite3Worker1Promiser;
-        }
-
-        if (!promiserFactory) {
-          throw new Error('sqlite3Worker1Promiser not found. Ensure script tag is in index.html with type="module"');
-        }
-
-        sharedPromiser = await new Promise((resolve, reject) => {
-          try {
-            const _promiser = promiserFactory({
-              // Use direct path for the worker in public folder
-              worker: () => new Worker('/sqlite3/sqlite3-worker1.mjs', { type: 'module' }),
-              onready: () => {
-                console.log('[SQLite Web] Worker ready.');
-                resolve(_promiser);
-              },
-              onerror: (err: any) => {
-                console.error('[SQLite Web] Worker error:', err);
-                reject(err);
-              },
-            });
-          } catch (e) {
-            reject(e);
-          }
+        // sqlite3Worker1Promiser.v2() returns a promise that resolves to the promiser function
+        sharedPromiser = await sqlite3Worker1Promiser.v2({
+          // By using the bundler version, we don't need to manually provide the worker
+          // but we can if the default path resolution fails.
+          // For now, let's try the default provided by the bundler-friendly mjs.
         });
+
+        console.log('[SQLite Web] Worker ready.');
       }
       return sharedPromiser;
     })();
@@ -65,11 +43,18 @@ export class WebSQLiteEngine implements SQLiteExecutor {
     this.promiser = await initializationPromise;
 
     console.log(`[SQLite Web] Opening database: ${this.dbName}...`);
-    await this.promiser('open', {
-      filename: `file:${this.dbName}?vfs=opfs`,
-    });
+    try {
+      await this.promiser('open', {
+        filename: `file:${this.dbName}?vfs=opfs`,
+      });
+      console.log(`[SQLite Web] Database ${this.dbName} opened via OPFS successfully.`);
+    } catch (e) {
+      console.error(`[SQLite Web] Failed to open database ${this.dbName}:`, e);
+      throw e;
+    }
 
-    console.log(`[SQLite Web] Database ${this.dbName} opened via OPFS successfully.`);
+    // Log database summary
+    await this.logDatabaseSummary();
   }
 
   /** Execute a SELECT and return rows as objects */
@@ -83,7 +68,6 @@ export class WebSQLiteEngine implements SQLiteExecutor {
         rowMode: 'object',
       });
 
-      // Promiser returns { type: 'exec', result: { resultRows: [...] } }
       const rows = response.result.resultRows || [];
       return rows as T[];
     } catch (e) {
@@ -110,9 +94,13 @@ export class WebSQLiteEngine implements SQLiteExecutor {
   /** Close the database */
   async close(): Promise<void> {
     if (this.promiser) {
-      await this.promiser('close', {
-        filename: `file:${this.dbName}?vfs=opfs`,
-      });
+      try {
+        await this.promiser('close', {
+          filename: `file:${this.dbName}?vfs=opfs`,
+        });
+      } catch (_) {
+        // Ignore if error during close
+      }
       this.promiser = null;
     }
   }
@@ -131,16 +119,14 @@ export class WebSQLiteEngine implements SQLiteExecutor {
       }
 
       // 2. Write directly to OPFS using the browser's FileSystem API
-      // Note: OPFS is available via navigator.storage.getDirectory()
       const root = await navigator.storage.getDirectory();
 
       // Delete existing file if any to be clean
       try {
         await root.removeEntry(this.dbName);
-        // Also remove journal/wal files if they exist
         await root.removeEntry(`${this.dbName}-journal`).catch(() => { });
         await root.removeEntry(`${this.dbName}-wal`).catch(() => { });
-      } catch (e) {
+      } catch (_) {
         // Ignore if file doesn't exist
       }
 
@@ -154,13 +140,36 @@ export class WebSQLiteEngine implements SQLiteExecutor {
       // 3. Re-open the database
       await this.initialize();
 
-      // Verify schema (optional debug)
-      const tables = await this.getAllAsync<{ name: string }>("SELECT name FROM sqlite_master WHERE type='table'");
-      console.log('[SQLite Web] Imported tables:', tables.map(t => t.name).join(', '));
+    } catch (err) {
+      console.error('[SQLite Web] importDatabase error:', err);
+      throw err;
+    }
+  }
 
+  /**
+   * Log all tables and their row counts to the console for debugging.
+   */
+  async logDatabaseSummary(): Promise<void> {
+    try {
+      const tables = await this.getAllAsync<{ name: string }>("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
+
+      console.group(`[SQLite Web] Database Summary: ${this.dbName}`);
+      if (tables.length === 0) {
+        console.log('No tables found.');
+      }
+
+      for (const table of tables) {
+        try {
+          const countResult = await this.getAllAsync<any>(`SELECT count(*) as count FROM ${table.name}`);
+          const count = countResult[0]?.count ?? 0;
+          console.log(`- ${table.name.padEnd(25)}: ${count.toLocaleString()} rows`);
+        } catch (e) {
+          console.error(`- ${table.name.padEnd(25)}: Error getting count`, e);
+        }
+      }
+      console.groupEnd();
     } catch (e) {
-      console.error('[SQLite Web] importDatabase error:', e);
-      throw e;
+      console.error('[SQLite Web] Failed to get database summary:', e);
     }
   }
 }

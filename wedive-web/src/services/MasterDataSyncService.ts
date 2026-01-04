@@ -28,7 +28,7 @@ export class MasterDataSyncService {
       const cachedUpdated = localStorage.getItem(LAST_UPDATED_KEY);
 
       // Force sync once for engine migration (wa-sqlite -> official sqlite-wasm)
-      const ENGINE_VERSION = 'v2-opfs';
+      const ENGINE_VERSION = 'v2-opfs-v3';
       const lastEngineVersion = localStorage.getItem('master_db_engine_version');
 
       if (cachedUpdated === serverUpdated && lastEngineVersion === ENGINE_VERSION) {
