@@ -26,6 +26,11 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg', 'sqlite3.wasm'], // キャッシュ対象に含める
+      workbox: {
+        // キャッシュサイズの上限を 3MiB に引き上げる（デフォルトは 2MiB）
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+        // globPatterns などの詳細設定が必要な場合はここに追加
+      },
       manifest: {
         name: 'Wedive',
         short_name: 'Wedive',
