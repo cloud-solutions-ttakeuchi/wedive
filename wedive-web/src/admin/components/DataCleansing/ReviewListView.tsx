@@ -11,7 +11,6 @@ import {
   Trash2
 } from 'lucide-react';
 import clsx from 'clsx';
-import { db } from '../../../lib/firebase';
 import type { PointCreature, Point, Creature } from '../../../types';
 
 interface ReviewListViewProps {

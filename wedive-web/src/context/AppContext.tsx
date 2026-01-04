@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useRef, useMemo, type ReactNode } from 'react';
-import type { User, Log, Rarity, Creature, Point, PointCreature, Review, PointCreatureProposal } from '../types';
-import { INITIAL_DATA } from '../data/initialData';
+import type { User, Log, Rarity, Creature, Point, PointCreature, Review, PointCreatureProposal, Region, Zone, Area } from '../types';
+
 import { auth, googleProvider, db as firestore, functions } from '../lib/firebase';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import {
@@ -13,12 +13,12 @@ import {
   deleteDoc,
   doc,
   setDoc,
-  collectionGroup,
-  limit,
   writeBatch
 } from 'firebase/firestore';
 import { connectFunctionsEmulator } from 'firebase/functions';
 
+import { MasterDataSyncService } from '../services/MasterDataSyncService';
+import { masterDbEngine } from '../services/WebSQLiteEngine';
 // Helper to remove undefined values
 const sanitizePayload = (data: any): any => {
   if (Array.isArray(data)) {
@@ -57,7 +57,7 @@ interface AppContextType {
   toggleWanted: (creatureId: string) => void;
   toggleBookmarkPoint: (pointId: string) => void;
 
-  areas: typeof INITIAL_DATA.areas;
+  areas: Area[];
   addPointCreature: (pointId: string, creatureId: string, localRarity: Rarity) => Promise<void>;
   removePointCreature: (pointId: string, creatureId: string) => Promise<void>;
   approveProposal: (type: 'creature' | 'point' | 'point-creature', id: string, data: any) => Promise<void>;
@@ -79,8 +79,8 @@ interface AppContextType {
   proposalCreatures: (Creature & { proposalType?: string, diffData?: any, targetId?: string, reason?: string })[];
   proposalPoints: (Point & { proposalType?: string, diffData?: any, targetId?: string, reason?: string })[];
   proposalPointCreatures: PointCreatureProposal[];
-  regions: typeof INITIAL_DATA.regions;
-  zones: typeof INITIAL_DATA.zones;
+  regions: Region[];
+  zones: Zone[];
 
   // Admin
   allUsers: User[];
@@ -112,9 +112,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const isDeletingRef = useRef(false);
 
   // Data State
-  const [creatures, setCreatures] = useState<Creature[]>(INITIAL_DATA.creatures);
-  const [points, setPoints] = useState<Point[]>(INITIAL_DATA.points);
-  const [pointCreatures, setPointCreatures] = useState<PointCreature[]>(INITIAL_DATA.pointCreatures);
+  const [creatures, setCreatures] = useState<Creature[]>([]);
+  const [points, setPoints] = useState<Point[]>([]);
+  const [pointCreatures, setPointCreatures] = useState<PointCreature[]>([]);
   const [dbProposalCreatures, setDbProposalCreatures] = useState<Creature[]>([]);
   const [dbProposalPoints, setDbProposalPoints] = useState<Point[]>([]);
   const [proposalPointCreatures, setProposalPointCreatures] = useState<PointCreatureProposal[]>([]);
@@ -125,9 +125,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [allUsers, setAllUsers] = useState<User[]>([]);
 
   // Master Data State
-  const [regions, setRegions] = useState<typeof INITIAL_DATA.regions>(INITIAL_DATA.regions);
-  const [zones, setZones] = useState<typeof INITIAL_DATA.zones>(INITIAL_DATA.zones);
-  const [areas, setAreas] = useState<typeof INITIAL_DATA.areas>(INITIAL_DATA.areas);
+  const [regions, setRegions] = useState<Region[]>([]);
+  const [zones, setZones] = useState<Zone[]>([]);
+  const [areas, setAreas] = useState<Area[]>([]);
 
   // Emulator connections (development only)
   useEffect(() => {
@@ -139,65 +139,61 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  // 1. Master Data Sync (Regions, Zones, Areas)
+  // 1 & 2. Local-First Master Data Sync & Load
   useEffect(() => {
-    const unsubR = onSnapshot(collection(firestore, 'regions'), (snap) => {
-      if (!snap.empty) setRegions(snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as any)));
-    }, (err) => console.error("Snapshot error (regions):", err));
-    const unsubZ = onSnapshot(collection(firestore, 'zones'), (snap) => {
-      if (!snap.empty) setZones(snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as any)));
-    }, (err) => console.error("Snapshot error (zones):", err));
-    const unsubA = onSnapshot(collection(firestore, 'areas'), (snap) => {
-      if (!snap.empty) setAreas(snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as any)));
-    }, (err) => console.error("Snapshot error (areas):", err));
-    return () => { unsubR(); unsubZ(); unsubA(); };
-  }, []);
+    const initMasterData = async () => {
+      try {
+        console.log('[MasterData] Initializing Local-First engine...');
 
-  // 2. Core Data Sync (Creatures, Points, PointCreatures)
-  useEffect(() => {
-    const creaturesQuery = query(collection(firestore, 'creatures'), where('status', 'in', ['approved', 'pending']));
-    const unsubCreatures = onSnapshot(creaturesQuery, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Creature));
-      setCreatures(data);
-    });
+        // A. SQLite 同期 (Firebase Storage から最新 DB を取得)
+        await MasterDataSyncService.syncMasterData();
 
-    const pointsQuery = query(collection(firestore, 'points'), where('status', 'in', ['approved', 'pending']));
-    const unsubPoints = onSnapshot(pointsQuery, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Point));
-      setPoints(data);
-    });
+        // B. SQLite からデータをロード
+        await masterDbEngine.initialize();
 
-    const unsubPointCreatures = onSnapshot(collection(firestore, 'point_creatures'), (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as PointCreature));
-      setPointCreatures(data);
-    }, (err) => console.error("Snapshot error (point_creatures):", err));
+        const loadTable = async <T,>(tableName: string, query: string): Promise<T[]> => {
+          try {
+            return await masterDbEngine.getAllAsync<T>(query);
+          } catch {
+            console.warn(`[MasterData] Table ${tableName} not found or query failed, skipping.`);
+            return [];
+          }
+        };
 
-    const unsubReviews = onSnapshot(query(
-      collection(firestore, 'reviews'),
-      limit(200)
-    ), (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Review))
-        .filter(r => r.status === 'approved' || !r.status) // statusがない古いデータも承認済みとして扱う
-        .sort((a, b) => {
-          const timeA = new Date(a.date || a.createdAt || 0).getTime();
-          const timeB = new Date(b.date || b.createdAt || 0).getTime();
-          return timeB - timeA;
-        });
-      setReviews(data);
-    }, (err) => console.error("Snapshot error (reviews/all_public):", err));
+        const [geo, c, p, pc, rv, pl] = await Promise.all([
+          loadTable<any>('master_geography', 'SELECT * FROM master_geography'),
+          loadTable<any>('master_creatures', 'SELECT * FROM master_creatures LIMIT 1000'),
+          loadTable<any>('master_points', 'SELECT * FROM master_points LIMIT 1000'),
+          loadTable<any>('master_point_creatures', 'SELECT * FROM master_point_creatures'),
+          loadTable<any>('master_point_reviews', 'SELECT * FROM master_point_reviews ORDER BY created_at DESC LIMIT 100'),
+          loadTable<any>('master_public_logs', 'SELECT * FROM master_public_logs ORDER BY date DESC LIMIT 20')
+        ]);
 
-    // Global Recent Public Logs
-    let unsubPublicLogs: () => void = () => { };
-    try {
-      const publicLogsQuery = query(collectionGroup(firestore, 'logs'), where('isPrivate', '==', false), orderBy('date', 'desc'), limit(20));
-      unsubPublicLogs = onSnapshot(publicLogsQuery, (snapshot) => {
-        setRecentLogs(snapshot.docs.map(doc => doc.data() as Log));
-      });
-    } catch (e) { console.error(e); }
+        // Geography (Region / Zone / Area) の振り分け
+        if (geo.length) {
+          const regionsObj = geo.filter((i: any) => i.type === 'region');
+          const zonesObj = geo.filter((i: any) => i.type === 'zone');
+          const areasObj = geo.filter((i: any) => i.type === 'area');
 
-    return () => {
-      unsubCreatures(); unsubPoints(); unsubPointCreatures(); unsubReviews(); unsubPublicLogs();
+          if (regionsObj.length) setRegions(regionsObj);
+          if (zonesObj.length) setZones(zonesObj.map((i: any) => ({ ...i, regionId: i.region_id })));
+          if (areasObj.length) setAreas(areasObj.map((i: any) => ({ ...i, zoneId: i.zone_id, regionId: i.region_id })));
+        }
+
+        if (c.length) setCreatures(c.map(i => ({ ...i, status: 'approved' })));
+        if (p.length) setPoints(p.map(i => ({ ...i, status: 'approved' })));
+        if (pc.length) setPointCreatures(pc.map(i => ({ ...i, status: 'approved' })));
+        if (rv.length) setReviews(rv.map(i => ({ ...i, status: 'approved' })));
+        if (pl.length) setRecentLogs(pl);
+
+        console.log('[MasterData] Master data loaded from SQLite (using unified geography).');
+
+      } catch (e) {
+        console.error('[MasterData] Fatal error loading master data:', e);
+      }
     };
+
+    initMasterData();
   }, []);
 
   // 3. Auth & User-Specific Sync
@@ -299,7 +295,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       : query(collection(firestore, 'reviews'), where('userId', '==', userId));
     const unsubR = onSnapshot(qR, (snapshot) => {
       setProposalReviews(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Review)));
-    }, (err) => console.error("Snapshot error (personal/pending reviews):", err));
+    }, (err: Error) => console.error("Snapshot error (personal/pending reviews):", err));
 
     // Point-Creature Proposals (New)
     const qPPC = isAdmin
@@ -307,7 +303,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       : query(collection(firestore, 'point_creature_proposals'), where('submitterId', '==', userId), where('status', '==', 'pending'));
     const unsubPPC = onSnapshot(qPPC, (snapshot) => {
       setProposalPointCreatures(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as PointCreatureProposal)));
-    }, (err) => console.error("Snapshot error (point-creature proposals):", err));
+    }, (err: Error) => console.error("Snapshot error (point-creature proposals):", err));
 
     return () => {
       unsubLogs();
@@ -323,20 +319,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const isAdmin = currentUser.role === 'admin' || currentUser.role === 'moderator';
     if (!isAdmin) return dbProposalPoints;
 
-    const pendingMasterPoints = points.filter(p => p.status === 'pending');
-    const prevIds = new Set(dbProposalPoints.map(p => p.id));
-    const newItems = pendingMasterPoints.filter(p => !prevIds.has(p.id));
-    return [...dbProposalPoints, ...newItems].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+    const pendingMasterPoints = points.filter((p: Point) => p.status === 'pending');
+    const prevIds = new Set(dbProposalPoints.map((p: Point) => p.id));
+    const newItems = pendingMasterPoints.filter((p: Point) => !prevIds.has(p.id));
+    return [...dbProposalPoints, ...newItems].sort((a: Point, b: Point) => (b.createdAt || '').localeCompare(a.createdAt || ''));
   }, [dbProposalPoints, points, currentUser.role]);
 
   const proposalCreatures = useMemo(() => {
     const isAdmin = currentUser.role === 'admin' || currentUser.role === 'moderator';
     if (!isAdmin) return dbProposalCreatures;
 
-    const pendingMasterCreatures = creatures.filter(c => c.status === 'pending');
-    const prevIds = new Set(dbProposalCreatures.map(c => c.id));
-    const newItems = pendingMasterCreatures.filter(c => !prevIds.has(c.id));
-    return [...dbProposalCreatures, ...newItems].sort((a, b) => (b.id || '').localeCompare(a.id || ''));
+    const pendingMasterCreatures = creatures.filter((c: Creature) => c.status === 'pending');
+    const prevIds = new Set(dbProposalCreatures.map((c: Creature) => c.id));
+    const newItems = pendingMasterCreatures.filter((c: Creature) => !prevIds.has(c.id));
+    return [...dbProposalCreatures, ...newItems].sort((a: Creature, b: Creature) => (b.id || '').localeCompare(a.id || ''));
   }, [dbProposalCreatures, creatures, currentUser.role]);
 
   // Admin Specific: Fetch All Users
@@ -384,7 +380,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const targetId = currentUser?.id;
     if (!targetId || targetId === 'guest') return;
     const cleanData = sanitizePayload(userData);
-    setCurrentUser(prev => ({ ...prev, ...userData }));
+    setCurrentUser((prev: User) => ({ ...prev, ...userData }));
     if (isAuthenticated) {
       try { await updateDoc(doc(firestore, 'users', targetId), cleanData); }
       catch (e) { console.error(e); }
@@ -546,16 +542,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     try {
       if (type === 'creature') {
         const targetId = data.targetId || `c${Date.now()}`;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { id: _fid, proposalType: _pt, targetId: _ftid, submitterId: _sid, status: _st, createdAt: _ca, ...finalData } = data;
         await setDoc(doc(firestore, 'creatures', targetId), sanitizePayload({ ...finalData, id: targetId, status: 'approved' }));
         await updateDoc(doc(firestore, 'creature_proposals', id), { status: 'approved', processedAt: now });
       } else if (type === 'point') {
         const targetId = data.targetId || `p${Date.now()}`;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { id: _fid, proposalType: _pt, targetId: _ftid, submitterId: _sid, status: _st, createdAt: _ca, ...finalData } = data;
         await setDoc(doc(firestore, 'points', targetId), sanitizePayload({ ...finalData, id: targetId, status: 'approved' }));
         await updateDoc(doc(firestore, 'point_proposals', id), { status: 'approved', processedAt: now });
       } else if (type === 'point-creature') {
         const targetId = data.targetId || `${data.pointId}_${data.creatureId}`;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { id: _fid, proposalType, targetId: _ftid, submitterId: _sid, status: _st, createdAt: _ca, ...finalData } = data;
         if (proposalType === 'delete') {
           await deleteDoc(doc(firestore, 'point_creatures', targetId));

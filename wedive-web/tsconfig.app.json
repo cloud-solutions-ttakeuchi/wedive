@@ -29,9 +29,19 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "wedive-shared": [
+        "../wedive-shared/src/index.ts"
+      ],
+      "wedive-shared/*": [
+        "../wedive-shared/src/*"
+      ]
+    }
   },
   "include": [
-    "src"
+    "src",
+    "../wedive-shared/src"
   ]
 }

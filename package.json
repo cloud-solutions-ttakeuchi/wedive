@@ -1,0 +1,18 @@
+{
+  "name": "wedive-monorepo",
+  "private": true,
+  "workspaces": [
+    "wedive-app",
+    "wedive-web",
+    "wedive-shared"
+  ],
+  "scripts": {
+    "web:dev": "npm run dev -w wedive-web",
+    "app:start": "npm run start -w wedive-app"
+  },
+  "optionalDependencies": {
+    "@tailwindcss/oxide-linux-x64-gnu": "^4.1.18",
+    "lightningcss": "^1.30.2",
+    "lightningcss-linux-x64-gnu": "^1.30.2"
+  }
+}
