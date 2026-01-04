@@ -1,3 +1,4 @@
+import * as SQLite from 'wa-sqlite';
 // @ts-ignore
 import SQLiteESMFactory from 'wa-sqlite/dist/wa-sqlite-async.mjs';
 // @ts-ignore
@@ -118,9 +119,6 @@ export class WebSQLiteEngine implements SQLiteExecutor {
     }
   }
 }
-
-export const masterDbEngine = new WebSQLiteEngine('master.db');
-export const userDbEngine = new WebSQLiteEngine('user.db');
 
 export const masterDbEngine = new WebSQLiteEngine('master.db');
 export const userDbEngine = new WebSQLiteEngine('user.db');
