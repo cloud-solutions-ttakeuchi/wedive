@@ -1,8 +1,10 @@
 // @ts-ignore
-import sqlite3InitModule from '@sqlite.org/sqlite-wasm';
+import sqlite3InitModule from '../assets/jswasm/sqlite3.mjs';
 // @ts-ignore
-// import wasmUrl from '../assets/sqlite3.wasm?url';
-const wasmUrl = 'https://unpkg.com/@sqlite.org/sqlite-wasm@3.46.0/sqlite-wasm/jswasm/sqlite3.wasm';
+import wasmUrl from '../assets/jswasm/sqlite3.wasm?url';
+// @ts-ignore
+import opfsUrl from '../assets/jswasm/sqlite3-opfs-async-proxy.js?url';
+// const wasmUrl = 'https://unpkg.com/@sqlite.org/sqlite-wasm@3.46.0/sqlite-wasm/jswasm/sqlite3.wasm';
 
 /**
  * SQLite WASM をバックグラウンドで初期化するためのワーカー
