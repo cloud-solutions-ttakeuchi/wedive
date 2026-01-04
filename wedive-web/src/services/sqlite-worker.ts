@@ -8,8 +8,8 @@ import sqlite3InitModule from './sqlite3.mjs';
 sqlite3InitModule({
   locateFile: (path: string) => {
     if (path.endsWith('.wasm')) {
-      console.log('[SQLite Web] Loading WASM from hardcoded path: /sqlite3/sqlite3.wasm');
-      return '/sqlite3/sqlite3.wasm';
+      console.log('[SQLite Web] Loading WASM from hardcoded path: /sqlite3.wasm');
+      return '/sqlite3.wasm';
     }
     return path;
   }
