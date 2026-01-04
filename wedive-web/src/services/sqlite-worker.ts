@@ -1,22 +1,14 @@
 import sqlite3InitModule from '@sqlite.org/sqlite-wasm';
-// @ts-ignore - Bypass package exports restriction AND get the correct hashed URL from Vite
-import wasmUrl from '../../../node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm/sqlite3.wasm?url';
-console.log('[SQLite Web] Top-level WASM URL check:', wasmUrl);
 
 /**
  * SQLite WASM をバックグラウンドで初期化するためのワーカー
- * locateFile に Vite が解決した正確な URL (wasmUrl) を渡します
+ * locateFile を使用して、public フォルダに配置した WASM ファイルを直接指定します
  */
 sqlite3InitModule({
   locateFile: (path) => {
     if (path.endsWith('.wasm')) {
-      console.log('[SQLite Web] Loading WASM from:', wasmUrl);
-      // 存在確認のための fetch (デバッグ用)
-      fetch(wasmUrl, { method: 'HEAD' })
-        .then(res => console.log(`[SQLite Web] WASM Check: ${res.status} ${res.statusText}`))
-        .catch(err => console.error('[SQLite Web] WASM Check Error:', err));
-
-      return wasmUrl;
+      console.log('[SQLite Web] Loading WASM from hardcoded path: /sqlite3.wasm');
+      return '/sqlite3.wasm';
     }
     return path;
   }
