@@ -1,15 +1,17 @@
 // @ts-ignore
-import sqlite3InitModule from './sqlite3.mjs';
+import sqlite3InitModule from '@sqlite.org/sqlite-wasm';
+// @ts-ignore
+import wasmUrl from '@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm/sqlite3.wasm?url';
 
 /**
  * SQLite WASM をバックグラウンドで初期化するためのワーカー
- * locateFile を使用して、public フォルダに配置した WASM ファイルを直接指定します
+ * Vite の ?url import を使用して、WASM ファイルのパスを確実に解決します
  */
 sqlite3InitModule({
   locateFile: (path: string) => {
     if (path.endsWith('.wasm')) {
-      console.log('[SQLite Web] Loading WASM from hardcoded path: /sqlite3.wasm');
-      return '/sqlite3.wasm';
+      // console.log('[SQLite Web] Loading WASM from Vite resolved URL:', wasmUrl);
+      return wasmUrl;
     }
     return path;
   }

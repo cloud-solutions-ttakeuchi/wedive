@@ -70,6 +70,12 @@ export default defineConfig({
     },
   },
   */
+  server: {
+    fs: {
+      // モノレポ構成でルートの node_modules にアクセスするために必要
+      allow: ['..'],
+    },
+  },
   // @ts-ignore
   configureServer(server: any) {
     server.middlewares.use((req: any, res: any, next: any) => {
