@@ -9,9 +9,10 @@ export default defineConfig({
     viteStaticCopy({
       targets: [
         {
-          // モノレポのルートにある node_modules から SQLite WASM を取得
-          // 相対パスに切り替えたため、__dirname 関連のコードは削除しました
-          src: normalizePath('../node_modules/@sqlite.org/sqlite-wasm/jswasm/sqlite3.wasm'),
+          // 【修正ポイント】
+          // ../node_modules（ルート）と node_modules（パッケージ内）の両方を一気に探す設定
+          // これなら GitHub Actions がどちらにインストールしていても捕捉できます
+          src: normalizePath('**/node_modules/@sqlite.org/sqlite-wasm/jswasm/sqlite3.wasm'),
           dest: './',
         },
       ],
@@ -20,7 +21,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg', 'sqlite3.wasm'],
       workbox: {
-        // 前回のビルドで引っかかった 2.2MB の制限を 3MB に拡張
+        // 2.2MB の JS ファイルを許容するための 3MB 設定
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
       },
       manifest: {
