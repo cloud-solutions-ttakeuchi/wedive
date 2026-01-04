@@ -8,7 +8,15 @@ import wasmUrl from '../../../node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/j
  */
 sqlite3InitModule({
   locateFile: (path) => {
-    if (path.endsWith('.wasm')) return wasmUrl;
+    if (path.endsWith('.wasm')) {
+      console.log('[SQLite Web] Loading WASM from:', wasmUrl);
+      // 存在確認のための fetch (デバッグ用)
+      fetch(wasmUrl, { method: 'HEAD' })
+        .then(res => console.log(`[SQLite Web] WASM Check: ${res.status} ${res.statusText}`))
+        .catch(err => console.error('[SQLite Web] WASM Check Error:', err));
+
+      return wasmUrl;
+    }
     return path;
   }
 }).then((sqlite3) => {
