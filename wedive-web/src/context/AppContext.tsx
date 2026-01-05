@@ -170,14 +170,62 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         ]);
 
         // Geography (Region / Zone / Area) の振り分け
+        // Geography (Region / Zone / Area) の振り分け
         if (geo.length) {
-          const regionsObj = geo.filter((i: any) => i.type === 'region');
-          const zonesObj = geo.filter((i: any) => i.type === 'zone');
-          const areasObj = geo.filter((i: any) => i.type === 'area');
+          // Check if it's polymorphic (type column) or flattened (region_id, etc.)
+          const sample = geo[0];
 
-          if (regionsObj.length) setRegions(regionsObj);
-          if (zonesObj.length) setZones(zonesObj.map((i: any) => ({ ...i, regionId: i.region_id })));
-          if (areasObj.length) setAreas(areasObj.map((i: any) => ({ ...i, zoneId: i.zone_id, regionId: i.region_id })));
+          if ('type' in sample) {
+            // Polymorphic (Old structure)
+            const regionsObj = geo.filter((i: any) => i.type === 'region');
+            const zonesObj = geo.filter((i: any) => i.type === 'zone');
+            const areasObj = geo.filter((i: any) => i.type === 'area');
+
+            if (regionsObj.length) setRegions(regionsObj.map((i: any) => ({
+              id: i.id, name: i.name, description: i.description
+            })));
+            if (zonesObj.length) setZones(zonesObj.map((i: any) => ({
+              id: i.id, name: i.name, regionId: i.region_id || i.regionId, description: i.description
+            })));
+            if (areasObj.length) setAreas(areasObj.map((i: any) => ({
+              id: i.id, name: i.name, zoneId: i.zone_id || i.zoneId, regionId: i.region_id || i.regionId, description: i.description
+            })));
+          } else if ('region_id' in sample || 'regionId' in sample) {
+            // Flattened (New structure - e.g. v_app_geography_master)
+            const uniqueRegions = new Map();
+            const uniqueZones = new Map();
+            const uniqueAreas = new Map();
+
+            geo.forEach((row: any) => {
+              // Handle both snake_case (SQLite) and camelCase (potential future)
+              const rId = row.region_id || row.regionId;
+              const rName = row.region_name || row.regionName;
+              const rDesc = row.region_description || row.regionDescription;
+
+              const zId = row.zone_id || row.zoneId;
+              const zName = row.zone_name || row.zoneName;
+              const zDesc = row.zone_description || row.zoneDescription;
+
+              const aId = row.area_id || row.areaId || row.id;
+              const aName = row.area_name || row.areaName || row.name;
+              const aDesc = row.area_description || row.areaDescription || row.description;
+
+              if (rId && !uniqueRegions.has(rId)) {
+                uniqueRegions.set(rId, { id: rId, name: rName, description: rDesc });
+              }
+              if (zId && !uniqueZones.has(zId)) {
+                uniqueZones.set(zId, { id: zId, name: zName, regionId: rId, description: zDesc });
+              }
+              if (aId && !uniqueAreas.has(aId)) {
+                uniqueAreas.set(aId, { id: aId, name: aName, zoneId: zId, regionId: rId, description: aDesc });
+              }
+            });
+
+            setRegions(Array.from(uniqueRegions.values()));
+            setZones(Array.from(uniqueZones.values()));
+            setAreas(Array.from(uniqueAreas.values()));
+            console.log(`[MasterData] Extracted ${uniqueRegions.size} regions, ${uniqueZones.size} zones, ${uniqueAreas.size} areas from flattened geography.`);
+          }
         }
 
         if (c.length) {
