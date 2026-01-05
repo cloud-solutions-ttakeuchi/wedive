@@ -33,7 +33,7 @@ export class MasterDataService extends BaseMasterDataService {
       try {
         const results = await super.searchPoints(normalizedQuery, limitCount);
         if (results.length > 0) {
-          console.log(`[MasterData] Found ${results.length} points from SQLite (Web) 🚀`);
+          console.log(`[MasterData] Found ${results.length} points from SQLite (Web) 🚀`, results[0]);
           return results;
         }
       } catch (e) {
@@ -66,7 +66,7 @@ export class MasterDataService extends BaseMasterDataService {
       try {
         const results = await super.searchCreatures(normalizedQuery, limitCount);
         if (results.length > 0) {
-          console.log(`[MasterData] Found ${results.length} creatures from SQLite (Web) 🚀`);
+          console.log(`[MasterData] Found ${results.length} creatures from SQLite (Web) 🚀`, results[0]);
           return results;
         }
       } catch (e) {
