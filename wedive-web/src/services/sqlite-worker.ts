@@ -1,21 +1,23 @@
-// CDNからロードすることでローカルパス問題を回避
-const CDN_BASE = 'https://unpkg.com/@sqlite.org/sqlite-wasm@3.46.0/sqlite-wasm/jswasm';
+// @ts-ignore
+import sqlite3InitModule from '../assets/jswasm/sqlite3.mjs';
+// @ts-ignore
+import wasmUrl from '../assets/jswasm/sqlite3.wasm?url';
 
 const initSQLite = async () => {
   try {
-    // @ts-ignore
-    const { default: sqlite3InitModule } = await import(/* @vite-ignore */ `${CDN_BASE}/sqlite3.mjs`);
-
+    console.log('[SQLite Worker] Initializing SQLite3...');
     sqlite3InitModule({
       print: console.log,
       printErr: console.error,
       locateFile: (file: string) => {
-        if (file.endsWith('.wasm')) return `${CDN_BASE}/sqlite3.wasm`;
+        if (file.endsWith('.wasm')) {
+          return wasmUrl;
+        }
         return file;
       }
     }).then((sqlite3: any) => {
       try {
-        console.log('[SQLite Worker] Initialized using CDN assets.');
+        console.log('[SQLite Worker] Module loaded.');
         // @ts-ignore
         if (sqlite3.initWorker1API) {
           // @ts-ignore
@@ -29,7 +31,7 @@ const initSQLite = async () => {
       }
     });
   } catch (err) {
-    console.error('[SQLite Worker] Failed to load sqlite3.mjs from CDN:', err);
+    console.error('[SQLite Worker] Failed to load sqlite3 module:', err);
   }
 };
 

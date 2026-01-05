@@ -63,10 +63,6 @@ export default defineConfig({
     */
   ],
   server: {
-    headers: {
-      'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'require-corp',
-    },
     fs: {
       // モノレポ構成でルートの node_modules にアクセスするために必要
       allow: ['..'],
@@ -90,13 +86,5 @@ export default defineConfig({
     },
   },
   build: {
-    rollupOptions: {
-      external: ['/sqlite3/sqlite3.mjs'],
-    },
-  },
-  worker: {
-    rollupOptions: {
-      external: ['/sqlite3/sqlite3.mjs'],
-    },
   },
 });
