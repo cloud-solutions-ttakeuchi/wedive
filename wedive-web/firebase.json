@@ -26,33 +26,6 @@
       "**/.*",
       "**/node_modules/**"
     ],
-    "rewrites": [
-      {
-        "source": "/api/concierge",
-        "function": "getConciergeResponse",
-        "region": "asia-northeast1"
-      },
-      {
-        "source": "/api/spot-draft",
-        "function": "generateSpotDraft",
-        "region": "asia-northeast1"
-      },
-      {
-        "source": "/api/creature-draft",
-        "function": "generateCreatureDraft",
-        "region": "asia-northeast1"
-      },
-      {
-        "source": "/api/runDataCleansing",
-        "function": "runDataCleansing",
-        "region": "asia-northeast1"
-      },
-      {
-        "source": "!**/*.@(js|css|jpg|jpeg|png|svg|wasm|json|webmanifest)",
-        "function": "basicAuth",
-        "region": "asia-northeast1"
-      }
-    ],
     "headers": [
       {
         "source": "**/*.@(eot|otf|ttf|ttc|woff|font.css)",
@@ -102,11 +75,46 @@
         "source": "**/*.@(js|wasm|worker.js)",
         "headers": [
           {
+            "key": "Cross-Origin-Embedder-Policy",
+            "value": "require-corp"
+          },
+          {
+            "key": "Cross-Origin-Opener-Policy",
+            "value": "same-origin"
+          },
+          {
             "key": "Cross-Origin-Resource-Policy",
             "value": "same-origin"
           }
         ]
       }
     ]
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/api/concierge",
+      "function": "getConciergeResponse",
+      "region": "asia-northeast1"
+    },
+    {
+      "source": "/api/spot-draft",
+      "function": "generateSpotDraft",
+      "region": "asia-northeast1"
+    },
+    {
+      "source": "/api/creature-draft",
+      "function": "generateCreatureDraft",
+      "region": "asia-northeast1"
+    },
+    {
+      "source": "/api/runDataCleansing",
+      "function": "runDataCleansing",
+      "region": "asia-northeast1"
+    },
+    {
+      "source": "!**/*.@(js|css|jpg|jpeg|png|svg|wasm|json|webmanifest)",
+      "function": "basicAuth",
+      "region": "asia-northeast1"
+    }
+  ]
 }
