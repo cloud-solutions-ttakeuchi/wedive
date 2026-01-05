@@ -214,6 +214,10 @@ OPFS (Origin Private File System) と `SharedArrayBuffer` を利用して高速�
   {
     "key": "Cross-Origin-Opener-Policy",
     "value": "same-origin"
+  },
+  {
+    "key": "Cross-Origin-Resource-Policy",
+    "value": "same-origin"
   }
 ]
 ```
@@ -221,6 +225,7 @@ OPFS (Origin Private File System) と `SharedArrayBuffer` を利用して高速�
 ### 解決策と配置のルール
 1. **HTML だけでなく JS にも適用**:
     - Vite のバンドルによって JS ファイルが生成されますが、`sqlite3-opfs-async-proxy.js` のような動的に読み込まれる Worker ファイルにも `Cross-Origin-Resource-Policy: same-origin` などの設定が必要です。
+    - 確認方法：ブラウザの開発者ツールを開き、ネットワークタブで該当のリソースを確認し、レスポンスヘッダーに`Cross-Origin-Resource-Policy` ヘッダーが正しく設定されているかを確認します。
 
 2. **物理ファイルの配置 (重要)**:
     - Vite は `src` 内のファイルをバンドルしてハッシュ化しますが、`locateFile` をオーバーライドして明示的にファイルを読み込む場合、**`public/` ディレクトリ配下に物理的にファイルを配置** しないと、Firebase Hosting の `headers` ルール（globパターン）が正しく適用されない（またはファイルが見つからない）ケースがあります。
