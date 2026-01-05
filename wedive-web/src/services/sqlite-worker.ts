@@ -1,27 +1,21 @@
-/**
- * SQLite WASM をバックグラウンドで初期化するためのワーカー
- * Vite のビルドプロセスを回避し、public フォルダに配置された生のファイルをロードします。
- * これにより、ファイル名のハッシュ化を防ぎ、相対パスによる依存関係解決(Proxy Worker等)を正常化します。
- */
+// CDNからロードすることでローカルパス問題を回避
+const CDN_BASE = 'https://unpkg.com/@sqlite.org/sqlite-wasm@3.46.0/sqlite-wasm/jswasm';
+
 const initSQLite = async () => {
   try {
     // @ts-ignore
-    const { default: sqlite3InitModule } = await import(/* @vite-ignore */ '/sqlite3/sqlite3.mjs');
-
-    const baseUrl = `${self.location.origin}/sqlite3`;
+    const { default: sqlite3InitModule } = await import(/* @vite-ignore */ `${CDN_BASE}/sqlite3.mjs`);
 
     sqlite3InitModule({
       print: console.log,
       printErr: console.error,
-      // フルパスを指定して曖昧さを排除
-      proxyUri: `${baseUrl}/sqlite3-opfs-async-proxy.js`,
       locateFile: (file: string) => {
-        // WASMファイル等のパスも明示
-        if (file.endsWith('.wasm')) return `${baseUrl}/sqlite3.wasm`;
-        return `${baseUrl}/${file}`;
+        if (file.endsWith('.wasm')) return `${CDN_BASE}/sqlite3.wasm`;
+        return file;
       }
     }).then((sqlite3: any) => {
       try {
+        console.log('[SQLite Worker] Initialized using CDN assets.');
         // @ts-ignore
         if (sqlite3.initWorker1API) {
           // @ts-ignore
@@ -35,7 +29,7 @@ const initSQLite = async () => {
       }
     });
   } catch (err) {
-    console.error('[SQLite Worker] Failed to load sqlite3.mjs from public directory:', err);
+    console.error('[SQLite Worker] Failed to load sqlite3.mjs from CDN:', err);
   }
 };
 
