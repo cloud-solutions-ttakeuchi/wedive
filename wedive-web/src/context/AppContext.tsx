@@ -180,9 +180,79 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           if (areasObj.length) setAreas(areasObj.map((i: any) => ({ ...i, zoneId: i.zone_id, regionId: i.region_id })));
         }
 
-        if (c.length) setCreatures(c.map(i => ({ ...i, status: 'approved' })));
-        if (p.length) setPoints(p.map(i => ({ ...i, status: 'approved' })));
-        if (pc.length) setPointCreatures(pc.map(i => ({ ...i, status: 'approved' })));
+        if (c.length) {
+          setCreatures(c.map(i => ({
+            id: i.id,
+            name: i.name,
+            name_kana: i.name_kana,
+            scientificName: i.scientific_name,
+            englishName: i.english_name,
+            category: i.category || '',
+            family: i.family,
+            description: i.description || '',
+            rarity: i.rarity,
+            imageUrl: i.image_url,
+            tags: (typeof i.tags_json === 'string' ? JSON.parse(i.tags_json) : i.tags_json) || [],
+            depthRange: typeof i.depth_range_json === 'string' ? JSON.parse(i.depth_range_json) : i.depth_range_json,
+            specialAttributes: (typeof i.special_attributes_json === 'string' ? JSON.parse(i.special_attributes_json) : i.special_attributes_json) || [],
+            waterTempRange: typeof i.water_temp_range_json === 'string' ? JSON.parse(i.water_temp_range_json) : i.water_temp_range_json,
+            size: i.size,
+            season: (typeof i.season_json === 'string' ? JSON.parse(i.season_json) : i.season_json) || [],
+            gallery: (typeof i.gallery_json === 'string' ? JSON.parse(i.gallery_json) : i.gallery_json) || [],
+            stats: typeof i.stats_json === 'string' ? JSON.parse(i.stats_json) : i.stats_json,
+            imageCredit: i.image_credit,
+            imageLicense: i.image_license,
+            imageKeyword: i.image_keyword,
+            status: 'approved'
+          } as unknown as Creature)));
+        }
+
+        if (p.length) {
+          setPoints(p.map(i => ({
+            id: i.id,
+            name: i.name,
+            name_kana: i.name_kana,
+            region: i.region_name || i.region || '',
+            area: i.area_name || i.area || '',
+            zone: i.zone_name || i.zone || '',
+            latitude: i.latitude,
+            longitude: i.longitude,
+            level: i.level || 'Unknown',
+            maxDepth: i.max_depth,
+            mainDepth: typeof i.main_depth_json === 'string' ? JSON.parse(i.main_depth_json) : i.main_depth_json,
+            entryType: i.entry_type,
+            current: i.current_condition,
+            topography: (typeof i.topography_json === 'string' ? JSON.parse(i.topography_json) : i.topography_json) || [],
+            description: i.description || '',
+            features: (typeof i.features_json === 'string' ? JSON.parse(i.features_json) : i.features_json) || [],
+            coordinates: { lat: i.latitude, lng: i.longitude },
+            googlePlaceId: i.google_place_id,
+            formattedAddress: i.formatted_address,
+            imageUrl: i.image_url,
+            images: (typeof i.images_json === 'string' ? JSON.parse(i.images_json) : i.images_json) || [],
+            imageKeyword: i.image_keyword,
+            submitterId: i.submitter_id,
+            bookmarkCount: i.bookmark_count,
+            officialStats: typeof i.official_stats_json === 'string' ? JSON.parse(i.official_stats_json) : i.official_stats_json,
+            actualStats: typeof i.actual_stats_json === 'string' ? JSON.parse(i.actual_stats_json) : i.actual_stats_json,
+            rating: i.rating,
+            status: 'approved'
+          } as unknown as Point)));
+        }
+
+        if (pc.length) {
+          setPointCreatures(pc.map(i => ({
+            id: i.id,
+            pointId: i.point_id,
+            creatureId: i.creature_id,
+            localRarity: i.local_rarity,
+            lastSighted: i.last_sighted,
+            reasoning: i.reasoning,
+            confidence: i.confidence,
+            status: 'approved'
+          } as unknown as PointCreature)));
+        }
+
         if (rv.length) setReviews(rv.map(i => ({ ...i, status: 'approved' })));
         if (pl.length) setRecentLogs(pl);
 
