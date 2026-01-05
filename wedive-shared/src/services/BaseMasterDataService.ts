@@ -43,36 +43,42 @@ export class BaseMasterDataService {
       console.log('[BaseMasterData] Raw SQLite result:', results[0]);
     }
 
-    return results.map(p => ({
-      id: p.id,
-      name: p.name,
-      name_kana: p.name_kana,
-      region: p.region_name || p.region || '',
-      area: p.area_name || p.area || '',
-      zone: p.zone_name || p.zone || '',
-      latitude: p.latitude,
-      longitude: p.longitude,
-      level: p.level || 'Unknown',
-      maxDepth: p.max_depth,
-      mainDepth: typeof p.main_depth_json === 'string' ? JSON.parse(p.main_depth_json) : p.main_depth_json,
-      entryType: p.entry_type,
-      current: p.current_condition,
-      topography: (typeof p.topography_json === 'string' ? JSON.parse(p.topography_json) : p.topography_json) || [],
-      description: p.description || '',
-      features: (typeof p.features_json === 'string' ? JSON.parse(p.features_json) : p.features_json) || [],
-      coordinates: { lat: p.latitude, lng: p.longitude },
-      googlePlaceId: p.google_place_id,
-      formattedAddress: p.formatted_address,
-      imageUrl: p.image_url,
-      images: (typeof p.images_json === 'string' ? JSON.parse(p.images_json) : p.images_json) || [],
-      imageKeyword: p.image_keyword,
-      submitterId: p.submitter_id,
-      bookmarkCount: p.bookmark_count,
-      officialStats: typeof p.official_stats_json === 'string' ? JSON.parse(p.official_stats_json) : p.official_stats_json,
-      actualStats: typeof p.actual_stats_json === 'string' ? JSON.parse(p.actual_stats_json) : p.actual_stats_json,
-      rating: p.rating,
-      status: 'approved'
-    } as unknown as Point));
+    return results.map(p => {
+      const lat = p.latitude != null ? Number(p.latitude) : undefined;
+      const lng = p.longitude != null ? Number(p.longitude) : undefined;
+      const hasCoords = lat !== undefined && lng !== undefined && !isNaN(lat) && !isNaN(lng);
+
+      return {
+        id: p.id,
+        name: p.name,
+        name_kana: p.name_kana,
+        region: p.region_name || p.region || '',
+        area: p.area_name || p.area || '',
+        zone: p.zone_name || p.zone || '',
+        latitude: lat,
+        longitude: lng,
+        level: p.level || 'Unknown',
+        maxDepth: p.max_depth,
+        mainDepth: typeof p.main_depth_json === 'string' ? JSON.parse(p.main_depth_json) : p.main_depth_json,
+        entryType: p.entry_type,
+        current: p.current_condition,
+        topography: (typeof p.topography_json === 'string' ? JSON.parse(p.topography_json) : p.topography_json) || [],
+        description: p.description || '',
+        features: (typeof p.features_json === 'string' ? JSON.parse(p.features_json) : p.features_json) || [],
+        coordinates: hasCoords ? { lat, lng } : undefined,
+        googlePlaceId: p.google_place_id,
+        formattedAddress: p.formatted_address,
+        imageUrl: p.image_url,
+        images: (typeof p.images_json === 'string' ? JSON.parse(p.images_json) : p.images_json) || [],
+        imageKeyword: p.image_keyword,
+        submitterId: p.submitter_id,
+        bookmarkCount: p.bookmark_count,
+        officialStats: typeof p.official_stats_json === 'string' ? JSON.parse(p.official_stats_json) : p.official_stats_json,
+        actualStats: typeof p.actual_stats_json === 'string' ? JSON.parse(p.actual_stats_json) : p.actual_stats_json,
+        rating: p.rating,
+        status: 'approved'
+      } as unknown as Point;
+    });
   }
 
   /**
