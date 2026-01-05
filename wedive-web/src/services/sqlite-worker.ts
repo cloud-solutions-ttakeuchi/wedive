@@ -13,6 +13,9 @@ const initSQLite = async () => {
         if (file.endsWith('.wasm')) {
           return wasmUrl;
         }
+        if (file.includes('opfs-async-proxy')) {
+          return '/sqlite3/sqlite3-opfs-async-proxy.js';
+        }
         return file;
       }
     }).then((sqlite3: any) => {
