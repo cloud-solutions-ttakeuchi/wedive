@@ -54,9 +54,10 @@ export class WebSQLiteEngine implements SQLiteExecutor {
     this.promiser = await initializationPromise;
 
     // データベースを OPFS (高速モード) で開く
-    console.log(`[SQLite Web] Opening database: ${this.dbName} (VFS: default)`);
+    console.log(`[SQLite Web] Opening database: ${this.dbName} (VFS: opfs)`);
     await this.promiser('open', {
       filename: this.dbName,
+      vfs: 'opfs',
     });
 
     console.log(`[SQLite Web] Database ${this.dbName} is now open.`);
