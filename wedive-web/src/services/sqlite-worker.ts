@@ -8,11 +8,18 @@ const initSQLite = async () => {
     // @ts-ignore
     const { default: sqlite3InitModule } = await import(/* @vite-ignore */ '/sqlite3/sqlite3.mjs');
 
+    const baseUrl = `${self.location.origin}/sqlite3`;
+
     sqlite3InitModule({
       print: console.log,
       printErr: console.error,
-      // OPFS Proxy Worker のパスを明示的に指定して自動解決の失敗を防ぐ
-      proxyUri: '/sqlite3/sqlite3-opfs-async-proxy.js',
+      // フルパスを指定して曖昧さを排除
+      proxyUri: `${baseUrl}/sqlite3-opfs-async-proxy.js`,
+      locateFile: (file: string) => {
+        // WASMファイル等のパスも明示
+        if (file.endsWith('.wasm')) return `${baseUrl}/sqlite3.wasm`;
+        return `${baseUrl}/${file}`;
+      }
     }).then((sqlite3: any) => {
       try {
         // @ts-ignore
