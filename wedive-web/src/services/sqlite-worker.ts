@@ -1,30 +1,33 @@
-// @ts-ignore
-import sqlite3InitModule from '../assets/jswasm/sqlite3.mjs';
-// @ts-ignore
-import wasmUrl from '../assets/jswasm/sqlite3.wasm?url';
-// @ts-ignore
-import opfsUrl from '../assets/jswasm/sqlite3-opfs-async-proxy.js?url';
-// const wasmUrl = 'https://unpkg.com/@sqlite.org/sqlite-wasm@3.46.0/sqlite-wasm/jswasm/sqlite3.wasm';
-
 /**
  * SQLite WASM をバックグラウンドで初期化するためのワーカー
- * Vite の ?url import を使用して、WASM ファイルのパスを確実に解決します
+ * Vite のビルドプロセスを回避し、public フォルダに配置された生のファイルをロードします。
+ * これにより、ファイル名のハッシュ化を防ぎ、相対パスによる依存関係解決(Proxy Worker等)を正常化します。
  */
-sqlite3InitModule({
-  locateFile: (path: string) => {
-    if (path.endsWith('.wasm')) {
-      // console.log('[SQLite Web] Loading WASM from Vite resolved URL:', wasmUrl);
-      return wasmUrl;
-    }
-    return path;
-  }
-}).then((sqlite3: any) => {
+const initSQLite = async () => {
   try {
-    // 公式の Worker1 API を有効にする
     // @ts-ignore
-    sqlite3.initWorker1API();
-    console.log('[SQLite Worker] Background thread initialization complete.');
-  } catch (e) {
-    console.error('[SQLite Worker] Failed to initialize Worker API:', e);
+    const { default: sqlite3InitModule } = await import(/* @vite-ignore */ '/sqlite3/sqlite3.mjs');
+
+    sqlite3InitModule({
+      print: console.log,
+      printErr: console.error,
+    }).then((sqlite3: any) => {
+      try {
+        // @ts-ignore
+        if (sqlite3.initWorker1API) {
+          // @ts-ignore
+          sqlite3.initWorker1API();
+          console.log('[SQLite Worker] Background thread initialization complete.');
+        } else {
+          console.error('[SQLite Worker] sqlite3.initWorker1API is missing.');
+        }
+      } catch (e) {
+        console.error('[SQLite Worker] Failed to initialize Worker API inside module:', e);
+      }
+    });
+  } catch (err) {
+    console.error('[SQLite Worker] Failed to load sqlite3.mjs from public directory:', err);
   }
-});
+};
+
+initSQLite();

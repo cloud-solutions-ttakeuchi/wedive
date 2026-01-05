@@ -89,4 +89,14 @@ export default defineConfig({
       '@sqlite-wasm': path.resolve(__dirname, '../node_modules/@sqlite.org/sqlite-wasm'),
     },
   },
+  build: {
+    rollupOptions: {
+      external: ['/sqlite3/sqlite3.mjs'],
+    },
+  },
+  worker: {
+    rollupOptions: {
+      external: ['/sqlite3/sqlite3.mjs'],
+    },
+  },
 });
