@@ -19,6 +19,33 @@
       ]
     }
   ],
+  "rewrites": [
+    {
+      "source": "/api/concierge",
+      "function": "getConciergeResponse",
+      "region": "asia-northeast1"
+    },
+    {
+      "source": "/api/spot-draft",
+      "function": "generateSpotDraft",
+      "region": "asia-northeast1"
+    },
+    {
+      "source": "/api/creature-draft",
+      "function": "generateCreatureDraft",
+      "region": "asia-northeast1"
+    },
+    {
+      "source": "/api/runDataCleansing",
+      "function": "runDataCleansing",
+      "region": "asia-northeast1"
+    },
+    {
+      "source": "!**/*.@(js|css|jpg|jpeg|png|svg|wasm|json|webmanifest)",
+      "function": "basicAuth",
+      "region": "asia-northeast1"
+    }
+  ],
   "hosting": {
     "public": "dist",
     "ignore": [
@@ -89,32 +116,5 @@
         ]
       }
     ]
-  },
-  "rewrites": [
-    {
-      "source": "/api/concierge",
-      "function": "getConciergeResponse",
-      "region": "asia-northeast1"
-    },
-    {
-      "source": "/api/spot-draft",
-      "function": "generateSpotDraft",
-      "region": "asia-northeast1"
-    },
-    {
-      "source": "/api/creature-draft",
-      "function": "generateCreatureDraft",
-      "region": "asia-northeast1"
-    },
-    {
-      "source": "/api/runDataCleansing",
-      "function": "runDataCleansing",
-      "region": "asia-northeast1"
-    },
-    {
-      "source": "!**/*.@(js|css|jpg|jpeg|png|svg|wasm|json|webmanifest)",
-      "function": "basicAuth",
-      "region": "asia-northeast1"
-    }
-  ]
+  }
 }
