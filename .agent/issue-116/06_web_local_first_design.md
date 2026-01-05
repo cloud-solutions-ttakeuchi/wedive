@@ -198,3 +198,34 @@ npm install @tailwindcss/oxide-linux-x64-gnu --save-optional
 # 前回の lightningcss のエラーも念のため同様に処理
 npm install lightningcss-linux-x64-gnu --save-optional
 ```
+
+## 6. Web版 OPFS 実装における重要な注意点 (COOP/COEP)
+
+OPFS (Origin Private File System) と `SharedArrayBuffer` を利用して高速な SQLite パフォーマンスを実現するためには、厳しいセキュリティヘッダーの設定が不可欠です。
+特に、**メインの HTML ファイルだけでなく、実際に処理を行う Worker や Proxy JS ファイルに対してもヘッダーを適用する必要がある** 点が最大のハマりポイントです。
+
+### 必須ヘッダー構成
+```json
+"headers": [
+  {
+    "key": "Cross-Origin-Embedder-Policy",
+    "value": "require-corp"
+  },
+  {
+    "key": "Cross-Origin-Opener-Policy",
+    "value": "same-origin"
+  }
+]
+```
+
+### 解決策と配置のルール
+1. **HTML だけでなく JS にも適用**:
+    - Vite のバンドルによって JS ファイルが生成されますが、`sqlite3-opfs-async-proxy.js` のような動的に読み込まれる Worker ファイルにも `Cross-Origin-Resource-Policy: same-origin` などの設定が必要です。
+
+2. **物理ファイルの配置 (重要)**:
+    - Vite は `src` 内のファイルをバンドルしてハッシュ化しますが、`locateFile` をオーバーライドして明示的にファイルを読み込む場合、**`public/` ディレクトリ配下に物理的にファイルを配置** しないと、Firebase Hosting の `headers` ルール（globパターン）が正しく適用されない（またはファイルが見つからない）ケースがあります。
+    - 解決策：`sqlite3-opfs-async-proxy.js` を `public/assets/` に物理コピーし、コード側でそのパスを明示的に指定することで、確実にレスポンスヘッダーを制御できます。
+
+### Google Maps などの外部 iframe への影響
+- この `require-corp` 設定を有効にすると、CORP ヘッダーを持たない外部リソース（Google Maps iframe, YouTube embed など）が読み込めなくなる副作用があります。
+- これらを併用する場合は、`Cross-Origin-Embedder-Policy: credentialless` (Chrome 96+) の利用を検討するか、Local-First 戦略と外部埋め込みのトレードオフを再考する必要があります。

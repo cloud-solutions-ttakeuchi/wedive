@@ -39,13 +39,17 @@ export class BaseMasterDataService {
       limitCount
     ]);
 
+    if (results.length > 0) {
+      console.log('[BaseMasterData] Raw SQLite result:', results[0]);
+    }
+
     return results.map(p => ({
       id: p.id,
       name: p.name,
       name_kana: p.name_kana,
-      region: p.region_name || '',
-      area: p.area_name || '',
-      zone: p.zone_name || '',
+      region: p.region_name || p.region || '',
+      area: p.area_name || p.area || '',
+      zone: p.zone_name || p.zone || '',
       latitude: p.latitude,
       longitude: p.longitude,
       level: p.level || 'Unknown',
