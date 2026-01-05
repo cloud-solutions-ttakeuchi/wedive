@@ -11,6 +11,8 @@ const initSQLite = async () => {
     sqlite3InitModule({
       print: console.log,
       printErr: console.error,
+      // OPFS Proxy Worker のパスを明示的に指定して自動解決の失敗を防ぐ
+      proxyUri: '/sqlite3/sqlite3-opfs-async-proxy.js',
     }).then((sqlite3: any) => {
       try {
         // @ts-ignore
