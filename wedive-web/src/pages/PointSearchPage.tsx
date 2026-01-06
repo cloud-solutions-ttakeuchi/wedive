@@ -217,7 +217,7 @@ export const PointSearchPage = () => {
                         <div className="bg-black/50 backdrop-blur-sm text-white text-[10px] font-black px-2 py-1 rounded uppercase tracking-tighter">
                           {point.level}
                         </div>
-                        {point.actualStats && point.actualStats.reviewCount > 0 && point.officialStats && (
+                        {point.actualStats && (point.actualStats.reviewCount ?? 0) > 0 && point.officialStats && (
                           <div className={clsx(
                             "backdrop-blur-md text-white text-[10px] font-black px-2 py-1 rounded shadow-lg border",
                             point.actualStats.avgVisibility >= point.officialStats.visibility[1] * 0.8 ? "bg-emerald-500/80 border-emerald-400" :
@@ -227,7 +227,7 @@ export const PointSearchPage = () => {
                           </div>
                         )}
                         {/* Personalized Alert (v6.0.0) */}
-                        {currentUser.role !== 'admin' && point.actualStats && point.actualStats.reviewCount > 0 && (
+                        {currentUser.role !== 'admin' && point.actualStats && (point.actualStats.reviewCount ?? 0) > 0 && (
                           <div className="flex flex-col gap-1">
                             {(() => {
                               const userLogCount = logs.length;

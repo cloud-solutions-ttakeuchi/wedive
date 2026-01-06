@@ -57,7 +57,7 @@ export const PointReviewStats: React.FC<PointReviewStatsProps> = ({ point, revie
   const stats = useMemo(() => {
     const calculateStats = (revs: Review[]) => {
       if (revs.length === 0) return null;
-      const avg = (key: keyof ReviewRadar) => revs.reduce((sum, r) => sum + r.radar[key], 0) / revs.length;
+      const avg = (key: keyof ReviewRadar) => revs.reduce((sum, r) => sum + (r.radar as any)[key], 0) / revs.length;
       return {
         avgRating: revs.reduce((sum, r) => sum + r.rating, 0) / revs.length,
         avgVisibility: revs.reduce((sum, r) => sum + r.metrics.visibility, 0) / revs.length,
@@ -87,9 +87,9 @@ export const PointReviewStats: React.FC<PointReviewStatsProps> = ({ point, revie
 
     return (Object.keys(RADAR_LABELS) as Array<keyof ReviewRadar>).map((key) => ({
       subject: RADAR_LABELS[key],
-      official: official[key],
-      actual: currentStats?.radar[key] || 0,
-      area: areaStats?.radar[key] || 0,
+      official: (official as any)[key],
+      actual: (currentStats?.radar as any)?.[key] || 0,
+      area: (areaStats?.radar as any)?.[key] || 0,
       fullMark: 5
     }));
   }, [point.officialStats, currentStats, areaStats]);

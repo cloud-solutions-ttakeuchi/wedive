@@ -19,6 +19,27 @@ export interface Area {
   description?: string;
 }
 
+export interface ReviewRadar {
+  visibility: number;      // 透明度
+  satisfaction: number;    // 満足度
+  excite: number;          // エキサイト
+  comfort: number;         // 快適さ・余裕度
+  encounter: number;       // 生物遭遇率
+  topography: number;      // 地形満足度
+}
+
+export interface MonthlyStats {
+  month: number;
+  visibility: number;       // 透明度 (m)
+  visibility_score: number; // 透明度スコア (1-5)
+  encounter: number;
+  excite: number;
+  topography: number;
+  comfort: number;
+  satisfaction: number;
+  count: number;
+}
+
 export interface Point {
   id: string;
   name: string;
@@ -34,6 +55,7 @@ export interface Point {
   // Attributes
   level: 'Beginner' | 'Intermediate' | 'Advanced';
   maxDepth: number;
+  mainDepth?: { min: number; max: number };
   entryType: 'beach' | 'boat' | 'entry_easy';
   current: 'none' | 'weak' | 'strong' | 'drift';
 
@@ -49,8 +71,8 @@ export interface Point {
     lat: number;
     lng: number;
   };
-  googlePlaceId?: string; // New: Google Maps Place ID
-  formattedAddress?: string; // New: Google Maps Formatted Address
+  googlePlaceId?: string;
+  formattedAddress?: string;
 
   // System
   status: 'pending' | 'approved' | 'rejected';
@@ -58,44 +80,50 @@ export interface Point {
   createdAt: string;
 
   images: string[];
-  imageUrl: string; // Main image (keep for compatibility)
+  imageUrl: string;
   imageKeyword?: string;
-
-  // creatures: string[]; // Removed in favor of PointCreature relation
   bookmarkCount: number;
-  rating?: number;
-  reviewCount?: number;
-}
 
-export interface Review {
-  id: string;
-  pointId: string;
-  userId: string;
-  rating: number; // 1-5
-  title?: string;
-  comment: string;
-  photos?: string[];
-  date: string;
-  createdAt: string;
-  // System
-  status?: 'pending' | 'approved' | 'rejected';
-  likeCount?: number;
+  // Review & Potential Data
+  officialStats?: {
+    visibility: [number, number];
+    currents: string[];
+    difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+    radar: ReviewRadar;
+  };
+  actualStats?: {
+    avgRating: number;
+    avgVisibility: number;
+    reviewCount?: number;   // Web usage
+    totalReviews?: number;  // App usage
+    currentCondition?: {
+      weather: string;
+      wave: string;
+    };
+    seasonalRadar?: {
+      [month: number]: ReviewRadar;
+    };
+    // App flattened stats
+    radar_encounter?: number;
+    radar_excite?: number;
+    radar_macro?: number;
+    radar_comfort?: number;
+    radar_topography?: number;
+    radar_satisfaction?: number;
+    radar_visibility?: number;
+    monthly_analysis?: string; // JSON string
+  };
+  nameKana?: string;
+  region_name?: string;
+  area_name?: string;
+  zone_name?: string;
+  latitude?: number;
+  longitude?: number;
+  rating?: number;
 }
 
 export type DivingPoint = Point;
-
 export type Rarity = 'Common' | 'Rare' | 'Epic' | 'Legendary';
-
-export type PointCreature = {
-  id: string; // pointId_creatureId
-  pointId: string;
-  creatureId: string;
-  localRarity: 'Common' | 'Rare' | 'Epic' | 'Legendary';
-  lastSighted?: string;
-  status: 'approved' | 'pending' | 'deletion_requested' | 'rejected';
-  reasoning?: string;    // AIによる紐付け根拠 (Issue #49)
-  confidence?: number;   // AIによる信頼度スコア 0.0-1.0 (Issue #49)
-};
 
 // --- Master Data Types ---
 export interface CertificationRank {
@@ -120,8 +148,6 @@ export interface BadgeMaster {
   };
 }
 
-// --- Domain Types ---
-
 export interface RankMaster {
   id: string;
   name: string;
@@ -131,12 +157,23 @@ export interface RankMaster {
   icon: string;
 }
 
+export type PointCreature = {
+  id: string; // pointId_creatureId
+  pointId: string;
+  creatureId: string;
+  localRarity: Rarity;
+  lastSighted?: string;
+  status: 'approved' | 'pending' | 'deletion_requested' | 'rejected';
+  reasoning?: string;
+  confidence?: number;
+};
+
 export interface User {
   id: string;
   name: string;
   role: 'user' | 'moderator' | 'admin';
   trustScore: number;
-  profileImage?: string; // Data URL or path
+  profileImage?: string;
   favorites: {
     points: { id: string; isPrimary: boolean }[];
     areas: { id: string; isPrimary: boolean }[];
@@ -149,11 +186,11 @@ export interface User {
       }[];
     };
   };
-  favoriteCreatureIds: string[]; // Renamed from favorites
-  wanted: string[]; // IDs of wanted creatures
-  bookmarkedPointIds: string[]; // IDs of bookmarked points
-
-  // Extended Profile
+  favoriteCreatureIds: string[];
+  wanted: string[];
+  bookmarkedPointIds: string[];
+  createdAt?: string;
+  status?: UserStatus;
   certification?: {
     orgId: string;
     rankId: string;
@@ -163,19 +200,11 @@ export interface User {
     badgeId: string;
     earnedAt: string;
   }[];
-  subscription?: {
-    status: 'active' | 'inactive';
-  };
-
-  // Legal
-  isTermsAgreed?: boolean; // Deprecated but kept for backward compat if needed? Or just rely on version.
-  agreedAt?: string;
   agreedTermsVersion?: string;
-
-  // System
-  createdAt?: string;
-  status?: UserStatus;
+  isTermsAgreed?: boolean;
+  agreedAt?: string;
 }
+
 export type UserStatus = 'provisional' | 'active' | 'suspended' | 'withdrawn';
 
 export interface Creature {
@@ -183,21 +212,17 @@ export interface Creature {
   name: string;
   scientificName?: string;
   englishName?: string;
-  family?: string; // 科目 (例: スズメダイ科)
+  nameKana?: string; // Added for SQLite search text
+  family?: string;
   category: string;
   description: string;
   rarity: Rarity;
   imageUrl: string;
   tags: string[];
-
-  // Extended Attributes
   depthRange?: { min: number; max: number };
-  specialAttributes?: string[]; // e.g., "毒", "擬態", "夜行性"
+  specialAttributes?: string[];
   waterTempRange?: { min: number; max: number };
-  // regions?: string[]; // Removed in favor of PointCreature logic
   status: 'pending' | 'approved' | 'rejected';
-
-  // Legacy/Optional fields
   size?: string;
   season?: string[];
   locationIds?: string[];
@@ -207,15 +232,16 @@ export interface Creature {
   imageCredit?: string;
   imageLicense?: string;
   imageKeyword?: string;
+  createdAt?: string;
 }
 
 export type CreatureStats = {
-  popularity: number; // 人気：ダイバーからの人気度、フォトジェニックさ
-  size: number;       // 大きさ：物理的なサイズ感
-  danger: number;     // 危険度：毒、攻撃性
-  lifespan: number;   // 寿命：生物としての寿命の長さ
-  rarity: number;     // レア度：遭遇の難易度（高いほどレア）
-  speed: number;      // 逃げ足：泳ぐ速さ、撮影難易度
+  popularity: number;
+  size: number;
+  danger: number;
+  lifespan: number;
+  rarity: number;
+  speed: number;
 };
 
 export interface DiveLog {
@@ -223,7 +249,6 @@ export interface DiveLog {
   userId: string;
   date: string;
   diveNumber: number;
-
   location: {
     pointId: string;
     pointName: string;
@@ -232,25 +257,21 @@ export interface DiveLog {
     lat?: number;
     lng?: number;
   };
-
   team?: {
     buddy?: string;
     guide?: string;
     members?: string[];
   };
-
   time: {
     entry?: string;
     exit?: string;
     duration: number;
-    surfaceInterval?: number; // minutes
+    surfaceInterval?: number;
   };
-
   depth: {
     max: number;
     average: number;
   };
-
   condition?: {
     weather?: 'sunny' | 'cloudy' | 'rainy' | 'stormy';
     airTemp?: number;
@@ -264,7 +285,6 @@ export interface DiveLog {
     surge?: 'none' | 'weak' | 'strong';
     waterType?: 'salt' | 'fresh';
   };
-
   gear?: {
     suitType?: 'wet' | 'dry';
     suitThickness?: number;
@@ -274,55 +294,101 @@ export interface DiveLog {
       capacity?: number;
       pressureStart?: number;
       pressureEnd?: number;
-      gasType?: string; // e.g. "Air", "EANx32"
+      gasType?: string;
       oxygen?: number;
     };
   };
-
   entryType?: 'beach' | 'boat';
-
-  creatureId?: string; // Main creature found (optional link)
-  sightedCreatures?: string[]; // IDs of other creatures
-
+  creatureId?: string;
+  sightedCreatures?: string[];
   photos: string[];
   comment: string;
   isPrivate: boolean;
-
-  // Social
   likeCount: number;
-  likedBy: string[]; // User IDs
-
-  // Legacy compatibility
-  spotId: string; // Alias for location.pointId
-
-  // Import Metadata
-  title?: string; // Original title from import (e.g. Garmin activity name)
-  garminActivityId?: string; // To prevent duplicates
-
+  likedBy: string[];
+  spotId: string;
+  title?: string;
+  garminActivityId?: string;
   profile?: {
     depth?: number;
     temp?: number;
     hr?: number;
-    time: number; // seconds from start
+    time: number;
   }[];
-
+  reviewId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export type Log = DiveLog;
 
-// --- Proposal Types ---
 export interface EditProposal {
-  targetId?: string; // If 'update' or 'delete'
+  targetId?: string;
   proposalType: 'create' | 'update' | 'delete';
-  diffData?: any; // Partial<Creature> | Partial<Point>
+  diffData?: any;
   submitterId: string;
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
-  // For 'create', we might just store the full data in root or diffData?
-  // Current implementation stores full data in root of doc.
-  // We'll keep compatibility by allowing the doc to have Creature/Point fields directly for 'create'.
+  processedAt?: string;
   [key: string]: any;
 }
 
 export type CreatureProposal = Creature & EditProposal;
 export type PointProposal = Point & EditProposal;
+
+export interface PointCreatureProposal {
+  id: string;
+  targetId: string;
+  pointId: string;
+  creatureId: string;
+  localRarity: Rarity;
+  proposalType: 'create' | 'delete';
+  submitterId: string;
+  status: 'pending' | 'approved' | 'rejected';
+  reasoning?: string;
+  confidence?: number;
+  createdAt: string;
+  processedAt?: string;
+}
+
+export interface Review {
+  id: string;
+  pointId: string;
+  areaId?: string;
+  zoneId?: string;
+  regionId?: string;
+  userId: string;
+  logId?: string;
+  userName: string;
+  userProfileImage?: string;
+  userLogsCount: number;
+  userOrgId?: string;
+  userRank?: string;
+  rating: number;
+  comment: string;
+  images: string[];
+  condition: {
+    weather: 'sunny' | 'cloudy' | 'rainy' | 'stormy' | 'typhoon' | 'spring_bloom';
+    airTemp?: number;
+    waterTemp?: number;
+    wave: 'none' | 'low' | 'high';
+    wind?: string;
+  };
+  metrics: {
+    visibility: number;
+    flow: 'none' | 'weak' | 'strong' | 'drift';
+    difficulty: 'easy' | 'normal' | 'hard';
+    macroWideRatio: number;
+    terrainIntensity?: number;
+    depthAvg?: number;
+    depthMax?: number;
+  };
+  radar: ReviewRadar;
+  tags: string[];
+  status: 'pending' | 'approved' | 'rejected';
+  trustLevel: 'standard' | 'verified' | 'expert' | 'professional' | 'official';
+  helpfulCount: number;
+  helpfulBy: string[];
+  date: string;
+  createdAt: string;
+}
