@@ -28,7 +28,7 @@ export const mapPointFromSQLite = (row: SQLitePoint): Point => {
   return {
     id: row.id,
     name: row.name,
-    name_kana: row.name_kana,
+    nameKana: row.name_kana,
 
     // Hierarchy
     regionId: row.region_id || '',
@@ -79,7 +79,7 @@ export const mapCreatureFromSQLite = (row: SQLiteCreature): Creature => {
   return {
     id: row.id,
     name: row.name,
-    name_kana: row.name_kana,
+    nameKana: row.name_kana,
     scientificName: row.scientific_name,
     englishName: row.english_name,
     category: row.category || '',

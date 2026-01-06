@@ -113,7 +113,7 @@ export interface Point {
     radar_visibility?: number;
     monthly_analysis?: string; // JSON string
   };
-  name_kana?: string;
+  nameKana?: string;
   region_name?: string;
   area_name?: string;
   zone_name?: string;
@@ -212,7 +212,7 @@ export interface Creature {
   name: string;
   scientificName?: string;
   englishName?: string;
-  name_kana?: string; // Added for SQLite search text
+  nameKana?: string; // Added for SQLite search text
   family?: string;
   category: string;
   description: string;
