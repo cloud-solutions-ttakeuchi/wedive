@@ -36,5 +36,5 @@ jobs:
           chmod +x ./deploy.sh
           # Enable non-interactive mode
           gcloud config set core/disable_prompts True
-          ./deploy.sh ${{ vars.VITE_FIREBASE_PROJECT_ID }}
+          ./deploy.sh ${{ vars.VITE_FIREBASE_PROJECT_ID }} ${{ vars.VITE_MASTER_DATA_BUCKET}}
         working-directory: wedive-backend

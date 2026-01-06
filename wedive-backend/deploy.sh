@@ -6,7 +6,11 @@
 export PROJECT_ID=$1
 export LOCATION="asia-northeast1"
 export DATASET="wedive_master_data_v1"
-export BUCKET="wedive-app-static-master"
+export BUCKET=$2
+
+if [ -z "$BUCKET" ]; then
+    export BUCKET="wedive-app-static-master"
+fi
 
 if [ -z "$PROJECT_ID" ]; then
     echo "Usage: ./deploy.sh [PROJECT_ID]"
