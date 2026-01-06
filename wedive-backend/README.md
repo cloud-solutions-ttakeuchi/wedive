@@ -97,9 +97,16 @@ gcloud iam workload-identity-pools providers create-oidc "github-provider" \
   # ... 以降は同じ
 ```
 
+# Storage バケットにCORS設定を適用
+
+```
+gcloud storage buckets update gs://wedive-app-static-master-dev --cors-file=cors.json
+gcloud storage buckets update gs://wedive-app-static-master-prod --cors-file=cors.json
+```
+
 # cloud run 実行
 
 ```
-gcloud functions call master-data-enricher --region asia-northeast1 --project dive-dex-app-dev
-gcloud functions call master-data-exporter --region asia-northeast1 --project dive-dex-app-dev
+gcloud functions call master-data-enricher --region asia-northeast1 --project YOUR_GCP_PROJECT_ID
+gcloud functions call master-data-exporter --region asia-northeast1 --project YOUR_GCP_PROJECT_ID
 ```
