@@ -11,7 +11,7 @@ on:
 jobs:
   deploy_backend:
     runs-on: ubuntu-latest
-    environment: development
+    environment: production
 
     permissions:
       contents: read
