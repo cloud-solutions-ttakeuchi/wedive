@@ -19,6 +19,12 @@ import { connectFunctionsEmulator } from 'firebase/functions';
 
 import { MasterDataSyncService } from '../services/MasterDataSyncService';
 import { masterDbEngine } from '../services/WebSQLiteEngine';
+import {
+  mapPointFromSQLite,
+  mapCreatureFromSQLite,
+  mapPointCreatureFromSQLite,
+  mapGeographyFromFlattenedSQLite
+} from 'wedive-shared';
 // Helper to remove undefined values
 const sanitizePayload = (data: any): any => {
   if (Array.isArray(data)) {
@@ -169,148 +175,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           loadTable<any>('master_public_logs', 'SELECT * FROM master_public_logs ORDER BY date DESC LIMIT 20')
         ]);
 
-        // Geography (Region / Zone / Area) の振り分け
-        // Geography (Region / Zone / Area) の振り分け
+        // Geography (Region / Zone / Area)
         if (geo.length) {
-          // Check if it's polymorphic (type column) or flattened (region_id, etc.)
-          const sample = geo[0];
-
-          if ('type' in sample) {
-            // Polymorphic (Old structure)
-            const regionsObj = geo.filter((i: any) => i.type === 'region');
-            const zonesObj = geo.filter((i: any) => i.type === 'zone');
-            const areasObj = geo.filter((i: any) => i.type === 'area');
-
-            if (regionsObj.length) setRegions(regionsObj.map((i: any) => ({
-              id: i.id, name: i.name, description: i.description
-            })));
-            if (zonesObj.length) setZones(zonesObj.map((i: any) => ({
-              id: i.id, name: i.name, regionId: i.region_id || i.regionId, description: i.description
-            })));
-            if (areasObj.length) setAreas(areasObj.map((i: any) => ({
-              id: i.id, name: i.name, zoneId: i.zone_id || i.zoneId, regionId: i.region_id || i.regionId, description: i.description
-            })));
-          } else if ('region_id' in sample || 'regionId' in sample) {
-            // Flattened (New structure - e.g. v_app_geography_master)
-            const uniqueRegions = new Map();
-            const uniqueZones = new Map();
-            const uniqueAreas = new Map();
-
-            geo.forEach((row: any) => {
-              // Handle both snake_case (SQLite) and camelCase (potential future)
-              const rId = row.region_id || row.regionId;
-              const rName = row.region_name || row.regionName;
-              const rDesc = row.region_description || row.regionDescription;
-
-              const zId = row.zone_id || row.zoneId;
-              const zName = row.zone_name || row.zoneName;
-              const zDesc = row.zone_description || row.zoneDescription;
-
-              const aId = row.area_id || row.areaId || row.id;
-              const aName = row.area_name || row.areaName || row.name;
-              const aDesc = row.area_description || row.areaDescription || row.description;
-
-              if (rId && !uniqueRegions.has(rId)) {
-                uniqueRegions.set(rId, { id: rId, name: rName, description: rDesc });
-              }
-              if (zId && !uniqueZones.has(zId)) {
-                uniqueZones.set(zId, { id: zId, name: zName, regionId: rId, description: zDesc });
-              }
-              if (aId && !uniqueAreas.has(aId)) {
-                uniqueAreas.set(aId, { id: aId, name: aName, zoneId: zId, regionId: rId, description: aDesc });
-              }
-            });
-
-            setRegions(Array.from(uniqueRegions.values()));
-            setZones(Array.from(uniqueZones.values()));
-            setAreas(Array.from(uniqueAreas.values()));
-            console.log(`[MasterData] Extracted ${uniqueRegions.size} regions, ${uniqueZones.size} zones, ${uniqueAreas.size} areas from flattened geography.`);
-          }
+          const { regions: r, zones: z, areas: a } = mapGeographyFromFlattenedSQLite(geo);
+          setRegions(r);
+          setZones(z);
+          setAreas(a);
+          console.log(`[MasterData] Extracted ${r.length} regions, ${z.length} zones, ${a.length} areas.`);
         }
 
-        if (c.length) {
-          setCreatures(c.map(i => ({
-            id: i.id,
-            name: i.name,
-            name_kana: i.name_kana,
-            scientificName: i.scientific_name,
-            englishName: i.english_name,
-            category: i.category || '',
-            family: i.family,
-            description: i.description || '',
-            rarity: i.rarity,
-            imageUrl: i.image_url,
-            tags: (typeof i.tags_json === 'string' ? JSON.parse(i.tags_json) : i.tags_json) || [],
-            depthRange: typeof i.depth_range_json === 'string' ? JSON.parse(i.depth_range_json) : i.depth_range_json,
-            specialAttributes: (typeof i.special_attributes_json === 'string' ? JSON.parse(i.special_attributes_json) : i.special_attributes_json) || [],
-            waterTempRange: typeof i.water_temp_range_json === 'string' ? JSON.parse(i.water_temp_range_json) : i.water_temp_range_json,
-            size: i.size,
-            season: (typeof i.season_json === 'string' ? JSON.parse(i.season_json) : i.season_json) || [],
-            gallery: (typeof i.gallery_json === 'string' ? JSON.parse(i.gallery_json) : i.gallery_json) || [],
-            stats: typeof i.stats_json === 'string' ? JSON.parse(i.stats_json) : i.stats_json,
-            imageCredit: i.image_credit,
-            imageLicense: i.image_license,
-            imageKeyword: i.image_keyword,
-            status: 'approved'
-          } as unknown as Creature)));
-        }
+        if (c.length) setCreatures(c.map(mapCreatureFromSQLite));
+        if (p.length) setPoints(p.map(mapPointFromSQLite));
+        if (pc.length) setPointCreatures(pc.map(mapPointCreatureFromSQLite));
 
-        if (p.length) {
-          setPoints(p.map(i => {
-            const lat = i.latitude != null ? Number(i.latitude) : undefined;
-            const lng = i.longitude != null ? Number(i.longitude) : undefined;
-            const hasCoords = lat !== undefined && lng !== undefined && !isNaN(lat) && !isNaN(lng);
-
-            return {
-              id: i.id,
-              name: i.name,
-              name_kana: i.name_kana,
-              regionId: i.region_id,
-              areaId: i.area_id,
-              zoneId: i.zone_id,
-              region: i.region_name || i.region || '',
-              area: i.area_name || i.area || '',
-              zone: i.zone_name || i.zone || '',
-              latitude: lat,
-              longitude: lng,
-              level: i.level || 'Unknown',
-              maxDepth: i.max_depth,
-              mainDepth: typeof i.main_depth_json === 'string' ? JSON.parse(i.main_depth_json) : i.main_depth_json,
-              entryType: i.entry_type,
-              current: i.current_condition,
-              topography: (typeof i.topography_json === 'string' ? JSON.parse(i.topography_json) : i.topography_json) || [],
-              description: i.description || '',
-              features: (typeof i.features_json === 'string' ? JSON.parse(i.features_json) : i.features_json) || [],
-              coordinates: hasCoords ? { lat, lng } : undefined,
-              googlePlaceId: i.google_place_id,
-              formattedAddress: i.formatted_address,
-              imageUrl: i.image_url,
-              images: (typeof i.images_json === 'string' ? JSON.parse(i.images_json) : i.images_json) || [],
-              imageKeyword: i.image_keyword,
-              submitterId: i.submitter_id,
-              bookmarkCount: i.bookmark_count,
-              officialStats: typeof i.official_stats_json === 'string' ? JSON.parse(i.official_stats_json) : i.official_stats_json,
-              actualStats: typeof i.actual_stats_json === 'string' ? JSON.parse(i.actual_stats_json) : i.actual_stats_json,
-              rating: i.rating,
-              status: 'approved'
-            } as unknown as Point;
-          }));
-        }
-
-        if (pc.length) {
-          setPointCreatures(pc.map(i => ({
-            id: i.id,
-            pointId: i.point_id,
-            creatureId: i.creature_id,
-            localRarity: i.local_rarity,
-            lastSighted: i.last_sighted,
-            reasoning: i.reasoning,
-            confidence: i.confidence,
-            status: 'approved'
-          } as unknown as PointCreature)));
-        }
-
-        if (rv.length) setReviews(rv.map(i => ({ ...i, status: 'approved' })));
+        if (rv.length) setReviews(rv.map(i => ({ ...i, status: 'approved' }))); // Review mapper if needed
         if (pl.length) setRecentLogs(pl);
 
         console.log('[MasterData] Master data loaded from SQLite (using unified geography).');
