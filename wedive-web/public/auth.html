@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ログイン処理中 - WeDive</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f0f9ff;
+      color: #333;
+    }
+
+    .loader {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3498db;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    // Firebase Configuration will be injected or loaded from env
+    // Since this is a static file in public, we need to hardcode specific config or fetch it.
+    // For simplicity and security in this specific context, we will fetch the config from a global variable
+    // injected by the hosting environment or use the known config values.
+    // NOTE: In a real build, we might want to inject these values.
+    // However, since this file is served statically, we should use the same config values as the main app.
+
+    // We will attempt to read the config from localStorage or allow the opener to pass it?
+    // A simpler way for now is to use the known config directly or fetch it from a JSON file.
+    // But since we can't easily import from .env here without a build step,
+    // we'll assume we can get the config from the cleaner way:
+    // The main app can redirect here with config? No that's unsafe.
+
+    // Let's rely on the fact that we are in the same domain.
+    // Using a hardcoded config approach for the auth.html for now to ensure it works.
+    // Users should replace this with their actual config or a mechanism to load it.
+
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY_PLACEHOLDER", // This needs to be replaced or loaded dynamically
+      authDomain: window.location.hostname, // dynamically set authDomain
+      projectId: "dive-dex-app-dev", // Defaulting to dev for now, need logic to switch?
+      // storageBucket, messagingSenderId, appId are not strictly needed for Auth only
+    };
+
+    // Attempt to parse config from URL fragment or query params if passed?
+    // Better: let's fetch the /__/firebase/init.json if hosted on Firebase Hosting
+    // Firebase Hosting automatically serves this file.
+
+    async function init() {
+      try {
+        const response = await fetch('/__/firebase/init.json');
+        const config = await response.json();
+
+        const app = initializeApp(config);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        // Check if we are returning from a redirect
+        try {
+          const result = await getRedirectResult(auth);
+          if (result) {
+            // Login successful
+            document.getElementById('status').textContent = 'ログイン成功！画面を閉じます...';
+            // Notify opener if exists
+            if (window.opener) {
+              window.opener.postMessage({ type: 'AUTH_SUCCESS', user: result.user }, window.location.origin);
+            }
+            // Close self after a short delay
+            setTimeout(() => window.close(), 1000);
+            return;
+          }
+        } catch (error) {
+          console.error("Redirect result error:", error);
+          document.getElementById('status').textContent = 'エラーが発生しました: ' + error.message;
+          return;
+        }
+
+        // Check current auth state
+        onAuthStateChanged(auth, (user) => {
+          if (user) {
+            document.getElementById('status').textContent = 'ログイン済みです。画面を閉じます...';
+            if (window.opener) {
+              window.opener.postMessage({ type: 'AUTH_SUCCESS', user: user }, window.location.origin);
+            }
+            setTimeout(() => window.close(), 1500);
+          } else {
+            // Not logged in, start redirect flow
+            document.getElementById('status').textContent = 'Googleへリダイレクト中...';
+            signInWithRedirect(auth, provider);
+          }
+        });
+
+      } catch (e) {
+        console.error("Initialization error:", e);
+        document.getElementById('status').textContent = '初期化エラー: ' + e.message;
+      }
+    }
+
+    init();
+  </script>
+</head>
+<body>
+  <div class="loader"></div>
+  <div id="status">認証を準備中...</div>
+</body>
+</html>
