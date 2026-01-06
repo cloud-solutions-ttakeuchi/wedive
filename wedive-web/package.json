@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && ls -R dist",
+    "build": "npm run build -w wedive-shared && tsc -b && vite build && ls -R dist",
     "lint": "eslint .",
     "preview": "vite preview"
   },
