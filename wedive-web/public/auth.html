@@ -79,11 +79,13 @@
         const provider = new GoogleAuthProvider();
 
         // Check if we are returning from a redirect
+        // Check if we are returning from a redirect
         try {
           const result = await getRedirectResult(auth);
           if (result) {
             // Login successful
             document.getElementById('status').textContent = 'ログイン成功！画面を閉じます...';
+            sessionStorage.removeItem('auth_in_progress');
             // Notify opener if exists
             if (window.opener) {
               window.opener.postMessage({ type: 'AUTH_SUCCESS', user: result.user }, window.location.origin);
@@ -95,6 +97,7 @@
         } catch (error) {
           console.error("Redirect result error:", error);
           document.getElementById('status').textContent = 'エラーが発生しました: ' + error.message;
+          sessionStorage.removeItem('auth_in_progress');
           return;
         }
 
@@ -102,14 +105,29 @@
         onAuthStateChanged(auth, (user) => {
           if (user) {
             document.getElementById('status').textContent = 'ログイン済みです。画面を閉じます...';
+            sessionStorage.removeItem('auth_in_progress');
             if (window.opener) {
               window.opener.postMessage({ type: 'AUTH_SUCCESS', user: user }, window.location.origin);
             }
             setTimeout(() => window.close(), 1500);
           } else {
-            // Not logged in, start redirect flow
-            document.getElementById('status').textContent = 'Googleへリダイレクト中...';
-            signInWithRedirect(auth, provider);
+            // Not logged in, check if we should redirect
+            const inProgress = sessionStorage.getItem('auth_in_progress');
+            if (!inProgress) {
+              document.getElementById('status').textContent = 'Googleへリダイレクト中...';
+              sessionStorage.setItem('auth_in_progress', 'true');
+              signInWithRedirect(auth, provider);
+            } else {
+              // Already redirected but back without user?
+              document.getElementById('status').textContent = '認証が完了していません。もう一度お試しください。';
+              const btn = document.createElement('button');
+              btn.textContent = '再試行';
+              btn.onclick = () => {
+                sessionStorage.removeItem('auth_in_progress');
+                window.location.reload();
+              };
+              document.body.appendChild(btn);
+            }
           }
         });
 
