@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useRef, useMemo, type R
 import type { User, Log, Rarity, Creature, Point, PointCreature, Review, PointCreatureProposal, Region, Zone, Area } from '../types';
 
 import { auth, googleProvider, db as firestore, functions } from '../lib/firebase';
-import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
+import { signInWithRedirect, signOut, onAuthStateChanged } from 'firebase/auth';
 import {
   collection,
   onSnapshot,
@@ -353,7 +353,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   // Actions
   const login = async () => {
-    try { setIsLoading(true); await signInWithPopup(auth, googleProvider); }
+    try { setIsLoading(true); await signInWithRedirect(auth, googleProvider); }
     catch (error) { console.error(error); setIsLoading(false); }
   };
 
