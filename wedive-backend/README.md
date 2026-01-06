@@ -57,6 +57,11 @@ firebase deploy --only extensions
 # プロジェクトIDと変数の設定
 export PROJECT_ID="dive-dex-app-dev"
 export REPO_NAME="cloud-solutions-ttakeuchi/wedive"
+export PROJECT_NUMBER=$(gcloud projects describe ${PROJECT_ID} --format='value(projectNumber)')
+# 既存のサービスアカウント（例: github-actions-deployer 等）を使用します
+export SERVICE_ACCOUNT_NAME="dive-dex-app-dev-fb-gh@dive-dex-app-dev.iam.gserviceaccount.com" # 実際の名称に書き換えてください
+
+
 # 1. Workload Identity Pool の作成
 gcloud iam workload-identity-pools create "github-pool" \
     --project="${PROJECT_ID}" \
@@ -72,9 +77,7 @@ gcloud iam workload-identity-pools providers create-oidc "github-provider" \
     --attribute-condition="assertion.repository == '${REPO_NAME}'" \
     --issuer-uri="https://token.actions.githubusercontent.com"
 # 3. サービスアカウントに GitHub からの「なりすまし」権限を与える
-# 既存のサービスアカウント（例: github-actions-deployer 等）を使用します
-export SERVICE_ACCOUNT_NAME="dive-dex-app-dev-fb-gh@dive-dex-app-dev.iam.gserviceaccount.com" # 実際の名称に書き換えてください
-gcloud iam service-accounts add-iam-policy-binding "${SERVICE_ACCOUNT_NAME}" \
+#gcloud iam service-accounts add-iam-policy-binding "${SERVICE_ACCOUNT_NAME}" \
     --project="${PROJECT_ID}" \
     --role="roles/iam.workloadIdentityUser" \
     --member="principalSet://iam.googleapis.com/projects/$(gcloud projects describe ${PROJECT_ID} --format='value(projectNumber)')/locations/global/workloadIdentityPools/github-pool/attribute.repository/${REPO_NAME}"
