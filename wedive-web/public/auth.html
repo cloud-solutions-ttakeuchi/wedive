@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WeDive 認証</title>
+  <style>
+    :root {
+      --primary-color: #0088CC;
+      /* WeDive blue-ish */
+      --bg-color: #F0F4F8;
+      --text-color: #333;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+    }
+
+    .card {
+      background: white;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+    }
+
+    .logo {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 24px;
+      object-fit: contain;
+    }
+
+    h1 {
+      font-size: 20px;
+      margin: 0 0 16px 0;
+      font-weight: 600;
+    }
+
+    p {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 32px;
+      line-height: 1.5;
+    }
+
+    .btn-google {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 12px;
+      background-color: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s;
+      color: #333;
+    }
+
+    .btn-google:hover {
+      background-color: #f8f8f8;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .btn-google img {
+      width: 18px;
+      height: 18px;
+      margin-right: 12px;
+    }
+
+    .loader {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid var(--primary-color);
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    #manual-action {
+      display: none;
+      /* Initially hidden, shown if auto popup fails */
+    }
+
+    #status-text {
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+  </style>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    async function init() {
+      try {
+        const response = await fetch('/__/firebase/init.json');
+        const config = await response.json();
+        const app = initializeApp(config);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        const statusEl = document.getElementById('status-text');
+        const manualActionEl = document.getElementById('manual-action');
+        const autoLoaderEl = document.getElementById('auto-loader');
+
+        // Function to handle login success
+        const handleSuccess = (user) => {
+          statusEl.textContent = 'ログインしました。画面を閉じます...';
+          autoLoaderEl.style.display = 'block';
+          manualActionEl.style.display = 'none';
+          if (window.opener) {
+            window.opener.postMessage({ type: 'AUTH_SUCCESS', user: user }, window.location.origin);
+          }
+          setTimeout(() => window.close(), 1000);
+        };
+
+        // Function to perform popup login
+        const doLogin = async () => {
+          try {
+            statusEl.textContent = 'Google認証画面を開いています...';
+            const result = await signInWithPopup(auth, provider);
+            handleSuccess(result.user);
+          } catch (error) {
+            console.error("Popup info/error:", error);
+            if (error.code === 'auth/popup-blocked' || error.code === 'auth/cancelled-popup-request') {
+              // Fallback to manual button if blocked
+              statusEl.textContent = '認証を続けるにはボタンを押してください';
+              autoLoaderEl.style.display = 'none';
+              manualActionEl.style.display = 'block';
+            } else if (error.code === 'auth/popup-closed-by-user') {
+              statusEl.textContent = 'キャンセルされました。再度ボタンを押してください。';
+              autoLoaderEl.style.display = 'none';
+              manualActionEl.style.display = 'block';
+            } else {
+              statusEl.textContent = 'エラー: ' + error.message;
+            }
+          }
+        };
+
+        // Check current auth state first
+        onAuthStateChanged(auth, (user) => {
+          if (user) {
+            handleSuccess(user);
+          } else {
+            // Not logged in.
+            // Try automatic login first (might be blocked, but worth a shot if trusted context)
+            // Note: Most browsers block async popups not directly triggered by user event.
+            // But since this window was opened by a user click, some might allow it.
+            doLogin().catch(() => {
+              // If doLogin throws unexpectedly
+              statusEl.textContent = '認証を続けるにはボタンを押してください';
+              autoLoaderEl.style.display = 'none';
+              manualActionEl.style.display = 'block';
+            });
+          }
+        });
+
+        // Manual button handler
+        document.getElementById('login-btn').onclick = doLogin;
+
+      } catch (e) {
+        console.error("Init error:", e);
+        document.getElementById('status-text').textContent = '初期化エラー: ' + e.message;
+      }
+    }
+
+    init();
+  </script>
+</head>
+<body>
+  <div class="card">
+    <img src="/images/logo.png" alt="WeDive Logo" class="logo" onerror="this.style.display='none'">
+    <h1>ログイン認証</h1>
+
+    <div id="status-text">認証の状態を確認中...</div>
+
+    <div id="auto-loader">
+      <div class="loader"></div>
+    </div>
+
+    <div id="manual-action">
+      <p>セキュリティ保護のため、<br>個別のウィンドウで認証を行います。</p>
+      <button id="login-btn" class="btn-google">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+        Googleでログイン
+      </button>
+    </div>
+  </div>
+</body>
+</html>

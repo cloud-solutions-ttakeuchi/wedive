@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useRef, useMemo, type R
 import type { User, Log, Rarity, Creature, Point, PointCreature, Review, PointCreatureProposal, Region, Zone, Area } from '../types';
 
 import { auth, googleProvider, db as firestore, functions } from '../lib/firebase';
-import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
+import { signInWithRedirect, signOut, onAuthStateChanged } from 'firebase/auth';
 import {
   collection,
   onSnapshot,
@@ -353,8 +353,45 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   // Actions
   const login = async () => {
-    try { setIsLoading(true); await signInWithPopup(auth, googleProvider); }
-    catch (error) { console.error(error); setIsLoading(false); }
+    setIsLoading(true);
+    // Open auth.html in a popup to bypass COOP/COEP restrictions for Google Auth
+    const width = 500;
+    const height = 600;
+    const left = (window.screen.width - width) / 2;
+    const top = (window.screen.height - height) / 2;
+    const popup = window.open(
+      '/auth.html',
+      'firebase_auth_popup',
+      `width=${width},height=${height},left=${left},top=${top}`
+    );
+
+    if (!popup) {
+      alert('ポップアップがブロックされました。許可してください。');
+      setIsLoading(false);
+      return;
+    }
+
+    // Monitor popup closure or success message
+    const messageHandler = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if (event.data?.type === 'AUTH_SUCCESS') {
+        console.log('Login success signal received from popup');
+        // onAuthStateChanged should trigger independently, but we can force state check or wait.
+        // The popup will close itself.
+        window.removeEventListener('message', messageHandler);
+      }
+    };
+    window.addEventListener('message', messageHandler);
+
+    // Fallback: Check if popup is closed manually
+    const timer = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(timer);
+        window.removeEventListener('message', messageHandler);
+        // If still not authenticated after popup close, maybe loading false
+        if (!auth.currentUser) setIsLoading(false);
+      }
+    }, 1000);
   };
 
   const logout = async () => {

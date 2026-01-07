@@ -95,23 +95,31 @@
           {
             "key": "Cross-Origin-Resource-Policy",
             "value": "same-origin"
+          },
+          {
+            "key": "Content-Security-Policy",
+            "value": "default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://www.gstatic.com https://www.google.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https: wss:; img-src 'self' data: blob: https:;"
           }
         ]
       },
       {
-        "source": "**/*.@(js|wasm|worker.js)",
+        "source": "**/auth.html",
         "headers": [
           {
             "key": "Cross-Origin-Embedder-Policy",
-            "value": "credentialless"
+            "value": "unsafe-none"
           },
           {
             "key": "Cross-Origin-Opener-Policy",
-            "value": "same-origin"
+            "value": "unsafe-none"
           },
           {
             "key": "Cross-Origin-Resource-Policy",
-            "value": "same-origin"
+            "value": "cross-origin"
+          },
+          {
+            "key": "Content-Security-Policy",
+            "value": "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://www.gstatic.com https://www.google.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https: wss:; img-src 'self' data: blob: https:;"
           }
         ]
       }
