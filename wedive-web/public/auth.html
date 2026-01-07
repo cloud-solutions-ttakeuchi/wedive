@@ -39,7 +39,7 @@
   </style>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getAuth, GoogleAuthProvider, signInWithRedirect, signInWithPopup, getRedirectResult, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     // Firebase Configuration will be injected or loaded from env
     // Since this is a static file in public, we need to hardcode specific config or fetch it.
@@ -78,56 +78,48 @@
         const auth = getAuth(app);
         const provider = new GoogleAuthProvider();
 
-        // Check if we are returning from a redirect
-        // Check if we are returning from a redirect
-        try {
-          const result = await getRedirectResult(auth);
-          if (result) {
-            // Login successful
-            document.getElementById('status').textContent = 'ログイン成功！画面を閉じます...';
-            sessionStorage.removeItem('auth_in_progress');
-            // Notify opener if exists
-            if (window.opener) {
-              window.opener.postMessage({ type: 'AUTH_SUCCESS', user: result.user }, window.location.origin);
-            }
-            // Close self after a short delay
-            setTimeout(() => window.close(), 1000);
-            return;
-          }
-        } catch (error) {
-          console.error("Redirect result error:", error);
-          document.getElementById('status').textContent = 'エラーが発生しました: ' + error.message;
-          sessionStorage.removeItem('auth_in_progress');
-          return;
-        }
-
-        // Check current auth state
+        // Check current auth state first
         onAuthStateChanged(auth, (user) => {
           if (user) {
             document.getElementById('status').textContent = 'ログイン済みです。画面を閉じます...';
-            sessionStorage.removeItem('auth_in_progress');
             if (window.opener) {
               window.opener.postMessage({ type: 'AUTH_SUCCESS', user: user }, window.location.origin);
             }
             setTimeout(() => window.close(), 1500);
           } else {
-            // Not logged in, check if we should redirect
-            const inProgress = sessionStorage.getItem('auth_in_progress');
-            if (!inProgress) {
-              document.getElementById('status').textContent = 'Googleへリダイレクト中...';
-              sessionStorage.setItem('auth_in_progress', 'true');
-              signInWithRedirect(auth, provider);
-            } else {
-              // Already redirected but back without user?
-              document.getElementById('status').textContent = '認証が完了していません。もう一度お試しください。';
-              const btn = document.createElement('button');
-              btn.textContent = '再試行';
-              btn.onclick = () => {
-                sessionStorage.removeItem('auth_in_progress');
-                window.location.reload();
-              };
-              document.body.appendChild(btn);
-            }
+            // Not logged in, show login button
+            document.getElementById('status').textContent = '以下のボタンをクリックしてログインしてください。';
+            // Remove loader to show static state
+            const loader = document.querySelector('.loader');
+            if (loader) loader.style.display = 'none';
+
+            const btn = document.createElement('button');
+            btn.textContent = 'Googleでログイン';
+            btn.style.padding = '10px 20px';
+            btn.style.fontSize = '16px';
+            btn.style.cursor = 'pointer';
+            btn.style.backgroundColor = '#4285F4';
+            btn.style.color = 'white';
+            btn.style.border = 'none';
+            btn.style.borderRadius = '4px';
+            btn.style.marginTop = '20px';
+
+            btn.onclick = async () => {
+              try {
+                document.getElementById('status').textContent = 'Google認証中...';
+                const result = await signInWithPopup(auth, provider);
+                // Success
+                document.getElementById('status').textContent = 'ログイン成功！画面を閉じます...';
+                if (window.opener) {
+                  window.opener.postMessage({ type: 'AUTH_SUCCESS', user: result.user }, window.location.origin);
+                }
+                setTimeout(() => window.close(), 1000);
+              } catch (error) {
+                console.error("Popup error:", error);
+                document.getElementById('status').textContent = 'エラーが発生しました: ' + error.message;
+              }
+            };
+            document.body.appendChild(btn);
           }
         });
 
