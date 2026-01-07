@@ -1,5 +1,7 @@
 import type { SQLiteExecutor } from '../repository/SQLiteExecutor';
-import type { Point, Creature } from '../types';
+import type { Point, Creature, OrganizationMaster } from '../types';
+import type { SQLiteOrganization } from '../types/sqlite';
+import { mapOrganizationFromSQLite } from '../utils/mapper';
 
 /**
  * Web と App で共有されるマスタデータアクセスの基本クラス
@@ -132,5 +134,20 @@ export class BaseMasterDataService {
       imageKeyword: c.image_keyword,
       status: 'approved'
     } as unknown as Creature));
+  }
+
+  /**
+   * 認定団体マスタの取得
+   * (v_app_certifications_master -> master_certifications)
+   */
+  async getOrganizations(): Promise<OrganizationMaster[]> {
+    try {
+      const sql = `SELECT * FROM master_certifications ORDER BY name ASC`;
+      const results = await this.sqlite.getAllAsync<SQLiteOrganization>(sql);
+      return results.map(mapOrganizationFromSQLite);
+    } catch (e: any) {
+      console.warn('[BaseMasterData] Failed to load organizations (table might not exist yet):', e.message);
+      return [];
+    }
   }
 }

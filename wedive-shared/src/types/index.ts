@@ -129,14 +129,20 @@ export type Rarity = 'Common' | 'Rare' | 'Epic' | 'Legendary';
 export interface CertificationRank {
   id: string;
   name: string;
-  level: number;
+  level: number; // 0=N/A, 10=Entry, 20=Advanced, 30=Rescue, 40=Master, 50=Instructor (Example)
+  abbreviation?: string;
+  commonRank?: 'OW' | 'AOW' | 'RED' | 'DM' | 'INST' | 'OTHER';
 }
 
-export interface CertificationMaster {
+export interface OrganizationMaster {
   id: string;
   name: string;
   ranks: CertificationRank[];
+  website?: string;
+  logoUrl?: string;
 }
+
+export type CertificationMaster = OrganizationMaster;
 
 export interface BadgeMaster {
   id: string;
