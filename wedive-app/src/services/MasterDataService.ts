@@ -1,7 +1,7 @@
 import { collection, query, where, getDocs, limit as firestoreLimit, orderBy, startAt, endAt } from 'firebase/firestore';
 import { db as firestoreDb } from '../firebase';
-import { BaseMasterDataService } from 'wedive-shared';
-import type { Point, Creature } from 'wedive-shared';
+import { BaseMasterDataService, mapAgencyFromSQLite } from 'wedive-shared';
+import type { Point, Creature, AgencyMaster } from 'wedive-shared';
 import { appDbEngine } from './AppSQLiteEngine';
 
 /**
@@ -231,6 +231,24 @@ export class MasterDataService extends BaseMasterDataService {
     const snapshotPointCreatures = await getDocs(collection(firestoreDb, 'point_creatures'));
     return snapshotPointCreatures.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     */
+    return [];
+  }
+
+  /**
+   * 全エージェンシー（指導団体）の取得
+   */
+  async getAllAgencies(): Promise<AgencyMaster[]> {
+    if (await this.initialize()) {
+      try {
+        const sql = 'SELECT * FROM master_agencies';
+        const results = await appDbEngine.getAllAsync<any>(sql);
+        if (results.length > 0) {
+          return results.map(mapAgencyFromSQLite);
+        }
+      } catch (e) {
+        console.error('SQLite getAllAgencies failed:', e);
+      }
+    }
     return [];
   }
 }

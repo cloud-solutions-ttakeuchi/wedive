@@ -13,10 +13,10 @@ import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { useState } from 'react';
 
-import { CERTIFICATIONS, BADGE_MASTER, TRUST_RANKS } from '../constants/masterData';
+import { BADGE_MASTER, TRUST_RANKS } from '../constants/masterData';
 
 export const MyPage = () => {
-  const { currentUser, logs, points, zones, areas, creatures, pointCreatures, isAuthenticated, toggleLikeLog, deleteLogs, updateLogs, proposalReviews, deleteReview } = useApp();
+  const { currentUser, logs, points, zones, areas, creatures, pointCreatures, isAuthenticated, toggleLikeLog, deleteLogs, updateLogs, proposalReviews, deleteReview, agencies } = useApp();
   const { t } = useLanguage();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [activeTab, setActiveTab] = useState<'dashboard' | 'logbook' | 'collection' | 'favorites' | 'wanted' | 'bookmarks' | 'reviews'>('dashboard');
@@ -59,7 +59,7 @@ export const MyPage = () => {
 
   // Certification Info
   const userCert = currentUser.certification;
-  const certOrg = userCert ? CERTIFICATIONS.find(o => o.id === userCert.orgId) : null;
+  const certOrg = userCert ? agencies.find(o => o.id === userCert.orgId) : null;
   const certRank = userCert && certOrg ? certOrg.ranks.find(r => r.id === userCert.rankId) : null;
 
   // Badges Info

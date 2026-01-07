@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Camera, X, Star, Plus, Trash2, AlertTriangle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { CERTIFICATIONS } from '../constants/masterData';
+
 import clsx from 'clsx';
 import { ImageWithFallback } from './common/ImageWithFallback';
 import { HierarchicalPointSelector } from './HierarchicalPointSelector';
@@ -12,7 +12,7 @@ interface Props {
 }
 
 export const ProfileEditModal = ({ isOpen, onClose }: Props) => {
-  const { currentUser, updateUser, points, deleteAccount } = useApp();
+  const { currentUser, updateUser, points, deleteAccount, agencies } = useApp();
 
   // Tabs
   const [activeTab, setActiveTab] = useState<'basic' | 'points' | 'gear' | 'shops' | 'account'>('basic');
@@ -221,12 +221,12 @@ export const ProfileEditModal = ({ isOpen, onClose }: Props) => {
                       onChange={(e) => {
                         setOrgId(e.target.value);
                         // Reset rank to 'entry' or similar when org changes
-                        const firstRank = CERTIFICATIONS.find(o => o.id === e.target.value)?.ranks[0]?.id;
+                        const firstRank = agencies.find(o => o.id === e.target.value)?.ranks[0]?.id;
                         if (firstRank) setRankId(firstRank);
                       }}
                       className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-ocean outline-none"
                     >
-                      {CERTIFICATIONS.map(org => (
+                      {agencies.map(org => (
                         <option key={org.id} value={org.id}>{org.name}</option>
                       ))}
                     </select>
@@ -238,7 +238,7 @@ export const ProfileEditModal = ({ isOpen, onClose }: Props) => {
                       onChange={(e) => setRankId(e.target.value)}
                       className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-ocean outline-none"
                     >
-                      {CERTIFICATIONS.find(o => o.id === orgId)?.ranks.map(rank => (
+                      {agencies.find(o => o.id === orgId)?.ranks.map(rank => (
                         <option key={rank.id} value={rank.id}>{rank.name}</option>
                       ))}
                     </select>
