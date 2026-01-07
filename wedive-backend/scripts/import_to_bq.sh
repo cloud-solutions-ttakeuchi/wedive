@@ -21,7 +21,7 @@ COLLECTIONS=(
   "creatures"
   "point_creatures"
   "users"
-  "certifications"
+  "agencies"
 )
 
 echo "Starting bulk import to BigQuery for Project: $PROJECT_ID, Dataset: $DATASET_ID"

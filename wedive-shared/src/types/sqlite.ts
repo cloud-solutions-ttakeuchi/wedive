@@ -136,7 +136,7 @@ export interface SQLiteReview {
   created_at?: string;
 }
 
-export interface SQLiteOrganization {
+export interface SQLiteAgency {
   id: string;
   name: string;
   website?: string;

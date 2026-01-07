@@ -134,7 +134,7 @@ export interface CertificationRank {
   commonRank?: 'OW' | 'AOW' | 'RED' | 'DM' | 'INST' | 'OTHER';
 }
 
-export interface OrganizationMaster {
+export interface AgencyMaster {
   id: string;
   name: string;
   ranks: CertificationRank[];
@@ -142,7 +142,9 @@ export interface OrganizationMaster {
   logoUrl?: string;
 }
 
-export type CertificationMaster = OrganizationMaster;
+// Deprecated alias for transition
+export type CertificationMaster = AgencyMaster;
+export type OrganizationMaster = AgencyMaster;
 
 export interface BadgeMaster {
   id: string;

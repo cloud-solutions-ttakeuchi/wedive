@@ -1,5 +1,5 @@
-import type { Creature, Point, PointCreature, Review, Region, Zone, Area, OrganizationMaster } from '../types';
-import type { SQLitePoint, SQLiteCreature, SQLitePointCreature, SQLiteReview, SQLiteOrganization } from '../types/sqlite';
+import type { Creature, Point, PointCreature, Review, Region, Zone, Area, AgencyMaster } from '../types';
+import type { SQLitePoint, SQLiteCreature, SQLitePointCreature, SQLiteReview, SQLiteAgency } from '../types/sqlite';
 
 // Helper to safely parse JSON
 const safeParse = <T>(json: string | undefined | null, fallback: T): T => {
@@ -134,7 +134,7 @@ export const mapReviewFromSQLite = (row: SQLiteReview): Review => {
 
 // ... (existing code)
 
-export const mapOrganizationFromSQLite = (row: SQLiteOrganization): OrganizationMaster => {
+export const mapAgencyFromSQLite = (row: SQLiteAgency): AgencyMaster => {
   return {
     id: row.id,
     name: row.name,
