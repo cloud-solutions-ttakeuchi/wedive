@@ -135,3 +135,11 @@ export interface SQLiteReview {
   // ... add other fields as needed
   created_at?: string;
 }
+
+export interface SQLiteAgency {
+  id: string;
+  name: string;
+  website?: string;
+  logo_url?: string;
+  ranks_json: string; // JSON string of CertificationRank[]
+}

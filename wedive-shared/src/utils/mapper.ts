@@ -1,5 +1,5 @@
-import type { Creature, Point, PointCreature, Review, Region, Zone, Area } from '../types';
-import type { SQLitePoint, SQLiteCreature, SQLitePointCreature, SQLiteReview } from '../types/sqlite';
+import type { Creature, Point, PointCreature, Review, Region, Zone, Area, AgencyMaster } from '../types';
+import type { SQLitePoint, SQLiteCreature, SQLitePointCreature, SQLiteReview, SQLiteAgency } from '../types/sqlite';
 
 // Helper to safely parse JSON
 const safeParse = <T>(json: string | undefined | null, fallback: T): T => {
@@ -132,7 +132,20 @@ export const mapReviewFromSQLite = (row: SQLiteReview): Review => {
   };
 };
 
+// ... (existing code)
+
+export const mapAgencyFromSQLite = (row: SQLiteAgency): AgencyMaster => {
+  return {
+    id: row.id,
+    name: row.name,
+    website: row.website,
+    logoUrl: row.logo_url, // map snake_case to camelCase
+    ranks: safeParse(row.ranks_json, [])
+  };
+};
+
 export const mapGeographyFromFlattenedSQLite = (rows: any[]): { regions: Region[], zones: Zone[], areas: Area[] } => {
+  // ...
   const uniqueRegions = new Map<string, Region>();
   const uniqueZones = new Map<string, Zone>();
   const uniqueAreas = new Map<string, Area>();

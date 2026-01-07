@@ -1,5 +1,5 @@
 import { BaseMasterDataService } from 'wedive-shared';
-import type { Point, Creature } from 'wedive-shared';
+import type { Point, Creature, AgencyMaster } from 'wedive-shared';
 import { masterDbEngine } from './WebSQLiteEngine';
 
 /**
@@ -88,6 +88,19 @@ export class MasterDataService extends BaseMasterDataService {
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Creature));
     */
+    return [];
+  }
+
+  async getAgencies(): Promise<AgencyMaster[]> {
+    if (await this.initialize()) {
+      try {
+        console.log('[MasterData] Fetching agencies from SQLite (Web) 🚀');
+        const results = await super.getAgencies();
+        return results;
+      } catch (e) {
+        console.warn('SQLite agency fetch failed, falling back...', e);
+      }
+    }
     return [];
   }
 }

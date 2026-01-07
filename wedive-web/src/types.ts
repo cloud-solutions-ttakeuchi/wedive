@@ -17,5 +17,6 @@ export type {
   CreatureStats,
   CertificationMaster,
   BadgeMaster,
-  RankMaster
+  RankMaster,
+  AgencyMaster
 } from 'wedive-shared';

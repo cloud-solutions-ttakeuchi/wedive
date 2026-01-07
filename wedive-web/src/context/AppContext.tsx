@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useRef, useMemo, type ReactNode } from 'react';
-import type { User, Log, Rarity, Creature, Point, PointCreature, Review, PointCreatureProposal, Region, Zone, Area } from '../types';
+import type { User, Log, Rarity, Creature, Point, PointCreature, Review, PointCreatureProposal, Region, Zone, Area, AgencyMaster } from '../types';
 
 import { auth, googleProvider, db as firestore, functions } from '../lib/firebase';
 import { signInWithRedirect, signOut, onAuthStateChanged } from 'firebase/auth';
@@ -23,7 +23,8 @@ import {
   mapPointFromSQLite,
   mapCreatureFromSQLite,
   mapPointCreatureFromSQLite,
-  mapGeographyFromFlattenedSQLite
+  mapGeographyFromFlattenedSQLite,
+  mapAgencyFromSQLite
 } from 'wedive-shared';
 // Helper to remove undefined values
 const sanitizePayload = (data: any): any => {
@@ -64,6 +65,7 @@ interface AppContextType {
   toggleBookmarkPoint: (pointId: string) => void;
 
   areas: Area[];
+  agencies: AgencyMaster[];
   addPointCreature: (pointId: string, creatureId: string, localRarity: Rarity) => Promise<void>;
   removePointCreature: (pointId: string, creatureId: string) => Promise<void>;
   approveProposal: (type: 'creature' | 'point' | 'point-creature', id: string, data: any) => Promise<void>;
@@ -134,6 +136,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [regions, setRegions] = useState<Region[]>([]);
   const [zones, setZones] = useState<Zone[]>([]);
   const [areas, setAreas] = useState<Area[]>([]);
+  const [agencies, setAgencies] = useState<AgencyMaster[]>([]);
 
   // Emulator connections (development only)
   useEffect(() => {
@@ -166,13 +169,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           }
         };
 
-        const [geo, c, p, pc, rv, pl] = await Promise.all([
+        const [geo, c, p, pc, rv, pl, ag] = await Promise.all([
           loadTable<any>('master_geography', 'SELECT * FROM master_geography'),
           loadTable<any>('master_creatures', 'SELECT * FROM master_creatures LIMIT 1000'),
           loadTable<any>('master_points', 'SELECT * FROM master_points LIMIT 1000'),
           loadTable<any>('master_point_creatures', 'SELECT * FROM master_point_creatures'),
           loadTable<any>('master_point_reviews', 'SELECT * FROM master_point_reviews ORDER BY created_at DESC LIMIT 100'),
-          loadTable<any>('master_public_logs', 'SELECT * FROM master_public_logs ORDER BY date DESC LIMIT 20')
+          loadTable<any>('master_public_logs', 'SELECT * FROM master_public_logs ORDER BY date DESC LIMIT 20'),
+          loadTable<any>('master_agencies', 'SELECT * FROM master_agencies')
         ]);
 
         // Geography (Region / Zone / Area)
@@ -190,6 +194,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
         if (rv.length) setReviews(rv.map(i => ({ ...i, status: 'approved' }))); // Review mapper if needed
         if (pl.length) setRecentLogs(pl);
+        if (ag.length) setAgencies(ag.map(mapAgencyFromSQLite));
+
 
         console.log('[MasterData] Master data loaded from SQLite (using unified geography).');
 
@@ -744,7 +750,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const value: AppContextType = {
     currentUser, isAuthenticated, isLoading, login, logout, calculateRarity, addLog, addCreature, addPoint, addPointCreature, removePointCreature, updateLog, updateCreature, updatePoint, deleteLog, deleteLogs, updateLogs, updateUser, toggleLikeLog, toggleFavorite, toggleWanted, toggleBookmarkPoint,
-    creatures, points, pointCreatures, logs: allLogs, reviews, proposalReviews, recentLogs, proposalCreatures, proposalPoints, proposalPointCreatures, regions, zones, areas, addCreatureProposal, addPointProposal, addPointCreatureProposal, removePointCreatureProposal, approveProposal, rejectProposal, allUsers, updateUserRole, deleteAccount, addReview, approveReview, rejectReview, updateReview, deleteReview
+    creatures, points, pointCreatures, logs: allLogs, reviews, proposalReviews, recentLogs, proposalCreatures, proposalPoints, proposalPointCreatures, regions, zones, areas, agencies, addCreatureProposal, addPointProposal, addPointCreatureProposal, removePointCreatureProposal, approveProposal, rejectProposal, allUsers, updateUserRole, deleteAccount, addReview, approveReview, rejectReview, updateReview, deleteReview
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

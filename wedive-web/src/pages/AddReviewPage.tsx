@@ -18,14 +18,13 @@ import {
 } from 'lucide-react';
 
 registerLocale('ja', ja);
-import { CERTIFICATIONS } from '../constants/masterData';
 import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   ResponsiveContainer
 } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
-import type { Review } from '../types';
+import type { Review, AgencyMaster } from '../types';
 
 export const AddReviewPage = () => {
   const { pointId, reviewId } = useParams<{ pointId?: string, reviewId?: string }>();
@@ -34,7 +33,7 @@ export const AddReviewPage = () => {
   const queryParams = new URLSearchParams(location.search);
   const logId = queryParams.get('logId');
 
-  const { points, logs, currentUser, addReview, updateReview, isAuthenticated, updateUser, reviews, proposalReviews } = useApp();
+  const { points, logs, currentUser, addReview, updateReview, isAuthenticated, updateUser, reviews, proposalReviews, agencies } = useApp();
   const isEdit = !!reviewId;
   const existingReview = isEdit ? (reviews.find(r => r.id === reviewId) || proposalReviews.find(r => r.id === reviewId)) : null;
 
@@ -331,6 +330,7 @@ export const AddReviewPage = () => {
                 fileInputRef={fileInputRef}
                 isAdmin={currentUser.role === 'admin' || currentUser.role === 'moderator'}
                 isEdit={isEdit}
+                agencies={agencies}
               />
             )}
           </motion.div>
@@ -829,7 +829,7 @@ const Step2Metrics = ({ data, onChange }: any) => {
   );
 };
 
-const Step3Evaluation = ({ data, onChange, onRadarChange, onImageUpload, uploading, fileInputRef, isAdmin }: any) => {
+const Step3Evaluation = ({ data, onChange, onRadarChange, onImageUpload, uploading, fileInputRef, isAdmin, agencies = [] }: any & { agencies: AgencyMaster[] }) => {
   const radarData = useMemo(() => [
     { subject: '透明度', A: data.radar.visibility },
     { subject: '生物遭遇', A: data.radar.encounter },
@@ -935,12 +935,12 @@ const Step3Evaluation = ({ data, onChange, onRadarChange, onImageUpload, uploadi
                 value={data.userOrgId}
                 onChange={e => {
                   const orgId = e.target.value.toLowerCase();
-                  const firstRank = CERTIFICATIONS.find(o => o.id === orgId)?.ranks[0]?.id || '';
+                  const firstRank = agencies.find((o: AgencyMaster) => o.id === orgId)?.ranks[0]?.id || '';
                   onChange({ userOrgId: orgId, userRank: firstRank });
                 }}
                 className="w-full h-8 bg-transparent text-[10px] font-black outline-none cursor-pointer"
               >
-                {CERTIFICATIONS.map(org => (
+                {agencies.map((org: AgencyMaster) => (
                   <option key={org.id} value={org.id}>{org.name}</option>
                 ))}
               </select>
@@ -952,7 +952,7 @@ const Step3Evaluation = ({ data, onChange, onRadarChange, onImageUpload, uploadi
                 onChange={e => onChange({ userRank: e.target.value })}
                 className="w-full h-8 bg-transparent text-[10px] font-black outline-none cursor-pointer"
               >
-                {CERTIFICATIONS.find(o => o.id.toLowerCase() === (data.userOrgId || '').toLowerCase())?.ranks.map(rank => (
+                {agencies.find((o: AgencyMaster) => o.id.toLowerCase() === (data.userOrgId || '').toLowerCase())?.ranks.map((rank: any) => (
                   <option key={rank.id} value={rank.id}>{rank.name}</option>
                 ))}
               </select>

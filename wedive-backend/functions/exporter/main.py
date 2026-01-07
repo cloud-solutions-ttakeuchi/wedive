@@ -24,6 +24,7 @@ TABLE_MAPPING = {
     "v_app_point_stats": "master_point_stats",
     "v_app_point_reviews": "master_point_reviews",
     "v_app_user_public_logs": "master_public_logs",
+    "v_app_agencies_master": "master_agencies",
 }
 
 def compress_and_upload(local_file_path, destination_blob_name):

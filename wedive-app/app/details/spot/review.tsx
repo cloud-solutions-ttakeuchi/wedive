@@ -9,8 +9,9 @@ import { collection, addDoc, doc, getDoc, getDocs, query, where, updateDoc, setD
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import * as ImagePicker from 'expo-image-picker';
 import type { Review, ReviewRadar } from '../../../src/types';
-import { CERTIFICATIONS } from '../../../src/constants/masterData';
 import { Wind, Waves, Search, Maximize, Map, Mountain, Boxes } from 'lucide-react-native';
+import { useAgencies } from '../../../src/hooks/useAgencies';
+import { AgencyMaster } from 'wedive-shared';
 import React from 'react';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Platform } from 'react-native';
@@ -197,6 +198,7 @@ export default function AddReviewScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user, isAuthenticated, logs } = useAuth();
+  const { agencies = [] } = useAgencies();
 
   const [step, setStep] = useState(0);
   const flatListRef = useRef<FlatList>(null);
@@ -532,6 +534,7 @@ export default function AddReviewScreen() {
           onRadarChange={(r: Partial<ReviewRadar>) => setFormData(p => ({ ...p, radar: { ...p.radar!, ...r } }))}
           onPickImage={handlePickImage}
           uploading={uploading}
+          agencies={agencies}
         />
       );
       default: return null;
@@ -1038,13 +1041,15 @@ const Step3 = ({
   onChange,
   onRadarChange,
   onPickImage,
-  uploading
+  uploading,
+  agencies
 }: {
   data: Partial<Review>,
   onChange: (d: Partial<Review>) => void,
   onRadarChange: (r: Partial<ReviewRadar>) => void,
   onPickImage: () => void,
-  uploading: boolean
+  uploading: boolean,
+  agencies: AgencyMaster[]
 }) => (
   <ScrollView style={{ width }} contentContainerStyle={styles.stepContent}>
     <Text style={styles.stepTitle}>今回の感想・評価</Text>
@@ -1125,12 +1130,12 @@ const Step3 = ({
           <View style={styles.selectBox}>
             <TextInput
               style={styles.selectInput}
-              value={CERTIFICATIONS.find(o => o.id === data.userOrgId)?.name || 'PADI'}
+              value={agencies.find(o => o.id === data.userOrgId)?.name || 'PADI'}
               editable={false}
             />
             {/* Simple list of orgs for now */}
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.orgList}>
-              {CERTIFICATIONS.map(o => (
+              {agencies.map(o => (
                 <TouchableOpacity key={o.id} onPress={() => onChange({ userOrgId: o.id, userRank: 'entry' })} style={[styles.orgChip, data.userOrgId === o.id && styles.orgChipActive]}>
                   <Text style={[styles.orgChipText, data.userOrgId === o.id && styles.orgChipTextActive]}>{o.name}</Text>
                 </TouchableOpacity>
@@ -1142,7 +1147,7 @@ const Step3 = ({
           <Text style={styles.subLabel}>ランク</Text>
           <View style={styles.selectBox}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {CERTIFICATIONS.find(o => o.id === (data.userOrgId || 'padi'))?.ranks.map(r => (
+              {agencies.find(o => o.id === (data.userOrgId || 'padi'))?.ranks.map(r => (
                 <TouchableOpacity key={r.id} onPress={() => onChange({ userRank: r.id })} style={[styles.orgChip, data.userRank === r.id && styles.orgChipActive]}>
                   <Text style={[styles.orgChipText, data.userRank === r.id && styles.orgChipTextActive]}>{r.name}</Text>
                 </TouchableOpacity>

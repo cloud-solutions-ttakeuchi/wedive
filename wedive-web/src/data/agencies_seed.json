@@ -1,0 +1,131 @@
+[
+  {
+    "id": "org_padi",
+    "name": "PADI",
+    "website": "https://www.padi.com",
+    "logoUrl": "",
+    "ranks": [
+      {
+        "id": "padi_ow",
+        "name": "Open Water Diver",
+        "level": 10,
+        "abbreviation": "OW",
+        "commonRank": "OW"
+      },
+      {
+        "id": "padi_aow",
+        "name": "Advanced Open Water Diver",
+        "level": 20,
+        "abbreviation": "AOW",
+        "commonRank": "AOW"
+      },
+      {
+        "id": "padi_red",
+        "name": "Rescue Diver",
+        "level": 30,
+        "abbreviation": "RED",
+        "commonRank": "RED"
+      },
+      {
+        "id": "padi_dm",
+        "name": "Divemaster",
+        "level": 40,
+        "abbreviation": "DM",
+        "commonRank": "DM"
+      },
+      {
+        "id": "padi_inst",
+        "name": "Instructor",
+        "level": 50,
+        "abbreviation": "INST",
+        "commonRank": "INST"
+      }
+    ]
+  },
+  {
+    "id": "org_naui",
+    "name": "NAUI",
+    "website": "https://www.naui.org",
+    "logoUrl": "",
+    "ranks": [
+      {
+        "id": "naui_ow",
+        "name": "Scuba Diver",
+        "level": 10,
+        "abbreviation": "SD",
+        "commonRank": "OW"
+      },
+      {
+        "id": "naui_aow",
+        "name": "Advanced Scuba Diver",
+        "level": 20,
+        "abbreviation": "ASD",
+        "commonRank": "AOW"
+      },
+      {
+        "id": "naui_red",
+        "name": "Rescue Scuba Diver",
+        "level": 30,
+        "abbreviation": "RSD",
+        "commonRank": "RED"
+      },
+      {
+        "id": "naui_dm",
+        "name": "Divemaster",
+        "level": 40,
+        "abbreviation": "DM",
+        "commonRank": "DM"
+      },
+      {
+        "id": "naui_inst",
+        "name": "Instructor",
+        "level": 50,
+        "abbreviation": "INST",
+        "commonRank": "INST"
+      }
+    ]
+  },
+  {
+    "id": "org_ssi",
+    "name": "SSI",
+    "website": "https://www.divessi.com",
+    "logoUrl": "",
+    "ranks": [
+      {
+        "id": "ssi_ow",
+        "name": "Open Water Diver",
+        "level": 10,
+        "abbreviation": "OW",
+        "commonRank": "OW"
+      },
+      {
+        "id": "ssi_aow",
+        "name": "Advanced Adventurer",
+        "level": 20,
+        "abbreviation": "AA",
+        "commonRank": "AOW"
+      },
+      {
+        "id": "ssi_red",
+        "name": "Diver Stress & Rescue",
+        "level": 30,
+        "abbreviation": "DSR",
+        "commonRank": "RED"
+      },
+      {
+        "id": "ssi_dm",
+        "name": "Divemaster",
+        "level": 40,
+        "abbreviation": "DM",
+        "commonRank": "DM"
+      },
+      {
+        "id": "ssi_inst",
+        "name": "Open Water Instructor",
+        "level": 50,
+        "abbreviation": "OWI",
+        "commonRank": "INST"
+      }
+    ]
+  }
+]

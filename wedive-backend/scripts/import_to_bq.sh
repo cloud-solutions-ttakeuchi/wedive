@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Configuration
-PROJECT_ID="we-dive"
+PROJECT_ID="dive-dex-app-dev"
+#PROJECT_ID="we-dive"
 DATASET_ID="wedive_master_data_v1"
 
 # List of collections to import
@@ -14,13 +15,14 @@ DATASET_ID="wedive_master_data_v1"
 # So we should match the COLLECTION names with the TABLE PREFIXES.
 
 COLLECTIONS=(
-  "areas"
-  "zones"
-  "regions"
-  "points"
-  "creatures"
-  "point_creatures"
-  "users"
+  # "areas"
+  # "zones"
+  # "regions"
+  # "points"
+  # "creatures"
+  # "point_creatures"
+  # "users"
+  "agencies"
 )
 
 echo "Starting bulk import to BigQuery for Project: $PROJECT_ID, Dataset: $DATASET_ID"
