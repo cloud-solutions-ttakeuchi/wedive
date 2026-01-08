@@ -6,7 +6,7 @@ import { LogImportModal } from '../components/LogImportModal';
 import { ProfileEditModal } from '../components/ProfileEditModal';
 import { LogCard } from '../components/LogCard';
 import { BulkEditModal } from '../components/BulkEditModal';
-import { Award, MapPin, Grid, List, BookOpen, Heart, Bookmark, Check, Star, PenTool, ChevronRight, Compass, Droplet, Map as MapIcon, Aperture, Crown, Shield, Info, Settings, X, Activity, Droplets, Image as ImageIcon, Upload, Trash2, MessageSquare } from 'lucide-react';
+import { Award, MapPin, Grid, List, BookOpen, Heart, Bookmark, Check, Star, PenTool, ChevronRight, Compass, Droplet, Map as MapIcon, Aperture, Crown, Shield, Info, Settings, X, Activity, Droplets, Image as ImageIcon, Upload, Trash2, MessageSquare, Sparkles, Ticket } from 'lucide-react';
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { Link } from 'react-router-dom';
@@ -299,6 +299,44 @@ export const MyPage = () => {
       {
         activeTab === 'dashboard' && (
           <div className="space-y-6">
+            {/* AI Concierge & Campaign Card */}
+            <div className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-500">
+                <Sparkles size={120} />
+              </div>
+              <div className="relative z-10">
+                <div className="flex justify-between items-start mb-6">
+                  <div>
+                    <div className="text-purple-100 text-xs font-bold uppercase tracking-widest mb-1">AI Concierge Tickets</div>
+                    <div className="text-4xl font-black flex items-baseline gap-2">
+                      {currentUser.aiConciergeTickets?.totalAvailable || 0}
+                      <span className="text-lg font-bold text-purple-200">残り枚数</span>
+                    </div>
+                  </div>
+                  <Link to="/concierge" className="bg-white/20 hover:bg-white/30 backdrop-blur-md text-white px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2">
+                    チャットを開始 <ChevronRight size={16} />
+                  </Link>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4 bg-black/10 rounded-2xl p-4 border border-white/10 backdrop-blur-sm">
+                  <div className="text-center">
+                    <div className="text-xs text-purple-200 mb-1">スポット</div>
+                    <div className="font-bold">{currentUser.aiConciergeTickets?.periodContribution?.points || 0}</div>
+                  </div>
+                  <div className="text-center border-x border-white/10">
+                    <div className="text-xs text-purple-200 mb-1">生物</div>
+                    <div className="font-bold">{currentUser.aiConciergeTickets?.periodContribution?.creatures || 0}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xs text-purple-200 mb-1">レビュー</div>
+                    <div className="font-bold">{currentUser.aiConciergeTickets?.periodContribution?.reviews || 0}</div>
+                  </div>
+                </div>
+                <div className="mt-4 text-[10px] text-purple-200/70 text-right font-medium italic">
+                  *コンテンツ承認ごとにAIチケットをプレゼント中！
+                </div>
+              </div>
+            </div>
             {/* Stats Chart */}
             <div className="bg-white rounded-2xl p-6 border border-deepBlue-100 shadow-sm">
               <h3 className="font-bold text-deepBlue-900 mb-4 flex items-center gap-2">

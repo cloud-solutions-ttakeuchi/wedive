@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getAuth } from 'firebase/auth';
 
 export interface Message {
   role: 'user' | 'model';
@@ -20,12 +21,20 @@ export const aiService = {
       // サーバー側のCORS制限でエラーになる可能性が高いため、
       // タイムアウトやエラーをキャッチしてデモ応答を返します。
 
+      const auth = getAuth();
+      const token = await auth.currentUser?.getIdToken();
+
       const response = await axios.post(`${API_BASE_URL}/getConciergeResponse`, {
         data: {
           query,
           history: history.length > 0 ? history : undefined
         }
-      }, { timeout: 5000 });
+      }, {
+        timeout: 15000,
+        headers: token ? {
+          'Authorization': `Bearer ${token}`
+        } : {}
+      });
 
       if (response.data && response.data.result) {
         return {

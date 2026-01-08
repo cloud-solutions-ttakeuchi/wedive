@@ -45,10 +45,12 @@ class AiConciergeServiceImpl extends BaseAiConciergeService {
         });
 
         transaction.set(ticketRef, newTicket);
-        transaction.update(userRef, {
-          'aiConciergeTickets.lastDailyGrant': today,
-          'aiConciergeTickets.totalAvailable': increment(1)
-        });
+        transaction.set(userRef, {
+          aiConciergeTickets: {
+            lastDailyGrant: today,
+            totalAvailable: increment(1)
+          }
+        }, { merge: true });
 
         console.log(`[AiConciergeService] Daily ticket granted for Web: ${ticketId}`);
         return true;
@@ -129,15 +131,20 @@ class AiConciergeServiceImpl extends BaseAiConciergeService {
         transaction.set(ticketRef, newTicket);
 
         // キャンペーン期間中（2026/01 - 04）であれば貢献数をカウント
-        const updateData: any = {
-          'aiConciergeTickets.totalAvailable': increment(1)
+        const contributionData: any = {
+          totalAvailable: increment(1)
         };
 
         if (this.isCampaignPeriod()) {
-          updateData[`aiConciergeTickets.periodContribution.${category}`] = increment(1);
+          contributionData.periodContribution = {
+            [category]: increment(1)
+          };
         }
 
-        transaction.update(userRef, updateData);
+        transaction.set(userRef, {
+          aiConciergeTickets: contributionData
+        }, { merge: true });
+
         console.log(`[AiConciergeService] Contribution ticket granted: ${category} for user ${userId}`);
       });
     } catch (error) {

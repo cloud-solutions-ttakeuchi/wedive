@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Menu, X, Globe, Shield } from 'lucide-react';
+import { Search, Menu, X, Globe, Shield, Sparkles } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -56,10 +56,14 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
               {language === 'en' ? 'JP' : 'EN'}
             </button>
 
-            {/* Search Button - Zukan Style */}
             <Link to="/pokedex" className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-full transition-colors group">
               <Search size={18} className="text-gray-500 group-hover:text-gray-900" />
               <span className="text-sm font-bold">{t('nav.pokedex')}</span>
+            </Link>
+
+            <Link to="/concierge" className="hidden md:flex items-center gap-2 text-gray-600 hover:text-cyan-600 px-3 py-2 transition-colors group">
+              <Sparkles size={18} className="text-cyan-500 group-hover:animate-pulse" />
+              <span className="text-sm font-bold">AI Concierge</span>
             </Link>
 
             {/* Menu Button */}
@@ -85,6 +89,11 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
             </Link>
             <Link to="/points" onClick={() => setIsMenuOpen(false)} className="text-xl font-bold py-4 border-b border-gray-100 hover:text-red-500">
               ポイント検索
+            </Link>
+            <Link to="/concierge" onClick={() => setIsMenuOpen(false)} className="text-xl font-bold py-4 border-b border-gray-100 text-cyan-600 hover:text-cyan-500">
+              <div className="flex items-center justify-center gap-2">
+                <Sparkles size={20} /> AIコンシェルジュ
+              </div>
             </Link>
             {isAuthenticated && (
               <Link to="/mypage" onClick={() => setIsMenuOpen(false)} className="text-xl font-bold py-4 border-b border-gray-100 hover:text-red-500">
