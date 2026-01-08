@@ -125,6 +125,90 @@
     - **閲覧（承認待ち）**: 「管理者・モデレーター」または「投稿者本人」のみが閲覧可能。
     - **編集・削除**: 「管理者・モデレーター」または「投稿者本人」のみが可能。投稿者本人が承認済みレビューを編集した場合、ステータスは自動的に `pending`（承認待ち）に戻ります（管理者による再確認のため）。
 
+### 2.6 AI チャットチケット・報酬システム (v2026.01+) (参照: `users`, `users/aiChatTickets`)
+AI コンシェルジュの利用（API コスト）をコントロールしつつ、コンテンツへの貢献を加速させるための報酬システム。期間限定キャンペーン（2026年1月〜4月）として実装。
+
+- **チケット付与条件**:
+  - **ログインボーナス**: 1日1回ログイン時に付与（使用期限あり）。
+  - **コンテンツ貢献**: 以下の登録が承認された際に付与（使用期限あり）。
+    - ダイビングポイントの登録
+    - 生物の登録
+    - ポイントレビューの投稿
+- **チケット管理**:
+  - **サブコレクション**: `aiChatTickets` にて個別チケットの有効期限（発行から30日間等）、使用ステータスを管理。
+  - **サマリー保持**: `User` ドキュメントに `totalAvailable` と最終付与日を保持し、リスト取得なしで残高を表示可能。
+- **ランキングキャンペーン**:
+  - 期間中の累計承認数に基づき、トップ貢献者へボーナスチケット（100チャット分）をプレゼントする仕掛け。
+- **有料誘導**:
+  - チケット消費時に「残りのチケット数」を表示し、無料体験を通じて有用性を実感させ、サブスクリプションプランへ誘導。
+
+#### アーキテクチャ構成とデータフロー
+
+AIチャットチケットシステムは、保守性とプラットフォーム間の整合性を両立させるため、**「共有抽象層 + プラットフォーム別実装」** のハイブリッド構成を採用しています。
+
+1. **抽象層 (`BaseAiChatService`)**:
+   - `wedive-shared` に配置され、WebとAppで共通のキャンペーン設定（開始日・終了日）やチケット生成の基本ロジック（有効期限計算など）を定義します。これにより、両OS間での仕様決定の乖離を防ぎます。
+2. **Web実装 (`AiChatService.ts` in web)**:
+   - 管理画面での「承認」ワークフローに統合されています。管理者がコンテンツを承認した瞬間、Firestore トランザクションを介してユーザーにチケットを付与し、同時にキャンペーン期間中の貢献カウントを更新します。
+3. **Mobile実装 (`AiChatService.ts` in app)**:
+   - オフライン操作を考慮し、ローカル SQLite (`user.db / my_ai_chat_tickets`) をキャッシュレイヤーとして活用します。チャット送信時は、まずローカルの件数を消費し、オンライン復帰時に Firestore との整合性を担保します。
+4. **整合性管理**:
+   - チケットの付与および消費は、すべて Firestore の `runTransaction` を使用しています。これにより、「チケットは付与されたがユーザープロファイルの残高が増えていない」といった不整合を防止し、原子性を保証します。
+
+#### 概念図 (Architecture Diagram)
+
+```mermaid
+graph TD
+    subgraph "Client Assets"
+        Web[wedive-web]
+        App[wedive-app]
+    end
+
+    subgraph "Service Layer (Shared)"
+        BaseService[BaseAiChatService]
+        BaseService ---|共通定数・ロジック| CHAT_CAMPAIGN
+    end
+
+    subgraph "Service Layer (Implementation)"
+        AiWeb[AiChatService Web]
+        AiApp[AiChatService App]
+        AiWeb --- AiApp
+        AiWeb -.->|extends| BaseService
+        AiApp -.->|extends| BaseService
+    end
+
+    subgraph "Data Store"
+        Firestore[Cloud Firestore]
+        SQLite[Local SQLite]
+    end
+
+    %% Web Calls
+    Web -->|Login| AiWeb
+    Web -->|Proposal Approval| AiWeb
+    Web -->|Chat Send| AiWeb
+    AiWeb <-->|Atomic Transaction| Firestore
+
+    %% App Calls
+    App -->|Login / Sync| AiApp
+    App -->|Chat Send| AiApp
+    AiApp <-->|Sync / Transaction| Firestore
+    AiApp <-->|Offline Cache| SQLite
+```
+
+#### 呼び出し元一覧 (Traceability)
+
+| 呼び出し元 (File) | メソッド | タイミング / 目的 |
+| :--- | :--- | :--- |
+| **wedive-app** | | |
+| `AuthContext.tsx` | `grantDailyTicket` | ログイン/起動時。1日1回の無料チケット付与。 |
+| `AuthContext.tsx` | `syncTickets` | ログイン直後。Firestoreからローカルへのチケット同期。 |
+| `app/(tabs)/ai.tsx` | `getRemainingCount` | AIチャット画面表示時。現在のチケット残数を取得。 |
+| `app/(tabs)/ai.tsx` | `sendMessageWithTicket` | チャット送信。チケットを1枚消費してからAI APIをコール。 |
+| **wedive-web** | | |
+| `AppContext.tsx` | `grantDailyTicket` | ログイン時。1日1回の無料チケット付与。 |
+| `AppContext.tsx` | `grantContributionTicket` | ポイント・生物・レビューの「承認」時。貢献報酬を付与。 |
+| `ConciergePage.tsx` | `consumeTicket` | コンシェルジュ送信時。チケットを1枚消費。 |
+
 ---
 
 ## 3. 運営・管理機能

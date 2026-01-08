@@ -4,7 +4,9 @@ import { ChevronLeft, Send, Bot, User, Loader2, MapPin, Anchor, Sparkles } from 
 import { useApp } from '../context/AppContext';
 import { auth } from '../lib/firebase';
 import { FEATURE_FLAGS } from '../config/features';
+import { AiChatService } from '../services/AiChatService';
 import clsx from 'clsx';
+import { Ticket } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -31,6 +33,8 @@ export const ConciergePage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const ticketCount = currentUser?.aiChatTickets?.totalAvailable ?? 0;
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -43,6 +47,11 @@ export const ConciergePage = () => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
+    if (ticketCount <= 0) {
+      alert("チャットチケットが不足しています。明日またログインすると新しいチケットが付与されます。");
+      return;
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -54,7 +63,13 @@ export const ConciergePage = () => {
     setIsLoading(true);
 
     try {
-      // 1. Get Auth Token
+      // 1. Consume Ticket
+      const success = await AiChatService.consumeTicket(currentUser.id);
+      if (!success) {
+        throw new Error("Failed to consume ticket");
+      }
+
+      // 2. Get Auth Token
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error("Unauthenticated");
 
@@ -158,6 +173,10 @@ export const ConciergePage = () => {
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">AI Powered</span>
               </div>
             </div>
+          </div>
+          <div className="flex items-center gap-2 bg-ocean-50 px-3 py-1.5 rounded-xl border border-ocean-100">
+            <Ticket size={16} className="text-ocean-600" />
+            <span className="text-sm font-bold text-ocean-700">{ticketCount}</span>
           </div>
         </div>
       </header>

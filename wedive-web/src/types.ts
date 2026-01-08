@@ -18,5 +18,11 @@ export type {
   CertificationMaster,
   BadgeMaster,
   RankMaster,
-  AgencyMaster
+  AgencyMaster,
+  ChatTicket,
+} from 'wedive-shared';
+
+export {
+  BaseAiChatService,
+  CHAT_CAMPAIGN,
 } from 'wedive-shared';

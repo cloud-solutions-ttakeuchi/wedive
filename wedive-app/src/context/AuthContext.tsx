@@ -4,6 +4,7 @@ import { auth, db } from '../firebase';
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { User, DiveLog } from '../types';
 import { userDataService } from '../services/UserDataService';
+import { aiChatService } from '../services/AiChatService';
 
 type AuthContextType = {
   user: User | null;
@@ -53,7 +54,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // 2. 必要に応じた初回同期（Firestore -> SQLite）
           await userDataService.syncInitialData(fbUser.uid);
 
-          // 3. 常に最新の SQLite からデータをロード
+          // 3. AIチャットチケットの付与チェックと同期
+          await aiChatService.grantDailyTicket(fbUser.uid);
+          await aiChatService.syncTickets(fbUser.uid);
+
+          // 4. 常に最新の SQLite からデータをロード
           const [localLogs, localProfile] = await Promise.all([
             userDataService.getLogs(),
             userDataService.getSetting<User>('profile')

@@ -26,6 +26,8 @@ import {
   mapGeographyFromFlattenedSQLite,
   mapAgencyFromSQLite
 } from 'wedive-shared';
+import { AiChatService } from '../services/AiChatService';
+
 // Helper to remove undefined values
 const sanitizePayload = (data: any): any => {
   if (Array.isArray(data)) {
@@ -216,6 +218,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setIsLoading(true);
         setAllLogs([]); // b-3: Isolate session by clearing previous user logs from memory immediately
         isDeletingRef.current = false;
+
+        // Daily Chat Ticket Bonus
+        AiChatService.grantDailyTicket(user.uid).catch(console.error);
 
         // User Profile Listener
         const userDocRef = doc(firestore, 'users', user.uid);
@@ -595,12 +600,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         const { id: _fid, proposalType: _pt, targetId: _ftid, submitterId: _sid, status: _st, createdAt: _ca, ...finalData } = data;
         await setDoc(doc(firestore, 'creatures', targetId), sanitizePayload({ ...finalData, id: targetId, status: 'approved' }));
         await updateDoc(doc(firestore, 'creature_proposals', id), { status: 'approved', processedAt: now });
+        // Grant Ticket
+        if (data.submitterId) {
+          AiChatService.grantContributionTicket(data.submitterId, `${finalData.name} 生物登録承認`, 'creatures');
+        }
       } else if (type === 'point') {
         const targetId = data.targetId || `p${Date.now()}`;
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { id: _fid, proposalType: _pt, targetId: _ftid, submitterId: _sid, status: _st, createdAt: _ca, ...finalData } = data;
         await setDoc(doc(firestore, 'points', targetId), sanitizePayload({ ...finalData, id: targetId, status: 'approved' }));
         await updateDoc(doc(firestore, 'point_proposals', id), { status: 'approved', processedAt: now });
+        // Grant Ticket
+        if (data.submitterId) {
+          AiChatService.grantContributionTicket(data.submitterId, `${finalData.name} ポイント登録承認`, 'points');
+        }
       } else if (type === 'point-creature') {
         const targetId = data.targetId || `${data.pointId}_${data.creatureId}`;
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -609,6 +622,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           await deleteDoc(doc(firestore, 'point_creatures', targetId));
         } else {
           await setDoc(doc(firestore, 'point_creatures', targetId), sanitizePayload({ ...finalData, id: targetId, status: 'approved' }));
+          // Grant Ticket for addition
+          if (data.submitterId) {
+            AiChatService.grantContributionTicket(data.submitterId, `ポイント-生物紐付け承認`, 'creatures');
+          }
         }
         await updateDoc(doc(firestore, 'point_creature_proposals', id), { status: 'approved', processedAt: now });
       }
@@ -635,7 +652,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const approveReview = async (reviewId: string) => {
     if (currentUser.role !== 'admin' && currentUser.role !== 'moderator') return;
     try {
+      const review = reviews.find(r => r.id === reviewId) || proposalReviews.find(r => r.id === reviewId);
       await updateDoc(doc(firestore, 'reviews', reviewId), { status: 'approved' });
+
+      // Grant Ticket
+      if (review && review.userId) {
+        AiChatService.grantContributionTicket(review.userId, `ポイントレビュー承認`, 'reviews');
+      }
+
       alert('レビューを承認しました');
     } catch (e) { console.error(e); }
   };

@@ -122,6 +122,16 @@ export class UserDataService {
           discovered_creatures_count INTEGER,
           last_visit_date TEXT
         );
+        CREATE TABLE IF NOT EXISTS my_ai_chat_tickets (
+          id TEXT PRIMARY KEY,
+          type TEXT,
+          remaining_count INTEGER,
+          granted_at TEXT,
+          expires_at TEXT,
+          status TEXT,
+          reason TEXT,
+          synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
       `);
 
       return true;
