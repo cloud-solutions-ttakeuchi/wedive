@@ -25,8 +25,7 @@ export class AppSQLiteEngine implements SQLiteExecutor {
 
   async close(): Promise<void> {
     if (this.db) {
-      // expo-sqlite doesn't have a direct closeAsync in some versions,
-      // but it's usually handled by the system.
+      await this.db.closeAsync();
       this.db = null;
     }
   }

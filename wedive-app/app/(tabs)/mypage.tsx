@@ -7,6 +7,7 @@ import { useAuth } from '../../src/context/AuthContext';
 import { usePoints } from '../../src/hooks/usePoints';
 import { useCreatures } from '../../src/hooks/useCreatures';
 import { useUserStats } from '../../src/hooks/useUserStats';
+import { useAgencies } from '../../src/hooks/useAgencies';
 import { DiveLog, Creature, Point } from '../../src/types';
 import { ImageWithFallback } from '../../src/components/ImageWithFallback';
 import { ReviewCard } from '../../src/components/ReviewCard';
@@ -14,6 +15,7 @@ import { useUserReviews } from '../../src/hooks/useUserReviews';
 import { db } from '../../src/firebase';
 import { doc, deleteDoc } from 'firebase/firestore';
 import { Alert } from 'react-native';
+import { ProfileEditModal } from '../../src/components/ProfileEditModal';
 
 const { width } = Dimensions.get('window');
 const NO_IMAGE_CREATURE = require('../../assets/images/no-image-creature.png');
@@ -23,15 +25,27 @@ type TabType = 'dashboard' | 'logbook' | 'collection' | 'favorites' | 'wanted' |
 
 export default function MyPageScreen() {
   const router = useRouter();
-  const { user, logs, isLoading: authLoading, signOut } = useAuth();
+  const { user, logs, isLoading: authLoading, signOut, updateUser } = useAuth();
 
   const { data: points = [], isLoading: loadingPoints } = usePoints();
   const { data: creatures = [], isLoading: loadingCreatures } = useCreatures();
   // usePointCreatures is no longer needed for mastery calculation!
   const { data: stats, isLoading: loadingStats } = useUserStats();
   const { reviews: userReviews, isLoading: loadingReviews } = useUserReviews();
+  const { agencies } = useAgencies();
+
+  // ユーザーの認定ランク短縮形を取得
+  const userCertAbbreviation = useMemo(() => {
+    if (!user?.certification?.orgId || !user?.certification?.rankId) return null;
+    const agency = agencies.find(a => a.id === user.certification?.orgId);
+    if (!agency) return null;
+    const rank = agency.ranks.find(r => r.id === user.certification?.rankId);
+    if (!rank) return null;
+    return `${agency.name} ${rank.abbreviation || rank.name}`;
+  }, [user?.certification, agencies]);
 
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
+  const [isProfileEditOpen, setIsProfileEditOpen] = useState(false);
 
   const isLoading = authLoading || loadingPoints || loadingCreatures || loadingStats || loadingReviews;
 
@@ -485,10 +499,12 @@ export default function MyPageScreen() {
             <View style={styles.profileInfo}>
               <Text style={styles.name}>{user.name || 'Diver'}</Text>
               <Text style={styles.role}>{user.role === 'admin' ? 'Admin' : 'Diver'}</Text>
-              <View style={styles.rankBadge}>
-                <Star size={10} color="#0ea5e9" fill="#0ea5e9" />
-                <Text style={styles.rankText}>Explorer Rank</Text>
-              </View>
+              {userCertAbbreviation && (
+                <View style={styles.rankBadge}>
+                  <Star size={10} color="#0ea5e9" fill="#0ea5e9" />
+                  <Text style={styles.rankText}>{userCertAbbreviation}</Text>
+                </View>
+              )}
             </View>
             <TouchableOpacity
               style={[styles.settingsBtn, { marginRight: 8 }]}
@@ -496,7 +512,7 @@ export default function MyPageScreen() {
             >
               <Plus size={24} color="#0ea5e9" />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.settingsBtn}>
+            <TouchableOpacity style={styles.settingsBtn} onPress={() => setIsProfileEditOpen(true)}>
               <Settings size={24} color="#64748b" />
             </TouchableOpacity>
           </View>
@@ -526,7 +542,7 @@ export default function MyPageScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>ACCOUNT</Text>
-          <Pressable style={styles.menuItem}>
+          <Pressable style={styles.menuItem} onPress={() => setIsProfileEditOpen(true)}>
             <View style={styles.menuLeft}>
               <Settings size={20} color="#64748b" />
               <Text style={styles.menuLabel}>Account Settings</Text>
@@ -552,6 +568,13 @@ export default function MyPageScreen() {
           <Plus size={24} color="#fff" />
         </TouchableOpacity>
       )}
+
+      <ProfileEditModal
+        visible={isProfileEditOpen}
+        onClose={() => setIsProfileEditOpen(false)}
+        initialData={user}
+        onSave={updateUser}
+      />
     </View>
   );
 }
@@ -1115,6 +1138,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
+    alignItems: 'flex-start',
   },
   creatureSmallCard: {
     width: (width - 40 - 24) / 3,
@@ -1127,6 +1151,7 @@ const styles = StyleSheet.create({
   creatureSmallThumb: {
     width: '100%',
     aspectRatio: 1,
+    height: undefined,
   },
   creatureSmallInfo: {
     padding: 8,

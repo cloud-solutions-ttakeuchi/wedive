@@ -1,5 +1,4 @@
-import { collection, query, where, getDocs, limit as firestoreLimit, orderBy, startAt, endAt } from 'firebase/firestore';
-import { db as firestoreDb } from '../firebase';
+
 import { BaseMasterDataService, mapAgencyFromSQLite } from 'wedive-shared';
 import type { Point, Creature, AgencyMaster } from 'wedive-shared';
 import { appDbEngine } from './AppSQLiteEngine';
@@ -43,21 +42,6 @@ export class MasterDataService extends BaseMasterDataService {
         console.warn('SQLite point search failed, falling back...', e);
       }
     }
-
-    /*
-    // フェイルオーバー: Firestore 検索
-    console.log('[MasterData] Falling back to Firestore search... ☁️');
-    const q = query(
-      collection(firestoreDb, 'points'),
-      where('status', '==', 'approved'),
-      orderBy('name'),
-      startAt(normalizedQuery),
-      endAt(normalizedQuery + '\uf8ff'),
-      firestoreLimit(20)
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Point));
-    */
     return [];
   }
 
@@ -79,21 +63,6 @@ export class MasterDataService extends BaseMasterDataService {
         console.warn('SQLite creature search failed, falling back...', e);
       }
     }
-
-    /*
-    // フェイルオーバー: Firestore 検索
-    console.log('[MasterData] Falling back to Firestore search... ☁️');
-    const q = query(
-      collection(firestoreDb, 'creatures'),
-      where('status', '==', 'approved'),
-      orderBy('name'),
-      startAt(normalizedQuery),
-      endAt(normalizedQuery + '\uf8ff'),
-      firestoreLimit(20)
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Creature));
-    */
     return [];
   }
 
@@ -171,11 +140,6 @@ export class MasterDataService extends BaseMasterDataService {
         }
       }
     }
-    /*
-    const q = query(collection(firestoreDb, 'points'), where('status', '==', 'approved'), orderBy('name'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Point));
-    */
     return [];
   }
 
@@ -200,11 +164,6 @@ export class MasterDataService extends BaseMasterDataService {
         console.error('SQLite getAllCreatures failed:', e);
       }
     }
-    /*
-    const q = query(collection(firestoreDb, 'creatures'), where('status', '==', 'approved'), orderBy('name'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Creature));
-    */
     return [];
   }
 
@@ -227,10 +186,6 @@ export class MasterDataService extends BaseMasterDataService {
         console.error('SQLite getAllPointCreatures failed:', e);
       }
     }
-    /*
-    const snapshotPointCreatures = await getDocs(collection(firestoreDb, 'point_creatures'));
-    return snapshotPointCreatures.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    */
     return [];
   }
 
@@ -245,8 +200,12 @@ export class MasterDataService extends BaseMasterDataService {
         if (results.length > 0) {
           return results.map(mapAgencyFromSQLite);
         }
-      } catch (e) {
-        console.error('SQLite getAllAgencies failed:', e);
+      } catch (e: any) {
+        if (e.message?.includes('no such table')) {
+          console.warn('[MasterData] master_agencies table not found in SQLite, returning empty.');
+        } else {
+          console.error('SQLite getAllAgencies failed:', e);
+        }
       }
     }
     return [];

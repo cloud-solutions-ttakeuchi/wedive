@@ -41,18 +41,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (fbUser) {
         try {
-          // 1. SQLiteの初期化と、必要に応じた初回同期（Firestore -> SQLite）
-          await userDataService.initialize();
+          // b-3: 隔離。まずメモリ上の（他人の可能性がある）データを即座に消去する
+          setLogs([]);
+          setUser(null);
+          setIsLoading(true);
+
+          // 1. UIDベースでのSQLite初期化と、他人のデータの掃除
+          await userDataService.initialize(fbUser.uid);
+          await userDataService.cleanupOtherUsersData(fbUser.uid);
+
+          // 2. 必要に応じた初回同期（Firestore -> SQLite）
           await userDataService.syncInitialData(fbUser.uid);
 
-          // 2. 常に SQLite を正本としてデータをロード
+          // 3. 常に最新の SQLite からデータをロード
           const [localLogs, localProfile] = await Promise.all([
             userDataService.getLogs(),
             userDataService.getSetting<User>('profile')
           ]);
 
-          if (localLogs) setLogs(localLogs);
-          if (localProfile) setUser(localProfile);
+          setLogs(localLogs || []);
+          setUser(localProfile);
 
           setIsLoading(false);
         } catch (err) {
@@ -60,6 +68,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setIsLoading(false);
         }
       } else {
+        // ログアウト時
+        await userDataService.logout();
         setUser(null);
         setLogs([]);
         setIsLoading(false);
@@ -74,6 +84,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
+      // セキュリティのためログアウト時にローカルデータをクリアするか検討が必要ですが、
+      // 今回は「ログイン時の UID チェック」で不一致なら消すロジックに倒しています。
+      // 仕様通り「退会時」は確実に消します。
+      await userDataService.logout();
     } catch (error) {
       console.error("Error signing out:", error);
     }
@@ -97,7 +111,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const deleteAccount = async () => {
     if (!firebaseUser) return;
     try {
+      // 1. Firestoreデータ削除
       await deleteDoc(doc(db, 'users', firebaseUser.uid));
+      // 2. ローカルデータ削除 (不具合報告に基づき追加)
+      await userDataService.clearUserData();
+      // 3. 認証ユーザー削除
       await firebaseUser.delete();
     } catch (error) {
       console.error("Error deleting account:", error);
