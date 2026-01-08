@@ -1,23 +1,23 @@
-import { ChatTicket } from '../types';
+import { ConciergeTicket } from '../types';
 
 /**
- * AIチャットチケット・報酬システムの共通定数と基本ロジック
+ * AIコンシェルジュ・チケット報酬システムの共通定数と基本ロジック
  */
-export const CHAT_CAMPAIGN = {
+export const CONCIERGE_CAMPAIGN = {
   START_DATE: '2026-01-01',
   END_DATE: '2026-04-30',
   DAILY_EXPIRATION_DAYS: 30,
   CONTRIBUTION_EXPIRATION_DAYS: 30,
 };
 
-export class BaseAiChatService {
+export class BaseAiConciergeService {
   /**
    * 現在がキャンペーン期間中か判定
    */
   isCampaignPeriod(): boolean {
     const now = new Date();
-    const start = new Date(CHAT_CAMPAIGN.START_DATE);
-    const end = new Date(CHAT_CAMPAIGN.END_DATE);
+    const start = new Date(CONCIERGE_CAMPAIGN.START_DATE);
+    const end = new Date(CONCIERGE_CAMPAIGN.END_DATE);
     return now >= start && now <= end;
   }
 
@@ -39,11 +39,11 @@ export class BaseAiChatService {
    */
   createTicketBase(params: {
     id: string;
-    type: ChatTicket['type'];
+    type: ConciergeTicket['type'];
     count: number;
     reason: string;
     expirationDays: number;
-  }): ChatTicket {
+  }): ConciergeTicket {
     const { grantedAt, expiresAt } = this.calculateExpirations(params.expirationDays);
     return {
       id: params.id,

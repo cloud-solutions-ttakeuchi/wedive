@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { StyleSheet, FlatList, Image, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ScrollView, Keyboard, TouchableWithoutFeedback, Alert } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { Bot, Send, User, Sparkles, Ticket } from 'lucide-react-native';
-import { aiChatService } from '../../src/services/AiChatService';
+import { aiConciergeService } from '../../src/services/AiConciergeService';
 import { useAuth } from '../../src/context/AuthContext';
 
 export default function AIScreen() {
@@ -21,7 +21,7 @@ export default function AIScreen() {
 
   const loadTicketCount = async () => {
     if (firebaseUser) {
-      const count = await aiChatService.getRemainingCount(firebaseUser.uid);
+      const count = await aiConciergeService.getRemainingCount(firebaseUser.uid);
       setTicketCount(count);
     }
   };
@@ -30,7 +30,7 @@ export default function AIScreen() {
     if (!input.trim() || isLoading || !firebaseUser) return;
 
     // チケット残数チェック
-    const currentCount = await aiChatService.getRemainingCount(firebaseUser.uid);
+    const currentCount = await aiConciergeService.getRemainingCount(firebaseUser.uid);
     if (currentCount <= 0) {
       Alert.alert(
         'チケット不足',
@@ -52,7 +52,7 @@ export default function AIScreen() {
         parts: [{ text: m.content }]
       }));
 
-      const response = await aiChatService.sendMessageWithTicket(firebaseUser.uid, userMessage.content, history);
+      const response = await aiConciergeService.askConcierge(firebaseUser.uid, userMessage.content, history);
 
       if (response.error === 'tickets_exhausted') {
         setMessages(prev => [...prev, { role: 'assistant', content: '申し訳ありません。チケットが不足しています。' }]);

@@ -31,7 +31,7 @@
 | `point_creatures` | 8 | `master_point_creatures` | 10 | － | － |
 | `reviews` | 19 | `master_point_reviews` | 21 | `my_reviews` | 12 |
 | `users` | 16 | － | － | `my_settings` | 2 |
-| `users/{uid}/aiChatTickets` | 9 | － | － | `my_ai_chat_tickets` | 8 |
+| `users/{uid}/aiConciergeTickets` | 9 | － | － | `my_ai_concierge_tickets` | 8 |
 | `users/{uid}/logs` | 21 | `master_public_logs` | 24 | `my_logs` | 24 |
 | `certifications` | 4 | `master_certifications` | 4 | － | － |
 | `badges` | 4 | `master_badges` | 4 | － | － |
@@ -199,13 +199,13 @@ erDiagram
 | `certification` | map | `{orgId, rankId, date}` |
 | `badges` | array(map) | `{badgeId, earnedAt}` |
 | `subscription` | map | `{status: active/inactive}` |
-| `aiChatTickets` | map | `{totalAvailable, lastDailyGrant, periodContribution: {points, creatures, reviews}}` |
+| `aiConciergeTickets` | map | `{totalAvailable, lastDailyGrant, periodContribution: {points, creatures, reviews}}` |
 | `agreedAt` | string | 利用規約同意日時 |
 | `agreedTermsVersion`| string | 同意した規約バージョン |
 | `createdAt` | string | アカウント作成日 |
 | `status` | string | provisional, active, suspended, withdrawn |
 
-### 4.6 `users/{uid}/aiChatTickets` (AIチャットチケット - サブコレクション)
+### 4.6 `users/{uid}/aiConciergeTickets` (AIコンシェルジュ・チケット - サブコレクション)
 AIコンシェルジュ（チャット）の利用権を管理します。一回使い切りのチケット形式で、有効期限を持ちます。
 | フィールド | 型 | 説明 |
 | :--- | :--- | :--- |

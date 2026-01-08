@@ -26,7 +26,7 @@ import {
   mapGeographyFromFlattenedSQLite,
   mapAgencyFromSQLite
 } from 'wedive-shared';
-import { AiChatService } from '../services/AiChatService';
+import { AiConciergeService } from '../services/AiConciergeService';
 
 // Helper to remove undefined values
 const sanitizePayload = (data: any): any => {
@@ -220,7 +220,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         isDeletingRef.current = false;
 
         // Daily Chat Ticket Bonus
-        AiChatService.grantDailyTicket(user.uid).catch(console.error);
+        AiConciergeService.grantDailyTicket(user.uid).catch(console.error);
 
         // User Profile Listener
         const userDocRef = doc(firestore, 'users', user.uid);
@@ -602,7 +602,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         await updateDoc(doc(firestore, 'creature_proposals', id), { status: 'approved', processedAt: now });
         // Grant Ticket
         if (data.submitterId) {
-          AiChatService.grantContributionTicket(data.submitterId, `${finalData.name} 生物登録承認`, 'creatures');
+          AiConciergeService.grantContributionTicket(data.submitterId, `${finalData.name} 生物登録承認`, 'creatures');
         }
       } else if (type === 'point') {
         const targetId = data.targetId || `p${Date.now()}`;
@@ -612,7 +612,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         await updateDoc(doc(firestore, 'point_proposals', id), { status: 'approved', processedAt: now });
         // Grant Ticket
         if (data.submitterId) {
-          AiChatService.grantContributionTicket(data.submitterId, `${finalData.name} ポイント登録承認`, 'points');
+          AiConciergeService.grantContributionTicket(data.submitterId, `${finalData.name} ポイント登録承認`, 'points');
         }
       } else if (type === 'point-creature') {
         const targetId = data.targetId || `${data.pointId}_${data.creatureId}`;
@@ -624,7 +624,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           await setDoc(doc(firestore, 'point_creatures', targetId), sanitizePayload({ ...finalData, id: targetId, status: 'approved' }));
           // Grant Ticket for addition
           if (data.submitterId) {
-            AiChatService.grantContributionTicket(data.submitterId, `ポイント-生物紐付け承認`, 'creatures');
+            AiConciergeService.grantContributionTicket(data.submitterId, `ポイント-生物紐付け承認`, 'creatures');
           }
         }
         await updateDoc(doc(firestore, 'point_creature_proposals', id), { status: 'approved', processedAt: now });
@@ -657,7 +657,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
       // Grant Ticket
       if (review && review.userId) {
-        AiChatService.grantContributionTicket(review.userId, `ポイントレビュー承認`, 'reviews');
+        AiConciergeService.grantContributionTicket(review.userId, `ポイントレビュー承認`, 'reviews');
       }
 
       alert('レビューを承認しました');

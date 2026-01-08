@@ -10,10 +10,11 @@ import {
   limit
 } from 'firebase/firestore';
 import { db as firestoreDb } from '../lib/firebase';
-import type { ChatTicket, User } from '../types';
-import { BaseAiChatService, CHAT_CAMPAIGN } from '../types';
+import { auth } from '../lib/firebase';
+import type { ConciergeTicket, User } from '../types';
+import { BaseAiConciergeService, CONCIERGE_CAMPAIGN } from '../types';
 
-class AiChatServiceImpl extends BaseAiChatService {
+class AiConciergeServiceImpl extends BaseAiConciergeService {
   /**
    * 1日1回のログインボーナスチケット付与
    */
@@ -28,32 +29,32 @@ class AiChatServiceImpl extends BaseAiChatService {
         if (!userDoc.exists()) return false;
         const userData = userDoc.data() as User;
 
-        if (userData.aiChatTickets?.lastDailyGrant === today) {
+        if (userData.aiConciergeTickets?.lastDailyGrant === today) {
           return false;
         }
 
         const ticketId = `daily_${today}_${userId}`;
-        const ticketRef = doc(firestoreDb, 'users', userId, 'aiChatTickets', ticketId);
+        const ticketRef = doc(firestoreDb, 'users', userId, 'aiConciergeTickets', ticketId);
 
         const newTicket = this.createTicketBase({
           id: ticketId,
           type: 'daily',
           count: 1,
           reason: 'ログインボーナス',
-          expirationDays: CHAT_CAMPAIGN.DAILY_EXPIRATION_DAYS,
+          expirationDays: CONCIERGE_CAMPAIGN.DAILY_EXPIRATION_DAYS,
         });
 
         transaction.set(ticketRef, newTicket);
         transaction.update(userRef, {
-          'aiChatTickets.lastDailyGrant': today,
-          'aiChatTickets.totalAvailable': increment(1)
+          'aiConciergeTickets.lastDailyGrant': today,
+          'aiConciergeTickets.totalAvailable': increment(1)
         });
 
-        console.log(`[AiChatService] Daily ticket granted for Web: ${ticketId}`);
+        console.log(`[AiConciergeService] Daily ticket granted for Web: ${ticketId}`);
         return true;
       });
     } catch (error) {
-      console.error('[AiChatService] Failed to grant daily ticket:', error);
+      console.error('[AiConciergeService] Failed to grant daily ticket:', error);
       return false;
     }
   }
@@ -64,7 +65,7 @@ class AiChatServiceImpl extends BaseAiChatService {
   consumeTicket = async (userId: string): Promise<boolean> => {
     try {
       return await runTransaction(firestoreDb, async (transaction) => {
-        const ticketsRef = collection(firestoreDb, 'users', userId, 'aiChatTickets');
+        const ticketsRef = collection(firestoreDb, 'users', userId, 'aiConciergeTickets');
         const q = query(
           ticketsRef,
           where('status', '==', 'active'),
@@ -76,7 +77,7 @@ class AiChatServiceImpl extends BaseAiChatService {
         if (snapshot.empty) return false;
 
         const ticketDoc = snapshot.docs[0];
-        const ticketData = ticketDoc.data() as ChatTicket;
+        const ticketData = ticketDoc.data() as ConciergeTicket;
 
         const newCount = ticketData.remainingCount - 1;
         const newStatus = newCount <= 0 ? 'used' : 'active';
@@ -88,13 +89,13 @@ class AiChatServiceImpl extends BaseAiChatService {
           status: newStatus
         });
         transaction.update(userRef, {
-          'aiChatTickets.totalAvailable': increment(-1)
+          'aiConciergeTickets.totalAvailable': increment(-1)
         });
 
         return true;
       });
     } catch (error) {
-      console.error('[AiChatService] Failed to consume ticket:', error);
+      console.error('[AiConciergeService] Failed to consume ticket:', error);
       return false;
     }
   }
@@ -110,34 +111,59 @@ class AiChatServiceImpl extends BaseAiChatService {
         if (!userDoc.exists()) return;
 
         const ticketId = `contrib_${Date.now()}_${userId}`;
-        const ticketRef = doc(firestoreDb, 'users', userId, 'aiChatTickets', ticketId);
+        const ticketRef = doc(firestoreDb, 'users', userId, 'aiConciergeTickets', ticketId);
 
         const newTicket = this.createTicketBase({
           id: ticketId,
           type: 'contribution',
           count: 1,
           reason,
-          expirationDays: CHAT_CAMPAIGN.CONTRIBUTION_EXPIRATION_DAYS,
+          expirationDays: CONCIERGE_CAMPAIGN.CONTRIBUTION_EXPIRATION_DAYS,
         });
 
         transaction.set(ticketRef, newTicket);
 
         // キャンペーン期間中（2026/01 - 04）であれば貢献数をカウント
         const updateData: any = {
-          'aiChatTickets.totalAvailable': increment(1)
+          'aiConciergeTickets.totalAvailable': increment(1)
         };
 
         if (this.isCampaignPeriod()) {
-          updateData[`aiChatTickets.periodContribution.${category}`] = increment(1);
+          updateData[`aiConciergeTickets.periodContribution.${category}`] = increment(1);
         }
 
         transaction.update(userRef, updateData);
-        console.log(`[AiChatService] Contribution ticket granted: ${category} for user ${userId}`);
+        console.log(`[AiConciergeService] Contribution ticket granted: ${category} for user ${userId}`);
       });
     } catch (error) {
-      console.error('[AiChatService] Failed to grant contribution ticket:', error);
+      console.error('[AiConciergeService] Failed to grant contribution ticket:', error);
     }
+  }
+
+  /**
+   * コンシェルジュに質問する（チケット消費を含む）
+   */
+  askConcierge = async (userId: string, query: string, sessionId: string | null = null): Promise<any> => {
+    const hasTicket = await this.consumeTicket(userId);
+    if (!hasTicket) {
+      throw new Error('tickets_exhausted');
+    }
+
+    const token = await auth.currentUser?.getIdToken();
+    if (!token) throw new Error('Unauthenticated');
+
+    const response = await fetch('/api/ai/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ query, sessionId })
+    });
+
+    if (!response.ok) throw new Error('API Error');
+    return await response.json();
   }
 }
 
-export const AiChatService = new AiChatServiceImpl();
+export const AiConciergeService = new AiConciergeServiceImpl();

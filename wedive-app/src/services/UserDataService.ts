@@ -122,7 +122,7 @@ export class UserDataService {
           discovered_creatures_count INTEGER,
           last_visit_date TEXT
         );
-        CREATE TABLE IF NOT EXISTS my_ai_chat_tickets (
+        CREATE TABLE IF NOT EXISTS my_ai_concierge_tickets (
           id TEXT PRIMARY KEY,
           type TEXT,
           remaining_count INTEGER,

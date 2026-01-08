@@ -19,10 +19,10 @@ export type {
   BadgeMaster,
   RankMaster,
   AgencyMaster,
-  ChatTicket,
+  ConciergeTicket,
 } from 'wedive-shared';
 
 export {
-  BaseAiChatService,
-  CHAT_CAMPAIGN,
+  BaseAiConciergeService,
+  CONCIERGE_CAMPAIGN,
 } from 'wedive-shared';

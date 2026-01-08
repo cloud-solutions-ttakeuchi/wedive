@@ -4,7 +4,7 @@ import { ChevronLeft, Send, Bot, User, Loader2, MapPin, Anchor, Sparkles } from 
 import { useApp } from '../context/AppContext';
 import { auth } from '../lib/firebase';
 import { FEATURE_FLAGS } from '../config/features';
-import { AiChatService } from '../services/AiChatService';
+import { AiConciergeService } from '../services/AiConciergeService';
 import clsx from 'clsx';
 import { Ticket } from 'lucide-react';
 
@@ -33,7 +33,7 @@ export const ConciergePage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const ticketCount = currentUser?.aiChatTickets?.totalAvailable ?? 0;
+  const ticketCount = currentUser?.aiConciergeTickets?.totalAvailable ?? 0;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -63,35 +63,8 @@ export const ConciergePage = () => {
     setIsLoading(true);
 
     try {
-      // 1. Consume Ticket
-      const success = await AiChatService.consumeTicket(currentUser.id);
-      if (!success) {
-        throw new Error("Failed to consume ticket");
-      }
-
-      // 2. Get Auth Token
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error("Unauthenticated");
-
-      // 2. Call via Hosting Proxy to bypass CORS completely
-      const response = await fetch('/api/concierge', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          data: {
-            query: input,
-            sessionId: sessionId // Send sessionId if we have it
-          }
-        })
-      });
-
-      if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-
-      const result = await response.json();
-      const aiResult = result.result; // httpsCallable format wrapper
+      // Use unified service method
+      const aiResult = await AiConciergeService.askConcierge(currentUser.id, input, sessionId);
 
       // Store sessionId for next turn
       if (aiResult.sessionId) {

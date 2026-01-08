@@ -211,7 +211,7 @@ export interface User {
   agreedTermsVersion?: string;
   isTermsAgreed?: boolean;
   agreedAt?: string;
-  aiChatTickets?: {
+  aiConciergeTickets?: {
     totalAvailable: number;
     lastDailyGrant?: string; // YYYY-MM-DD
     periodContribution?: {
@@ -222,7 +222,7 @@ export interface User {
   };
 }
 
-export interface ChatTicket {
+export interface ConciergeTicket {
   id: string;
   type: 'daily' | 'contribution' | 'bonus' | 'purchased';
   count: number;
