@@ -839,7 +839,7 @@ const Step3Evaluation = ({ data, onChange, onRadarChange, onImageUpload, uploadi
     { subject: '快適さ', A: data.radar.comfort },
   ], [data.radar]);
 
-  const tags = ['ドリフト', '絶景', '魚群', '透明度抜群', '洞窟', 'ドロップオフ', '沈船', 'サンゴ', 'ハゼ', 'ウミウシ'];
+  const tags = ['ドリフト', '絶景ポイント', '群れ', '透明度抜群', '洞窟', 'ドロップオフ', '沈船', 'サンゴ', 'ハゼ', 'ウミウシ', '初心者向け', '上級者向け', '大物ポイント'];
 
   return (
     <div className="space-y-10 animate-fade-in">

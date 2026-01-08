@@ -1091,10 +1091,9 @@ const Step3 = ({
         </View>
       ))}
     </View>
-
     <Text style={styles.label}>タグ</Text>
     <View style={styles.tagsGrid}>
-      {['ドリフト', '絶景', '魚群', '透明度抜群', '洞窟', 'ドロップオフ', '沈船', 'サンゴ', 'ハゼ', 'ウミウシ'].map(tag => (
+      {['ドリフト', '絶景ポイント', '群れ', '透明度抜群', '洞窟', 'ドロップオフ', '沈船', 'サンゴ', 'ハゼ', 'ウミウシ', '初心者向け', '上級者向け', '大物ポイント'].map(tag => (
         <TouchableOpacity
           key={tag}
           onPress={() => {
