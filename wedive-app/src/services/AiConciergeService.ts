@@ -21,13 +21,20 @@ export class AiConciergeService extends BaseAiConciergeService {
 
     try {
       const ticketsRef = collection(firestoreDb, 'users', userId, 'aiConciergeTickets');
-      const q = query(ticketsRef, where('status', '==', 'active'), orderBy('expiresAt', 'asc'));
+      const q = query(ticketsRef, where('status', '==', 'active')); // orderByを削除
       const snapshot = await getDocs(q);
+
+      // メモリ上で有効期限順にソート（expiresAtがnullのものは後ろへ）
+      const sortedDocs = snapshot.docs.sort((a, b) => {
+        const valA = a.data().expiresAt || '9999-12-31';
+        const valB = b.data().expiresAt || '9999-12-31';
+        return valA.localeCompare(valB);
+      });
 
       // ローカルのactiveチケットを一旦クリアして最新に
       await db.runAsync('DELETE FROM my_ai_concierge_tickets WHERE status = "active"');
 
-      for (const ticketDoc of snapshot.docs) {
+      for (const ticketDoc of sortedDocs) {
         const data = ticketDoc.data() as ConciergeTicket;
         await db.runAsync(
           `INSERT OR REPLACE INTO my_ai_concierge_tickets (id, type, remaining_count, granted_at, expires_at, status, reason)

@@ -107,13 +107,20 @@ export class MasterDataSyncService {
    */
   private static async cleanupProposals(): Promise<void> {
     try {
+      // ログイン中のユーザーがいなければスキップ
+      const userId = userDataService.getCurrentUserId();
+      if (!userId) {
+        console.log('[Sync] No user logged in. Skipping proposal cleanup.');
+        return;
+      }
+
       // user.db が初期化されていることを確認
-      await userDataService.initialize();
+      await userDataService.initialize(userId);
 
       // 仮の SQLite モジュール（expo-sqlite）を再取得
       const SQLite = require('expo-sqlite');
       const masterDb = await SQLite.openDatabaseAsync(MASTER_DB_NAME);
-      const userDb = await SQLite.openDatabaseAsync('user.db');
+      const userDb = await SQLite.openDatabaseAsync(`user_${userId}.db`);
 
       // (A) マスタ反映済みポイントの ID リストを取得
       const masterPoints = await masterDb.getAllAsync('SELECT id FROM master_points');

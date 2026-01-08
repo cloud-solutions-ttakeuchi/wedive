@@ -18,6 +18,10 @@ export class UserDataService {
   private isInitializing = false;
   private currentUserId: string | null = null;
 
+  getCurrentUserId(): string | null {
+    return this.currentUserId;
+  }
+
   /**
    * SQLite接続とテーブルの初期化
    * @param userId ログイン中のユーザーID（物理隔離用）

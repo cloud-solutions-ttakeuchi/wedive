@@ -68,15 +68,20 @@ class AiConciergeServiceImpl extends BaseAiConciergeService {
         const ticketsRef = collection(firestoreDb, 'users', userId, 'aiConciergeTickets');
         const q = query(
           ticketsRef,
-          where('status', '==', 'active'),
-          orderBy('expiresAt', 'asc'),
-          limit(1)
+          where('status', '==', 'active')
         );
 
         const snapshot = await getDocs(q);
         if (snapshot.empty) return false;
 
-        const ticketDoc = snapshot.docs[0];
+        // メモリ上で有効期限順にソートして最古の1件を選択
+        const sortedDocs = snapshot.docs.sort((a, b) => {
+          const valA = (a.data() as ConciergeTicket).expiresAt || '9999-12-31';
+          const valB = (b.data() as ConciergeTicket).expiresAt || '9999-12-31';
+          return valA.localeCompare(valB);
+        });
+
+        const ticketDoc = sortedDocs[0];
         const ticketData = ticketDoc.data() as ConciergeTicket;
 
         const newCount = ticketData.remainingCount - 1;
@@ -152,17 +157,23 @@ class AiConciergeServiceImpl extends BaseAiConciergeService {
     const token = await auth.currentUser?.getIdToken();
     if (!token) throw new Error('Unauthenticated');
 
-    const response = await fetch('/api/ai/chat', {
+    const response = await fetch('/api/concierge', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ query, sessionId })
+      body: JSON.stringify({
+        data: {
+          query,
+          sessionId
+        }
+      })
     });
 
     if (!response.ok) throw new Error('API Error');
-    return await response.json();
+    const json = await response.json();
+    return json.result; // httpsCallable format wrapper
   }
 }
 

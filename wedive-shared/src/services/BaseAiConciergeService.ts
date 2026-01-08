@@ -1,4 +1,4 @@
-import { ConciergeTicket } from '../types';
+import type { ConciergeTicket } from '../types';
 
 /**
  * AIコンシェルジュ・チケット報酬システムの共通定数と基本ロジック

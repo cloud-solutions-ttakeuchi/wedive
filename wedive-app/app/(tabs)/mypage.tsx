@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { StyleSheet, Pressable, ScrollView, Image, Dimensions, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Text, View } from '@/components/Themed';
-import { LogOut, ChevronRight, Bookmark, Heart, Settings, Activity, BookOpen, Grid, User as UserIcon, Award, Star, MapPin, Plus, Clock, Sparkles } from 'lucide-react-native';
+import { LogOut, ChevronRight, Bookmark, Heart, Settings, Activity, BookOpen, Grid, User as UserIcon, Award, Star, MapPin, Plus, Clock, Sparkles, Ticket } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
 import { usePoints } from '../../src/hooks/usePoints';
@@ -138,6 +138,47 @@ export default function MyPageScreen() {
               </View>
               <View style={styles.rankFooter}>
                 <Text style={styles.rankFooterText}>Next Rank: {100 - (trustScore % 100)} TP remaining</Text>
+              </View>
+            </View>
+
+            {/* AI Concierge & Campaign Card */}
+            <View style={[styles.card, { borderLeftWidth: 4, borderLeftColor: '#8b5cf6' }]}>
+              <View style={styles.cardHeader}>
+                <View style={[styles.iconBg, { backgroundColor: '#f5f3ff' }]}>
+                  <Ticket size={20} color="#8b5cf6" />
+                </View>
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={styles.cardInfoLabel}>AI CONCIERGE TICKETS</Text>
+                  <Text style={styles.cardInfoValue}>{user.aiConciergeTickets?.totalAvailable || 0} 枚</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.aiLinkBtn}
+                  onPress={() => router.push('/ai')}
+                >
+                  <Text style={styles.aiLinkText}>使う</Text>
+                  <Sparkles size={14} color="#8b5cf6" />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.campaignDivider} />
+
+              <View style={styles.campaignInfo}>
+                <Text style={styles.campaignLabel}>冬の冒険者キャンペーン貢献度</Text>
+                <View style={styles.campaignStats}>
+                  <View style={styles.campaignStatItem}>
+                    <Text style={styles.campaignStatNum}>{user.aiConciergeTickets?.periodContribution?.points || 0}</Text>
+                    <Text style={styles.campaignStatLabel}>スポット</Text>
+                  </View>
+                  <View style={styles.campaignStatItem}>
+                    <Text style={styles.campaignStatNum}>{user.aiConciergeTickets?.periodContribution?.creatures || 0}</Text>
+                    <Text style={styles.campaignStatLabel}>生物</Text>
+                  </View>
+                  <View style={styles.campaignStatItem}>
+                    <Text style={styles.campaignStatNum}>{user.aiConciergeTickets?.periodContribution?.reviews || 0}</Text>
+                    <Text style={styles.campaignStatLabel}>レビュー</Text>
+                  </View>
+                </View>
+                <Text style={styles.campaignFootnote}>計10件承認で100チャット分プレゼント！</Text>
               </View>
             </View>
 
@@ -1224,5 +1265,60 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 12,
     fontWeight: '700',
+  },
+  aiLinkBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#f5f3ff',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#ddd6fe',
+  },
+  aiLinkText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#8b5cf6',
+  },
+  campaignDivider: {
+    height: 1,
+    backgroundColor: '#f1f5f9',
+    marginVertical: 12,
+  },
+  campaignInfo: {
+    backgroundColor: 'transparent',
+  },
+  campaignLabel: {
+    fontSize: 12,
+    color: '#64748b',
+    marginBottom: 8,
+    fontWeight: '500',
+  },
+  campaignStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: 'transparent',
+    marginBottom: 8,
+  },
+  campaignStatItem: {
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+  campaignStatNum: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1e293b',
+  },
+  campaignStatLabel: {
+    fontSize: 10,
+    color: '#94a3b8',
+    marginTop: 2,
+  },
+  campaignFootnote: {
+    fontSize: 10,
+    color: '#8b5cf6',
+    fontStyle: 'italic',
   },
 });

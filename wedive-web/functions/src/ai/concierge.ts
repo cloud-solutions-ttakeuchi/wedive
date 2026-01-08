@@ -23,7 +23,6 @@ export const getConciergeResponse = onCall({
 
   // --- Feature Flags and Configuration ---
   const useVertexSearch = process.env.ENABLE_V2_VERTEX_SEARCH === "true" || process.env.USE_VERTEX_AI_SEARCH === "true";
-  const dataStoreIds = process.env.VERTEX_AI_CONCIERGE_DATA_STORE_IDS;
   const projectId = process.env.GCLOUD_PROJECT;
 
   const vertexAI = new VertexAI({
@@ -87,6 +86,15 @@ export const getConciergeResponse = onCall({
   let legacyContext = "";
 
   // 1. Determine RAG Data Sources
+  // --- Data Store Configuration ---
+  let dataStoreIds = process.env.VERTEX_AI_CONCIERGE_DATA_STORE_IDS || "";
+
+  // 開発環境 (dive-dex-app-dev) かつ設定が空の場合、新規作成された wedive-ai-assistant をデフォルトにする
+  if (!dataStoreIds && projectId === "dive-dex-app-dev") {
+    dataStoreIds = "wedive-ai-assistant";
+    logger.info(`[Concierge] Defaulting to wedive-ai-assistant for project: ${projectId}`);
+  }
+
   if (useVertexSearch && dataStoreIds && projectId) {
     const ids = dataStoreIds.split(",").map(id => id.trim()).filter(id => id.length > 0);
     logger.info(`[Concierge] Using Managed RAG with ${ids.length} DataStore(s): ${dataStoreIds}. History length: ${normalizedHistory.length}`);
@@ -116,7 +124,7 @@ export const getConciergeResponse = onCall({
 ${userContext}
 
 【知識ソース】
-1. Managed RAG (Vertex AI Search): 独自のダイビング履歴「wedive-users-ds」やスポット情報「wedive-points-ds」を参照。
+1. Managed RAG (Vertex AI Search): 独自のダイバー履歴やスポット情報「wedive-ai-assistant」などを参照。
 2. Google検索: 内部データベースにない最新の情報や天候を補完。
 ${legacyContext ? `3. スポット情報（直接提供）:\n${legacyContext}` : ""}
 
