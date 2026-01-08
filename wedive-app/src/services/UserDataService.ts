@@ -1,6 +1,9 @@
 import { collection, query, getDocs, doc, setDoc, updateDoc, deleteDoc, orderBy, where } from 'firebase/firestore';
+import * as FileSystem from 'expo-file-system/legacy';
 import { db as firestoreDb } from '../firebase';
 import { DiveLog, User } from '../types';
+
+const { documentDirectory } = FileSystem;
 
 // ネイティブモジュール不足時にファイル全体がクラッシュするのを防ぐ
 let SQLite: any = null;
@@ -13,12 +16,26 @@ try {
 export class UserDataService {
   private sqliteDb: any = null;
   private isInitializing = false;
+  private currentUserId: string | null = null;
 
   /**
    * SQLite接続とテーブルの初期化
+   * @param userId ログイン中のユーザーID（物理隔離用）
    */
-  async initialize(): Promise<boolean> {
-    if (this.sqliteDb) return true;
+  async initialize(userId?: string): Promise<boolean> {
+    const targetUserId = userId || this.currentUserId;
+    if (!targetUserId) {
+      console.warn('[UserDataService] No userId provided for initialization.');
+      return false;
+    }
+
+    const dbName = `user_${targetUserId}.db`;
+
+    // 既に同じユーザーのDBが開いている場合は何もしない
+    if (this.sqliteDb && this.currentUserId === targetUserId) {
+      return true;
+    }
+
     if (this.isInitializing) return false;
     if (!SQLite || !SQLite.openDatabaseAsync) {
       return false;
@@ -26,7 +43,15 @@ export class UserDataService {
 
     this.isInitializing = true;
     try {
-      this.sqliteDb = await SQLite.openDatabaseAsync('user.db');
+      // 別のユーザーのDBが開いている場合は一度閉じる
+      if (this.sqliteDb) {
+        // 接続をクリア
+        this.sqliteDb = null;
+      }
+
+      console.log(`[UserDataService] Opening database: ${dbName}`);
+      this.sqliteDb = await SQLite.openDatabaseAsync(dbName);
+      this.currentUserId = targetUserId;
 
       // テーブル作成 (設計書 03_file_formats_and_gcs_naming.md および DATABASE_DESIGN.md に準拠)
       await this.sqliteDb.execAsync(`
@@ -99,11 +124,11 @@ export class UserDataService {
         );
       `);
 
-      console.log('UserData SQLite initialized (All my_ tables created).');
       return true;
     } catch (error) {
       console.error('UserData SQLite initialization failed:', error);
       this.sqliteDb = null;
+      this.currentUserId = null;
       return false;
     } finally {
       this.isInitializing = false;
@@ -111,7 +136,63 @@ export class UserDataService {
   }
 
   /**
-   * 個人のログを取得（ローカルSQLite優先）
+   * 他のユーザーの古いDBファイルを削除（案1: 通用済み）
+   */
+  async cleanupOtherUsersData(currentUserId: string): Promise<void> {
+    try {
+      const sqliteDir = `${documentDirectory || ''}SQLite/`;
+      const dirInfo = await FileSystem.getInfoAsync(sqliteDir);
+      if (!dirInfo.exists) return;
+
+      const files = await FileSystem.readDirectoryAsync(sqliteDir);
+      const currentUserDb = `user_${currentUserId}.db`;
+
+      for (const file of files) {
+        // user_*.db で、現在のユーザーのものでないファイルを削除
+        // user.db (旧形式) も念のため削除対象に含む
+        if ((file.startsWith('user_') && file !== currentUserDb) || file === 'user.db') {
+          console.log(`[UserDataService] Deleting old user data: ${file}`);
+          await FileSystem.deleteAsync(sqliteDir + file, { idempotent: true });
+        }
+      }
+    } catch (error) {
+      console.error('[UserDataService] Cleanup failed:', error);
+    }
+  }
+
+  /**
+   * 現在のユーザーのデータをすべて削除（退会時など）
+   */
+  async clearUserData(): Promise<void> {
+    const isAvailable = await this.initialize();
+    if (isAvailable && this.sqliteDb && this.currentUserId) {
+      console.log(`[UserDataService] Clearing data for user: ${this.currentUserId}`);
+      try {
+        await this.sqliteDb.execAsync(`
+          DELETE FROM my_logs;
+          DELETE FROM my_reviews;
+          DELETE FROM my_proposals;
+          DELETE FROM my_bookmarks;
+          DELETE FROM my_favorites;
+          DELETE FROM my_settings;
+          DELETE FROM my_mastery;
+        `);
+      } catch (error) {
+        console.error('Failed to clear user data from SQLite:', error);
+      }
+    }
+  }
+
+  /**
+   * ログアウト処理
+   */
+  async logout(): Promise<void> {
+    this.sqliteDb = null;
+    this.currentUserId = null;
+  }
+
+  /**
+   * 個人のログを取得
    */
   async getLogs(): Promise<DiveLog[]> {
     const isAvailable = await this.initialize();
@@ -132,10 +213,9 @@ export class UserDataService {
    * ログを保存（SQLite & Firestore非同期）
    */
   async saveLog(userId: string, log: DiveLog, skipFirestore = false): Promise<void> {
-    const isAvailable = await this.initialize();
+    const isAvailable = await this.initialize(userId);
     const now = new Date().toISOString();
 
-    // 1. SQLiteに保存（即時）
     if (isAvailable && this.sqliteDb) {
       try {
         const searchText = `${log.location.pointName} ${log.comment || ''}`.toLowerCase();
@@ -168,13 +248,12 @@ export class UserDataService {
             log.isPrivate ? 1 : 0,
             log.garminActivityId || '',
             log.reviewId || '',
-            JSON.stringify(log.profile || {}), // profileはオブジェクトなので{}
+            JSON.stringify(log.profile || {}),
             JSON.stringify(log),
             searchText,
             now
           ]
         );
-        console.log(`Log ${log.id} saved to SQLite (my_logs).`);
       } catch (error) {
         console.error('Failed to save log to SQLite:', error);
       }
@@ -182,12 +261,9 @@ export class UserDataService {
 
     if (skipFirestore) return;
 
-    // 2. Firestoreに非同期で保存（バックアップ）
-    // 本来はバックグラウンドジョブが望ましいが、簡易的に非同期実行
     const logRef = doc(firestoreDb, 'users', userId, 'logs', log.id);
     setDoc(logRef, { ...log, updatedAt: now }).catch(err => {
       console.error('Failed to sync log to Firestore:', err);
-      // TODO: 失敗時の再試行キューイング
     });
   }
 
@@ -195,7 +271,7 @@ export class UserDataService {
    * ログを削除
    */
   async deleteLog(userId: string, logId: string): Promise<void> {
-    const isAvailable = await this.initialize();
+    const isAvailable = await this.initialize(userId);
 
     if (isAvailable && this.sqliteDb) {
       await this.sqliteDb.runAsync('DELETE FROM my_logs WHERE id = ?', [logId]);
@@ -209,40 +285,37 @@ export class UserDataService {
    * 初回同期：SQLiteが空の場合にFirestoreから全件取得
    */
   async syncInitialData(userId: string): Promise<void> {
-    const isAvailable = await this.initialize();
+    const isAvailable = await this.initialize(userId);
     if (!isAvailable) return;
 
     try {
-      // ローカルのセットアップ状況を確認（プロフィールの有無をマスターフラグとする）
-      const localProfile = await this.getSetting('profile');
+      // プロフィールの有無で初期同期済みか判断
+      const localProfile = await this.getSetting<User>('profile');
       if (localProfile) {
-        console.log('[Sync] Local user profile exists. Skipping initial sync.');
+        console.log('[Sync] Local data exists for this user. Skipping initial sync.');
         return;
       }
 
       console.log('Starting initial sync from Firestore for user:', userId);
 
       // 1. ログの取得
-      const logsQuery = query(
+      const snapshot = await getDocs(query(
         collection(firestoreDb, 'users', userId, 'logs'),
         orderBy('date', 'desc')
-      );
-      const snapshot = await getDocs(logsQuery);
+      ));
 
       if (!snapshot.empty) {
         for (const doc of snapshot.docs) {
           const log = { id: doc.id, ...doc.data() } as DiveLog;
-          await this.saveLog(userId, log, true); // SQLite のみ保存
+          await this.saveLog(userId, log, true);
         }
-        console.log(`Synced ${snapshot.size} logs from Firestore to my_logs.`);
       }
 
       // 2. 自分のレビューの取得
-      const reviewsQuery = query(
+      const reviewSnapshot = await getDocs(query(
         collection(firestoreDb, 'reviews'),
         where('userId', '==', userId)
-      );
-      const reviewSnapshot = await getDocs(reviewsQuery);
+      ));
       for (const doc of reviewSnapshot.docs) {
         const data = doc.data();
         await this.sqliteDb.runAsync(
@@ -252,23 +325,18 @@ export class UserDataService {
         );
       }
 
-      // 3. ブックマークの取得
-      const bookmarksSnapshot = await getDocs(collection(firestoreDb, 'users', userId, 'bookmarks'));
-      for (const doc of bookmarksSnapshot.docs) {
-        await this.sqliteDb.runAsync('INSERT OR REPLACE INTO my_bookmarks (point_id) VALUES (?)', [doc.id]);
-      }
+      // 3 & 4. ブックマークとお気に入り
+      const [bmSnap, favSnap] = await Promise.all([
+        getDocs(collection(firestoreDb, 'users', userId, 'bookmarks')),
+        getDocs(collection(firestoreDb, 'users', userId, 'favorites'))
+      ]);
+      for (const doc of bmSnap.docs) await this.sqliteDb.runAsync('INSERT OR REPLACE INTO my_bookmarks (point_id) VALUES (?)', [doc.id]);
+      for (const doc of favSnap.docs) await this.sqliteDb.runAsync('INSERT OR REPLACE INTO my_favorites (creature_id) VALUES (?)', [doc.id]);
 
-      // 4. お気に入りの取得
-      const favoritesSnapshot = await getDocs(collection(firestoreDb, 'users', userId, 'favorites'));
-      for (const doc of favoritesSnapshot.docs) {
-        await this.sqliteDb.runAsync('INSERT OR REPLACE INTO my_favorites (creature_id) VALUES (?)', [doc.id]);
-      }
-
-      // 5. プロフィール（settings）の取得
-      const userDoc = await getDocs(query(collection(firestoreDb, 'users'), where('id', '==', userId)));
-      if (!userDoc.empty) {
-        const userData = userDoc.docs[0].data();
-        await this.saveSetting('profile', userData);
+      // 5. プロフィールの取得
+      const userSnap = await getDocs(query(collection(firestoreDb, 'users'), where('id', '==', userId)));
+      if (!userSnap.empty) {
+        await this.saveSetting('profile', userSnap.docs[0].data());
       }
 
       console.log('Initial sync completed successfully.');

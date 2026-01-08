@@ -214,6 +214,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (user) {
         setIsAuthenticated(true);
         setIsLoading(true);
+        setAllLogs([]); // b-3: Isolate session by clearing previous user logs from memory immediately
         isDeletingRef.current = false;
 
         // User Profile Listener

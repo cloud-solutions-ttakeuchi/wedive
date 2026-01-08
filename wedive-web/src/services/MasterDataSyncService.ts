@@ -3,7 +3,7 @@ import { app } from '../lib/firebase';
 import pako from 'pako';
 import { masterDbEngine } from './WebSQLiteEngine';
 
-const MASTER_BUCKET = `gs://${import.meta.env.VITE_MASTER_DATA_BUCKET || 'wedive-app-static-master'}`;
+const MASTER_BUCKET = `gs://${import.meta.env.VITE_MASTER_DATA_BUCKET}`;
 const storage = getStorage(app, MASTER_BUCKET);
 const MASTER_STORAGE_PATH = 'v1/master/latest.db.gz';
 const LAST_UPDATED_KEY = 'master_db_last_updated';

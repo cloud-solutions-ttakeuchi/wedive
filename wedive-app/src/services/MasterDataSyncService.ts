@@ -1,30 +1,47 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Asset } from 'expo-asset';
 import { app } from '../firebase';
 import { ref, getDownloadURL, getMetadata, getStorage } from 'firebase/storage';
+import { appDbEngine } from './AppSQLiteEngine';
 import { GzipHelper } from '../utils/GzipHelper';
 import { userDataService } from './UserDataService';
 
 const { cacheDirectory, documentDirectory } = FileSystem;
 
 // マスターデータ専用のバケット（gs://...）を指定
-const MASTER_BUCKET = 'gs://wedive-app-static-master';
+const rawBucket = process.env.EXPO_PUBLIC_MASTER_DATA_BUCKET;
+if (!rawBucket) {
+  throw new Error('EXPO_PUBLIC_MASTER_DATA_BUCKET environment variable is not set');
+}
+const MASTER_BUCKET = rawBucket.startsWith('gs://') ? rawBucket : `gs://${rawBucket}`;
+console.log('[Sync] Master Data Storage Bucket:', MASTER_BUCKET);
 const storage = getStorage(app, MASTER_BUCKET);
 
 const MASTER_STORAGE_PATH = 'v1/master/latest.db.gz';
 const MASTER_DB_NAME = 'master.db';
 const LAST_UPDATED_KEY = 'master_db_last_updated';
-const BUNDLED_DB_ASSET = require('../../assets/master.db');
 
 export class MasterDataSyncService {
   /**
    * 同期実行（Firebase Storage メタデータチェック -> DL -> 解凍 -> クリーンアップ）
    */
   static async syncMasterData(): Promise<void> {
+    // ローカルDBの存在確認（catchブロックでも使うため先に宣言）
+    const sqliteDir = (documentDirectory || '') + 'SQLite/';
+    const dbPath = sqliteDir + MASTER_DB_NAME;
+    const dbInfo = await FileSystem.getInfoAsync(dbPath);
+    const isFirstSync = !dbInfo.exists;
+
     try {
-      // 0. まず内蔵DBがあるか確認し、なければ展開する
-      await this.ensureDatabaseExists();
+      // SQLiteディレクトリを作成（なければ）
+      const dirInfo = await FileSystem.getInfoAsync(sqliteDir);
+      if (!dirInfo.exists) {
+        await FileSystem.makeDirectoryAsync(sqliteDir, { intermediates: true });
+      }
+
+      if (isFirstSync) {
+        console.log('[Sync] No local database found. Will download from GCS...');
+      }
 
       console.log('[Sync] Checking master data update via Firebase Storage...');
 
@@ -35,7 +52,8 @@ export class MasterDataSyncService {
       const serverUpdated = metadata.updated; // ISO8601 string
       const cachedUpdated = await AsyncStorage.getItem(LAST_UPDATED_KEY);
 
-      if (cachedUpdated === serverUpdated) {
+      // 初回 or 更新がある場合のみダウンロード
+      if (!isFirstSync && cachedUpdated === serverUpdated) {
         console.log('[Sync] Master data is up to date.');
         return;
       }
@@ -54,9 +72,12 @@ export class MasterDataSyncService {
       }
 
       // 4. 解凍
-      const sqliteDir = (documentDirectory || '') + 'SQLite/';
-      const targetPath = sqliteDir + MASTER_DB_NAME;
-      await GzipHelper.decompressGzipFile(tempPath, targetPath);
+      await GzipHelper.decompressGzipFile(tempPath, dbPath);
+
+      // 4.5 DBエンジンのリロード（古い接続を閉じて新しいファイルを開く）
+      console.log('[Sync] Reloading database connection...');
+      await appDbEngine.close();
+      await appDbEngine.initialize(MASTER_DB_NAME);
 
       // 5. 更新日時の保存
       if (serverUpdated) {
@@ -69,39 +90,14 @@ export class MasterDataSyncService {
       await this.cleanupProposals();
 
     } catch (error) {
-      console.warn('[Sync] Master data sync failed:', error);
-      // 通信エラー等の場合は既存のローカルDBを使用するため、エラーを伝播させない
-    }
-  }
+      console.error('[Sync] Master data sync failed:', error);
 
-  /**
-   * 同梱されているDBアセットを展開する（必要な場合のみ）
-   */
-  private static async ensureDatabaseExists() {
-    const sqliteDir = (documentDirectory || '') + 'SQLite/';
-    const dbPath = sqliteDir + MASTER_DB_NAME;
-    const dbInfo = await FileSystem.getInfoAsync(dbPath);
-
-    if (!dbInfo.exists) {
-      console.log('[Sync] No local database found. Extracting bundled asset...');
-
-      // SQLiteディレクトリを作成
-      const dirInfo = await FileSystem.getInfoAsync(sqliteDir);
-      if (!dirInfo.exists) {
-        await FileSystem.makeDirectoryAsync(sqliteDir, { intermediates: true });
+      if (isFirstSync) {
+        // 初回起動でダウンロード失敗 → DBがないので動けない
+        throw new Error('初回起動時はネットワーク接続が必要です');
       }
-
-      // Bundleされたアセットをスマホのドキュメントにコピー
-      const asset = Asset.fromModule(BUNDLED_DB_ASSET);
-      await asset.downloadAsync();
-
-      if (asset.localUri) {
-        await FileSystem.copyAsync({
-          from: asset.localUri,
-          to: dbPath
-        });
-        console.log('[Sync] Bundled database extracted successfully.');
-      }
+      // 2回目以降 → ローカルDBを使い続ける（オフライン対応）
+      console.warn('[Sync] Could not update master data. Using local database.');
     }
   }
 
@@ -143,6 +139,39 @@ export class MasterDataSyncService {
 
     } catch (error) {
       console.error('[Sync] Proposal cleanup failed:', error);
+    }
+  }
+
+  /**
+   * データベースの整合性チェック
+   * 必須テーブルやカラムが存在するか確認し、不足していれば true (要修復) を返す
+   */
+  private static async checkDatabaseIntegrity(): Promise<boolean> {
+    try {
+      // DB初期化
+      await appDbEngine.initialize(MASTER_DB_NAME);
+
+      // 1. master_agencies テーブルの存在確認
+      const tableCheck = await appDbEngine.getAllAsync<any>(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='master_agencies'"
+      );
+      if (!tableCheck || tableCheck.length === 0) {
+        console.warn('[Sync] Integrity Check: master_agencies table missing.');
+        return true;
+      }
+
+      // 2. master_points テーブルの search_text カラム確認 (search機能に必須)
+      try {
+        await appDbEngine.getAllAsync("SELECT search_text FROM master_points LIMIT 1");
+      } catch (e) {
+        console.warn('[Sync] Integrity Check: search_text column missing in master_points.');
+        return true;
+      }
+
+      return false; // 正常
+    } catch (error) {
+      console.warn('[Sync] Integrity Check failed (DB access error):', error);
+      return true; // エラーなら安全のため修復対象とする
     }
   }
 }
