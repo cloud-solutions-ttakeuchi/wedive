@@ -12,6 +12,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recha
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { useState } from 'react';
+import { FEATURE_FLAGS } from '../config/features';
 
 import { BADGE_MASTER, TRUST_RANKS } from '../constants/masterData';
 
@@ -188,6 +189,58 @@ export const MyPage = () => {
           </div>
         </div>
       </div>
+
+      {FEATURE_FLAGS.ENABLE_V2_AI_CONCIERGE && (
+        <div className="bg-white rounded-3xl p-6 border-l-4 border-purple-500 shadow-sm relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-2xl bg-purple-50 text-purple-600">
+                  <Ticket size={24} />
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">AI Concierge Tickets</div>
+                  <div className="text-2xl font-black text-gray-800">{currentUser.aiConciergeTickets?.totalAvailable || 0} <span className="text-sm font-bold text-gray-400">枚</span></div>
+                </div>
+              </div>
+              <Link
+                to="/concierge"
+                className="flex items-center gap-2 bg-purple-600 text-white px-6 py-2.5 rounded-2xl font-bold hover:bg-purple-700 transition-all shadow-lg shadow-purple-200 hover:-translate-y-0.5"
+              >
+                <span>使ってみる</span>
+                <Sparkles size={18} />
+              </Link>
+            </div>
+
+            <div className="h-px bg-gray-100 w-full mb-6" />
+
+            <div>
+              <div className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+                冬の冒険者キャンペーン貢献度
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-gray-50 rounded-2xl p-4 text-center border border-transparent hover:border-purple-100 transition-colors">
+                  <div className="text-xl font-black text-gray-800">{currentUser.aiConciergeTickets?.periodContribution?.points || 0}</div>
+                  <div className="text-[10px] text-gray-400 font-bold uppercase">スポット</div>
+                </div>
+                <div className="bg-gray-50 rounded-2xl p-4 text-center border border-transparent hover:border-purple-100 transition-colors">
+                  <div className="text-xl font-black text-gray-800">{currentUser.aiConciergeTickets?.periodContribution?.creatures || 0}</div>
+                  <div className="text-[10px] text-gray-400 font-bold uppercase">生物</div>
+                </div>
+                <div className="bg-gray-50 rounded-2xl p-4 text-center border border-transparent hover:border-purple-100 transition-colors">
+                  <div className="text-xl font-black text-gray-800">{currentUser.aiConciergeTickets?.periodContribution?.reviews || 0}</div>
+                  <div className="text-[10px] text-gray-400 font-bold uppercase">レビュー</div>
+                </div>
+              </div>
+              <p className="mt-4 text-[11px] text-gray-400 font-medium text-center bg-purple-50/50 py-2 rounded-lg">
+                計10件承認されるごとに <span className="text-purple-600 font-bold">100チャット分</span> のチケットをプレゼント！
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Trust Rank Section */}
       <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm relative">

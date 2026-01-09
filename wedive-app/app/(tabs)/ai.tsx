@@ -6,7 +6,7 @@ import { aiConciergeService } from '../../src/services/AiConciergeService';
 import { useAuth } from '../../src/context/AuthContext';
 
 export default function AIScreen() {
-  const { firebaseUser } = useAuth();
+  const { firebaseUser, refreshProfile } = useAuth();
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant', content: string }[]>([
     { role: 'assistant', content: 'こんにちは！WeDiveコンシェルジュです。ダイビングのスポットや生物について何でも聞いてくださいね。' }
   ]);
@@ -25,6 +25,8 @@ export default function AIScreen() {
       await aiConciergeService.syncTickets(firebaseUser.uid);
       const count = await aiConciergeService.getRemainingCount(firebaseUser.uid);
       setTicketCount(count);
+      // マイページ表示用のプロフィールデータもリフレッシュ
+      await refreshProfile();
     }
   };
 

@@ -2,7 +2,15 @@
 
 プロジェクトの変更履歴を記録します。
 
-## [Unreleased] - 2026-01-08
+## [Unreleased] - 2026-01-09
+### Fixed
+- **AI Concierge Ticket Display & Sync (Web/App)**:
+    - **JST Date Awarding**: 日次ログインボーナスの判定を JST (Asia/Tokyo) に統一し、日付の変わり目での付与漏れを解消。
+    - **SQLite Profile Caching (App)**: チケットの同期および消費時に、ローカル SQLite の `profile` 設定（`totalAvailable`）を自動更新するロジックを実装。
+    - **サマリー保持**: `User` ドキュメントに `totalAvailable` と最終付与日を保持し、リスト取得なしでマイページ等に残高を表示可能（Web/App共通）。マイページ表示の即時反映を実現。
+    - **Web MyPage UI**: Web版のマイページに AI チケット残数およびキャンペーン貢献度を表示するカードを追加。アプリ版との機能・表示のパリティを確保。
+    - **State Management (App)**: `AuthContext` に `refreshProfile` を追加し、チケット操作後の UI 更新フローを最適化。
+
 ### Added
 - **AI チャットチケット報酬システム (設計・基盤実装)**:
     - **ログイン・コンテンツ貢献報酬**: 会員登録ユーザーの新規獲得とアクティブ化を目的としたチケットシステム。

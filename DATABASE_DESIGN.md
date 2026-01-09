@@ -199,7 +199,7 @@ erDiagram
 | `certification` | map | `{orgId, rankId, date}` |
 | `badges` | array(map) | `{badgeId, earnedAt}` |
 | `subscription` | map | `{status: active/inactive}` |
-| `aiConciergeTickets` | map | `{totalAvailable, lastDailyGrant, periodContribution: {points, creatures, reviews}}` |
+| `aiConciergeTickets` | map | `{totalAvailable, lastDailyGrant, periodContribution: {points, creatures, reviews}}` (UIサマリー用) |
 | `agreedAt` | string | 利用規約同意日時 |
 | `agreedTermsVersion`| string | 同意した規約バージョン |
 | `createdAt` | string | アカウント作成日 |

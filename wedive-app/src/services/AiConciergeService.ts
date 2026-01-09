@@ -32,15 +32,37 @@ export class AiConciergeService extends BaseAiConciergeService {
 
       await db.runAsync('DELETE FROM my_ai_concierge_tickets WHERE status = "active"');
 
+      let totalAvailable = 0;
       for (const ticketDoc of sortedDocs) {
         const data = ticketDoc.data() as ConciergeTicket;
+        totalAvailable += data.remainingCount;
         await db.runAsync(
           `INSERT OR REPLACE INTO my_ai_concierge_tickets (id, type, remaining_count, granted_at, expires_at, status, reason)
            VALUES (?, ?, ?, ?, ?, ?, ?)`,
           [ticketDoc.id, data.type, data.remainingCount, data.grantedAt, data.expiresAt || null, data.status, data.reason || '']
         );
       }
-      console.log(`[AiConciergeService] Synced ${snapshot.size} tickets for user ${userId}`);
+
+      // SQLiteのプロフィール（my_settings）に枚数をキャッシュ（マイページ表示用）
+      const profileRow: any = await db.getFirstAsync('SELECT value FROM my_settings WHERE key = "profile"');
+      if (profileRow) {
+        const profile = JSON.parse(profileRow.value);
+        if (!profile.aiConciergeTickets) profile.aiConciergeTickets = {};
+        profile.aiConciergeTickets.totalAvailable = totalAvailable;
+
+        // キャンペーン貢献度もあわせて同期（Firestoreの最新を反映）
+        const userSnap = await getDocs(query(collection(firestoreDb, 'users'), where('id', '==', userId)));
+        if (!userSnap.empty) {
+          const remoteUser = userSnap.docs[0].data() as User;
+          if (remoteUser.aiConciergeTickets?.periodContribution) {
+            profile.aiConciergeTickets.periodContribution = remoteUser.aiConciergeTickets.periodContribution;
+          }
+        }
+
+        await db.runAsync('INSERT OR REPLACE INTO my_settings (key, value) VALUES (?, ?)', ['profile', JSON.stringify(profile)]);
+      }
+
+      console.log(`[AiConciergeService] Synced ${snapshot.size} tickets and updated profile totalAvailable to ${totalAvailable} for user ${userId}`);
     } catch (error) {
       console.error('[AiConciergeService] Sync failed:', error);
     }
@@ -172,6 +194,16 @@ export class AiConciergeService extends BaseAiConciergeService {
         [newCount, newStatus, oldestTicket.id]
       );
 
+      // SQLiteのプロフィールも更新
+      const profileRow: any = await db.getFirstAsync('SELECT value FROM my_settings WHERE key = "profile"');
+      if (profileRow) {
+        const profile = JSON.parse(profileRow.value);
+        if (profile.aiConciergeTickets) {
+          profile.aiConciergeTickets.totalAvailable = Math.max(0, (profile.aiConciergeTickets.totalAvailable || 1) - 1);
+          await db.runAsync('UPDATE my_settings SET value = ? WHERE key = "profile"', [JSON.stringify(profile)]);
+        }
+      }
+
       return true;
     } catch (error) {
       console.error('[AiConciergeService] Failed to consume ticket:', error);
@@ -217,14 +249,12 @@ export class AiConciergeService extends BaseAiConciergeService {
 
         transaction.set(ticketRef, newTicket);
 
-        // 階層を壊さないよう、incrementデータを作成
         transaction.set(userRef, {
           aiConciergeTickets: {
             totalAvailable: increment(1)
           }
         }, { merge: true });
 
-        // キャンペーン期間中の貢献度
         if (this.isCampaignPeriod()) {
           const updateData: any = {};
           updateData[`aiConciergeTickets.periodContribution.${category}`] = increment(1);

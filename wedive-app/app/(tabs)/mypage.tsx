@@ -16,6 +16,8 @@ import { db } from '../../src/firebase';
 import { doc, deleteDoc } from 'firebase/firestore';
 import { Alert } from 'react-native';
 import { ProfileEditModal } from '../../src/components/ProfileEditModal';
+import { FEATURE_FLAGS } from '../../src/constants/features';
+import { useEffect } from 'react';
 
 const { width } = Dimensions.get('window');
 const NO_IMAGE_CREATURE = require('../../assets/images/no-image-creature.png');
@@ -25,7 +27,12 @@ type TabType = 'dashboard' | 'logbook' | 'collection' | 'favorites' | 'wanted' |
 
 export default function MyPageScreen() {
   const router = useRouter();
-  const { user, logs, isLoading: authLoading, signOut, updateUser } = useAuth();
+  const { user, logs, isLoading: authLoading, signOut, updateUser, refreshProfile } = useAuth();
+
+  // 画面が表示されるたびに最新のプロフィール（チケット枚数など）を読み込む
+  React.useEffect(() => {
+    refreshProfile();
+  }, []);
 
   const { data: points = [], isLoading: loadingPoints } = usePoints();
   const { data: creatures = [], isLoading: loadingCreatures } = useCreatures();
@@ -142,45 +149,47 @@ export default function MyPageScreen() {
             </View>
 
             {/* AI Concierge & Campaign Card */}
-            <View style={[styles.card, { borderLeftWidth: 4, borderLeftColor: '#8b5cf6' }]}>
-              <View style={styles.cardHeader}>
-                <View style={[styles.iconBg, { backgroundColor: '#f5f3ff' }]}>
-                  <Ticket size={20} color="#8b5cf6" />
+            {FEATURE_FLAGS.ENABLE_V2_AI_CONCIERGE && (
+              <View style={[styles.card, { borderLeftWidth: 4, borderLeftColor: '#8b5cf6' }]}>
+                <View style={styles.cardHeader}>
+                  <View style={[styles.iconBg, { backgroundColor: '#f5f3ff' }]}>
+                    <Ticket size={20} color="#8b5cf6" />
+                  </View>
+                  <View style={{ flex: 1, marginLeft: 12 }}>
+                    <Text style={styles.cardInfoLabel}>AI CONCIERGE TICKETS</Text>
+                    <Text style={styles.cardInfoValue}>{user.aiConciergeTickets?.totalAvailable || 0} 枚</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.aiLinkBtn}
+                    onPress={() => router.push('/ai')}
+                  >
+                    <Text style={styles.aiLinkText}>使う</Text>
+                    <Sparkles size={14} color="#8b5cf6" />
+                  </TouchableOpacity>
                 </View>
-                <View style={{ flex: 1, marginLeft: 12 }}>
-                  <Text style={styles.cardInfoLabel}>AI CONCIERGE TICKETS</Text>
-                  <Text style={styles.cardInfoValue}>{user.aiConciergeTickets?.totalAvailable || 0} 枚</Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.aiLinkBtn}
-                  onPress={() => router.push('/ai')}
-                >
-                  <Text style={styles.aiLinkText}>使う</Text>
-                  <Sparkles size={14} color="#8b5cf6" />
-                </TouchableOpacity>
-              </View>
 
-              <View style={styles.campaignDivider} />
+                <View style={styles.campaignDivider} />
 
-              <View style={styles.campaignInfo}>
-                <Text style={styles.campaignLabel}>冬の冒険者キャンペーン貢献度</Text>
-                <View style={styles.campaignStats}>
-                  <View style={styles.campaignStatItem}>
-                    <Text style={styles.campaignStatNum}>{user.aiConciergeTickets?.periodContribution?.points || 0}</Text>
-                    <Text style={styles.campaignStatLabel}>スポット</Text>
+                <View style={styles.campaignInfo}>
+                  <Text style={styles.campaignLabel}>冬の冒険者キャンペーン貢献度</Text>
+                  <View style={styles.campaignStats}>
+                    <View style={styles.campaignStatItem}>
+                      <Text style={styles.campaignStatNum}>{user.aiConciergeTickets?.periodContribution?.points || 0}</Text>
+                      <Text style={styles.campaignStatLabel}>スポット</Text>
+                    </View>
+                    <View style={styles.campaignStatItem}>
+                      <Text style={styles.campaignStatNum}>{user.aiConciergeTickets?.periodContribution?.creatures || 0}</Text>
+                      <Text style={styles.campaignStatLabel}>生物</Text>
+                    </View>
+                    <View style={styles.campaignStatItem}>
+                      <Text style={styles.campaignStatNum}>{user.aiConciergeTickets?.periodContribution?.reviews || 0}</Text>
+                      <Text style={styles.campaignStatLabel}>レビュー</Text>
+                    </View>
                   </View>
-                  <View style={styles.campaignStatItem}>
-                    <Text style={styles.campaignStatNum}>{user.aiConciergeTickets?.periodContribution?.creatures || 0}</Text>
-                    <Text style={styles.campaignStatLabel}>生物</Text>
-                  </View>
-                  <View style={styles.campaignStatItem}>
-                    <Text style={styles.campaignStatNum}>{user.aiConciergeTickets?.periodContribution?.reviews || 0}</Text>
-                    <Text style={styles.campaignStatLabel}>レビュー</Text>
-                  </View>
+                  <Text style={styles.campaignFootnote}>計10件承認で100チャット分プレゼント！</Text>
                 </View>
-                <Text style={styles.campaignFootnote}>計10件承認で100チャット分プレゼント！</Text>
               </View>
-            </View>
+            )}
 
             {/* Stats Grid */}
             <View style={styles.statsRow}>

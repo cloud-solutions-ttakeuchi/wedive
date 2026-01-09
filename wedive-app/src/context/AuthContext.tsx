@@ -14,6 +14,7 @@ type AuthContextType = {
   isLoading: boolean;
   signOut: () => Promise<void>;
   updateUser: (userData: Partial<User>) => Promise<void>;
+  refreshProfile: () => Promise<void>;
   deleteAccount: () => Promise<void>;
 };
 
@@ -25,6 +26,7 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   signOut: async () => { },
   updateUser: async () => { },
+  refreshProfile: async () => { },
   deleteAccount: async () => { },
 });
 
@@ -113,6 +115,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const refreshProfile = async () => {
+    if (!firebaseUser) return;
+    try {
+      const localProfile = await userDataService.getSetting<User>('profile');
+      if (localProfile) {
+        setUser(localProfile);
+      }
+    } catch (error) {
+      console.error("Error refreshing profile:", error);
+    }
+  };
+
   const deleteAccount = async () => {
     if (!firebaseUser) return;
     try {
@@ -137,6 +151,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isLoading,
       signOut,
       updateUser,
+      refreshProfile,
       deleteAccount
     }}>
       {children}
