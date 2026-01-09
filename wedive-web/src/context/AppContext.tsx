@@ -283,16 +283,24 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       await userDataService.saveLog(auth.currentUser.id, proposal as any); // Dummy for now
     },
     addPoint: async (point: any) => {
-      await adminActions.approveProposal('point', point.id || Date.now().toString(), point);
+      if (!auth.isAuthenticated) return;
+      await userDataService.savePoint(auth.currentUser.id, point);
+      points.refetch();
     },
     addPointProposal: async (proposal: any) => {
-      console.log("Point proposal:", proposal);
+      if (!auth.isAuthenticated) return;
+      await userDataService.savePointProposal(auth.currentUser.id, proposal);
+      proposalPointsQuery.refetch();
     },
     addPointCreature: async (rel: any) => {
-      console.log("addPointCreature in AppContext:", rel);
+      if (!auth.isAuthenticated) return;
+      await userDataService.savePointCreature(rel);
+      pointCreatures.refetch();
     },
     addPointCreatureProposal: async (proposal: any) => {
-      console.log("Point creature proposal:", proposal);
+      if (!auth.isAuthenticated) return;
+      await userDataService.savePointCreatureProposal(proposal);
+      proposalPointCreaturesQuery.refetch();
     },
     deleteAccount: async () => {
       if (!auth.isAuthenticated) return;

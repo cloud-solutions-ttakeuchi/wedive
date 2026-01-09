@@ -1,13 +1,29 @@
-import { BaseMasterDataService, mapAgencyFromSQLite } from 'wedive-shared';
+/*
+ * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ * AI AGENT WARNING: READ THIS BEFORE EDITING
+ * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ *
+ * This service MUST use Google Cloud Storage (GCS) and SQLite for master data.
+ *
+ * ABSOLUTELY FORBIDDEN:
+ * - Attempting to sync master data (Points, Creatures) directly from Firestore.
+ * - Using `getDocs` or `onSnapshot` for master data collections.
+ *
+ * If data is missing or broken, FIX THE GCS IMPORT OR SQLITE LOGIC.
+ * DO NOT REVERT TO FIRESTORE SYNC.
+ *
+ * See DATABASE_DESIGN.md for details.
+ * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ */
+import { BaseMasterDataService } from 'wedive-shared';
 import type { Point, Creature, AgencyMaster, Zone, Area } from 'wedive-shared';
 import { masterDbEngine } from './WebSQLiteEngine';
-import { collection, getDocs, query, where } from 'firebase/firestore';
-import { db as firestoreDb } from '../lib/firebase';
+import { ref, getDownloadURL } from 'firebase/storage';
+import { storage } from '../lib/firebase';
 
 /**
  * Web 版 MasterDataService
- * wedive-shared の BaseMasterDataService を継承し、Web 固有の
- * 初期化処理や Firestore フォールバックを追加。
+ * GCSからダウンロードしたSQLite DBを利用し、アプリが必要とするデータ形式への変換（アダプター）機能を提供します。
  */
 export class MasterDataService extends BaseMasterDataService {
   private isInitialized = false;
@@ -15,167 +31,142 @@ export class MasterDataService extends BaseMasterDataService {
   async initialize(): Promise<boolean> {
     if (this.isInitialized) return true;
     try {
-      // エンジンの初期化 (IDBのオープンなど)
       if ('initialize' in this.sqlite && typeof this.sqlite.initialize === 'function') {
         await (this.sqlite as any).initialize();
       }
-
-      // テーブル作成 (マスターデータ用)
-      await masterDbEngine.runAsync(`
-        CREATE TABLE IF NOT EXISTS master_points (
-          id TEXT PRIMARY KEY,
-          name TEXT,
-          name_kana TEXT,
-          area_id TEXT,
-          area_name TEXT,
-          zone_name TEXT,
-          region_name TEXT,
-          latitude REAL,
-          longitude REAL,
-          search_text TEXT,
-          updated_at TEXT
-        );
-        CREATE TABLE IF NOT EXISTS master_creatures (
-          id TEXT PRIMARY KEY,
-          name TEXT,
-          name_kana TEXT,
-          scientific_name TEXT,
-          english_name TEXT,
-          category TEXT,
-          family TEXT,
-          rarity TEXT,
-          search_text TEXT,
-          updated_at TEXT
-        );
-        CREATE TABLE IF NOT EXISTS master_point_creatures (
-          id TEXT PRIMARY KEY,
-          point_id TEXT,
-          creature_id TEXT,
-          localRarity TEXT,
-          updatedAt TEXT
-        );
-        CREATE TABLE IF NOT EXISTS master_agencies (
-          id TEXT PRIMARY KEY,
-          name TEXT,
-          ranks_json TEXT,
-          updated_at TEXT
-        );
-        CREATE TABLE IF NOT EXISTS master_regions (
-          id TEXT PRIMARY KEY,
-          name TEXT
-        );
-        CREATE TABLE IF NOT EXISTS master_zones (
-          id TEXT PRIMARY KEY,
-          name TEXT,
-          region_id TEXT
-        );
-        CREATE TABLE IF NOT EXISTS master_areas (
-          id TEXT PRIMARY KEY,
-          name TEXT,
-          zone_id TEXT
-        );
-      `);
-
       this.isInitialized = true;
       return true;
     } catch (e) {
-      console.error('[MasterData] Initialization failed:', e);
+      console.error('[MasterDataSync] Initialization failed:', e);
       return false;
     }
   }
 
   /**
-   * Firestore からマスターデータを一括取得して SQLite に同期する
+   * Firebase Storage (GCS) からビルド済みの SQLite ファイルをダウンロードしてインポートする
    */
   async syncMasterData(): Promise<void> {
-    const isAvailable = await this.initialize();
-    if (!isAvailable) return;
+    if (!await this.initialize()) return;
 
     try {
-      // データの存在確認
-      const pointsCount = await masterDbEngine.getAllAsync<{ count: number }>('SELECT COUNT(*) as count FROM master_points');
-      if (pointsCount.length > 0 && pointsCount[0].count > 0) {
-        console.log('[MasterData Sync] SQLite already has data.');
-        return;
+      console.log('[MasterDataSync] Checking for master data updates...');
+
+      const dbRef = ref(storage, 'master.db');
+      const url = await getDownloadURL(dbRef);
+
+      console.log(`[MasterDataSync] Downloading master DB from ${url}...`);
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to download master DB: ${response.statusText}`);
       }
 
-      console.log('[MasterData Sync] Starting master data sync from Firestore...');
+      const buffer = await response.arrayBuffer();
+      const data = new Uint8Array(buffer);
 
-      // 1. Points 同期 (簡易)
-      const pointsSnap = await getDocs(query(collection(firestoreDb, 'points'), where('status', '==', 'approved')));
-      for (const d of pointsSnap.docs) {
-        await this.updatePointInCache({ id: d.id, ...d.data() } as Point);
+      console.log(`[MasterDataSync] Downloaded ${data.byteLength} bytes. Importing to SQLite...`);
+      await masterDbEngine.importDatabase(data);
+
+      console.log('[MasterDataSync] Master data import completed successfully.');
+
+    } catch (error: any) {
+      if (error.code === 'storage/object-not-found') {
+        console.warn('[MasterDataSync] Master DB file not found in Storage. Using local creation fallback is NOT recommended for production.');
+      } else {
+        console.error('[MasterDataSync] Sync failed:', error);
       }
-
-      // 2. Creatures 同期 (簡易)
-      const creaturesSnap = await getDocs(query(collection(firestoreDb, 'creatures'), where('status', '==', 'approved')));
-      for (const d of creaturesSnap.docs) {
-        await this.updateCreatureInCache({ id: d.id, ...d.data() } as Creature);
-      }
-
-      // 3. Agencies 同期
-      const agenciesSnap = await getDocs(collection(firestoreDb, 'agencies'));
-      for (const d of agenciesSnap.docs) {
-        const data = d.data();
-        await masterDbEngine.runAsync(
-          'INSERT OR REPLACE INTO master_agencies (id, name, ranks_json, updated_at) VALUES (?, ?, ?, ?)',
-          [d.id, data.name, JSON.stringify(data.ranks || []), data.updatedAt || new Date().toISOString()]
-        );
-      }
-
-      // Regions / Zones / Areas も必要に応じて追加...
-
-      console.log('[MasterData Sync] Master data sync completed.');
-    } catch (error) {
-      console.error('[MasterData Sync] Error:', error);
     }
   }
 
+  // --- Override Search Methods to use local mapping (with IDs) ---
+
   async searchPoints(text: string, limitCount = 50): Promise<Point[]> {
+    if (!await this.initialize()) return [];
+
     const normalizedQuery = text.trim();
     if (!normalizedQuery) return [];
 
-    if (await this.initialize()) {
-      try {
-        const results = await super.searchPoints(normalizedQuery, limitCount);
-        if (results.length > 0) {
-          console.log(`[MasterData] Found ${results.length} points from SQLite (Web) 🚀`, results[0]);
-          return results;
-        }
-      } catch (e: any) {
-        console.warn('SQLite point search failed, falling back...', e);
-      }
+    const sql = `
+      SELECT * FROM master_points
+      WHERE search_text LIKE ?
+      ORDER BY
+        CASE
+          WHEN name = ? THEN 1
+          WHEN name LIKE ? THEN 2
+          ELSE 3
+        END,
+        name ASC
+      LIMIT ?
+    `;
+
+    try {
+      const results = await masterDbEngine.getAllAsync<any>(sql, [
+        `%${normalizedQuery}%`, normalizedQuery, `${normalizedQuery}%`, limitCount
+      ]);
+      return results.map(p => this.mapPointFromSQLite(p));
+    } catch (e: any) {
+      console.error('searchPoints failed:', e);
+      return [];
     }
-    return [];
   }
 
   async searchCreatures(text: string, limitCount = 50): Promise<Creature[]> {
+    if (!await this.initialize()) return [];
+
     const normalizedQuery = text.trim();
     if (!normalizedQuery) return [];
 
+    const sql = `
+      SELECT * FROM master_creatures
+      WHERE search_text LIKE ?
+      ORDER BY
+        CASE
+          WHEN name = ? THEN 1
+          WHEN name LIKE ? THEN 2
+          ELSE 3
+        END,
+        name ASC
+      LIMIT ?
+    `;
+
+    try {
+      const results = await masterDbEngine.getAllAsync<any>(sql, [
+        `%${normalizedQuery}%`, normalizedQuery, `${normalizedQuery}%`, limitCount
+      ]);
+      return results.map(c => this.mapCreatureFromSQLite(c));
+    } catch (e: any) {
+      console.error('searchCreatures failed:', e);
+      return [];
+    }
+  }
+
+  // --- Adapter Methods: SQLite Data -> App Model ---
+
+  async getAllPoints(): Promise<Point[]> {
     if (await this.initialize()) {
       try {
-        const results = await super.searchCreatures(normalizedQuery, limitCount);
-        if (results.length > 0) {
-          console.log(`[MasterData] Found ${results.length} creatures from SQLite (Web) 🚀`, results[0]);
-          return results;
-        }
-      } catch (e: any) {
-        console.warn('SQLite creature search failed, falling back...', e);
-      }
+        const results = await masterDbEngine.getAllAsync<any>('SELECT * FROM master_points ORDER BY name ASC');
+        return results.map(p => this.mapPointFromSQLite(p));
+      } catch (e: any) { console.error('getAllPoints failed:', e); }
     }
     return [];
   }
 
-  async getAgencies(): Promise<AgencyMaster[]> {
+  async getAllCreatures(): Promise<Creature[]> {
     if (await this.initialize()) {
       try {
-        console.log('[MasterData] Fetching agencies from SQLite (Web) 🚀');
-        const results = await super.getAgencies();
-        return results;
-      } catch (e: any) {
-        console.warn('SQLite agency fetch failed, falling back...', e);
-      }
+        const results = await masterDbEngine.getAllAsync<any>('SELECT * FROM master_creatures ORDER BY name ASC');
+        return results.map(c => this.mapCreatureFromSQLite(c));
+      } catch (e: any) { console.error('getAllCreatures failed:', e); }
+    }
+    return [];
+  }
+
+  async getRegions(): Promise<{ id: string; name: string }[]> {
+    if (await this.initialize()) {
+      try {
+        const results = await masterDbEngine.getAllAsync<any>('SELECT * FROM master_regions ORDER BY name ASC');
+        return results.map(r => ({ id: r.id, name: r.name }));
+      } catch (e: any) { console.error('getRegions failed:', e); }
     }
     return [];
   }
@@ -187,10 +178,9 @@ export class MasterDataService extends BaseMasterDataService {
         return results.map(z => ({
           id: z.id,
           name: z.name,
-          regionId: z.region_id,
-          updatedAt: z.updated_at
-        } as Zone));
-      } catch (e: any) { console.error(e); }
+          regionId: z.parent_id || z.region_id // 仕様書準拠(parent_id)と旧実装(region_id)の互換性維持
+        }));
+      } catch (e: any) { console.error('getZones failed:', e); }
     }
     return [];
   }
@@ -202,175 +192,153 @@ export class MasterDataService extends BaseMasterDataService {
         return results.map(a => ({
           id: a.id,
           name: a.name,
-          zoneId: a.zone_id,
-          regionId: '', // SQLite には直接ないため暫定
-          updatedAt: a.updated_at
-        } as Area));
-      } catch (e: any) { console.error(e); }
+          zoneId: a.parent_id || a.zone_id, // 仕様書準拠(parent_id)と旧実装(zone_id)の互換性維持
+          regionId: ''
+        }));
+      } catch (e: any) { console.error('getAreas failed:', e); }
     }
     return [];
   }
 
-  /**
-   * 全ポイントの取得
-   */
-  async getAllPoints(): Promise<Point[]> {
-    if (await this.initialize()) {
-      try {
-        const sql = 'SELECT * FROM master_points ORDER BY name ASC';
-        const results = await masterDbEngine.getAllAsync<any>(sql);
-        if (results.length > 0) {
-          return results.map(p => ({
-            id: p.id,
-            name: p.name,
-            nameKana: p.name_kana,
-            region: p.region_name || '',
-            area: p.area_name || '',
-            zone: p.zone_name || '',
-            latitude: p.latitude,
-            longitude: p.longitude,
-            status: 'approved',
-            updatedAt: p.updated_at
-          } as unknown as Point));
-        }
-      } catch (e: any) {
-        console.error('SQLite getAllPoints failed:', e);
-      }
-    }
-    return [];
+  private mapPointFromSQLite(p: any): Point {
+    return {
+      id: p.id,
+      name: p.name,
+      nameKana: p.name_kana,
+      areaId: p.area_id,
+      zoneId: p.zone_id,
+      regionId: p.region_id,
+      region: p.region_name || '',
+      area: p.area_name || '',
+      zone: p.zone_name || '',
+      latitude: p.latitude,
+      longitude: p.longitude,
+      level: p.level || 'Unknown',
+      maxDepth: p.max_depth,
+      mainDepth: p.main_depth_json ? JSON.parse(p.main_depth_json) : undefined,
+      entryType: p.entry_type,
+      current: p.current_condition,
+      topography: p.topography_json ? JSON.parse(p.topography_json) : [],
+      description: p.description || '',
+      features: p.features_json ? JSON.parse(p.features_json) : [],
+      googlePlaceId: p.google_place_id,
+      formattedAddress: p.formatted_address,
+      imageUrl: p.image_url,
+      images: p.images_json ? JSON.parse(p.images_json) : [],
+      rating: p.rating,
+      status: 'approved',
+      updatedAt: p.updated_at
+    } as unknown as Point;
   }
 
-  /**
-   * 全生物の取得
-   */
-  async getAllCreatures(): Promise<Creature[]> {
-    if (await this.initialize()) {
-      try {
-        const sql = 'SELECT * FROM master_creatures ORDER BY name ASC';
-        const results = await masterDbEngine.getAllAsync<any>(sql);
-        if (results.length > 0) {
-          return results.map(c => ({
-            id: c.id,
-            name: c.name,
-            nameKana: c.name_kana,
-            category: c.category || '',
-            status: 'approved',
-            updatedAt: c.updated_at
-          } as unknown as Creature));
-        }
-      } catch (e: any) {
-        console.error('SQLite getAllCreatures failed:', e);
-      }
-    }
-    return [];
+  private mapCreatureFromSQLite(c: any): Creature {
+    return {
+      id: c.id,
+      name: c.name,
+      nameKana: c.name_kana,
+      scientificName: c.scientific_name,
+      englishName: c.english_name,
+      category: c.category || '',
+      family: c.family,
+      description: c.description || '',
+      rarity: c.rarity,
+      imageUrl: c.image_url,
+      tags: c.tags_json ? JSON.parse(c.tags_json) : [],
+      gallery: c.gallery_json ? JSON.parse(c.gallery_json) : [],
+      status: 'approved',
+      updatedAt: c.updated_at
+    } as unknown as Creature;
   }
 
-  /**
-   * 全ポイント生物紐付けデータの取得
-   */
   async getAllPointCreatures(): Promise<any[]> {
     if (await this.initialize()) {
       try {
-        const sql = 'SELECT * FROM master_point_creatures';
-        const results = await masterDbEngine.getAllAsync<any>(sql);
-        return results.map((r: any) => ({
+        const results = await masterDbEngine.getAllAsync<any>('SELECT * FROM master_point_creatures');
+        return results.map(r => ({
           id: r.id,
           pointId: r.point_id,
           creatureId: r.creature_id,
           localRarity: r.localRarity,
           updatedAt: r.updatedAt
         }));
-      } catch (e: any) {
-        console.error('SQLite getAllPointCreatures failed:', e);
-      }
+      } catch (e: any) { console.error(e); }
     }
     return [];
   }
-  /**
-   * ポイントのローカルキャッシュ更新
-   */
+
+  // --- Cache Update Methods (For local updates after edit) ---
+
   async updatePointInCache(point: Point): Promise<void> {
     if (await this.initialize()) {
       const searchText = `${point.name} ${point.nameKana || ''} ${point.area || ''} ${point.zone || ''} ${point.region || ''}`.toLowerCase();
       const sql = `
         INSERT OR REPLACE INTO master_points (
-          id, name, name_kana, area_id, area_name, zone_name, region_name,
-          latitude, longitude, search_text, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          id, name, name_kana, area_id, zone_id, region_id,
+          region_name, area_name, zone_name,
+          latitude, longitude, level, max_depth, main_depth_json,
+          entry_type, current_condition, topography_json, description,
+          features_json, google_place_id, formatted_address, image_url,
+          images_json, image_keyword, submitter_id, bookmark_count,
+          official_stats_json, actual_stats_json, rating,
+          search_text, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
       await masterDbEngine.runAsync(sql, [
-        point.id, point.name, point.nameKana || '', point.areaId,
-        point.area || '', point.zone || '', point.region || '',
-        point.latitude, point.longitude, searchText, point.updatedAt || new Date().toISOString()
+        point.id, point.name, point.nameKana || '', point.areaId || null, point.zoneId || null, point.regionId || null,
+        point.region || '', point.area || '', point.zone || '',
+        point.latitude || null, point.longitude || null, point.level || null, point.maxDepth || null,
+        JSON.stringify(point.mainDepth || null), point.entryType || null, point.current || null,
+        JSON.stringify(point.topography || []), point.description || '', JSON.stringify(point.features || []),
+        point.googlePlaceId || null, point.formattedAddress || null, point.imageUrl || null,
+        JSON.stringify(point.images || []), point.imageKeyword || null, point.submitterId || null,
+        point.bookmarkCount || 0, JSON.stringify(point.officialStats || {}), JSON.stringify(point.actualStats || {}),
+        point.rating || null, searchText, point.updatedAt || new Date().toISOString()
       ]);
     }
   }
 
-  async deletePointFromCache(id: string): Promise<void> {
-    if (await this.initialize()) {
-      await masterDbEngine.runAsync('DELETE FROM master_points WHERE id = ?', [id]);
-    }
-  }
-
-  /**
-   * 生物のローカルキャッシュ更新
-   */
   async updateCreatureInCache(creature: Creature): Promise<void> {
     if (await this.initialize()) {
       const searchText = `${creature.name} ${creature.nameKana || ''} ${creature.scientificName || ''} ${creature.englishName || ''}`.toLowerCase();
       const sql = `
         INSERT OR REPLACE INTO master_creatures (
           id, name, name_kana, scientific_name, english_name, category, family,
-          rarity, search_text, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          description, rarity, image_url, tags_json, depth_range_json,
+          special_attributes_json, water_temp_range_json, size, season_json,
+          gallery_json, stats_json, image_credit, image_license, image_keyword,
+          search_text, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
       await masterDbEngine.runAsync(sql, [
         creature.id, creature.name, creature.nameKana || '', creature.scientificName || '',
         creature.englishName || '', creature.category || '', creature.family || '',
-        creature.rarity || 'Common', searchText, creature.updatedAt || new Date().toISOString()
+        creature.description || '', creature.rarity || 'Common', creature.imageUrl || null,
+        JSON.stringify(creature.tags || []), JSON.stringify(creature.depthRange || {}),
+        JSON.stringify(creature.specialAttributes || []), JSON.stringify(creature.waterTempRange || {}),
+        creature.size || '', JSON.stringify(creature.season || []), JSON.stringify(creature.gallery || []),
+        JSON.stringify(creature.stats || {}), creature.imageCredit || '', creature.imageLicense || '',
+        creature.imageKeyword || '', searchText, creature.updatedAt || new Date().toISOString()
       ]);
     }
   }
 
-  async deleteCreatureFromCache(id: string): Promise<void> {
-    if (await this.initialize()) {
-      await masterDbEngine.runAsync('DELETE FROM master_creatures WHERE id = ?', [id]);
-    }
-  }
-
-  /**
-   * 地域・ゾーン・エリアの更新
-   */
   async updateAreaInCache(area: Area): Promise<void> {
     if (await this.initialize()) {
-      await masterDbEngine.runAsync('INSERT OR REPLACE INTO master_areas (id, name, zone_id) VALUES (?, ?, ?)', [area.id, area.name, area.zoneId]);
-    }
-  }
-  async deleteAreaFromCache(id: string): Promise<void> {
-    if (await this.initialize()) {
-      await masterDbEngine.runAsync('DELETE FROM master_areas WHERE id = ?', [id]);
+      // 仕様書準拠: master_areas の親IDカラムは parent_id
+      await masterDbEngine.runAsync('INSERT OR REPLACE INTO master_areas (id, name, parent_id) VALUES (?, ?, ?)', [area.id, area.name, area.zoneId]);
     }
   }
 
   async updateZoneInCache(zone: Zone): Promise<void> {
     if (await this.initialize()) {
-      await masterDbEngine.runAsync('INSERT OR REPLACE INTO master_zones (id, name, region_id) VALUES (?, ?, ?)', [zone.id, zone.name, zone.regionId]);
-    }
-  }
-  async deleteZoneFromCache(id: string): Promise<void> {
-    if (await this.initialize()) {
-      await masterDbEngine.runAsync('DELETE FROM master_zones WHERE id = ?', [id]);
+      // 仕様書準拠: master_zones の親IDカラムは parent_id
+      await masterDbEngine.runAsync('INSERT OR REPLACE INTO master_zones (id, name, parent_id) VALUES (?, ?, ?)', [zone.id, zone.name, zone.regionId]);
     }
   }
 
   async updateRegionInCache(region: any): Promise<void> {
     if (await this.initialize()) {
       await masterDbEngine.runAsync('INSERT OR REPLACE INTO master_regions (id, name) VALUES (?, ?)', [region.id, region.name]);
-    }
-  }
-  async deleteRegionFromCache(id: string): Promise<void> {
-    if (await this.initialize()) {
-      await masterDbEngine.runAsync('DELETE FROM master_regions WHERE id = ?', [id]);
     }
   }
 
@@ -381,6 +349,22 @@ export class MasterDataService extends BaseMasterDataService {
         [item.id, item.pointId, item.creatureId, item.localRarity]
       );
     }
+  }
+
+  async deletePointFromCache(id: string): Promise<void> {
+    if (await this.initialize()) await masterDbEngine.runAsync('DELETE FROM master_points WHERE id = ?', [id]);
+  }
+  async deleteCreatureFromCache(id: string): Promise<void> {
+    if (await this.initialize()) await masterDbEngine.runAsync('DELETE FROM master_creatures WHERE id = ?', [id]);
+  }
+  async deleteAreaFromCache(id: string): Promise<void> {
+    if (await this.initialize()) await masterDbEngine.runAsync('DELETE FROM master_areas WHERE id = ?', [id]);
+  }
+  async deleteZoneFromCache(id: string): Promise<void> {
+    if (await this.initialize()) await masterDbEngine.runAsync('DELETE FROM master_zones WHERE id = ?', [id]);
+  }
+  async deleteRegionFromCache(id: string): Promise<void> {
+    if (await this.initialize()) await masterDbEngine.runAsync('DELETE FROM master_regions WHERE id = ?', [id]);
   }
 }
 

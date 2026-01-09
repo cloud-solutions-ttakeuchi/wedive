@@ -9,6 +9,7 @@ SELECT
   JSON_VALUE(pc.data, '$.lastSighted') AS last_sighted,
   JSON_VALUE(pc.data, '$.reasoning') AS reasoning,
   CAST(JSON_VALUE(pc.data, '$.confidence') AS FLOAT64) AS confidence,
-  JSON_VALUE(pc.data, '$.status') AS status
+  JSON_VALUE(pc.data, '$.status') AS status,
+  JSON_VALUE(pc.data, '$.updatedAt') AS updated_at
 FROM `${PROJECT_ID}.${DATASET}`.point_creatures_raw_latest pc
 JOIN `${PROJECT_ID}.${DATASET}`.v_app_creatures_master c ON JSON_VALUE(pc.data, '$.creatureId') = c.id
