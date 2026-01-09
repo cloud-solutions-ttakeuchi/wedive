@@ -21,8 +21,25 @@ export default function AIScreen() {
 
   const loadTicketCount = async () => {
     if (firebaseUser) {
+      // まずFirestoreとSQLiteを同期
+      await aiConciergeService.syncTickets(firebaseUser.uid);
       const count = await aiConciergeService.getRemainingCount(firebaseUser.uid);
       setTicketCount(count);
+    }
+  };
+
+  const handleTestGrant = async () => {
+    if (!firebaseUser) return;
+    setIsLoading(true);
+    try {
+      // 日次制限のないテスト用付与を呼び出す
+      await aiConciergeService.grantTestTicket(firebaseUser.uid);
+      await loadTicketCount();
+      Alert.alert('Success', 'テストチケット(1枚)を付与しました。');
+    } catch (e) {
+      Alert.alert('Error', '付与に失敗しました。');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -80,9 +97,13 @@ export default function AIScreen() {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         <View style={styles.header}>
-          <View style={styles.botIconContainer}>
+          <TouchableOpacity
+            style={styles.botIconContainer}
+            onLongPress={handleTestGrant}
+            activeOpacity={0.7}
+          >
             <Bot size={24} color="#0284c7" />
-          </View>
+          </TouchableOpacity>
           <View style={{ flex: 1, backgroundColor: 'transparent' }}>
             <Text style={styles.title}>AIコンシェルジュ</Text>
             <Text style={styles.status}>Online • Powered by Gemini</Text>

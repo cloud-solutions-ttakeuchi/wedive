@@ -151,6 +151,17 @@ export const ConciergePage = () => {
             <Ticket size={16} className="text-ocean-600" />
             <span className="text-sm font-bold text-ocean-700">{ticketCount}</span>
           </div>
+          {import.meta.env.DEV && (
+            <button
+              onClick={async () => {
+                await AiConciergeService.grantTestTicket(currentUser.id);
+                window.location.reload();
+              }}
+              className="ml-auto text-[10px] font-bold bg-purple-100 text-purple-600 px-2 py-1 rounded-lg hover:bg-purple-200 transition-colors"
+            >
+              [DEV] チケット付与
+            </button>
+          )}
         </div>
       </header>
 

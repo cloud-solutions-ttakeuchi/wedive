@@ -21,17 +21,15 @@ export class AiConciergeService extends BaseAiConciergeService {
 
     try {
       const ticketsRef = collection(firestoreDb, 'users', userId, 'aiConciergeTickets');
-      const q = query(ticketsRef, where('status', '==', 'active')); // orderByを削除
+      const q = query(ticketsRef, where('status', '==', 'active'));
       const snapshot = await getDocs(q);
 
-      // メモリ上で有効期限順にソート（expiresAtがnullのものは後ろへ）
       const sortedDocs = snapshot.docs.sort((a, b) => {
-        const valA = a.data().expiresAt || '9999-12-31';
-        const valB = b.data().expiresAt || '9999-12-31';
+        const valA = (a.data() as ConciergeTicket).expiresAt || '9999-12-31';
+        const valB = (b.data() as ConciergeTicket).expiresAt || '9999-12-31';
         return valA.localeCompare(valB);
       });
 
-      // ローカルのactiveチケットを一旦クリアして最新に
       await db.runAsync('DELETE FROM my_ai_concierge_tickets WHERE status = "active"');
 
       for (const ticketDoc of sortedDocs) {
@@ -52,7 +50,12 @@ export class AiConciergeService extends BaseAiConciergeService {
    * 1日1回のログインボーナスチケット付与
    */
   async grantDailyTicket(userId: string): Promise<boolean> {
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const today = new Date().toLocaleDateString('ja-JP', {
+      timeZone: 'Asia/Tokyo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).replaceAll('/', '-');
 
     try {
       return await runTransaction(firestoreDb, async (transaction) => {
@@ -62,7 +65,6 @@ export class AiConciergeService extends BaseAiConciergeService {
         if (!userDoc.exists()) return false;
         const userData = userDoc.data() as User;
 
-        // 既に付与済みかチェック
         if (userData.aiConciergeTickets?.lastDailyGrant === today) {
           return false;
         }
@@ -78,14 +80,14 @@ export class AiConciergeService extends BaseAiConciergeService {
           expirationDays: CONCIERGE_CAMPAIGN.DAILY_EXPIRATION_DAYS
         });
 
-        // トランザクション：ユーザープロファイルの更新とチケット作成を不可分に
         transaction.set(ticketRef, newTicket);
-        transaction.update(userRef, {
-          'aiConciergeTickets.lastDailyGrant': today,
-          'aiConciergeTickets.totalAvailable': increment(1)
-        });
+        transaction.set(userRef, {
+          aiConciergeTickets: {
+            lastDailyGrant: today,
+            totalAvailable: increment(1)
+          }
+        }, { merge: true });
 
-        console.log(`[AiConciergeService] Daily ticket granted: ${ticketId}`);
         return true;
       });
     } catch (error) {
@@ -95,8 +97,35 @@ export class AiConciergeService extends BaseAiConciergeService {
   }
 
   /**
-   * 有効なチケット合計数を取得（SQLite）
+   * テスト用：無制限に1枚付与
    */
+  async grantTestTicket(userId: string): Promise<void> {
+    try {
+      await runTransaction(firestoreDb, async (transaction) => {
+        const userRef = doc(firestoreDb, 'users', userId);
+        const ticketId = `test_${Date.now()}_${userId}`;
+        const ticketRef = doc(firestoreDb, 'users', userId, 'aiConciergeTickets', ticketId);
+
+        const newTicket = this.createTicketBase({
+          id: ticketId,
+          type: 'daily',
+          count: 1,
+          reason: 'テスト付与',
+          expirationDays: 30
+        });
+
+        transaction.set(ticketRef, newTicket);
+        transaction.set(userRef, {
+          aiConciergeTickets: {
+            totalAvailable: increment(1)
+          }
+        }, { merge: true });
+      });
+    } catch (error) {
+      console.error('[AiConciergeService] Test grant failed:', error);
+    }
+  }
+
   async getRemainingCount(userId: string): Promise<number> {
     if (!SQLite) return 0;
     const dbName = `user_${userId}.db`;
@@ -109,15 +138,11 @@ export class AiConciergeService extends BaseAiConciergeService {
     return row?.total || 0;
   }
 
-  /**
-   * チケットを1枚消費する
-   */
   async consumeTicket(userId: string): Promise<boolean> {
     if (!SQLite) return false;
     const dbName = `user_${userId}.db`;
     const db = await SQLite.openDatabaseAsync(dbName);
 
-    // 期限が近い有効なチケットを1つ取得
     const oldestTicket: any = await db.getFirstAsync(
       'SELECT id, remaining_count FROM my_ai_concierge_tickets WHERE status = "active" AND (expires_at IS NULL OR expires_at > ?) ORDER BY expires_at ASC LIMIT 1',
       [new Date().toISOString()]
@@ -129,7 +154,6 @@ export class AiConciergeService extends BaseAiConciergeService {
     const newStatus = newCount <= 0 ? 'used' : 'active';
 
     try {
-      // 1. Firestore更新
       const ticketRef = doc(firestoreDb, 'users', userId, 'aiConciergeTickets', oldestTicket.id);
       const userRef = doc(firestoreDb, 'users', userId);
 
@@ -143,7 +167,6 @@ export class AiConciergeService extends BaseAiConciergeService {
         });
       });
 
-      // 2. Local SQLite更新
       await db.runAsync(
         'UPDATE my_ai_concierge_tickets SET remaining_count = ?, status = ? WHERE id = ?',
         [newCount, newStatus, oldestTicket.id]
@@ -156,9 +179,6 @@ export class AiConciergeService extends BaseAiConciergeService {
     }
   }
 
-  /**
-   * コンシェルジュに質問する（チケット消費を含む）
-   */
   async askConcierge(userId: string, query: string, history: any[] = []): Promise<{ content: string, error?: string }> {
     const hasTicket = await this.consumeTicket(userId);
     if (!hasTicket) {
@@ -171,6 +191,48 @@ export class AiConciergeService extends BaseAiConciergeService {
     } catch (error) {
       console.error('[AiConciergeService] AI Error:', error);
       return { content: '', error: 'ai_failed' };
+    }
+  }
+
+  /**
+   * 貢献に対するチケット付与
+   */
+  async grantContributionTicket(userId: string, reason: string, category: 'points' | 'creatures' | 'reviews'): Promise<void> {
+    try {
+      await runTransaction(firestoreDb, async (transaction) => {
+        const userRef = doc(firestoreDb, 'users', userId);
+        const userDoc = await transaction.get(userRef);
+        if (!userDoc.exists()) return;
+
+        const ticketId = `contrib_${Date.now()}_${userId}`;
+        const ticketRef = doc(firestoreDb, 'users', userId, 'aiConciergeTickets', ticketId);
+
+        const newTicket = this.createTicketBase({
+          id: ticketId,
+          type: 'contribution',
+          count: 1,
+          reason,
+          expirationDays: CONCIERGE_CAMPAIGN.CONTRIBUTION_EXPIRATION_DAYS,
+        });
+
+        transaction.set(ticketRef, newTicket);
+
+        // 階層を壊さないよう、incrementデータを作成
+        transaction.set(userRef, {
+          aiConciergeTickets: {
+            totalAvailable: increment(1)
+          }
+        }, { merge: true });
+
+        // キャンペーン期間中の貢献度
+        if (this.isCampaignPeriod()) {
+          const updateData: any = {};
+          updateData[`aiConciergeTickets.periodContribution.${category}`] = increment(1);
+          transaction.update(userRef, updateData);
+        }
+      });
+    } catch (error) {
+      console.error('[AiConciergeService] Failed to grant contribution ticket:', error);
     }
   }
 }

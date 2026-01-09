@@ -19,7 +19,13 @@ class AiConciergeServiceImpl extends BaseAiConciergeService {
    * 1日1回のログインボーナスチケット付与
    */
   grantDailyTicket = async (userId: string): Promise<boolean> => {
-    const today = new Date().toISOString().split('T')[0];
+    // JST (Asia/Tokyo) ベースで今日の日付を取得 (YYYY-MM-DD)
+    const today = new Date().toLocaleDateString('ja-JP', {
+      timeZone: 'Asia/Tokyo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).replaceAll('/', '-');
 
     try {
       return await runTransaction(firestoreDb, async (transaction) => {
@@ -58,6 +64,36 @@ class AiConciergeServiceImpl extends BaseAiConciergeService {
     } catch (error) {
       console.error('[AiConciergeService] Failed to grant daily ticket:', error);
       return false;
+    }
+  }
+
+  /**
+   * テスト用：無制限に1枚付与
+   */
+  grantTestTicket = async (userId: string): Promise<void> => {
+    try {
+      await runTransaction(firestoreDb, async (transaction) => {
+        const userRef = doc(firestoreDb, 'users', userId);
+        const ticketId = `test_${Date.now()}_${userId}`;
+        const ticketRef = doc(firestoreDb, 'users', userId, 'aiConciergeTickets', ticketId);
+
+        const newTicket = this.createTicketBase({
+          id: ticketId,
+          type: 'daily',
+          count: 1,
+          reason: 'テスト付与',
+          expirationDays: 30
+        });
+
+        transaction.set(ticketRef, newTicket);
+        transaction.set(userRef, {
+          aiConciergeTickets: {
+            totalAvailable: increment(1)
+          }
+        }, { merge: true });
+      });
+    } catch (error) {
+      console.error('[AiConciergeService] Test grant failed:', error);
     }
   }
 

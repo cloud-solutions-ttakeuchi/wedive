@@ -40,30 +40,26 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
             <div className="relative">
               <img src="/images/logo.png" alt="WeDive Logo" className="w-14 h-14 object-contain mix-blend-multiply brightness-110 contrast-110" />
             </div>
-            <span className="text-2xl font-extrabold text-gray-700 tracking-tight" style={{ fontFamily: '"M PLUS Rounded 1c", sans-serif' }}>
-              <span className="text-cyan-500">We</span>Dive
+            <span className="text-2xl font-extrabold text-[#111827] tracking-tight" style={{ fontFamily: '"M PLUS Rounded 1c", sans-serif' }}>
+              <span className="text-[#0ea5e9]">We</span>Dive
             </span>
           </Link>
 
           {/* Right Navigation */}
           <div className="flex items-center gap-4">
-            {/* Language Toggle (Custom addition) */}
+            {/* Language Toggle */}
             <button
               onClick={() => setLanguage(language === 'en' ? 'ja' : 'en')}
               className="hidden md:flex items-center gap-1 text-xs font-bold text-gray-500 hover:text-gray-900 transition-colors"
             >
               <Globe size={14} />
-              {language === 'en' ? 'JP' : 'EN'}
+              {language.toUpperCase()}
             </button>
 
-            <Link to="/pokedex" className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-full transition-colors group">
-              <Search size={18} className="text-gray-500 group-hover:text-gray-900" />
-              <span className="text-sm font-bold">{t('nav.pokedex')}</span>
-            </Link>
-
-            <Link to="/concierge" className="hidden md:flex items-center gap-2 text-gray-600 hover:text-cyan-600 px-3 py-2 transition-colors group">
-              <Sparkles size={18} className="text-cyan-500 group-hover:animate-pulse" />
-              <span className="text-sm font-bold">AI Concierge</span>
+            {/* Search Button - Zukan Style */}
+            <Link to="/pokedex" className="flex items-center gap-2 bg-gray-100/80 hover:bg-gray-200/80 text-gray-700 px-5 py-2 rounded-full transition-all group">
+              <Search size={18} className="text-gray-400 group-hover:text-gray-700" />
+              <span className="text-sm font-bold">図鑑</span>
             </Link>
 
             {/* Menu Button */}
