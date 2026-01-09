@@ -130,43 +130,75 @@ export class MasterDataService extends BaseMasterDataService {
     return [];
   }
 
-  async getRegions(): Promise<{ id: string; name: string }[]> {
-    if (await this.initialize()) {
-      try {
-        const results = await masterDbEngine.getAllAsync<any>('SELECT * FROM master_regions ORDER BY name ASC');
-        return results.map(r => ({ id: r.id, name: r.name }));
-      } catch (e: any) { console.error('getRegions failed:', e); }
+  /**
+   * 地域一覧を取得
+   */
+  async getRegions(): Promise<any[]> {
+    await this.initialize();
+    try {
+      // master_geography から重複を除いて取得
+      const res = await masterDbEngine.getAllAsync(`
+        SELECT DISTINCT
+          region_id as id,
+          region_name as name,
+          region_description as description
+        FROM master_geography
+        WHERE region_status = 'approved'
+        ORDER BY region_id
+      `);
+      return res;
+    } catch (e) {
+      console.warn('[MasterData] Failed to fetch regions, returning empty array.', e);
+      return [];
     }
-    return [];
   }
 
-  async getZones(): Promise<Zone[]> {
-    if (await this.initialize()) {
-      try {
-        const results = await masterDbEngine.getAllAsync<any>('SELECT * FROM master_zones ORDER BY name ASC');
-        return results.map(z => ({
-          id: z.id,
-          name: z.name,
-          regionId: z.parent_id || z.region_id // 仕様書準拠(parent_id)と旧実装(region_id)の互換性維持
-        }));
-      } catch (e: any) { console.error('getZones failed:', e); }
+  /**
+   * ゾーン一覧を取得
+   */
+  async getZones(): Promise<any[]> {
+    await this.initialize();
+    try {
+      const res = await masterDbEngine.getAllAsync(`
+        SELECT DISTINCT
+          zone_id as id,
+          zone_name as name,
+          zone_description as description,
+          region_id as regionId
+        FROM master_geography
+        WHERE zone_status = 'approved'
+        ORDER BY zone_id
+      `);
+      // parentId マッピング (互換性維持)
+      return res.map((r: any) => ({ ...r, parentId: r.regionId }));
+    } catch (e) {
+      console.warn('[MasterData] Failed to fetch zones, returning empty array.', e);
+      return [];
     }
-    return [];
   }
 
-  async getAreas(): Promise<Area[]> {
-    if (await this.initialize()) {
-      try {
-        const results = await masterDbEngine.getAllAsync<any>('SELECT * FROM master_areas ORDER BY name ASC');
-        return results.map(a => ({
-          id: a.id,
-          name: a.name,
-          zoneId: a.parent_id || a.zone_id, // 仕様書準拠(parent_id)と旧実装(zone_id)の互換性維持
-          regionId: ''
-        }));
-      } catch (e: any) { console.error('getAreas failed:', e); }
+  /**
+   * エリア一覧を取得
+   */
+  async getAreas(): Promise<any[]> {
+    await this.initialize();
+    try {
+      const res = await masterDbEngine.getAllAsync(`
+        SELECT
+          area_id as id,
+          area_name as name,
+          area_description as description,
+          zone_id as zoneId
+        FROM master_geography
+        WHERE area_status = 'approved'
+        ORDER BY area_id
+      `);
+      // parentId マッピング
+      return res.map((r: any) => ({ ...r, parentId: r.zoneId }));
+    } catch (e) {
+      console.warn('[MasterData] Failed to fetch areas, returning empty array.', e);
+      return [];
     }
-    return [];
   }
 
   private mapPointFromSQLite(p: any): Point {

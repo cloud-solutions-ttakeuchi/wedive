@@ -642,6 +642,69 @@ Firebase Storage (GCS) から配信され、全ユーザーが読み取り専用
 | `role` | TEXT | 権限レベル |
 | `trust_score` | INTEGER | トラストスコア |
 | `data_json` | TEXT | 全プロフィールデータ |
+### 9.5 Personal Data & AI Concierge Flow
+
+The synchronization of sensitive user data and AI usage rights.
+
+#### (1) Personal Data Sync Sequence
+
+```mermaid
+sequenceDiagram
+    participant App as UserDataService
+    participant FS as Firestore
+    participant UserDB as SQLite (user_*.db)
+
+    Note over App: Triggered explicitly on Login or Refresh
+    
+    App->>FS: getDocs(users/{uid}/logs)
+    FS-->>App: Logs Collection
+    App->>UserDB: INSERT OR REPLACE INTO my_logs (id, data_json, synced_at)
+    
+    App->>FS: getDocs(reviews where userId == me)
+    FS-->>App: Reviews QuerySnapshot
+    App->>UserDB: INSERT OR REPLACE INTO my_reviews
+    
+    App->>FS: getDocs(users/{uid}/aiConciergeTickets)
+    FS-->>App: Tickets Collection
+    App->>UserDB: REPLACE INTO my_ai_concierge_tickets
+    
+    App->>FS: getDocs(*_proposals where submitterId == me)
+    FS-->>App: Proposals QuerySnapshot
+    App->>UserDB: REPLACE INTO my_proposals (Update Status)
+    
+    Note over App: SQLite now mirrors Firestore for Offline UI
+```
+
+#### (2) AI Concierge Usage Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant UI as ChatScreen
+    participant BE as Cloud Functions (AI Agent)
+    participant FS as Firestore (aiConciergeTickets)
+    participant App as AppContext/UserDataService
+
+    User->>UI: Send Message
+    UI->>BE: callFunction(message)
+    
+    rect rgb(255, 240, 240)
+    Note over BE: Server-Side Validation & Logic
+    BE->>FS: Transaction: Check Remaining Count > 0
+    alt Sufficient Tickets
+        FS->>FS: Decrement Count
+        BE->>BE: Generate AI Response
+        BE-->>UI: Response Text
+    else Insufficient
+        BE-->>UI: Error: No Tickets
+    end
+    end
+
+    Note over UI: Client needs to update ticket display
+    UI->>App: syncInitialData() (Partial or Full)
+    App->>FS: Fetch updated tickets
+    App->>UI: Update "Remaining: X"
+```
 ### 9.4 App Architecture (Native Specifics)
 The Mobile App (React Native/Expo) follows the same high-level architecture but uses different underlying engines.
 

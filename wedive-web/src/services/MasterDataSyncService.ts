@@ -118,9 +118,12 @@ export class MasterDataSyncService {
           gallery_json TEXT, stats_json TEXT, image_credit TEXT, image_license TEXT, image_keyword TEXT,
           search_text TEXT, updated_at TEXT
         );
-        CREATE TABLE IF NOT EXISTS master_regions (id TEXT PRIMARY KEY, name TEXT);
-        CREATE TABLE IF NOT EXISTS master_zones (id TEXT PRIMARY KEY, name TEXT, parent_id TEXT);
-        CREATE TABLE IF NOT EXISTS master_areas (id TEXT PRIMARY KEY, name TEXT, parent_id TEXT);
+        CREATE TABLE IF NOT EXISTS master_geography (
+          area_id TEXT, area_name TEXT, area_description TEXT, area_status TEXT,
+          zone_id TEXT, zone_name TEXT, zone_description TEXT, zone_status TEXT,
+          region_id TEXT, region_name TEXT, region_description TEXT, region_status TEXT,
+          full_path TEXT
+        );
         CREATE TABLE IF NOT EXISTS master_point_creatures (
           id TEXT PRIMARY KEY, point_id TEXT, creature_id TEXT, localRarity TEXT, updatedAt TEXT
         );
