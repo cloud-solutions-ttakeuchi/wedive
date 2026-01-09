@@ -470,29 +470,55 @@ Managed RAG (Vertex AI Search) を連携させるための設定規則です。
 
 ---
 
-## 8. Local-First データ管理 (Offline & Performance)
+## 8. データ整合性と同期設計 (Integrity & Sync Design)
 
-WeDive では、Web版および App版の双方において、ネットワーク負荷の最小化とパフォーマンスの最大化、およびオフライン利用を可能にするため、Firestore を「同期・バックアップ用」、SQLite を「プライマリ・ストレージ」として使い分ける **Local-First** 設計を採用する。
+### 8.1 基本原則とAIへの絶対禁止事項 (Strict Policies)
+WeDive は **Local-First** アーキテクチャを採用しており、マスタデータの参照において Firestore への直接的な Read を徹底的に排除します。
 
-### 8.1 永続化の仕組み
-- **対象データ**: 
-    - マスタデータ (`master.db`): GCS から配信される共通データ。
-    - パーソナルデータ (`user.db`): ログインユーザーのログ、設定、お気に入り。
-    - 管理用キャッシュ (`admin_cache`): 管理者のみが保持する承認待ちデータ・ユーザーリスト。
-- **挙動**: ネットワーク未接続時でも、アプリは SQLite から直接データを読み出す。Firestore SDK のキャッシュ機能に依存せず、独自のアプリロジックで高速に表示・検索を行う。
+> **AI AGENT WARNING: READ PROHIBITION**
+> マスタデータ（Points, Creatures, Areas, Zones, Regions）を同期するために、クライアントアプリから Firestore に対して `getDocs`, `onSnapshot` を実行することは**「死命的禁止事項」**である。
+> "Firestoreからデータを同期して解決します" という提案をした時点で、プロジェクトルール違反とみなされる。
 
-### 8.2 データ整合性 (Write-Through Logic)
-- **通常ユーザー**: 
-    - ログの保存や編集は、まずローカル SQLite に即時実行され、その後 Firestore へ非同期（または単発）で送信される。
-    - 読み出し時は Firestore を参照せず、SQLite からのみ取得する（課金 Read ゼロ）。
-- **管理者**:
-    - **マスタメンテナンス / クレンジング**: `AdminAreaCleansingPage` 等での直接編集は、Firestore の本番コレクションを更新すると同時に、管理者の手元の `master.db` も即時更新（UPDATE/DELETE）する。
-    - **承認プロセス**: 承認ボタン押下により Firestore が更新されたら、ローカルの `admin_cache` からその情報を物理削除し、リストを即座に更新する。
-- **同期の原則**: 
-    - Firestore 側の `onSnapshot`（常時監視）は**原則禁止**。
-    - すべてのデータは「ログイン時の一括同期」または「明示的なリフレッシュ」によってのみクラウドから取得される。
+### 8.2 データ同期サイクル (Sync Cycles)
 
-### 8.3 画像管理
-- 画像アップロードは Firebase Storage を利用する。オフライン時はローカルパスを保持し、次回オンライン時にアップロードを試みるキュー管理を行う。
+#### (1) マスタデータ (Public Use)
+すべてのユーザーが参照する共通データ。
+*   **Source**: Google Cloud Storage (GCS) に配置された `master.db` (SQLite Binary)。
+*   **Sync Logic**: アプリ起動時、`MasterDataService.syncMasterData()` が `master.db` をダウンロードし、Origin Private File System (OPFS) にインポートする。
+*   **Read**: アプリ内の検索・表示はすべてローカルの SQLite から行う。Firestore は一切参照しない。
+*   **Update**: ユーザーによる参照系データの更新は発生しない。
+
+#### (2) 個人データ (Personal Data)
+*   **Scope**: ログ (`my_logs`)、レビュー (`my_reviews`)、設定 (`my_settings`)。
+*   **Sync Logic**: アプリ起動時 (`UserDataService.syncInitialData`)、ログインユーザーのサブコレクション等から一括取得する。
+    *   `master.db` とは異なり、個人の整合性が最優先されるため Firestore を正とする。
+
+#### (3) 管理者データ (Admin/Moderator Data)
+*   **Scope**: 承認待ち申請 (`proposals`)、未承認レビュー (`unapproved_reviews`)。
+*   **Sync Logic**: `UserDataService.syncInitialData` において、`user.role` が `admin` / `moderator` である場合のみ、対象コレクションから承認待ちドキュメントを取得する。
+
+### 8.3 編集と整合性 (Editing & Write-Through)
+
+管理者機能においてデータを更新する場合の整合性担保フロー。
+
+#### (1) マスタデータの直接更新 (Direct Update)
+管理者がポイント情報を修正する場合：
+1.  **Check**: 必要に応じ、対象ドキュメント (`doc()`) を Firestore から `getDoc` し、競合を確認する。
+2.  **Write (Firestore)**: Firestore に更新を書き込む (`setDoc` / `updateDoc`)。
+3.  **Write (Local)**: Firestore 更新成功後、**直ちにローカルの SQLite (`master_points` 等) にも同じ変更を適用する** (`MasterDataService.updatePointInCache`)。
+    *   **目的**: GCS 反映待ち時間を解消し、管理者の手元に即時反映させるため。
+    *   **注意**: この際、Firestore からの再同期 (`getDocs`) は絶対に行わない。
+
+#### (2) 申請の承認 (Approval)
+1.  **Write (Firestore)**: 申請内容をマスタとして Firestore に保存。プロポーザルを `approved` に更新。
+2.  **Delete (Local)**: ローカルの申請キャッシュ (`admin_proposals`) から削除。
+3.  **Write (Local)**: 承認した内容でローカルのマスタデータを更新。
+
+### 8.4 クラス責務
+
+| クラス | 責務 | 禁止事項 |
+| :--- | :--- | :--- |
+| **MasterDataService** | GCS からの `master.db` 同期と、SQLite へのクエリ/マッピング。 | Firestore API (`getDocs`, `onSnapshot`) の使用。 |
+| **UserDataService** | ユーザー個人データの同期。管理者用データの同期。マスタ保存時の `Write-Through` 制御。 | マスタデータ同期のための `getDocs` 呼び出し。 |
 
 ---
