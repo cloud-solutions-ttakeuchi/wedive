@@ -150,10 +150,9 @@ export class MasterDataService extends BaseMasterDataService {
           region_name as name,
           region_description as description
         FROM master_geography
-        WHERE region_status = 'approved'
         ORDER BY region_id
       `);
-      console.log(`[MasterData] getRegions: found ${res.length} rows`);
+      console.log(`[MasterData] getRegions: found ${res.length} rows`, res);
       return res;
     } catch (e) {
       console.warn('[MasterData] Failed to fetch regions, returning empty array.', e);
@@ -174,11 +173,10 @@ export class MasterDataService extends BaseMasterDataService {
           zone_description as description,
           region_id as regionId
         FROM master_geography
-        WHERE zone_status = 'approved'
         ORDER BY zone_id
       `);
       // parentId マッピング (互換性維持)
-      console.log(`[MasterData] getZones: found ${res.length} rows`);
+      console.log(`[MasterData] getZones: found ${res.length} rows`, res);
       return (res as any[]).map((r: any) => ({ ...r, parentId: r.regionId }));
     } catch (e) {
       console.warn('[MasterData] Failed to fetch zones, returning empty array.', e);
@@ -199,11 +197,10 @@ export class MasterDataService extends BaseMasterDataService {
           area_description as description,
           zone_id as zoneId
         FROM master_geography
-        WHERE area_status = 'approved'
         ORDER BY area_id
       `);
       // parentId マッピング
-      console.log(`[MasterData] getAreas: found ${res.length} rows`);
+      console.log(`[MasterData] getAreas: found ${res.length} rows`, res);
       return (res as any[]).map((r: any) => ({ ...r, parentId: r.zoneId }));
     } catch (e) {
       console.warn('[MasterData] Failed to fetch areas, returning empty array.', e);
