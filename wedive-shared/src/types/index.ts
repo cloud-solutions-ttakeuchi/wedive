@@ -78,6 +78,7 @@ export interface Point {
   status: 'pending' | 'approved' | 'rejected';
   submitterId: string;
   createdAt: string;
+  updatedAt?: string;
 
   images: string[];
   imageUrl: string;
@@ -262,6 +263,7 @@ export interface Creature {
   imageLicense?: string;
   imageKeyword?: string;
   createdAt?: string;
+  updatedAt?: string;
 }
 
 export type CreatureStats = {

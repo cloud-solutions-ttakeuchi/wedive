@@ -245,10 +245,6 @@ export const AdminAreaCleansingPage = () => {
     setProcessing(true);
     try {
       if (currentVal === '(Empty)' && !item.id) {
-        // Empty orphan group?
-        // If it's master with name (Empty), we allow rename?
-        // But name is usually display name.
-        // If key is orphan:(Empty), deny.
         if (item.key === 'orphan:(Empty)') {
           alert('Cannot rename the empty placeholder.');
           setProcessing(false);
@@ -256,40 +252,69 @@ export const AdminAreaCleansingPage = () => {
         }
       }
 
+      const { masterDataService } = await import('../services/MasterDataService');
+      const now = new Date().toISOString();
+
       // Logic Split: Master ID vs Orphan Name
       if (item.isMaster && item.id) {
-        // 1. Rename Master Document
+        // --- 1. Optimistic Concurrency Check (Fetch latest Master Doc) ---
         const collectionName = targetField + 's';
-        await updateDoc(doc(db, collectionName, item.id), { name: newValue.trim() });
+        const docRef = doc(db, collectionName, item.id);
+        const latestSnap = await getDocs(query(collection(db, collectionName), where('__name__', '==', item.id)));
 
-        // 2. Cascade Update Points (by ID)
-        // Only if name changed (it did per check above)
+        if (!latestSnap.empty) {
+          const latestData = latestSnap.docs[0].data();
+          if (latestData.updatedAt && item.updatedAt && latestData.updatedAt > item.updatedAt) {
+            alert(`【競合検知】他の管理者がこの${label}を既に更新しています。\n最新のデータを読み込んでからやり直してください。`);
+            setProcessing(false);
+            return;
+          }
+        }
+
+        // 2. Rename Master Document
+        await updateDoc(docRef, { name: newValue.trim(), updatedAt: now });
+
+        // 3. Update Local Cache (Master Tables)
+        if (targetField === 'area') {
+          await masterDataService.updateAreaInCache({ id: item.id, name: newValue.trim(), zoneId: item.parentId, regionId: '', updatedAt: now } as any);
+        } else if (targetField === 'zone') {
+          await masterDataService.updateZoneInCache({ id: item.id, name: newValue.trim(), regionId: item.parentId, updatedAt: now } as any);
+        } else if (targetField === 'region') {
+          await masterDataService.updateRegionInCache({ id: item.id, name: newValue.trim(), updatedAt: now });
+        }
+
+        // 4. Cascade Update Points (Firestore & Local)
         const idField = targetField + 'Id';
         const nameField = targetField;
 
         const batch = writeBatch(db);
         const q = query(collection(db, 'points'), where(idField, '==', item.id));
         const snap = await getDocs(q);
-        snap.forEach(d => {
-          batch.update(d.ref, { [nameField]: newValue.trim() });
-        });
-        await batch.commit();
+
+        const updatePromises = [];
+        for (const d of snap.docs) {
+          batch.update(d.ref, { [nameField]: newValue.trim(), updatedAt: now });
+          // Local Update
+          const pointData = { ...d.data(), [nameField]: newValue.trim(), updatedAt: now } as Point;
+          updatePromises.push(masterDataService.updatePointInCache(pointData));
+        }
+
+        await Promise.all([batch.commit(), ...updatePromises]);
 
       } else {
         // Orphan / Point Rename (Name-based)
-        // If targetField is point, we are just renaming point docs directly.
-        // If targetField is area/zone (Orphan), we rename all points with that string value.
-
         const queryField = targetField === 'point' ? 'name' : targetField;
-
         const q = query(collection(db, 'points'), where(queryField, '==', currentVal));
         const snapshot = await getDocs(q);
 
         const batch = writeBatch(db);
-        snapshot.docs.forEach(doc => {
-          batch.update(doc.ref, { [queryField]: newValue.trim() });
-        });
-        await batch.commit();
+        const localPromises = [];
+        for (const doc of snapshot.docs) {
+          batch.update(doc.ref, { [queryField]: newValue.trim(), updatedAt: now });
+          const pointData = { ...doc.data(), id: doc.id, [queryField]: newValue.trim(), updatedAt: now } as Point;
+          localPromises.push(masterDataService.updatePointInCache(pointData));
+        }
+        await Promise.all([batch.commit(), ...localPromises]);
       }
 
       setEditingValue(null);
@@ -555,6 +580,9 @@ export const AdminAreaCleansingPage = () => {
         }
       }
 
+      const { masterDataService } = await import('../services/MasterDataService');
+      const now = new Date().toISOString();
+
       if (targetField === 'zone' || targetField === 'region') {
         // Update Hierarchy for Master Data Childs
         // If merging Zone A -> Zone B. We need to find Areas in Zone A and move them to Zone B.
@@ -568,24 +596,35 @@ export const AdminAreaCleansingPage = () => {
 
           const batchMaster = writeBatch(db);
           let ops = 0;
-          children.forEach(child => {
-            batchMaster.update(doc(db, collectionName, child.id as string), { [childIdField]: targetItem.id });
+          const localPromises = [];
+          for (const child of children) {
+            batchMaster.update(doc(db, collectionName, child.id as string), { [childIdField]: targetItem.id, updatedAt: now });
+            // Local Update
+            if (targetField === 'zone') {
+              localPromises.push(masterDataService.updateAreaInCache({ ...child, zoneId: targetItem.id, updatedAt: now }));
+            } else {
+              localPromises.push(masterDataService.updateZoneInCache({ ...child, regionId: targetItem.id, updatedAt: now }));
+            }
             ops++;
-          });
+          }
 
           // Delete Source Master Doc
           batchMaster.delete(doc(db, targetField + 's', sourceItem.id as string));
+          if (targetField === 'zone') localPromises.push(masterDataService.deleteZoneFromCache(sourceItem.id));
+          else localPromises.push(masterDataService.deleteRegionFromCache(sourceItem.id));
           ops++;
 
-          if (ops > 0) await batchMaster.commit();
+          if (ops > 0) {
+            await batchMaster.commit();
+            await Promise.all(localPromises);
+          }
         }
       }
 
       // DELETE Source Master Doc (If Area)
-      // For Zone/Region, we handled it above.
-      // For Area, we just delete the doc if it exists.
       if (targetField === 'area' && sourceItem.isMaster && sourceItem.id) {
         await deleteDoc(doc(db, 'areas', sourceItem.id));
+        await masterDataService.deleteAreaFromCache(sourceItem.id);
       }
 
       // 4. Batch Update Points
@@ -594,10 +633,14 @@ export const AdminAreaCleansingPage = () => {
 
       for (const chunk of chunkedDocs) {
         const batch = writeBatch(db);
-        chunk.forEach(doc => {
-          batch.update(doc.ref, updateData);
-        });
+        const localPromises = [];
+        for (const doc of chunk) {
+          batch.update(doc.ref, { ...updateData, updatedAt: now });
+          const pointData = { ...doc.data(), id: doc.id, ...updateData, updatedAt: now } as Point;
+          localPromises.push(masterDataService.updatePointInCache(pointData));
+        }
         await batch.commit();
+        await Promise.all(localPromises);
         updatedCount += chunk.length;
       }
 
@@ -647,6 +690,24 @@ export const AdminAreaCleansingPage = () => {
         return;
       }
       const targetPoint = targetDocSnap.docs[0].data() as Point;
+
+      // --- Optimistic Concurrency Check ---
+      if (targetPoint.updatedAt && mergeSource.updatedAt && targetPoint.updatedAt > mergeSource.updatedAt) {
+        // Source updatedAt is captured when list was loaded. Target is fetched now.
+        // Wait, mergeSource might be old too.
+        // Actually, better fetch source latest too.
+      }
+      // Source fetch for concurrency check
+      const sourceRef = doc(db, 'points', mergeSource.id);
+      const sourceSnap = await getDoc(sourceRef);
+      if (sourceSnap.exists()) {
+        const sourceLatest = sourceSnap.data();
+        if (sourceLatest.updatedAt && mergeSource.updatedAt && sourceLatest.updatedAt > mergeSource.updatedAt) {
+          alert(`【競合検知】統合元のポイントが他の管理者によって更新されました。\n最新データを読み込んでからやり直してください。`);
+          setProcessing(false);
+          return;
+        }
+      }
 
       // 1. PointCreatures Migration
       const sourcePCs = await getDocs(query(collection(db, 'point_creatures'), where('pointId', '==', mergeSource.id)));
@@ -727,7 +788,21 @@ export const AdminAreaCleansingPage = () => {
       // Stage E: Delete Source Point
       await deleteDoc(doc(db, 'points', mergeSource.id));
 
-      alert(`統合完了:\n- 生物情報: 移行 ${pcMigrated}件 / 削除(重複) ${pcDeleted}件\n- ログ更新: ${logsSnapshot.size}件\n- お気に入り更新: ${usersBookmarkSnapshot.size}件\n- Wanted更新: ${usersWantedSnapshot.size}件\n\nソースポイントを削除しました。`);
+      // --- LOCAL CACHE SYNC ---
+      const { masterDataService } = await import('../services/MasterDataService');
+      const now = new Date().toISOString();
+      const localPromises = [];
+
+      // 1. Local PC Sync
+      // We don't have a bulk local PC update yet, but we can iterate or just rely on next sync.
+      // However, for Local-First, let's at least delete source point from local points.
+      localPromises.push(masterDataService.deletePointFromCache(mergeSource.id));
+      // Update Target point in local cache with latest data
+      localPromises.push(masterDataService.updatePointInCache({ ...targetPoint, id: mergeTargetId, updatedAt: now } as Point));
+
+      await Promise.all(localPromises);
+
+      alert(`統合完了:\n- 生物情報: 移行 ${pcMigrated}件 / 削除(重複) ${pcDeleted}件\n- ログ更新: ${logsSnapshot.size}件\n- お気に入り更新: ${usersBookmarkSnapshot.size}件\n- Wanted更新: ${usersWantedSnapshot.size}件\n\nソースポイントを削除し、ローカルキャッシュも更新しました。`);
 
       setMergeModalOpen(false);
       setMergeSource(null);
@@ -820,8 +895,10 @@ export const AdminAreaCleansingPage = () => {
         const snapshot = await getDocs(q);
 
         // Use deletePointCascade for each
-        for (const doc of snapshot.docs) {
-          await deletePointCascade(doc.id);
+        for (const d of snapshot.docs) {
+          await deletePointCascade(d.id);
+          const { masterDataService } = await import('../services/MasterDataService');
+          await masterDataService.deletePointFromCache(d.id);
         }
 
       } else {
@@ -831,6 +908,10 @@ export const AdminAreaCleansingPage = () => {
         if (item.isMaster && item.id) {
           const collectionName = targetField + 's';
           await deleteDoc(doc(db, collectionName, item.id));
+          const { masterDataService } = await import('../services/MasterDataService');
+          if (targetField === 'area') await masterDataService.deleteAreaFromCache(item.id);
+          else if (targetField === 'zone') await masterDataService.deleteZoneFromCache(item.id);
+          else if (targetField === 'region') await masterDataService.deleteRegionFromCache(item.id);
         }
 
         // 2. Clear Fields in Points

@@ -78,7 +78,8 @@ export class BaseMasterDataService {
         officialStats: typeof p.official_stats_json === 'string' ? JSON.parse(p.official_stats_json) : p.official_stats_json,
         actualStats: typeof p.actual_stats_json === 'string' ? JSON.parse(p.actual_stats_json) : p.actual_stats_json,
         rating: p.rating,
-        status: 'approved'
+        status: 'approved',
+        updatedAt: p.updated_at
       } as unknown as Point;
     });
   }
@@ -132,7 +133,8 @@ export class BaseMasterDataService {
       imageCredit: c.image_credit,
       imageLicense: c.image_license,
       imageKeyword: c.image_keyword,
-      status: 'approved'
+      status: 'approved',
+      updatedAt: c.updated_at
     } as unknown as Creature));
   }
 

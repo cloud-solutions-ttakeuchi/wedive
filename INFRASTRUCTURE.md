@@ -129,6 +129,13 @@ API タイムアウト（60秒）を超える重い処理や、定期的な一�
 
 ---
 
+### 3.3 Master Data Distribution (Cloud Storage)
+- **マスタ配信拠点**: Firebase Storage (Google Cloud Storage) 内の `master_data/` フォルダ。
+- **配信ファイル**: `latest.db.gz` (SQLite binary + Gzip)。
+- **同期ロジック**: 各クライアント (Web/App) は起動時にファイルのメタデータ (updatedTime) を取得。手元のタイムスタンプと差異がある場合のみダウンロード・解凍してローカル SQLite を上書き更新する。これにより、Firestore の読み取り課金を発生させず、数万件のマスタデータを瞬時に同期する。
+
+---
+
 ## 4. デプロイメント・パイプライン
 
 GitHub Actions を通じて、以下の 3 段階でデプロイが実行されます。
@@ -138,8 +145,6 @@ GitHub Actions を通じて、以下の 3 段階でデプロイが実行され�
 3.  **Batch Build & Update**: Docker イメージのビルド、Push、および Cloud Run Jobs の定義更新。
 
 ---
-
-## 5. インフラ定数 (Infrastructure Constants)
 
 | 項目 | 値 |
 | :--- | :--- |

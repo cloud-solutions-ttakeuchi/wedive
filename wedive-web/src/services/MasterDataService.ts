@@ -1,5 +1,5 @@
-import { BaseMasterDataService } from 'wedive-shared';
-import type { Point, Creature, AgencyMaster } from 'wedive-shared';
+import { BaseMasterDataService, mapAgencyFromSQLite } from 'wedive-shared';
+import type { Point, Creature, AgencyMaster, Zone, Area } from 'wedive-shared';
 import { masterDbEngine } from './WebSQLiteEngine';
 
 /**
@@ -104,6 +104,37 @@ export class MasterDataService extends BaseMasterDataService {
     return [];
   }
 
+  async getZones(): Promise<Zone[]> {
+    if (await this.initialize()) {
+      try {
+        const results = await masterDbEngine.getAllAsync<any>('SELECT * FROM master_zones ORDER BY name ASC');
+        return results.map(z => ({
+          id: z.id,
+          name: z.name,
+          regionId: z.region_id,
+          updatedAt: z.updated_at
+        } as Zone));
+      } catch (e) { console.error(e); }
+    }
+    return [];
+  }
+
+  async getAreas(): Promise<Area[]> {
+    if (await this.initialize()) {
+      try {
+        const results = await masterDbEngine.getAllAsync<any>('SELECT * FROM master_areas ORDER BY name ASC');
+        return results.map(a => ({
+          id: a.id,
+          name: a.name,
+          zoneId: a.zone_id,
+          regionId: '', // SQLite には直接ないため暫定
+          updatedAt: a.updated_at
+        } as Area));
+      } catch (e) { console.error(e); }
+    }
+    return [];
+  }
+
   /**
    * 全ポイントの取得
    */
@@ -116,13 +147,14 @@ export class MasterDataService extends BaseMasterDataService {
           return results.map(p => ({
             id: p.id,
             name: p.name,
-            name_kana: p.name_kana,
+            nameKana: p.name_kana,
             region: p.region_name || '',
             area: p.area_name || '',
             zone: p.zone_name || '',
             latitude: p.latitude,
             longitude: p.longitude,
-            status: 'approved'
+            status: 'approved',
+            updatedAt: p.updated_at
           } as unknown as Point));
         }
       } catch (e) {
@@ -144,9 +176,10 @@ export class MasterDataService extends BaseMasterDataService {
           return results.map(c => ({
             id: c.id,
             name: c.name,
-            name_kana: c.name_kana,
+            nameKana: c.name_kana,
             category: c.category || '',
-            status: 'approved'
+            status: 'approved',
+            updatedAt: c.updated_at
           } as unknown as Creature));
         }
       } catch (e) {
@@ -176,6 +209,102 @@ export class MasterDataService extends BaseMasterDataService {
       }
     }
     return [];
+  }
+  /**
+   * ポイントのローカルキャッシュ更新
+   */
+  async updatePointInCache(point: Point): Promise<void> {
+    if (await this.initialize()) {
+      const searchText = `${point.name} ${point.nameKana || ''} ${point.area || ''} ${point.zone || ''} ${point.region || ''}`.toLowerCase();
+      const sql = `
+        INSERT OR REPLACE INTO master_points (
+          id, name, name_kana, area_id, area_name, zone_name, region_name,
+          latitude, longitude, search_text, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+      await masterDbEngine.runAsync(sql, [
+        point.id, point.name, point.nameKana || '', point.areaId,
+        point.area || '', point.zone || '', point.region || '',
+        point.latitude, point.longitude, searchText, point.updatedAt || new Date().toISOString()
+      ]);
+    }
+  }
+
+  async deletePointFromCache(id: string): Promise<void> {
+    if (await this.initialize()) {
+      await masterDbEngine.runAsync('DELETE FROM master_points WHERE id = ?', [id]);
+    }
+  }
+
+  /**
+   * 生物のローカルキャッシュ更新
+   */
+  async updateCreatureInCache(creature: Creature): Promise<void> {
+    if (await this.initialize()) {
+      const searchText = `${creature.name} ${creature.nameKana || ''} ${creature.scientificName || ''} ${creature.englishName || ''}`.toLowerCase();
+      const sql = `
+        INSERT OR REPLACE INTO master_creatures (
+          id, name, name_kana, scientific_name, english_name, category, family,
+          rarity, search_text, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+      await masterDbEngine.runAsync(sql, [
+        creature.id, creature.name, creature.nameKana || '', creature.scientificName || '',
+        creature.englishName || '', creature.category || '', creature.family || '',
+        creature.rarity || 'Common', searchText, creature.updatedAt || new Date().toISOString()
+      ]);
+    }
+  }
+
+  async deleteCreatureFromCache(id: string): Promise<void> {
+    if (await this.initialize()) {
+      await masterDbEngine.runAsync('DELETE FROM master_creatures WHERE id = ?', [id]);
+    }
+  }
+
+  /**
+   * 地域・ゾーン・エリアの更新
+   */
+  async updateAreaInCache(area: Area): Promise<void> {
+    if (await this.initialize()) {
+      await masterDbEngine.runAsync('INSERT OR REPLACE INTO master_areas (id, name, zone_id) VALUES (?, ?, ?)', [area.id, area.name, area.zoneId]);
+    }
+  }
+  async deleteAreaFromCache(id: string): Promise<void> {
+    if (await this.initialize()) {
+      await masterDbEngine.runAsync('DELETE FROM master_areas WHERE id = ?', [id]);
+    }
+  }
+
+  async updateZoneInCache(zone: Zone): Promise<void> {
+    if (await this.initialize()) {
+      await masterDbEngine.runAsync('INSERT OR REPLACE INTO master_zones (id, name, region_id) VALUES (?, ?, ?)', [zone.id, zone.name, zone.regionId]);
+    }
+  }
+  async deleteZoneFromCache(id: string): Promise<void> {
+    if (await this.initialize()) {
+      await masterDbEngine.runAsync('DELETE FROM master_zones WHERE id = ?', [id]);
+    }
+  }
+
+  async updateRegionInCache(region: any): Promise<void> {
+    if (await this.initialize()) {
+      await masterDbEngine.runAsync('INSERT OR REPLACE INTO master_regions (id, name) VALUES (?, ?)', [region.id, region.name]);
+    }
+  }
+  async deleteRegionFromCache(id: string): Promise<void> {
+    if (await this.initialize()) {
+      await masterDbEngine.runAsync('DELETE FROM master_regions WHERE id = ?', [id]);
+    }
+  }
+
+  async updatePointCreatureInCache(item: any): Promise<void> {
+    if (await this.initialize()) {
+      await masterDbEngine.runAsync(
+        'INSERT OR REPLACE INTO master_point_creatures (id, point_id, creature_id, localRarity) VALUES (?, ?, ?, ?)',
+        [item.id, item.pointId, item.creatureId, item.localRarity]
+      );
+    }
   }
 }
 

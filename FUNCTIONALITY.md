@@ -218,22 +218,17 @@ graph TD
 - **承認・却下 (`/admin/proposals`)**: 管理者・モデレーターによる申請の精査。
 
 ### 3.2 管理者向け管理ページ (Admin Only)
-- **ユーザー管理 (`/admin/users`)** (参照: `users`): ユーザーロール (User/Moderator/Admin) の変更。
-- **生物図鑑管理 (`/admin/creatures`)** (参照: `creatures`, `points`, `point_creatures`):
-  - データの直接編集・削除。
-  - **地点紐付け管理**: 特定の生物をダイビングポイントへ手動でリンク/解除。
-- **マスタデータ整理 (`/admin/areas`)** (参照: `regions`, `zones`, `areas`):
-  - **エリア統合**: 表記揺れ（Orphan データ）をマスタデータ (ID 保持) へ統合。
-  - **DB同期**: シードファイルからの Firestore 同期実行。
-  - **エクスポート機能**:
-    - **Locations**: `locations_seed_export_*.json` (階層データ)
-    - **Creatures**: `creatures_real_export_*.json` (生物データ)
-    - **Relations**: `point_creatures_seed_export_*.json` (紐付けデータ)
-  - **DBメンテナンス**: Truncate (全削除), Hard Reset (全削除+初期化), Delete My Logs。
-- **AI データクレンジング (`/admin/cleansing`)** (参照: `creatures`, `point_creatures`, `points`, `regions`, `zones`, `areas`):
-  - **Dashboard**: クレンジングパイプラインの実行条件設定（範囲/モード）。
-  - **Review Engine**: AI が生成した「地点×生物」の紐付け案の承認・却下。
-  - **エクスポート**: `EXPORT SEED` ボタン（※現在は UI プレースホルダー、ロジックは `/admin/areas` に実装済み）。
+- **ユーザー管理 (`/admin/users`)** (参照: `users`):
+    - **権限変更**: 全ユーザーリスト（SQLite `admin_users_cache`）からユーザーを選択し、ロール（User / Moderator / Admin）を即時変更。
+    - **トラストスコア管理**: ユーザーの貢献度に基づくトラストランクの確認と調整。
+- **マスタデータ整理・クレンジング (`/admin/areas`, `/admin/cleansing`)** (参照: `regions`, `zones`, `areas`, `points`):
+    - **Direct CRUD**: エリア、ゾーン、地域の名称変更、階層の移動、および新規作成。
+    - **エリア統合 (Merge)**: 重複・表記揺れのあるエリアを一つの正解 ID へ統合し、紐付く全ポイントの denormalized フィールドを一括置換。
+    - **Local-First 同期**: 管理者が編集したマスタデータは、Firestore を更新すると同時に管理者の手元のローカル SQLite 検索にも即時反映（更新後の名前で即座に再検索可能）される仕様。
+    - **データ保守**: Truncate (全削除), Hard Reset (全削除+初期化), Export Seed (GCS配信用データの生成)。
+- **生物図鑑管理 (`/admin/creatures`)** (参照: `creatures`, `point_creatures`):
+    - 生物情報の直接編集、一括削除。ポイントとの生息紐付け。
+    - **AI レビューエンジン**: AI が提案した紐付け案（Pending）の承認・却下。
 
 ---
 
