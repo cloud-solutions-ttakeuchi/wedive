@@ -56,7 +56,6 @@ export class UserDataService {
           data_json TEXT,
           status TEXT,
           synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-          synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
         -- 自分の提案履歴 (Personal用)
         CREATE TABLE IF NOT EXISTS my_proposals (
