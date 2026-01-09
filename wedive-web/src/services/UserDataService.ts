@@ -48,6 +48,14 @@ export class UserDataService {
           reason TEXT,
           synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
+        -- 管理用キャッシュテーブル (Admin/Moderator用)
+        CREATE TABLE IF NOT EXISTS admin_proposals (
+          id TEXT PRIMARY KEY,
+          type TEXT, -- 'creature', 'point', 'point-creature', 'review'
+          data_json TEXT,
+          status TEXT,
+          synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
       `);
       return true;
     } catch (error) {
@@ -91,6 +99,47 @@ export class UserDataService {
     } catch (error) {
       console.error('[UserDataService] Failed to get reviews:', error);
       return [];
+    }
+  }
+
+  /**
+   * 管理用申請データを取得
+   */
+  async getAdminProposals(type: 'creature' | 'point' | 'point-creature' | 'review'): Promise<any[]> {
+    try {
+      const results = await userDbEngine.getAllAsync<{ data_json: string }>(
+        'SELECT data_json FROM admin_proposals WHERE type = ?',
+        [type]
+      );
+      return results.map(row => JSON.parse(row.data_json));
+    } catch (error) {
+      console.error(`[UserDataService] Failed to get admin proposals (${type}):`, error);
+      return [];
+    }
+  }
+
+  /**
+   * 管理用申請データを削除
+   */
+  async deleteAdminProposal(id: string): Promise<void> {
+    try {
+      await userDbEngine.runAsync('DELETE FROM admin_proposals WHERE id = ?', [id]);
+    } catch (error) {
+      console.error('[UserDataService] Failed to delete admin proposal:', error);
+    }
+  }
+
+  /**
+   * 管理用申請データを保存 (Sync用)
+   */
+  private async saveAdminProposal(type: string, id: string, data: any): Promise<void> {
+    try {
+      await userDbEngine.runAsync(
+        'INSERT OR REPLACE INTO admin_proposals (id, type, data_json) VALUES (?, ?, ?)',
+        [id, type, JSON.stringify(data)]
+      );
+    } catch (error) {
+      console.error('[UserDataService] Failed to save admin proposal:', error);
     }
   }
 
@@ -159,6 +208,32 @@ export class UserDataService {
       }
 
       console.log('[Sync] Initial sync completed.');
+
+      // 3. 管理者データの同期 (Role が admin/moderator の場合)
+      const isAdmin = localProfile?.role === 'admin' || localProfile?.role === 'moderator';
+      if (isAdmin) {
+        console.log('[Sync] Starting admin data sync...');
+        const collections = [
+          { name: 'creature_proposals', type: 'creature' },
+          { name: 'point_proposals', type: 'point' },
+          { name: 'point_creature_proposals', type: 'point-creature' },
+          { name: 'unapproved_reviews', type: 'review' }
+        ];
+
+        for (const col of collections) {
+          const snap = await getDocs(collection(firestoreDb, col.name));
+          for (const doc of snap.docs) {
+            await this.saveAdminProposal(col.type, doc.id, { ...doc.data(), id: doc.id });
+          }
+        }
+
+        // 全ユーザーリストも管理者用に取得
+        const usersSnap = await getDocs(collection(firestoreDb, 'users'));
+        const allUsers = usersSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+        await this.saveSetting('all_users_cache', allUsers);
+
+        console.log('[Sync] Admin data sync completed.');
+      }
     } catch (error) {
       console.error('[Sync] Initial sync failed:', error);
     }

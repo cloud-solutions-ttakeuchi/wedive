@@ -317,117 +317,124 @@ AIによる再構築結果や検索結果を保存し、費用の抑制と高速
 | `iconUrl` | string | アイコン画像URL |
 | `condition` | map | 獲得条件定義 |
 
-### 4.14 管理画面におけるデータフロー（審査・承認プロセス）
+### 4.14 管理機能におけるデータフロー (Admin Data Flow)
 
-管理者用データ（各種プロポーザル等）も、Local-First の原則に従い **SQLite をプライマリ・ストレージ**とする。一般ユーザーデータと同様、Firestore への直接アクセスは最小限に抑える。
+管理者（Admin/Moderator）用のデータ操作も、Local-First の原則に従い **SQLite をプライマリ・ストレージ**とする。Firestore への直接アクセスは、初期同期と確定した書き込みのみに限定する。
 
-1.  **初回同期 (Initial Sync)**:
-    *   ログイン時、一般データと同様に `UserDataService.syncInitialData` 内で Firestore の各種承認待ちコレクション（`creature_proposals`, `point_proposals`, `point_creature_proposals`, `unapproved_reviews`）から全データを一括取得（One-off fetch）し、ローカル SQLite の管理用テーブルに保存・更新する。
-    *   `onSnapshot`（常時監視）は**全廃**している。
+#### 1. データカテゴリと同期方針
+| カテゴリ | 同期・取得タイミング | 書き込みフロー |
+| :--- | :--- | :--- |
+| **申請データ** (Proposals) | 初回ログイン時の一括取得 (getDocs) | Firestore 更新 + ローカル削除 |
+| **マスタ編集** (Direct CRUD) | 初期同期 (GCS) + 差分更新 | Firestore 更新 + ローカル SQLite 更新 (UPDATE) |
+| **ユーザー管理** (User Management) | 初回ログイン時の一括取得 (getDocs) | Firestore 更新 + ローカルキャッシュ更新 |
 
-2.  **ローカル読み出し**:
-    *   管理画面（Admin UI）は、常にローカル SQLite からデータを読み出して表示する。表示の高速化とオフライン対応、および Firestore の Read コスト削減を両立させる。
+#### 2. 管理者による承認・却下フロー (Approval Flow)
+1.  **表示**: `admin_cache` テーブル（SQLite）から申請一覧を表示。 
+2.  **アクション**:
+    - Firestore の `*_proposals` ドキュメントを更新。
+    - 承認の場合、該当するマスタコレクション（`points` 等）へ `setDoc` / `updateDoc`。
+    - **整合性確保**: アクション成功後、ローカル SQLite から該当する候補レコード (`admin_creature_proposals` 等) を **物理削除**。また、承認したデータがポイント等の場合は、管理者のローカル `master.db` も更新する。
 
-3.  **アクションと整合性**:
-    *   承認・却下実行時は、以下の順序で更新を行う。
-        1.  Firestore の該当ドキュメントを更新（`updateDoc` / `setDoc`）。
-        2.  ローカル SQLite の該当レコードを即時更新または削除。
-    *   これにより、クラウドへの反映と UI 上の表示更新を即座に（再読み込みなしで）同期させる。
+#### 3. マスタデータの直接メンテナンスフロー (Direct CRUD / Area Cleansing)
+1.  **直接編集**: `AdminAreaCleansingPage` 等からの直接的な名称変更、統合、削除。
+2.  **整合性確保 (副作用の伝搬)**:
+    - **Firestore**: `writeBatch` を使用し、対象ドキュメントだけでなく、紐付く denormalized field（例: `areaId` を書き換えた際の Point 内の `area` 文字列）をすべて一括更新する。
+    - **Local SQLite**: 管理者のブラウザ上にある `master.db` に対して、同一の UPDATE/DELETE 文を実行し、再起動なしで最新状態を反映させる。
+3.  **データ復旧 (Hard Reset)**:
+    - 必要に応じて Firestore の全ドキュメントを削除し、完全なシードデータから再構築する。この際、全ユーザーに対して次回の起動時にマスタの再ダウンロードを促す。
 
-**データフロー図 (Mermaid)**:
+#### 4.16 複数管理者間での競合解決 (Optimistic Concurrency Control)
 
-```mermaid
-sequenceDiagram
-    participant AdminUI as Administrative UI
-    participant SQLite as SQLite (Local Master)
-    participant SyncLogic as Sync Service
-    participant FS as Firestore (Cloud)
+複数の管理者が同時に操作する際の整合性は、各ドキュメントの `updatedAt` を用いた「楽観的ロック」方式で担保する。
 
-    Note over SyncLogic, FS: [ログイン時・初回同期]
-    SyncLogic->>FS: getDocs (申請データを一括取得)
-    FS-->>SyncLogic: 全申請データ
-    SyncLogic->>SQLite: 管理テーブルへ保存 (admin_*)
-
-    Note over AdminUI, SQLite: [データ閲覧]
-    AdminUI->>SQLite: データを要求 (SELECT)
-    SQLite-->>AdminUI: 申請一覧データ (高速表示)
-
-    Note over AdminUI, FS: [承認アクション]
-    AdminUI->>FS: Firestore 更新 (承認処理)
-    AdminUI->>SQLite: ローカルレコードの物理削除/更新
-    Note over AdminUI, SQLite: 再読み込みなしでリストから消滅
-```
-
-#### 管理データの状態遷移 (Admin Proposal State)
-
-管理者用キャッシュデータ（`admin_proposals` テーブル等）は、以下のライフサイクルに従う。
-
-| 現在の状態 | トリガー（イベント） | 遷移後の状態 | 実行エンジン / 処理内容 |
-| :--- | :--- | :--- | :--- |
-| **未存在** | ログイン / 初期同期 | `pending` (Local) | `UserDataService.syncInitialData`: Firestore から取得し物理保存 |
-| **pending** (Local) | 管理者による承認 | **削除** (Local) | `UserDataService.deleteAdminProposal`: Firestore 更新成功後に物理削除 |
-| **pending** (Local) | 管理者による却下 | **削除** (Local) | `UserDataService.deleteAdminProposal`: 却下確定後に物理削除 |
-| **pending** (Local) | 手動リフレッシュ | `pending` (Local) | `UserDataService.syncInitialData`: 最新データを取得し上書き (UPSERT) |
+1.  **比較ロジック**:
+    - 保存実行直前に、Firestore から対象レコードの最新の `updatedAt` を取得する。
+    - **一致 (Same)**: ローカルの元データから更新がないため、`serverTimestamp()` を付与して Firestore とローカルを同時更新する。
+    - **不一致 (Remote is Newer)**: 他の管理者が先に更新を完了している。自身の更新を破棄（中断）し、Firestore から最新データを取得してローカル SQLite をリフレッシュする。
+2.  **ユーザーへのフィードバック**: 「他の管理者がこのデータを更新しました。最新の状態を読み込みます」と通知し、編集内容の競合を回避する。
 
 ---
 
 ## 5. SQLite テーブル定義 (Local Storage)
 
-### 5.1 Personal Data (`user.db`)
-(既存のテーブル定義...)
+Local-First 実装において、Web/App 共通で利用される物理テーブル定義。
 
-### 5.2 Administrative Data (`admin_cache`)
-管理者・モデレーター権限を持つユーザーの環境でのみ同期・保持される管理用キャッシュテーブル。
+### 5.1 Master Data (`master.db`)
+Firebase Storage (GCS) から配信され、全ユーザーが読み取り専用で利用する共通マスタ。
 
-#### `admin_creature_proposals` / `admin_point_proposals`
+#### `master_regions` / `master_zones` / `master_areas`
+| フィールド | 型 | 説明 |
+| :--- | :--- | :--- |
+| `id` | TEXT PRIMARY KEY | 階層ID (r/z/a...) |
+| `name` | TEXT | 名称 |
+| `parent_id` | TEXT | 親階層のID |
+
+#### `master_points`
+| フィールド | 型 | 説明 |
+| :--- | :--- | :--- |
+| `id` | TEXT PRIMARY KEY | ポイントID |
+| `name` | TEXT | ポイント名 |
+| `name_kana` | TEXT | カナ名 (検索用) |
+| `area_id` | TEXT | 所属エリアID |
+| `latitude` / `longitude` | REAL | 座標 |
+| `search_text` | TEXT | 高速検索用結合文字列 |
+| `updated_at` | TEXT | 最終更新日時 (競合チェック用) |
+
+#### `master_creatures`
+| フィールド | 型 | 説明 |
+| :--- | :--- | :--- |
+| `id` | TEXT PRIMARY KEY | 生物ID |
+| `name` | TEXT | 和名 |
+| `scientific_name` | TEXT | 学名 |
+| `family` | TEXT | 科目 |
+| `rarity` | TEXT | レア度 |
+| `updated_at` | TEXT | 最終更新日時 (競合チェック用) |
+
+### 5.2 Personal Data (`user.db`)
+各ユーザー固有のデータ（ログ、プロフィール、設定など）。
+
+#### `my_logs`
+| フィールド | 型 | 説明 |
+| :--- | :--- | :--- |
+| `id` | TEXT PRIMARY KEY | ログID |
+| `date` | TEXT | 潜水日 |
+| `point_id` | TEXT | 地点ID |
+| `data_json` | TEXT | 全データ (Firestore ドキュメント互換) |
+| `synced_at` | TEXT | 最終同期日時 |
+| `updated_at` | TEXT | ローカル更新日時 |
+
+#### `my_settings`
+| フィールド | 型 | 説明 |
+| :--- | :--- | :--- |
+| `key` | TEXT PRIMARY KEY | 設定キー (profile, theme, etc.) |
+| `value_json` | TEXT | 設定値 |
+
+#### `my_ai_concierge_tickets`
+| フィールド | 型 | 説明 |
+| :--- | :--- | :--- |
+| `id` | TEXT PRIMARY KEY | チケットID |
+| `remaining_count` | INTEGER | 残数 |
+| `expires_at` | TEXT | 有効期限 |
+
+### 5.3 Administrative Data (`admin_cache.db` / `user.db` 内部)
+管理者・モデレーターのみが保持する、審査・管理用のキャッシュデータ。
+
+#### `admin_proposals`
 | フィールド | 型 | 説明 |
 | :--- | :--- | :--- |
 | `id` | TEXT PRIMARY KEY | プロポーザルID |
-| `target_id` | TEXT | 修正対象のマスタID (新規の場合は空) |
-| `data_json` | TEXT | プロポーザルの全データ (JSON) |
-| `status` | TEXT | `pending`, `approved`, `rejected` |
-| `synced_at` | TEXT | 同期日時 |
-
-#### `admin_point_creature_proposals`
-| フィールド | 型 | 説明 |
-| :--- | :--- | :--- |
-| `id` | TEXT PRIMARY KEY | ID |
-| `point_id` | TEXT | ポイントID |
-| `creature_id` | TEXT | 生物ID |
-| `data_json` | TEXT | JSONデータ |
-
-#### `admin_unapproved_reviews`
-| フィールド | 型 | 説明 |
-| :--- | :--- | :--- |
-| `id` | TEXT PRIMARY KEY | レビューID |
-| `point_id` | TEXT | ポイントID |
-| `data_json` | TEXT | JSONデータ |
-| `synced_at` | TEXT | 同期日時 |
+| `type` | TEXT | `creature`, `point`, `review` 等の種別 |
+| `data_json` | TEXT | 申請内容詳細 |
+| `status` | TEXT | `pending` 等 |
 
 #### `admin_users_cache`
 | フィールド | 型 | 説明 |
 | :--- | :--- | :--- |
 | `id` | TEXT PRIMARY KEY | ユーザーID |
-| `data_json` | TEXT | JSONデータ (プロフィール、権限等) |
-| `synced_at` | TEXT | 同期日時 |
-
----
-
-## 5. SQLite テーブル定義 (Mobile Local)
-
-### 5.1 Personal Data (`user.db`)
-
-#### `my_ai_chat_tickets`
-| フィールド | 型 | 説明 |
-| :--- | :--- | :--- |
-| `id` | TEXT PRIMARY KEY | ドキュメントID |
-| `type` | TEXT | `daily`, `contribution`, `bonus`, `purchased` |
-| `remaining_count`| INTEGER | 残りのチケット数 |
-| `granted_at` | TEXT | 付与日時 (ISO8601) |
-| `expires_at` | TEXT | 有効期限 (ISO8601) |
-| `status` | TEXT | `active`, `used`, `expired` |
-| `reason` | TEXT | 付与理由 |
-| `synced_at` | TEXT | Firestoreとの最終同期日時 |
+| `name` | TEXT | 名称 |
+| `role` | TEXT | 権限レベル |
+| `trust_score` | INTEGER | トラストスコア |
+| `data_json` | TEXT | 全プロフィールデータ |
 
 ---
 
@@ -456,15 +463,29 @@ Managed RAG (Vertex AI Search) を連携させるための設定規則です。
 
 ---
 
-## 8. オフライン・データ管理 (Offline Data Management)
+## 8. Local-First データ管理 (Offline & Performance)
 
-モバイルアプリ（wedive-app）では、通信環境の悪い海辺での利用を前提とし、Firestore を「同期・バックアップ用」、SQLite を「プライマリ・ストレージ」として使い分ける **Local-First** 設計を採用しています。
+WeDive では、Web版および App版の双方において、ネットワーク負荷の最小化とパフォーマンスの最大化、およびオフライン利用を可能にするため、Firestore を「同期・バックアップ用」、SQLite を「プライマリ・ストレージ」として使い分ける **Local-First** 設計を採用する。
 
 ### 8.1 永続化の仕組み
-- **対象データ**: マスタデータ (`master.db`) および個人の記録・設定 (`user.db`)。
-- **挙動**: ネットワーク未接続時でも、アプリは SQLite から直接データを読み出します。Firestore SDK のキャッシュ機能に依存せず、独自のアプリロジックで高速に表示・検索（FTS5利用）を行います。
+- **対象データ**: 
+    - マスタデータ (`master.db`): GCS から配信される共通データ。
+    - パーソナルデータ (`user.db`): ログインユーザーのログ、設定、お気に入り。
+    - 管理用キャッシュ (`admin_cache`): 管理者のみが保持する承認待ちデータ・ユーザーリスト。
+- **挙動**: ネットワーク未接続時でも、アプリは SQLite から直接データを読み出す。Firestore SDK のキャッシュ機能に依存せず、独自のアプリロジックで高速に表示・検索を行う。
 
-### 8.2 オフライン保存の整合性
-- **Write Operation**: ログの保存や編集は、まずローカル SQLite に即時実行されます。
-- **Firestore 同期**: 保存成功後、Firestore へ 1回だけデータが送信されます。コスト削減のため、Firestore 側の `onSnapshot`（常時監視）は全廃しており、サーバーからの不要なプッシュ通知による課金や無限ループを防止しています。
-- **画像管理**: 画像アップロードは Firebase Storage を利用し、オフライン時は将来的なバックグラウンドキュー管理で対応予定です。
+### 8.2 データ整合性 (Write-Through Logic)
+- **通常ユーザー**: 
+    - ログの保存や編集は、まずローカル SQLite に即時実行され、その後 Firestore へ非同期（または単発）で送信される。
+    - 読み出し時は Firestore を参照せず、SQLite からのみ取得する（課金 Read ゼロ）。
+- **管理者**:
+    - **マスタメンテナンス / クレンジング**: `AdminAreaCleansingPage` 等での直接編集は、Firestore の本番コレクションを更新すると同時に、管理者の手元の `master.db` も即時更新（UPDATE/DELETE）する。
+    - **承認プロセス**: 承認ボタン押下により Firestore が更新されたら、ローカルの `admin_cache` からその情報を物理削除し、リストを即座に更新する。
+- **同期の原則**: 
+    - Firestore 側の `onSnapshot`（常時監視）は**原則禁止**。
+    - すべてのデータは「ログイン時の一括同期」または「明示的なリフレッシュ」によってのみクラウドから取得される。
+
+### 8.3 画像管理
+- 画像アップロードは Firebase Storage を利用する。オフライン時はローカルパスを保持し、次回オンライン時にアップロードを試みるキュー管理を行う。
+
+---
