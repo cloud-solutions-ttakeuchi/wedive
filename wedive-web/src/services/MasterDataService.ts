@@ -31,13 +31,14 @@ export class MasterDataService extends BaseMasterDataService {
   async initialize(): Promise<boolean> {
     if (this.isInitialized) return true;
     try {
+      // エンジンの初期化 (IDBのオープンなど)
       if ('initialize' in this.sqlite && typeof this.sqlite.initialize === 'function') {
         await (this.sqlite as any).initialize();
       }
       this.isInitialized = true;
       return true;
     } catch (e) {
-      console.error('[MasterDataSync] Initialization failed:', e);
+      console.error('[MasterData] Initialization failed:', e);
       return false;
     }
   }
@@ -49,63 +50,50 @@ export class MasterDataService extends BaseMasterDataService {
   // --- Override Search Methods to use local mapping (with IDs) ---
 
   async searchPoints(text: string, limitCount = 50): Promise<Point[]> {
-    if (!await this.initialize()) return [];
-
     const normalizedQuery = text.trim();
     if (!normalizedQuery) return [];
 
-    const sql = `
-      SELECT * FROM master_points
-      WHERE search_text LIKE ?
-      ORDER BY
-        CASE
-          WHEN name = ? THEN 1
-          WHEN name LIKE ? THEN 2
-          ELSE 3
-        END,
-        name ASC
-      LIMIT ?
-    `;
-
-    try {
-      const results = await masterDbEngine.getAllAsync<any>(sql, [
-        `%${normalizedQuery}%`, normalizedQuery, `${normalizedQuery}%`, limitCount
-      ]);
-      return results.map(p => this.mapPointFromSQLite(p));
-    } catch (e: any) {
-      console.error('searchPoints failed:', e);
-      return [];
+    if (await this.initialize()) {
+      try {
+        const results = await super.searchPoints(normalizedQuery, limitCount);
+        if (results.length > 0) {
+          // BaseMasterDataService でマッピング済み
+          return results;
+        }
+      } catch (e) {
+        console.warn('SQLite point search failed, falling back...', e);
+      }
     }
+    return [];
   }
 
   async searchCreatures(text: string, limitCount = 50): Promise<Creature[]> {
-    if (!await this.initialize()) return [];
-
     const normalizedQuery = text.trim();
     if (!normalizedQuery) return [];
 
-    const sql = `
-      SELECT * FROM master_creatures
-      WHERE search_text LIKE ?
-      ORDER BY
-        CASE
-          WHEN name = ? THEN 1
-          WHEN name LIKE ? THEN 2
-          ELSE 3
-        END,
-        name ASC
-      LIMIT ?
-    `;
-
-    try {
-      const results = await masterDbEngine.getAllAsync<any>(sql, [
-        `%${normalizedQuery}%`, normalizedQuery, `${normalizedQuery}%`, limitCount
-      ]);
-      return results.map(c => this.mapCreatureFromSQLite(c));
-    } catch (e: any) {
-      console.error('searchCreatures failed:', e);
-      return [];
+    if (await this.initialize()) {
+      try {
+        const results = await super.searchCreatures(normalizedQuery, limitCount);
+        if (results.length > 0) {
+          // BaseMasterDataService でマッピング済み
+          return results;
+        }
+      } catch (e) {
+        console.warn('SQLite creature search failed, falling back...', e);
+      }
     }
+    return [];
+  }
+
+  async getAgencies(): Promise<AgencyMaster[]> {
+    if (await this.initialize()) {
+      try {
+        return await super.getAgencies();
+      } catch (e) {
+        console.warn('SQLite getAgencies failed, falling back...', e);
+      }
+    }
+    return [];
   }
 
   // --- Adapter Methods: SQLite Data -> App Model ---
