@@ -148,12 +148,12 @@ export class MasterDataService extends BaseMasterDataService {
         SELECT DISTINCT
           region_id as id,
           region_name as name,
-          region_description as description,
-          region_status as status
+          region_description as description
         FROM master_geography
+        WHERE (region_status IS NULL OR region_status != 'rejected')
         ORDER BY region_id
       `);
-      console.log(`[MasterData] getRegions: found ${res.length} rows`, res);
+      console.log(`[MasterData] getRegions: found ${res.length} rows`);
       return res;
     } catch (e) {
       console.warn('[MasterData] Failed to fetch regions, returning empty array.', e);
@@ -172,13 +172,13 @@ export class MasterDataService extends BaseMasterDataService {
           zone_id as id,
           zone_name as name,
           zone_description as description,
-          zone_status as status,
           region_id as regionId
         FROM master_geography
+        WHERE (zone_status IS NULL OR zone_status != 'rejected')
         ORDER BY zone_id
       `);
       // parentId マッピング (互換性維持)
-      console.log(`[MasterData] getZones: found ${res.length} rows`, res);
+      console.log(`[MasterData] getZones: found ${res.length} rows`);
       return (res as any[]).map((r: any) => ({ ...r, parentId: r.regionId }));
     } catch (e) {
       console.warn('[MasterData] Failed to fetch zones, returning empty array.', e);
@@ -197,13 +197,13 @@ export class MasterDataService extends BaseMasterDataService {
           area_id as id,
           area_name as name,
           area_description as description,
-          area_status as status,
           zone_id as zoneId
         FROM master_geography
+        WHERE (area_status IS NULL OR area_status != 'rejected')
         ORDER BY area_id
       `);
       // parentId マッピング
-      console.log(`[MasterData] getAreas: found ${res.length} rows`, res);
+      console.log(`[MasterData] getAreas: found ${res.length} rows`);
       return (res as any[]).map((r: any) => ({ ...r, parentId: r.zoneId }));
     } catch (e) {
       console.warn('[MasterData] Failed to fetch areas, returning empty array.', e);
