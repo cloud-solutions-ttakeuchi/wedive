@@ -13,6 +13,7 @@ import { db as firestoreDb } from '../lib/firebase';
 import { auth } from '../lib/firebase';
 import type { ConciergeTicket, User } from '../types';
 import { BaseAiConciergeService, CONCIERGE_CAMPAIGN } from '../types';
+import { userDataService } from './UserDataService';
 
 class AiConciergeServiceImpl extends BaseAiConciergeService {
   /**
@@ -58,6 +59,16 @@ class AiConciergeServiceImpl extends BaseAiConciergeService {
           }
         }, { merge: true });
 
+        // Update local SQLite cache
+        const localProfile = await userDataService.getSetting<User>('profile');
+        if (localProfile) {
+          const tickets = localProfile.aiConciergeTickets || { totalAvailable: 0 };
+          tickets.lastDailyGrant = today;
+          tickets.totalAvailable = (tickets.totalAvailable || 0) + 1;
+          localProfile.aiConciergeTickets = tickets;
+          await userDataService.saveSetting('profile', localProfile);
+        }
+
         console.log(`[AiConciergeService] Daily ticket granted for Web: ${ticketId}`);
         return true;
       });
@@ -91,6 +102,15 @@ class AiConciergeServiceImpl extends BaseAiConciergeService {
             totalAvailable: increment(1)
           }
         }, { merge: true });
+
+        // Update local SQLite cache
+        const localProfile = await userDataService.getSetting<User>('profile');
+        if (localProfile) {
+          const tickets = localProfile.aiConciergeTickets || { totalAvailable: 0 };
+          tickets.totalAvailable = (tickets.totalAvailable || 0) + 1;
+          localProfile.aiConciergeTickets = tickets;
+          await userDataService.saveSetting('profile', localProfile);
+        }
       });
     } catch (error) {
       console.error('[AiConciergeService] Test grant failed:', error);
@@ -134,6 +154,15 @@ class AiConciergeServiceImpl extends BaseAiConciergeService {
         transaction.update(userRef, {
           'aiConciergeTickets.totalAvailable': increment(-1)
         });
+
+        // Update local SQLite cache
+        const localProfile = await userDataService.getSetting<User>('profile');
+        if (localProfile) {
+          const tickets = localProfile.aiConciergeTickets || { totalAvailable: 0 };
+          tickets.totalAvailable = Math.max(0, (tickets.totalAvailable || 0) - 1);
+          localProfile.aiConciergeTickets = tickets;
+          await userDataService.saveSetting('profile', localProfile);
+        }
 
         return true;
       });
@@ -180,6 +209,22 @@ class AiConciergeServiceImpl extends BaseAiConciergeService {
         transaction.set(userRef, {
           aiConciergeTickets: contributionData
         }, { merge: true });
+
+        // Update local SQLite cache
+        const localProfile = await userDataService.getSetting<User>('profile');
+        if (localProfile) {
+          const tickets = localProfile.aiConciergeTickets || { totalAvailable: 0 };
+
+          tickets.totalAvailable = (tickets.totalAvailable || 0) + 1;
+
+          if (this.isCampaignPeriod()) {
+            const contrib = tickets.periodContribution || { points: 0, creatures: 0, reviews: 0 };
+            contrib[category] = (contrib[category] || 0) + 1;
+            tickets.periodContribution = contrib;
+          }
+          localProfile.aiConciergeTickets = tickets;
+          await userDataService.saveSetting('profile', localProfile);
+        }
 
         console.log(`[AiConciergeService] Contribution ticket granted: ${category} for user ${userId}`);
       });

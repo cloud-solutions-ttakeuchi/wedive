@@ -103,6 +103,80 @@ export class MasterDataService extends BaseMasterDataService {
     }
     return [];
   }
+
+  /**
+   * 全ポイントの取得
+   */
+  async getAllPoints(): Promise<Point[]> {
+    if (await this.initialize()) {
+      try {
+        const sql = 'SELECT * FROM master_points ORDER BY name ASC';
+        const results = await masterDbEngine.getAllAsync<any>(sql);
+        if (results.length > 0) {
+          return results.map(p => ({
+            id: p.id,
+            name: p.name,
+            name_kana: p.name_kana,
+            region: p.region_name || '',
+            area: p.area_name || '',
+            zone: p.zone_name || '',
+            latitude: p.latitude,
+            longitude: p.longitude,
+            status: 'approved'
+          } as unknown as Point));
+        }
+      } catch (e) {
+        console.error('SQLite getAllPoints failed:', e);
+      }
+    }
+    return [];
+  }
+
+  /**
+   * 全生物の取得
+   */
+  async getAllCreatures(): Promise<Creature[]> {
+    if (await this.initialize()) {
+      try {
+        const sql = 'SELECT * FROM master_creatures ORDER BY name ASC';
+        const results = await masterDbEngine.getAllAsync<any>(sql);
+        if (results.length > 0) {
+          return results.map(c => ({
+            id: c.id,
+            name: c.name,
+            name_kana: c.name_kana,
+            category: c.category || '',
+            status: 'approved'
+          } as unknown as Creature));
+        }
+      } catch (e) {
+        console.error('SQLite getAllCreatures failed:', e);
+      }
+    }
+    return [];
+  }
+
+  /**
+   * 全ポイント生物紐付けデータの取得
+   */
+  async getAllPointCreatures(): Promise<any[]> {
+    if (await this.initialize()) {
+      try {
+        const sql = 'SELECT * FROM master_point_creatures';
+        const results = await masterDbEngine.getAllAsync<any>(sql);
+        return results.map((r: any) => ({
+          id: r.id,
+          pointId: r.point_id,
+          creatureId: r.creature_id,
+          localRarity: r.localRarity,
+          updatedAt: r.updatedAt
+        }));
+      } catch (e) {
+        console.error('SQLite getAllPointCreatures failed:', e);
+      }
+    }
+    return [];
+  }
 }
 
 export const masterDataService = new MasterDataService(masterDbEngine);
