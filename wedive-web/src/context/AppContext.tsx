@@ -14,6 +14,8 @@ import { useRegions } from '../hooks/useRegions';
 import { db as firestore } from '../lib/firebase';
 import { collection, query, orderBy, limit, getDocs, doc, updateDoc, deleteDoc, writeBatch, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { useAdminActions } from '../hooks/useAdminActions';
+import { masterDataService } from '../services/MasterDataService';
+import { useEffect } from 'react';
 
 /**
  * AppContextは非推奨となりました。
@@ -89,6 +91,30 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
+  useEffect(() => {
+    // 起動時にマスターデータの初期化（テーブル作成）と同期を行う
+    const initMasterData = async () => {
+      try {
+        const available = await masterDataService.initialize();
+        if (available) {
+          console.log('[App] MasterDataService initialized.');
+          await masterDataService.syncMasterData();
+          // 同期完了後にクエリを再取得
+          points.refetch();
+          creatures.refetch();
+          pointCreatures.refetch();
+          zones.refetch();
+          areas.refetch();
+          agencies.refetch();
+          regions.refetch();
+        }
+      } catch (error) {
+        console.error('[App] MasterData init/sync failed:', error);
+      }
+    };
+    initMasterData();
+  }, []);
+
   const auth = useAuth();
   const points = usePoints();
   const creatures = useCreatures();

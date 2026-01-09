@@ -1,6 +1,8 @@
 import { BaseMasterDataService, mapAgencyFromSQLite } from 'wedive-shared';
 import type { Point, Creature, AgencyMaster, Zone, Area } from 'wedive-shared';
 import { masterDbEngine } from './WebSQLiteEngine';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db as firestoreDb } from '../lib/firebase';
 
 /**
  * Web 版 MasterDataService
@@ -15,13 +17,117 @@ export class MasterDataService extends BaseMasterDataService {
     try {
       // エンジンの初期化 (IDBのオープンなど)
       if ('initialize' in this.sqlite && typeof this.sqlite.initialize === 'function') {
-        await this.sqlite.initialize();
+        await (this.sqlite as any).initialize();
       }
+
+      // テーブル作成 (マスターデータ用)
+      await masterDbEngine.runAsync(`
+        CREATE TABLE IF NOT EXISTS master_points (
+          id TEXT PRIMARY KEY,
+          name TEXT,
+          name_kana TEXT,
+          area_id TEXT,
+          area_name TEXT,
+          zone_name TEXT,
+          region_name TEXT,
+          latitude REAL,
+          longitude REAL,
+          search_text TEXT,
+          updated_at TEXT
+        );
+        CREATE TABLE IF NOT EXISTS master_creatures (
+          id TEXT PRIMARY KEY,
+          name TEXT,
+          name_kana TEXT,
+          scientific_name TEXT,
+          english_name TEXT,
+          category TEXT,
+          family TEXT,
+          rarity TEXT,
+          search_text TEXT,
+          updated_at TEXT
+        );
+        CREATE TABLE IF NOT EXISTS master_point_creatures (
+          id TEXT PRIMARY KEY,
+          point_id TEXT,
+          creature_id TEXT,
+          localRarity TEXT,
+          updatedAt TEXT
+        );
+        CREATE TABLE IF NOT EXISTS master_agencies (
+          id TEXT PRIMARY KEY,
+          name TEXT,
+          ranks_json TEXT,
+          updated_at TEXT
+        );
+        CREATE TABLE IF NOT EXISTS master_regions (
+          id TEXT PRIMARY KEY,
+          name TEXT
+        );
+        CREATE TABLE IF NOT EXISTS master_zones (
+          id TEXT PRIMARY KEY,
+          name TEXT,
+          region_id TEXT
+        );
+        CREATE TABLE IF NOT EXISTS master_areas (
+          id TEXT PRIMARY KEY,
+          name TEXT,
+          zone_id TEXT
+        );
+      `);
+
       this.isInitialized = true;
       return true;
     } catch (e) {
       console.error('[MasterData] Initialization failed:', e);
       return false;
+    }
+  }
+
+  /**
+   * Firestore からマスターデータを一括取得して SQLite に同期する
+   */
+  async syncMasterData(): Promise<void> {
+    const isAvailable = await this.initialize();
+    if (!isAvailable) return;
+
+    try {
+      // データの存在確認
+      const pointsCount = await masterDbEngine.getAllAsync<{ count: number }>('SELECT COUNT(*) as count FROM master_points');
+      if (pointsCount.length > 0 && pointsCount[0].count > 0) {
+        console.log('[MasterData Sync] SQLite already has data.');
+        return;
+      }
+
+      console.log('[MasterData Sync] Starting master data sync from Firestore...');
+
+      // 1. Points 同期 (簡易)
+      const pointsSnap = await getDocs(query(collection(firestoreDb, 'points'), where('status', '==', 'approved')));
+      for (const d of pointsSnap.docs) {
+        await this.updatePointInCache({ id: d.id, ...d.data() } as Point);
+      }
+
+      // 2. Creatures 同期 (簡易)
+      const creaturesSnap = await getDocs(query(collection(firestoreDb, 'creatures'), where('status', '==', 'approved')));
+      for (const d of creaturesSnap.docs) {
+        await this.updateCreatureInCache({ id: d.id, ...d.data() } as Creature);
+      }
+
+      // 3. Agencies 同期
+      const agenciesSnap = await getDocs(collection(firestoreDb, 'agencies'));
+      for (const d of agenciesSnap.docs) {
+        const data = d.data();
+        await masterDbEngine.runAsync(
+          'INSERT OR REPLACE INTO master_agencies (id, name, ranks_json, updated_at) VALUES (?, ?, ?, ?)',
+          [d.id, data.name, JSON.stringify(data.ranks || []), data.updatedAt || new Date().toISOString()]
+        );
+      }
+
+      // Regions / Zones / Areas も必要に応じて追加...
+
+      console.log('[MasterData Sync] Master data sync completed.');
+    } catch (error) {
+      console.error('[MasterData Sync] Error:', error);
     }
   }
 
@@ -36,25 +142,10 @@ export class MasterDataService extends BaseMasterDataService {
           console.log(`[MasterData] Found ${results.length} points from SQLite (Web) 🚀`, results[0]);
           return results;
         }
-      } catch (e) {
+      } catch (e: any) {
         console.warn('SQLite point search failed, falling back...', e);
       }
     }
-
-    /*
-    // フェイルオーバー: Firestore 検索
-    console.log('[MasterData] Falling back to Firestore search... ☁️');
-    const q = query(
-      collection(firestoreDb, 'points'),
-      where('status', '==', 'approved'),
-      orderBy('name'),
-      startAt(normalizedQuery),
-      endAt(normalizedQuery + '\uf8ff'),
-      firestoreLimit(20)
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Point));
-    */
     return [];
   }
 
@@ -69,25 +160,10 @@ export class MasterDataService extends BaseMasterDataService {
           console.log(`[MasterData] Found ${results.length} creatures from SQLite (Web) 🚀`, results[0]);
           return results;
         }
-      } catch (e) {
+      } catch (e: any) {
         console.warn('SQLite creature search failed, falling back...', e);
       }
     }
-
-    /*
-    // フェイルオーバー: Firestore 検索
-    console.log('[MasterData] Falling back to Firestore search... ☁️');
-    const q = query(
-      collection(firestoreDb, 'creatures'),
-      where('status', '==', 'approved'),
-      orderBy('name'),
-      startAt(normalizedQuery),
-      endAt(normalizedQuery + '\uf8ff'),
-      firestoreLimit(20)
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Creature));
-    */
     return [];
   }
 
@@ -97,7 +173,7 @@ export class MasterDataService extends BaseMasterDataService {
         console.log('[MasterData] Fetching agencies from SQLite (Web) 🚀');
         const results = await super.getAgencies();
         return results;
-      } catch (e) {
+      } catch (e: any) {
         console.warn('SQLite agency fetch failed, falling back...', e);
       }
     }
@@ -114,7 +190,7 @@ export class MasterDataService extends BaseMasterDataService {
           regionId: z.region_id,
           updatedAt: z.updated_at
         } as Zone));
-      } catch (e) { console.error(e); }
+      } catch (e: any) { console.error(e); }
     }
     return [];
   }
@@ -130,7 +206,7 @@ export class MasterDataService extends BaseMasterDataService {
           regionId: '', // SQLite には直接ないため暫定
           updatedAt: a.updated_at
         } as Area));
-      } catch (e) { console.error(e); }
+      } catch (e: any) { console.error(e); }
     }
     return [];
   }
@@ -157,7 +233,7 @@ export class MasterDataService extends BaseMasterDataService {
             updatedAt: p.updated_at
           } as unknown as Point));
         }
-      } catch (e) {
+      } catch (e: any) {
         console.error('SQLite getAllPoints failed:', e);
       }
     }
@@ -182,7 +258,7 @@ export class MasterDataService extends BaseMasterDataService {
             updatedAt: c.updated_at
           } as unknown as Creature));
         }
-      } catch (e) {
+      } catch (e: any) {
         console.error('SQLite getAllCreatures failed:', e);
       }
     }
@@ -204,7 +280,7 @@ export class MasterDataService extends BaseMasterDataService {
           localRarity: r.localRarity,
           updatedAt: r.updatedAt
         }));
-      } catch (e) {
+      } catch (e: any) {
         console.error('SQLite getAllPointCreatures failed:', e);
       }
     }
