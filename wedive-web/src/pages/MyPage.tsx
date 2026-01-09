@@ -455,7 +455,7 @@ export const MyPage = () => {
                     <PenTool size={20} />
                   </div>
                   <div className="text-left">
-                    <div className="font-bold text-lg text-slate-900 group-hover:text-ocean-600 transition-colors">新しいレビューを書く</div>
+                    <div className="font-bold text-lg text-slate-900 group-hover:text-ocean-600 transition-colors">ダイビングログを記録する</div>
                     <div className="text-xs text-gray-400 font-mono">My Diving Log</div>
                   </div>
                 </div>
