@@ -61,7 +61,7 @@ erDiagram
     %% --- Geographical Hierarchy ---
     REGION ||--o{ ZONE : "Ref ID (zones.regionId)"
     ZONE ||--o{ AREA : "Ref ID (areas.zoneId)"
-    AREA ||--o{ POINT : "Ref ID (points.areaId)"
+    AREA ||--o{ POINT : "Ref ID (areas.zoneId)"
     REGION ||--o{ POINT : "Ref ID (points.regionId / Denormalized)"
     
     %% --- Core Entities & User Data ---
@@ -92,6 +92,202 @@ erDiagram
     %% Embedded: Nested Map object inside the document
     %% Denormalized: Data stored duplicated for query performance
 ```
+
+### 関連用語の凡例 (Legend)
+- **Sub-collection**: Firestore の物理的な階層構造。親のパス (`/users/uid`) の下に配置される。
+- **Ref ID**: 他ドキュメントの ID を単一の `string` フィールドとして保持。
+- **Ref ID List**: 他ドキュメントの ID を `string[]` (配列) 形式で保持。
+- **Root Mapping**: 多対多を実現するため、Root に配置した中間テーブル的役割のコレクション。
+- **Embedded**: 正規化せず、ドキュメント内に直接持っている属性情報（Map/独自オブジェクト）。
+- **Denormalized**: 結合（Join）を避けるため、正規化を崩して重複して持たせているデータ。
+
+## Architecture & Class Relationships
+
+The following diagrams illustrate the exact relationships and data flow between key components in the Web/App architecture, ensuring Clarity and Correctness.
+
+### 1. Component & Service Dependency (Class Diagram)
+
+```mermaid
+classDiagram
+    class AppContext {
+        +initMasterData()
+        +addCreatureProposal(proposal)
+        +updateCreature(id, data)
+        +updatePoint(id, data)
+    }
+
+    class MasterDataSyncService {
+        +syncMasterData() : static
+        -fallbackToLocalTables()
+        -updateSQLiteDatabase(data)
+    }
+
+    class MasterDataService {
+        +initialize()
+        +searchPoints(text)
+        +searchCreatures(text)
+        +savePoint(point)
+        +saveCreature(creature)
+    }
+
+    class UserDataService {
+        +syncInitialData()
+        +savePointProposal(proposal)
+        +saveCreatureProposal(proposal)
+        +saveMyProposal(type, id, data) : private
+    }
+
+    class WebSQLiteEngine {
+        +importDatabase(data)
+        +runAsync(sql)
+        +getAllAsync(sql)
+    }
+
+    class Firestore {
+        +setDoc()
+        +getDocs()
+    }
+
+    class GCS {
+        +getDownloadURL()
+        +v1/master/latest.db.gz
+    }
+
+    %% Relationships
+    AppContext ..> MasterDataSyncService : Calls syncMasterData() on Init
+    AppContext ..> MasterDataService : Reads Data (via hooks)
+    AppContext ..> UserDataService : Delegate Write/Sync Actions
+
+    MasterDataSyncService ..> GCS : Downloads DB
+    MasterDataSyncService ..> WebSQLiteEngine : Imports Binary / Creates Tables
+
+    MasterDataService ..> WebSQLiteEngine : Reads/Writes Cache
+    UserDataService ..> Firestore : Writes Proposals / Admin Data
+    UserDataService ..> WebSQLiteEngine : Writes my_proposals (userDb)
+```
+
+### 2. Initialization & Sync Flow (Sequence Diagram)
+
+```mermaid
+sequenceDiagram
+    participant UI as App/Pages
+    participant CTX as AppContext
+    participant MDSync as MasterDataSyncService
+    participant UDS as UserDataService
+    participant GCS
+    participant SQLite as SQLiteEngine
+    participant FS as Firestore
+
+    UI->>CTX: Mount (AppProvider)
+    CTX->>MDSync: syncMasterData()
+    
+    rect rgb(240, 248, 255)
+    note over MDSync: Master Data Sync Phase
+    MDSync->>GCS: Check Metadata & Download (v1/master/latest.db.gz)
+    alt Download Success
+        GCS-->>MDSync: latest.db.gz
+        MDSync->>SQLite: importDatabase(decompressed)
+    else Download Fail (Offline/404)
+        MDSync->>SQLite: fallbackToLocalTables() (Create Empty Schema)
+    end
+    end
+
+    CTX->>UDS: syncInitialData() (if authenticated)
+    
+    rect rgb(255, 250, 240)
+    note over UDS: User Data Sync Phase
+    UDS->>FS: Fetch User Proposals (submitterId==me)
+    FS-->>UDS: Docs
+    UDS->>SQLite: saveMyProposal() (Update local my_proposals)
+    
+    alt Admin User
+        UDS->>FS: Fetch Admin Data (unapproved_reviews etc)
+        FS-->>UDS: Docs
+        UDS->>SQLite: Save to local admin tables
+    end
+    end
+    
+    CTX->>UI: Ready (isLoading = false)
+```
+
+### 3. User Proposal Data Flow (Sequence Diagram)
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Page as EditCreaturePage
+    participant CTX as AppContext
+    participant UDS as UserDataService
+    participant FS as Firestore
+    participant SQLite as SQLiteEngine (my_proposals)
+
+    User->>Page: Click "Propose Change"
+    Page->>CTX: addCreatureProposal(proposalData)
+    CTX->>UDS: saveCreatureProposal(userId, proposalData)
+    
+    rect rgb(230, 255, 230)
+    note over UDS: Dual Write Strategy
+    
+    par Firestore Write
+        UDS->>FS: setDoc(creature_proposals/{id})
+    and Local Write
+        UDS->>SQLite: saveMyProposal('creature', id, data)
+        note right of SQLite: Status: 'pending'<br>SyncedAt: Now
+    end
+    end
+    
+    UDS-->>CTX: Success
+    CTX-->>Page: Success
+    Page-->>User: Show "Submitted" Dialog
+```
+
+### 1. Master Data Synchronization Strategy (Updated)
+
+**Previously:** Firestore `onSnapshot` listener (Deprecated & Forbidden).
+**New Strategy:** GCS + SQLite (Web: OPFS / Mobile: Native SQLite).
+
+#### Workflow matches Backend Exporter:
+1.  **Backend (Exporter)**:
+    *   BigQuery Views (`v_app_points_master` etc.) -> SQLite DB (`master.db`)
+    *   Compression: `gzip`
+    *   Upload: `gs://[BUCKET]/v1/master/latest.db.gz`
+    *   Trigger: On-demand or Scheduled (Cloud Scheduler).
+
+2.  **Client (Web/App)**:
+    *   **Service**: `MasterDataSyncService` (Use this, NOT `MasterDataService`)
+    *   **Check**: Compare local checksum/timestamp vs GCS Metadata.
+    *   **Download**: Fetch `v1/master/latest.db.gz`.
+    *   **Decompress**:
+        *   **Web**: `DecompressionStream` or `pako`
+        *   **App**: `pako` via `GzipHelper`
+    *   **Load**: Import into SQLite engine (Web: wa-sqlite/OPFS, App: expo-sqlite).
+    *   **Fallback (CRITICAL)**:
+        *   If GCS download fails (Offline, 404, etc.):
+        *   **Action**: Create **EMPTY TABLES** locally conforming to the schema.
+        *   **Reason**: Prevents app crash ("no such table") and allows limited functionality (e.g. viewing cached logs).
+
+#### Schema Consistency
+*   **Source of Truth**: BigQuery Views define the schema of `master.db`.
+*   **updatedAt**: MUST be included in BigQuery Views to enable Optimistic Locking on client edits.
+
+### 2. User Data & Sync Policy (Local-First + Firestore)
+
+#### User Proposals (Edits)
+When a general user proposes a change (e.g. Edit Point, Edit Creature):
+1.  **Firestore**: Save to `*_proposals` collection (for Admin review).
+2.  **Local SQLite**: Save to `my_proposals` table **simultaneously**.
+    *   Reason: Immediate "Show my history" support and Offline capability.
+    *   Table: `my_proposals (id, type, target_id, data_json, status, synced_at)`
+3.  **Sync**:
+    *   On App launch (`syncInitialData`), fetch `*_proposals` where `submitterId == me` to keep `my_proposals` up-to-date (status changes).
+4.  **Cleanup**:
+    *   Upon Master Data Sync, check if proposed changes are applied.
+    *   If `target_id` (e.g. creature ID) exists in new Master DB with updated content, remove from `my_proposals` (or mark as Merged).
+
+#### Admin Data
+*   **Admins** write directly to Master Data (Firestore `points`/`creatures`) using `saveCreature`/`savePoint`.
+*   **Conflict Resolution**: Check `updatedAt` in Firestore vs Local Cache before writing.
+*   **Local Cache**: Must be updated immediately after write to reflect changes without waiting for next GCS Sync.
 
 ### 関連用語の凡例 (Legend)
 - **Sub-collection**: Firestore の物理的な階層構造。親のパス (`/users/uid`) の下に配置される。
@@ -446,10 +642,83 @@ Firebase Storage (GCS) から配信され、全ユーザーが読み取り専用
 | `role` | TEXT | 権限レベル |
 | `trust_score` | INTEGER | トラストスコア |
 | `data_json` | TEXT | 全プロフィールデータ |
+### 9.4 App Architecture (Native Specifics)
+The Mobile App (React Native/Expo) follows the same high-level architecture but uses different underlying engines.
+
+```mermaid
+classDiagram
+    class AppContext {
+        +initMasterData()
+        +addCreatureProposal(proposal)
+    }
+
+    class MasterDataSyncService {
+        +syncMasterData() : static
+        -createLocalTables(dbPath)
+        -cleanupProposals()
+    }
+
+    class GzipHelper {
+        +decompressGzipFile(src, dest) : static
+    }
+
+    class MasterDataService {
+        +initialize()
+        +searchPoints(text)
+    }
+
+    class AppSQLiteEngine {
+        +initialize(dbName)
+        +runAsync(sql)
+        +getAllAsync(sql)
+    }
+
+    class FileSystem {
+        +downloadAsync()
+        +readAsStringAsync()
+    }
+
+    %% Relationships
+    AppContext ..> MasterDataSyncService : Calls syncMasterData()
+    MasterDataSyncService ..> FileSystem : Downloads .gz
+    MasterDataSyncService ..> GzipHelper : Decompresses .gz
+    GzipHelper ..> FileSystem : Writes binary
+    MasterDataSyncService ..> AppSQLiteEngine : Init / Fallback Tables
+
+    AppContext ..> MasterDataService : Reads Data
+    MasterDataService ..> AppSQLiteEngine : Queries
+```
+
+```mermaid
+sequenceDiagram
+    participant UI as App Screen
+    participant CTX as AppContext
+    participant MDSync as MasterDataSyncService
+    participant GH as GzipHelper
+    participant FS as FileSystem
+    participant SQL as AppSQLiteEngine
+
+    UI->>CTX: App Launch
+    CTX->>MDSync: syncMasterData()
+    
+    MDSync->>FS: Check Metadata & Download
+    alt Download Success
+        FS-->>MDSync: latest.db.gz (temp)
+        MDSync->>GH: decompressGzipFile(temp, master.db)
+        GH->>FS: Read/Write Base64/Binary
+        MDSync->>SQL: initialize('master.db')
+        MDSync->>MDSync: cleanupProposals()
+    else Download Fail
+        MDSync->>MDSync: createLocalTables() (Fallback)
+        MDSync->>SQL: execAsync(CREATE TABLE...)
+    end
+    
+    CTX->>UI: Ready
+```
 
 ---
 
-## 6. インデックス設計 (Index Design)
+## 10. インデックス設計 (Index Design)
 
 Firestore のクエリ性能を最適化し、複雑な絞り込み・並べ替えを実現するために以下の複合インデックスを構成します。
 
@@ -474,74 +743,179 @@ Managed RAG (Vertex AI Search) を連携させるための設定規則です。
 
 ---
 
-## 8. データ整合性と同期設計 (Integrity & Sync Design)
+## 8. Data Integrity & Synchronization Strategy
 
-### 8.1 基本原則とAIへの絶対禁止事項 (Strict Policies)
-WeDive は **Local-First** アーキテクチャを採用しており、マスタデータの参照において Firestore への直接的な Read を徹底的に排除します。
+### 8.1 Basic Principles & Strict Policies
+WeDive adopts a **Local-First** architecture. Direct reads from Firestore for Master Data are strictly prohibited.
 
 > **AI AGENT WARNING: READ PROHIBITION**
-> マスタデータ（Points, Creatures, Areas, Zones, Regions）を同期するために、クライアントアプリから Firestore に対して `getDocs`, `onSnapshot` を実行することは**「死命的禁止事項」**である。
-> "Firestoreからデータを同期して解決します" という提案をした時点で、プロジェクトルール違反とみなされる。
+> Do NOT use `getDocs` or `onSnapshot` for master data collections (`points`, `creatures`, etc.).
+> Master Data MUST be sourced from GCS (`master.db`) and queried via SQLite.
 
-### 8.2 データ同期サイクル (Sync Cycles)
+### 8.2 Master Data Synchronization Flow
 
-#### (1) マスタデータ (Public Use)
-すべてのユーザーが参照する共通データ。
-*   **Source**: Google Cloud Storage (GCS) に配置された `master.db` (SQLite Binary)。
-*   **Sync Logic**: アプリ起動時、`MasterDataService.syncMasterData()` が `master.db` をダウンロードし、Origin Private File System (OPFS) にインポートする。
-*   **Read**: アプリ内の検索・表示はすべてローカルの SQLite から行う。Firestore は一切参照しない。
-*   **Update**: ユーザーによる参照系データの更新は発生しない。
+**Approved Strategy**:
+1.  **Backend**: Cloud Functions exports BigQuery/Firestore data to `gs://[BUCKET]/v1/master/latest.db.gz`.
+2.  **Client (MasterDataSyncService)**:
+    *   **Check**: Compare local checksum/timestamp vs GCS Metadata.
+    *   **Download**: Fetch `v1/master/latest.db.gz`.
+    *   **Decompress**: Use `pako` or `GzipHelper` (native).
+    *   **Load**: Import into SQLite engine (Web: wa-sqlite/OPFS, App: expo-sqlite).
+    *   **Fallback**: If download fails, **create empty tables locally**.
 
-#### (2) 個人データ (Personal Data)
-*   **Scope**: ログ (`my_logs`)、レビュー (`my_reviews`)、設定 (`my_settings`)、**提案履歴 (`my_proposals`)**。
-*   **Sync Logic**: アプリ起動時 (`UserDataService.syncInitialData`)、ログインユーザーのサブコレクション等から一括取得する。
-    *   `master.db` とは異なり、個人の整合性が最優先されるため Firestore を正とする。
-    *   **提案履歴**: 自分の行った提案のステータス（承認/却下）を確認するため、`*_proposals` コレクションから `submitterId` でクエリして同期する。
-*   **マルチデバイス同期 (Multi-Device Sync)**:
-    *   Firestore の `onSnapshot` によるリアルタイム同期は行わない。
-    *   別端末（スマホ/PC）で行った更新を反映させるには、マイページ等での**「手動リフレッシュ（Pull-to-Refresh）」**を必須とする。
-    *   リフレッシュ時には、`syncInitialData` 等を呼び出し、Firestore から最新データを取得してローカル SQLite を更新する。
+### 8.3 User Data & Proposal Flow
 
-#### (3) 管理者データ (Admin/Moderator Data)
-*   **Scope**: 承認待ち申請 (`proposals`)、未承認レビュー (`unapproved_reviews`)。
-*   **Sync Logic**: `UserDataService.syncInitialData` において、`user.role` が `admin` / `moderator` である場合のみ、対象コレクションから承認待ちドキュメントを取得する。
+1.  **User Proposals (Edits)**:
+    *   **Action**: User submits a change (e.g. Edit Point).
+    *   **Write (Firestore)**: Save to `*_proposals` collection.
+    *   **Write (Local)**: **Simultaneously** insert into `my_proposals` table.
+    *   **Sync**: `my_proposals` provides immediate "My History" view.
 
-### 8.3 編集と整合性 (Editing & Write-Through)
+2.  **Personal Data Sync**:
+    *   On App launch (`syncInitialData`), fetch personal data (`logs`, `reviews`, `proposals`) from Firestore.
+    *   Update local SQLite tables (`my_logs`, `my_reviews`, `my_proposals`).
 
-管理者機能においてデータを更新する場合の整合性担保フロー（楽観的ロック）。
+3.  **Admin Operations**:
+    *   Admins write directly to Master Data (Firestore `points`/`creatures`).
+    *   **Conflict Resolution**: Optimistic Locking via `updatedAt` field.
+    *   **Local Cache**: Must be updated immediately after write (`Write-Through`).
 
-#### (1) マスタデータの直接編集 (Direct Update)
-エリア情報の変更やポイントの削除など、マスタを直接操作する場合。
-1.  **Conflict Check (Optimistic Lock)**:
-    - 保存前に、Firestore 上の該当マスタレコード（Point/Creature等）を `getDoc` し、`updatedAt` を取得。
-    - ローカル保持しているデータの `updatedAt` と比較する。
-    - **不一致の場合**: 「他の管理者が更新しました」と通知し、処理を中断・最新データを再読み込みさせる。
-2.  **Write (Firestore)**: チェックOKの場合のみ、Firestore に更新を書き込む。同時に `updatedAt` を最新化する。
-3.  **Write (Local)**: Firestore 更新成功後、直ちにローカルの SQLite も更新する。
+## 9. Architecture & Class Relationships
 
-#### (2) 申請の承認 (Approval)
-1.  **Conflict Check**:
-    - 承認・却下ボタン実行時に、Firestore 上の該当 proposal ドキュメントを取得。
-    - `status` が `pending` (または未処理) であることを確認する。
-    - **処理済みの場合**: 「既に他の管理者によって処理されました」と通知し中断。
-2.  **Write (Firestore)**:
-    - 申請内容をマスタとして保存し、`updatedAt` を更新。
-    - プロポーザルの `status` を `approved` に更新。
-3.  **Delete & Write (Local)**:
-    - ローカルの申請キャッシュ (`admin_proposals`) から削除。
-    - 承認した内容でローカルのマスタデータを更新。
+### 9.1 Component & Service Dependency (Class Diagram)
 
-#### (3) 一般ユーザーによる変更提案 (User Proposal)
-1.  **Write (Firestore)**: 提案内容を `*_proposals` コレクションに保存 (`setDoc`)。
-2.  **Write (Local)**: Firestore 保存と同時に、ローカルの `my_proposals` テーブルにも提案内容を保存する。
-    *   これにより、オフライン時や同期前でも自分の提案履歴を確認可能にする。
-3.  **Sync Status**: 後日、管理者が承認した結果は、次回の「個人データ同期」時にリフレッシュされ、ローカルのステータスが更新される。
+```mermaid
+classDiagram
+    class AppContext {
+        +initMasterData()
+        +addCreatureProposal(proposal)
+        +updateCreature(id, data)
+        +updatePoint(id, data)
+    }
 
-### 8.4 クラス責務
+    class MasterDataSyncService {
+        +syncMasterData() : static
+        -fallbackToLocalTables()
+        -updateSQLiteDatabase(data)
+    }
 
-| クラス | 責務 | 禁止事項 |
-| :--- | :--- | :--- |
-| **MasterDataService** | GCS からの `master.db` 同期と、SQLite へのクエリ/マッピング。 | Firestore API (`getDocs`, `onSnapshot`) の使用。 |
-| **UserDataService** | ユーザー個人データの同期。管理者用データの同期。マスタ保存時の `Write-Through` 制御。 | マスタデータ同期のための `getDocs` 呼び出し。 |
+    class MasterDataService {
+        +initialize()
+        +searchPoints(text)
+        +searchCreatures(text)
+        +savePoint(point)
+        +saveCreature(creature)
+    }
+
+    class UserDataService {
+        +syncInitialData()
+        +savePointProposal(proposal)
+        +saveCreatureProposal(proposal)
+        +saveMyProposal(type, id, data) : private
+    }
+
+    class WebSQLiteEngine {
+        +importDatabase(data)
+        +runAsync(sql)
+        +getAllAsync(sql)
+    }
+
+    class Firestore {
+        +setDoc()
+        +getDocs()
+    }
+
+    class GCS {
+        +getDownloadURL()
+        +v1/master/latest.db.gz
+    }
+
+    %% Relationships
+    AppContext ..> MasterDataSyncService : Calls syncMasterData() on Init
+    AppContext ..> MasterDataService : Reads Data (via hooks)
+    AppContext ..> UserDataService : Delegate Write/Sync Actions
+
+    MasterDataSyncService ..> GCS : Downloads DB
+    MasterDataSyncService ..> WebSQLiteEngine : Imports Binary / Creates Tables
+
+    MasterDataService ..> WebSQLiteEngine : Reads/Writes Cache
+    UserDataService ..> Firestore : Writes Proposals / Admin Data
+    UserDataService ..> WebSQLiteEngine : Writes my_proposals (userDb)
+```
+
+### 9.2 Initialization & Sync Flow (Sequence Diagram)
+
+```mermaid
+sequenceDiagram
+    participant UI as App/Pages
+    participant CTX as AppContext
+    participant MDSync as MasterDataSyncService
+    participant UDS as UserDataService
+    participant GCS
+    participant SQLite as SQLiteEngine
+    participant FS as Firestore
+
+    UI->>CTX: Mount (AppProvider)
+    CTX->>MDSync: syncMasterData()
+    
+    rect rgb(240, 248, 255)
+    note over MDSync: Master Data Sync Phase
+    MDSync->>GCS: Check Metadata & Download (v1/master/latest.db.gz)
+    alt Download Success
+        GCS-->>MDSync: latest.db.gz
+        MDSync->>SQLite: importDatabase(decompressed)
+    else Download Fail (Offline/404)
+        MDSync->>SQLite: fallbackToLocalTables() (Create Empty Schema)
+    end
+    end
+
+    CTX->>UDS: syncInitialData() (if authenticated)
+    
+    rect rgb(255, 250, 240)
+    note over UDS: User Data Sync Phase
+    UDS->>FS: Fetch User Proposals (submitterId==me)
+    FS-->>UDS: Docs
+    UDS->>SQLite: saveMyProposal() (Update local my_proposals)
+    
+    alt Admin User
+        UDS->>FS: Fetch Admin Data (unapproved_reviews etc)
+        FS-->>UDS: Docs
+        UDS->>SQLite: Save to local admin tables
+    end
+    end
+    
+    CTX->>UI: Ready (isLoading = false)
+```
+
+### 9.3 User Proposal Data Flow (Sequence Diagram)
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Page as EditCreaturePage
+    participant CTX as AppContext
+    participant UDS as UserDataService
+    participant FS as Firestore
+    participant SQLite as SQLiteEngine (my_proposals)
+
+    User->>Page: Click "Propose Change"
+    Page->>CTX: addCreatureProposal(proposalData)
+    CTX->>UDS: saveCreatureProposal(userId, proposalData)
+    
+    rect rgb(230, 255, 230)
+    note over UDS: Dual Write Strategy
+    
+    par Firestore Write
+        UDS->>FS: setDoc(creature_proposals/{id})
+    and Local Write
+        UDS->>SQLite: saveMyProposal('creature', id, data)
+        note right of SQLite: Status: 'pending'<br>SyncedAt: Now
+    end
+    end
+    
+    UDS-->>CTX: Success
+    CTX-->>Page: Success
+    Page-->>User: Show "Submitted" Dialog
+```
 
 ---
