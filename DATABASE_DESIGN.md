@@ -139,6 +139,7 @@ erDiagram
 | `status` | string | approved（マスタは常に承認済みのみ） |
 | `submitterId` | string | 登録者UID |
 | `createdAt` | string | 作成日時 (ISO8601) |
+| `updatedAt` | string | 更新日時 (ISO8601) - 競合検知用 |
 | `images` | array(string) | 画像URLリスト |
 | `imageUrl` | string | メイン画像URL |
 | `imageKeyword` | string | 画像検索用キーワード |
@@ -166,6 +167,8 @@ erDiagram
 | `size` | string | サイズ感 |
 | `season` | array(string) | 見られる季節 |
 | `submitterId` | string | 登録者UID |
+| `createdAt` | string | 作成日時 (ISO8601) |
+| `updatedAt` | string | 更新日時 (ISO8601) - 競合検知用 |
 | `gallery` | array(string) | 追加画像URLリスト |
 | `stats` | map | `{popularity, size, danger, lifespan, rarity, speed}` (1-5の数値) |
 | `imageCredit` | string | 画像の著作権情報 |
@@ -181,6 +184,7 @@ erDiagram
 | `localRarity` | string | その地点固有のレア度 (Common, Rare, Epic, Legendary) |
 | `lastSighted` | string | 最終目撃日 (Option) |
 | `status` | string | approved または 論理削除の rejected |
+| `updatedAt` | string | 更新日時 (ISO8601) |
 | `reasoning` | string | AIによる紐付け根拠 |
 | `confidence` | number | AI確信度 (0.0-1.0) |
 
@@ -499,20 +503,28 @@ WeDive は **Local-First** アーキテクチャを採用しており、マス�
 
 ### 8.3 編集と整合性 (Editing & Write-Through)
 
-管理者機能においてデータを更新する場合の整合性担保フロー。
+管理者機能においてデータを更新する場合の整合性担保フロー（楽観的ロック）。
 
-#### (1) マスタデータの直接更新 (Direct Update)
-管理者がポイント情報を修正する場合：
-1.  **Check**: 必要に応じ、対象ドキュメント (`doc()`) を Firestore から `getDoc` し、競合を確認する。
-2.  **Write (Firestore)**: Firestore に更新を書き込む (`setDoc` / `updateDoc`)。
-3.  **Write (Local)**: Firestore 更新成功後、**直ちにローカルの SQLite (`master_points` 等) にも同じ変更を適用する** (`MasterDataService.updatePointInCache`)。
-    *   **目的**: GCS 反映待ち時間を解消し、管理者の手元に即時反映させるため。
-    *   **注意**: この際、Firestore からの再同期 (`getDocs`) は絶対に行わない。
+#### (1) マスタデータの直接編集 (Direct Update)
+エリア情報の変更やポイントの削除など、マスタを直接操作する場合。
+1.  **Conflict Check (Optimistic Lock)**:
+    - 保存前に、Firestore 上の該当マスタレコード（Point/Creature等）を `getDoc` し、`updatedAt` を取得。
+    - ローカル保持しているデータの `updatedAt` と比較する。
+    - **不一致の場合**: 「他の管理者が更新しました」と通知し、処理を中断・最新データを再読み込みさせる。
+2.  **Write (Firestore)**: チェックOKの場合のみ、Firestore に更新を書き込む。同時に `updatedAt` を最新化する。
+3.  **Write (Local)**: Firestore 更新成功後、直ちにローカルの SQLite も更新する。
 
 #### (2) 申請の承認 (Approval)
-1.  **Write (Firestore)**: 申請内容をマスタとして Firestore に保存。プロポーザルを `approved` に更新。
-2.  **Delete (Local)**: ローカルの申請キャッシュ (`admin_proposals`) から削除。
-3.  **Write (Local)**: 承認した内容でローカルのマスタデータを更新。
+1.  **Conflict Check**:
+    - 承認・却下ボタン実行時に、Firestore 上の該当 proposal ドキュメントを取得。
+    - `status` が `pending` (または未処理) であることを確認する。
+    - **処理済みの場合**: 「既に他の管理者によって処理されました」と通知し中断。
+2.  **Write (Firestore)**:
+    - 申請内容をマスタとして保存し、`updatedAt` を更新。
+    - プロポーザルの `status` を `approved` に更新。
+3.  **Delete & Write (Local)**:
+    - ローカルの申請キャッシュ (`admin_proposals`) から削除。
+    - 承認した内容でローカルのマスタデータを更新。
 
 ### 8.4 クラス責務
 
