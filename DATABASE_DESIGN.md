@@ -496,6 +496,10 @@ WeDive は **Local-First** アーキテクチャを採用しており、マス�
 *   **Scope**: ログ (`my_logs`)、レビュー (`my_reviews`)、設定 (`my_settings`)。
 *   **Sync Logic**: アプリ起動時 (`UserDataService.syncInitialData`)、ログインユーザーのサブコレクション等から一括取得する。
     *   `master.db` とは異なり、個人の整合性が最優先されるため Firestore を正とする。
+*   **マルチデバイス同期 (Multi-Device Sync)**:
+    *   Firestore の `onSnapshot` によるリアルタイム同期は行わない。
+    *   別端末（スマホ/PC）で行った更新を反映させるには、マイページ等での**「手動リフレッシュ（Pull-to-Refresh）」**を必須とする。
+    *   リフレッシュ時には、`syncInitialData` 等を呼び出し、Firestore から最新データを取得してローカル SQLite を更新する。
 
 #### (3) 管理者データ (Admin/Moderator Data)
 *   **Scope**: 承認待ち申請 (`proposals`)、未承認レビュー (`unapproved_reviews`)。
