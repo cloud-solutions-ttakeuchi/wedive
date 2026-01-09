@@ -148,7 +148,8 @@ export class MasterDataService extends BaseMasterDataService {
         SELECT DISTINCT
           region_id as id,
           region_name as name,
-          region_description as description
+          region_description as description,
+          region_status as status
         FROM master_geography
         ORDER BY region_id
       `);
@@ -171,6 +172,7 @@ export class MasterDataService extends BaseMasterDataService {
           zone_id as id,
           zone_name as name,
           zone_description as description,
+          zone_status as status,
           region_id as regionId
         FROM master_geography
         ORDER BY zone_id
@@ -195,6 +197,7 @@ export class MasterDataService extends BaseMasterDataService {
           area_id as id,
           area_name as name,
           area_description as description,
+          area_status as status,
           zone_id as zoneId
         FROM master_geography
         ORDER BY area_id
