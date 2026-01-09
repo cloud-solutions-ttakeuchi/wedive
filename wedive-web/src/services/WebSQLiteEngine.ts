@@ -55,12 +55,26 @@ export class WebSQLiteEngine implements SQLiteExecutor {
 
     // データベースを OPFS (高速モード) で開く
     console.log(`[SQLite Web] Opening database: ${this.dbName} (VFS: opfs)`);
-    await this.promiser('open', {
-      filename: this.dbName,
-      vfs: 'opfs',
-    });
+    try {
+      await this.promiser('open', {
+        filename: this.dbName,
+        vfs: 'opfs',
+      });
+      console.log(`[SQLite Web] Database ${this.dbName} is now open (OPFS).`);
+    } catch (e: any) {
+      console.warn(`[SQLite Web] Failed to open with OPFS, falling back to in-memory (unix-none).`, e);
+      try {
+        await this.promiser('open', {
+          filename: this.dbName,
+          vfs: 'unix-none', // 永続化されないが、動作はする
+        });
+        console.log(`[SQLite Web] Database ${this.dbName} is now open (In-Memory).`);
+      } catch (e2) {
+        console.error('[SQLite Web] Failed to open database even with fallback.', e2);
+        throw e2;
+      }
+    }
 
-    console.log(`[SQLite Web] Database ${this.dbName} is now open.`);
     await this.logDatabaseSummary();
   }
 
