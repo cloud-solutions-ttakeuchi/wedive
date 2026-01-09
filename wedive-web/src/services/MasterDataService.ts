@@ -28,6 +28,10 @@ import { storage } from '../lib/firebase';
 export class MasterDataService extends BaseMasterDataService {
   private isInitialized = false;
 
+  constructor(sqlite: any) {
+    super(sqlite);
+  }
+
   async initialize(): Promise<boolean> {
     if (this.isInitialized) return true;
     try {
@@ -101,9 +105,24 @@ export class MasterDataService extends BaseMasterDataService {
   async getAllPoints(): Promise<Point[]> {
     if (await this.initialize()) {
       try {
-        const results = await masterDbEngine.getAllAsync<any>('SELECT * FROM master_points ORDER BY name ASC');
+        // master_geography と結合して、region_name / zone_name 等を補完する
+        // Note: BaseMasterDataServiceにはgetAllPointsがないか、もしくは単純な実装しかないため
+        // ここではJOINを含むアプリ要件に合わせたクエリを実行する
+        const sql = `
+          SELECT
+            p.*,
+            g.region_id, g.region_name,
+            g.zone_id, g.zone_name,
+            g.area_name
+          FROM master_points p
+          LEFT JOIN master_geography g ON p.area_id = g.area_id
+          ORDER BY p.name ASC
+        `;
+        const results = await this.sqlite.getAllAsync<any>(sql);
         return results.map(p => this.mapPointFromSQLite(p));
-      } catch (e: any) { console.error('getAllPoints failed:', e); }
+      } catch (e: any) {
+        console.error('getAllPoints failed:', e);
+      }
     }
     return [];
   }
@@ -111,7 +130,7 @@ export class MasterDataService extends BaseMasterDataService {
   async getAllCreatures(): Promise<Creature[]> {
     if (await this.initialize()) {
       try {
-        const results = await masterDbEngine.getAllAsync<any>('SELECT * FROM master_creatures ORDER BY name ASC');
+        const results = await this.sqlite.getAllAsync<any>('SELECT * FROM master_creatures ORDER BY name ASC');
         return results.map(c => this.mapCreatureFromSQLite(c));
       } catch (e: any) { console.error('getAllCreatures failed:', e); }
     }
@@ -125,7 +144,7 @@ export class MasterDataService extends BaseMasterDataService {
     await this.initialize();
     try {
       // master_geography から重複を除いて取得
-      const res = await masterDbEngine.getAllAsync(`
+      const res = await this.sqlite.getAllAsync(`
         SELECT DISTINCT
           region_id as id,
           region_name as name,
@@ -134,6 +153,7 @@ export class MasterDataService extends BaseMasterDataService {
         WHERE region_status = 'approved'
         ORDER BY region_id
       `);
+      console.log(`[MasterData] getRegions: found ${res.length} rows`);
       return res;
     } catch (e) {
       console.warn('[MasterData] Failed to fetch regions, returning empty array.', e);
@@ -147,7 +167,7 @@ export class MasterDataService extends BaseMasterDataService {
   async getZones(): Promise<any[]> {
     await this.initialize();
     try {
-      const res = await masterDbEngine.getAllAsync(`
+      const res = await this.sqlite.getAllAsync(`
         SELECT DISTINCT
           zone_id as id,
           zone_name as name,
@@ -158,7 +178,8 @@ export class MasterDataService extends BaseMasterDataService {
         ORDER BY zone_id
       `);
       // parentId マッピング (互換性維持)
-      return res.map((r: any) => ({ ...r, parentId: r.regionId }));
+      console.log(`[MasterData] getZones: found ${res.length} rows`);
+      return (res as any[]).map((r: any) => ({ ...r, parentId: r.regionId }));
     } catch (e) {
       console.warn('[MasterData] Failed to fetch zones, returning empty array.', e);
       return [];
@@ -171,7 +192,7 @@ export class MasterDataService extends BaseMasterDataService {
   async getAreas(): Promise<any[]> {
     await this.initialize();
     try {
-      const res = await masterDbEngine.getAllAsync(`
+      const res = await this.sqlite.getAllAsync(`
         SELECT
           area_id as id,
           area_name as name,
@@ -182,7 +203,8 @@ export class MasterDataService extends BaseMasterDataService {
         ORDER BY area_id
       `);
       // parentId マッピング
-      return res.map((r: any) => ({ ...r, parentId: r.zoneId }));
+      console.log(`[MasterData] getAreas: found ${res.length} rows`);
+      return (res as any[]).map((r: any) => ({ ...r, parentId: r.zoneId }));
     } catch (e) {
       console.warn('[MasterData] Failed to fetch areas, returning empty array.', e);
       return [];
