@@ -358,6 +358,17 @@ sequenceDiagram
     Note over AdminUI, SQLite: 再読み込みなしでリストから消滅
 ```
 
+#### 管理データの状態遷移 (Admin Proposal State)
+
+管理者用キャッシュデータ（`admin_proposals` テーブル等）は、以下のライフサイクルに従う。
+
+| 現在の状態 | トリガー（イベント） | 遷移後の状態 | 実行エンジン / 処理内容 |
+| :--- | :--- | :--- | :--- |
+| **未存在** | ログイン / 初期同期 | `pending` (Local) | `UserDataService.syncInitialData`: Firestore から取得し物理保存 |
+| **pending** (Local) | 管理者による承認 | **削除** (Local) | `UserDataService.deleteAdminProposal`: Firestore 更新成功後に物理削除 |
+| **pending** (Local) | 管理者による却下 | **削除** (Local) | `UserDataService.deleteAdminProposal`: 却下確定後に物理削除 |
+| **pending** (Local) | 手動リフレッシュ | `pending` (Local) | `UserDataService.syncInitialData`: 最新データを取得し上書き (UPSERT) |
+
 ---
 
 ## 5. SQLite テーブル定義 (Local Storage)
