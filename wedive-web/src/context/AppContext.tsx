@@ -91,6 +91,15 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
+  const auth = useAuth();
+  const points = usePoints();
+  const creatures = useCreatures();
+  const pointCreatures = usePointCreatures();
+  const zones = useZones();
+  const areas = useAreas();
+  const agencies = useAgencies();
+  const regions = useRegions();
+
   useEffect(() => {
     // 起動時にマスターデータの初期化（テーブル作成）と同期を行う
     const initMasterData = async () => {
@@ -113,16 +122,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       }
     };
     initMasterData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const auth = useAuth();
-  const points = usePoints();
-  const creatures = useCreatures();
-  const pointCreatures = usePointCreatures();
-  const zones = useZones();
-  const areas = useAreas();
-  const agencies = useAgencies();
-  const regions = useRegions();
 
   // 1. 最近のパブリックログを取得（Home画面用）
   const recentLogsQuery = useQuery({
