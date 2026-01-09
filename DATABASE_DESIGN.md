@@ -319,44 +319,86 @@ AIによる再構築結果や検索結果を保存し、費用の抑制と高速
 
 ### 4.14 管理画面におけるデータフロー（審査・承認プロセス）
 
-管理画面（Admin/Moderator）におけるデータの取得と更新は、以下の原則に従う。
+管理者用データ（各種プロポーザル等）も、Local-First の原則に従い **SQLite をプライマリ・ストレージ**とする。一般ユーザーデータと同様、Firestore への直接アクセスは最小限に抑える。
 
-1.  **一回限りの取得 (One-off Fetch)**:
-    *   Firestore 側の `onSnapshot`（常時監視）は**全廃**している。コスト削減と無限ループ防止のため、リアルタイムリスナーは一切使用しない。
-    *   `@tanstack/react-query` の `useQuery` を利用し、画面初期表示時またはユーザー操作時に `getDocs` を実行する。
+1.  **初回同期 (Initial Sync)**:
+    *   ログイン時、一般データと同様に `UserDataService.syncInitialData` 内で Firestore の各種承認待ちコレクション（`creature_proposals`, `point_proposals`, `point_creature_proposals`, `unapproved_reviews`）から全データを一括取得（One-off fetch）し、ローカル SQLite の管理用テーブルに保存・更新する。
+    *   `onSnapshot`（常時監視）は**全廃**している。
 
-2.  **型安全性の担保**:
-    *   Firestore から取得したデータは、各コレクションに対応する TypeScript インターフェース（`CreatureProposal`, `PointProposal` 等）へキャストして処理する。
-    *   `implicit any` を排除し、管理 UI の堅牢性を確保する。
+2.  **ローカル読み出し**:
+    *   管理画面（Admin UI）は、常にローカル SQLite からデータを読み出して表示する。表示の高速化とオフライン対応、および Firestore の Read コスト削減を両立させる。
 
-3.  **更新と整合性**:
-    *   承認/却下アクションを実行した後は、Firestore のドキュメントを直接更新（`updateDoc` / `setDoc`）する。
-    *   更新成功後、`queryClient.invalidateQueries` を呼び出し、React Query のキャッシュを無効化する。
-    *   自動的に最新のデータを再取得（Refetch）することで、UI 上のステータスを同期する。
+3.  **アクションと整合性**:
+    *   承認・却下実行時は、以下の順序で更新を行う。
+        1.  Firestore の該当ドキュメントを更新（`updateDoc` / `setDoc`）。
+        2.  ローカル SQLite の該当レコードを即時更新または削除。
+    *   これにより、クラウドへの反映と UI 上の表示更新を即座に（再読み込みなしで）同期させる。
 
 **データフロー図 (Mermaid)**:
 
 ```mermaid
 sequenceDiagram
     participant AdminUI as Administrative UI
-    participant RQuery as @tanstack/react-query
+    participant SQLite as SQLite (Local Master)
+    participant SyncLogic as Sync Service
     participant FS as Firestore (Cloud)
-    participant MasterTable as SQL Master (Local-First)
 
-    Note over AdminUI, FS: [データ閲覧]
-    AdminUI->>RQuery: 申請データを要求 (useQuery)
-    RQuery->>FS: getDocs (One-off fetch)
-    FS-->>RQuery: 申請一覧データ
-    RQuery-->>AdminUI: 型定義済みデータで表示
+    Note over SyncLogic, FS: [ログイン時・初回同期]
+    SyncLogic->>FS: getDocs (申請データを一括取得)
+    FS-->>SyncLogic: 全申請データ
+    SyncLogic->>SQLite: 管理テーブルへ保存 (admin_*)
 
-    Note over AdminUI, MasterTable: [承認アクション]
-    AdminUI->>FS: 申請ドキュメントの更新 (status="approved")
-    AdminUI->>FS: 本番マスタコレクションへの反映 (setDoc)
-    FS-->>AdminUI: 成功
-    AdminUI->>RQuery: キャッシュ無効化 (invalidateQueries)
-    RQuery->>FS: getDocs (再表示用)
-    Note over AdminUI, MasterTable: ※ Web版では同期後、次回の初期化時に<br/>SQLite エンジンが最新マスタを取り込む
+    Note over AdminUI, SQLite: [データ閲覧]
+    AdminUI->>SQLite: データを要求 (SELECT)
+    SQLite-->>AdminUI: 申請一覧データ (高速表示)
+
+    Note over AdminUI, FS: [承認アクション]
+    AdminUI->>FS: Firestore 更新 (承認処理)
+    AdminUI->>SQLite: ローカルレコードの物理削除/更新
+    Note over AdminUI, SQLite: 再読み込みなしでリストから消滅
 ```
+
+---
+
+## 5. SQLite テーブル定義 (Local Storage)
+
+### 5.1 Personal Data (`user.db`)
+(既存のテーブル定義...)
+
+### 5.2 Administrative Data (`admin_cache`)
+管理者・モデレーター権限を持つユーザーの環境でのみ同期・保持される管理用キャッシュテーブル。
+
+#### `admin_creature_proposals` / `admin_point_proposals`
+| フィールド | 型 | 説明 |
+| :--- | :--- | :--- |
+| `id` | TEXT PRIMARY KEY | プロポーザルID |
+| `target_id` | TEXT | 修正対象のマスタID (新規の場合は空) |
+| `data_json` | TEXT | プロポーザルの全データ (JSON) |
+| `status` | TEXT | `pending`, `approved`, `rejected` |
+| `synced_at` | TEXT | 同期日時 |
+
+#### `admin_point_creature_proposals`
+| フィールド | 型 | 説明 |
+| :--- | :--- | :--- |
+| `id` | TEXT PRIMARY KEY | ID |
+| `point_id` | TEXT | ポイントID |
+| `creature_id` | TEXT | 生物ID |
+| `data_json` | TEXT | JSONデータ |
+
+#### `admin_unapproved_reviews`
+| フィールド | 型 | 説明 |
+| :--- | :--- | :--- |
+| `id` | TEXT PRIMARY KEY | レビューID |
+| `point_id` | TEXT | ポイントID |
+| `data_json` | TEXT | JSONデータ |
+| `synced_at` | TEXT | 同期日時 |
+
+#### `admin_users_cache`
+| フィールド | 型 | 説明 |
+| :--- | :--- | :--- |
+| `id` | TEXT PRIMARY KEY | ユーザーID |
+| `data_json` | TEXT | JSONデータ (プロフィール、権限等) |
+| `synced_at` | TEXT | 同期日時 |
 
 ---
 
