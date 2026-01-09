@@ -15,6 +15,7 @@ import { db as firestore } from '../lib/firebase';
 import { collection, query, orderBy, limit, getDocs, doc, updateDoc, deleteDoc, writeBatch, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { useAdminActions } from '../hooks/useAdminActions';
 import { masterDataService } from '../services/MasterDataService';
+import { MasterDataSyncService } from '../services/MasterDataSyncService';
 import { useEffect } from 'react';
 
 /**
@@ -107,7 +108,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         const available = await masterDataService.initialize();
         if (available) {
           console.log('[App] MasterDataService initialized.');
-          await masterDataService.syncMasterData();
+          await MasterDataSyncService.syncMasterData();
           // 同期完了後にクエリを再取得
           points.refetch();
           creatures.refetch();

@@ -69,6 +69,10 @@ export class MasterDataSyncService {
 
       console.log('[Sync] Master data updated to latest version.');
 
+    } catch (error) {
+      console.error('[Sync] Master data sync failed:', error);
+      // 初回同期失敗時（またはファイルがない場合）に備えてフォールバックを実行
+      await this.fallbackToLocalTables();
     } finally {
       this.isSyncing = false;
     }
@@ -82,12 +86,53 @@ export class MasterDataSyncService {
     await masterDbEngine.initialize();
 
     // エンジン内部の API を使用してバイナリをロード
-    // 注意: wa-sqlite の実装に依存するため、WebSQLiteEngine に
-    // バイナリロード用のメソッドを追加するのが望ましい
     if ('importDatabase' in masterDbEngine && typeof (masterDbEngine as any).importDatabase === 'function') {
       await (masterDbEngine as any).importDatabase(data);
     } else {
       console.error('[Sync] importDatabase method not found on masterDbEngine');
+    }
+  }
+
+  /**
+   * ローカルフォールバック用の空テーブル作成
+   */
+  private static async fallbackToLocalTables(): Promise<void> {
+    console.warn('[Sync] Attempting to create local fallback tables...');
+    try {
+      await masterDbEngine.initialize();
+      await masterDbEngine.runAsync(`
+        CREATE TABLE IF NOT EXISTS master_points (
+          id TEXT PRIMARY KEY, name TEXT, name_kana TEXT, area_id TEXT, zone_id TEXT, region_id TEXT,
+          region_name TEXT, area_name TEXT, zone_name TEXT,
+          latitude REAL, longitude REAL, level TEXT, max_depth REAL, main_depth_json TEXT,
+          entry_type TEXT, current_condition TEXT, topography_json TEXT, description TEXT,
+          features_json TEXT, google_place_id TEXT, formatted_address TEXT, image_url TEXT,
+          images_json TEXT, image_keyword TEXT, submitter_id TEXT, bookmark_count INTEGER,
+          official_stats_json TEXT, actual_stats_json TEXT, rating REAL,
+          search_text TEXT, updated_at TEXT
+        );
+        CREATE TABLE IF NOT EXISTS master_creatures (
+          id TEXT PRIMARY KEY, name TEXT, name_kana TEXT, scientific_name TEXT, english_name TEXT, category TEXT, family TEXT,
+          description TEXT, rarity TEXT, image_url TEXT, tags_json TEXT, depth_range_json TEXT,
+          special_attributes_json TEXT, water_temp_range_json TEXT, size TEXT, season_json TEXT,
+          gallery_json TEXT, stats_json TEXT, image_credit TEXT, image_license TEXT, image_keyword TEXT,
+          search_text TEXT, updated_at TEXT
+        );
+        CREATE TABLE IF NOT EXISTS master_regions (id TEXT PRIMARY KEY, name TEXT);
+        CREATE TABLE IF NOT EXISTS master_zones (id TEXT PRIMARY KEY, name TEXT, parent_id TEXT);
+        CREATE TABLE IF NOT EXISTS master_areas (id TEXT PRIMARY KEY, name TEXT, parent_id TEXT);
+        CREATE TABLE IF NOT EXISTS master_point_creatures (
+          id TEXT PRIMARY KEY, point_id TEXT, creature_id TEXT, localRarity TEXT, updatedAt TEXT
+        );
+        CREATE TABLE IF NOT EXISTS master_point_reviews (
+          id TEXT PRIMARY KEY, point_id TEXT, area_id TEXT, user_id TEXT,
+          rating REAL, comment TEXT, created_at TEXT
+        );
+        CREATE TABLE IF NOT EXISTS master_agencies (id TEXT PRIMARY KEY, name TEXT);
+      `);
+      console.log('[Sync] Local fallback tables created successfully.');
+    } catch (e) {
+      console.error('[Sync] Failed to create local fallback tables:', e);
     }
   }
 }

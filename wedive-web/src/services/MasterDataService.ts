@@ -42,85 +42,9 @@ export class MasterDataService extends BaseMasterDataService {
     }
   }
 
-  /**
-   * Firebase Storage (GCS) からビルド済みの SQLite ファイルをダウンロードしてインポートする
+  /*
+   * (同期機能は MasterDataSyncService に移行しました)
    */
-  async syncMasterData(): Promise<void> {
-    if (!await this.initialize()) return;
-
-    try {
-      console.log('[MasterDataSync] Checking for master data updates...');
-
-      // Backend (Exporter) uploads to "v1/master/latest.db.gz"
-      const dbRef = ref(storage, 'v1/master/latest.db.gz');
-      const url = await getDownloadURL(dbRef);
-
-      console.log(`[MasterDataSync] Downloading master DB from ${url}...`);
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`Failed to download master DB: ${response.statusText}`);
-      }
-
-      // GZIP解凍
-      const ds = new DecompressionStream('gzip');
-      const decompressedStream = response.body?.pipeThrough(ds);
-      if (!decompressedStream) throw new Error('Failed to create decompression stream');
-
-      const buffer = await new Response(decompressedStream).arrayBuffer();
-      const data = new Uint8Array(buffer);
-
-      console.log(`[MasterDataSync] Downloaded and decompressed ${data.byteLength} bytes. Importing to SQLite...`);
-      await masterDbEngine.importDatabase(data);
-
-      console.log('[MasterDataSync] Master data import completed successfully.');
-    } catch (error: any) {
-      if (error.code === 'storage/object-not-found' || error.message.includes('404')) {
-        console.warn('[MasterDataSync] Master DB file not found in Storage. Creating empty tables locally as fallback.');
-        await this.createLocalTables();
-      } else {
-        console.error('[MasterDataSync] Sync failed:', error);
-        // Sync失敗時もテーブルがないと困るので作成を試みる
-        await this.createLocalTables();
-      }
-    }
-  }
-
-  /**
-   * ローカルフォールバック用の空テーブル作成
-   */
-  private async createLocalTables(): Promise<void> {
-    try {
-      await masterDbEngine.runAsync(`
-        CREATE TABLE IF NOT EXISTS master_points (
-          id TEXT PRIMARY KEY, name TEXT, name_kana TEXT, area_id TEXT, zone_id TEXT, region_id TEXT,
-          region_name TEXT, area_name TEXT, zone_name TEXT,
-          latitude REAL, longitude REAL, level TEXT, max_depth REAL, main_depth_json TEXT,
-          entry_type TEXT, current_condition TEXT, topography_json TEXT, description TEXT,
-          features_json TEXT, google_place_id TEXT, formatted_address TEXT, image_url TEXT,
-          images_json TEXT, image_keyword TEXT, submitter_id TEXT, bookmark_count INTEGER,
-          official_stats_json TEXT, actual_stats_json TEXT, rating REAL,
-          search_text TEXT, updated_at TEXT
-        );
-        CREATE TABLE IF NOT EXISTS master_creatures (
-          id TEXT PRIMARY KEY, name TEXT, name_kana TEXT, scientific_name TEXT, english_name TEXT, category TEXT, family TEXT,
-          description TEXT, rarity TEXT, image_url TEXT, tags_json TEXT, depth_range_json TEXT,
-          special_attributes_json TEXT, water_temp_range_json TEXT, size TEXT, season_json TEXT,
-          gallery_json TEXT, stats_json TEXT, image_credit TEXT, image_license TEXT, image_keyword TEXT,
-          search_text TEXT, updated_at TEXT
-        );
-        CREATE TABLE IF NOT EXISTS master_regions (id TEXT PRIMARY KEY, name TEXT);
-        CREATE TABLE IF NOT EXISTS master_zones (id TEXT PRIMARY KEY, name TEXT, parent_id TEXT);
-        CREATE TABLE IF NOT EXISTS master_areas (id TEXT PRIMARY KEY, name TEXT, parent_id TEXT);
-        CREATE TABLE IF NOT EXISTS master_point_creatures (
-          id TEXT PRIMARY KEY, point_id TEXT, creature_id TEXT, localRarity TEXT, updatedAt TEXT
-        );
-        CREATE TABLE IF NOT EXISTS master_agencies (id TEXT PRIMARY KEY, name TEXT);
-      `);
-      console.log('[MasterDataSync] Local tables created successfully.');
-    } catch (e) {
-      console.error('[MasterDataSync] Failed to create local tables:', e);
-    }
-  }
 
   // --- Override Search Methods to use local mapping (with IDs) ---
 
