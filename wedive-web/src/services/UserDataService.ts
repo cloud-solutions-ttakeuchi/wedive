@@ -56,6 +56,16 @@ export class UserDataService {
           data_json TEXT,
           status TEXT,
           synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        -- 自分の提案履歴 (Personal用)
+        CREATE TABLE IF NOT EXISTS my_proposals (
+          id TEXT PRIMARY KEY,
+          type TEXT,
+          target_id TEXT,
+          data_json TEXT,
+          status TEXT,
+          synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
       `);
       return true;
@@ -239,11 +249,34 @@ export class UserDataService {
   }
 
   /**
+   * 生物申請を保存
+   */
+  async saveCreatureProposal(userId: string, proposal: any): Promise<void> {
+    const propId = proposal.id || doc(collection(firestoreDb, 'creature_proposals')).id;
+    const propRef = doc(firestoreDb, 'creature_proposals', propId);
+    const data = { ...proposal, id: propId, userId, updatedAt: new Date().toISOString() };
+    await setDoc(propRef, data);
+    await this.saveMyProposal('creature', propId, data);
+  }
+
+  /**
    * 地点申請を保存
    */
   async savePointProposal(userId: string, proposal: any): Promise<void> {
-    const propRef = doc(firestoreDb, 'point_proposals', proposal.id || doc(collection(firestoreDb, 'point_proposals')).id);
-    await setDoc(propRef, { ...proposal, userId, updatedAt: new Date().toISOString() });
+    const propId = proposal.id || doc(collection(firestoreDb, 'point_proposals')).id;
+    const propRef = doc(firestoreDb, 'point_proposals', propId);
+    const data = { ...proposal, id: propId, userId, updatedAt: new Date().toISOString() };
+    await setDoc(propRef, data);
+    await this.saveMyProposal('point', propId, data);
+  }
+
+  /**
+   * 生物を保存
+   */
+  async saveCreature(userId: string, creature: any): Promise<void> {
+    const creatureRef = doc(firestoreDb, 'creatures', creature.id || doc(collection(firestoreDb, 'creatures')).id);
+    await setDoc(creatureRef, { ...creature, updatedAt: new Date().toISOString() });
+    await masterDataService.updateCreatureInCache({ ...creature, id: creatureRef.id });
   }
 
   /**
@@ -260,8 +293,11 @@ export class UserDataService {
    * 地点生物申請を保存
    */
   async savePointCreatureProposal(proposal: any): Promise<void> {
-    const propRef = doc(firestoreDb, 'point_creature_proposals', proposal.id || doc(collection(firestoreDb, 'point_creature_proposals')).id);
-    await setDoc(propRef, { ...proposal, updatedAt: new Date().toISOString() });
+    const propId = proposal.id || doc(collection(firestoreDb, 'point_creature_proposals')).id;
+    const propRef = doc(firestoreDb, 'point_creature_proposals', propId);
+    const data = { ...proposal, id: propId, updatedAt: new Date().toISOString() };
+    await setDoc(propRef, data);
+    await this.saveMyProposal('point-creature', propId, data);
   }
 
   /**
@@ -337,8 +373,38 @@ export class UserDataService {
 
         console.log('[Sync] Admin data sync completed.');
       }
+
+      // 4. 自分の提案履歴の同期 (全ユーザー対象)
+      console.log('[Sync] Syncing user proposals...');
+      const proposalTypes = [
+        { name: 'creature_proposals', type: 'creature' },
+        { name: 'point_proposals', type: 'point' },
+        { name: 'point_creature_proposals', type: 'point-creature' }
+      ];
+
+      for (const p of proposalTypes) {
+        const q = query(collection(firestoreDb, p.name), where('submitterId', '==', userId));
+        const snap = await getDocs(q);
+        for (const doc of snap.docs) {
+          await this.saveMyProposal(p.type, doc.id, { ...doc.data(), id: doc.id });
+        }
+      }
     } catch (error) {
       console.error('[Sync] Initial sync failed:', error);
+    }
+  }
+
+  /**
+   * 自分の提案履歴をローカルに保存
+   */
+  private async saveMyProposal(type: string, id: string, data: any): Promise<void> {
+    try {
+      await userDbEngine.runAsync(
+        'INSERT OR REPLACE INTO my_proposals (id, type, target_id, data_json, status, synced_at) VALUES (?, ?, ?, ?, ?, ?)',
+        [id, type, data.targetId || '', JSON.stringify(data), data.status || 'pending', new Date().toISOString()]
+      );
+    } catch (error) {
+      console.error('[UserDataService] Failed to save my proposal:', error);
     }
   }
 

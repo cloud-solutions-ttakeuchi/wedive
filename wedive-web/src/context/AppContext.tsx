@@ -277,10 +277,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       reviewsQuery.refetch();
     },
     addCreature: async (creature: any) => {
-      await adminActions.approveProposal('creature', creature.id || Date.now().toString(), creature);
+      if (!auth.isAuthenticated) return;
+      await userDataService.saveCreature(auth.currentUser.id, creature);
+      creatures.refetch();
     },
     addCreatureProposal: async (proposal: any) => {
-      await userDataService.saveLog(auth.currentUser.id, proposal as any); // Dummy for now
+      if (!auth.isAuthenticated) return;
+      await userDataService.saveCreatureProposal(auth.currentUser.id, proposal);
+      proposalCreaturesQuery.refetch();
     },
     addPoint: async (point: any) => {
       if (!auth.isAuthenticated) return;
@@ -313,10 +317,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       await updateDoc(doc(firestore, 'users', userId), { role });
     },
     updateCreature: async (id: string, data: any) => {
-      await updateDoc(doc(firestore, 'creatures', id), data);
+      if (!auth.isAuthenticated) return;
+      await userDataService.saveCreature(auth.currentUser.id, { id, ...data });
+      creatures.refetch();
     },
     updatePoint: async (id: string, data: any) => {
-      await updateDoc(doc(firestore, 'points', id), data);
+      if (!auth.isAuthenticated) return;
+      await userDataService.savePoint(auth.currentUser.id, { id, ...data });
+      points.refetch();
     },
     removePointCreature: async (id: string) => {
       await deleteDoc(doc(firestore, 'point_creatures', id));

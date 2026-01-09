@@ -493,9 +493,10 @@ WeDive は **Local-First** アーキテクチャを採用しており、マス�
 *   **Update**: ユーザーによる参照系データの更新は発生しない。
 
 #### (2) 個人データ (Personal Data)
-*   **Scope**: ログ (`my_logs`)、レビュー (`my_reviews`)、設定 (`my_settings`)。
+*   **Scope**: ログ (`my_logs`)、レビュー (`my_reviews`)、設定 (`my_settings`)、**提案履歴 (`my_proposals`)**。
 *   **Sync Logic**: アプリ起動時 (`UserDataService.syncInitialData`)、ログインユーザーのサブコレクション等から一括取得する。
     *   `master.db` とは異なり、個人の整合性が最優先されるため Firestore を正とする。
+    *   **提案履歴**: 自分の行った提案のステータス（承認/却下）を確認するため、`*_proposals` コレクションから `submitterId` でクエリして同期する。
 *   **マルチデバイス同期 (Multi-Device Sync)**:
     *   Firestore の `onSnapshot` によるリアルタイム同期は行わない。
     *   別端末（スマホ/PC）で行った更新を反映させるには、マイページ等での**「手動リフレッシュ（Pull-to-Refresh）」**を必須とする。
@@ -529,6 +530,12 @@ WeDive は **Local-First** アーキテクチャを採用しており、マス�
 3.  **Delete & Write (Local)**:
     - ローカルの申請キャッシュ (`admin_proposals`) から削除。
     - 承認した内容でローカルのマスタデータを更新。
+
+#### (3) 一般ユーザーによる変更提案 (User Proposal)
+1.  **Write (Firestore)**: 提案内容を `*_proposals` コレクションに保存 (`setDoc`)。
+2.  **Write (Local)**: Firestore 保存と同時に、ローカルの `my_proposals` テーブルにも提案内容を保存する。
+    *   これにより、オフライン時や同期前でも自分の提案履歴を確認可能にする。
+3.  **Sync Status**: 後日、管理者が承認した結果は、次回の「個人データ同期」時にリフレッシュされ、ローカルのステータスが更新される。
 
 ### 8.4 クラス責務
 
