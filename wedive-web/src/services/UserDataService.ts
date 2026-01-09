@@ -436,6 +436,26 @@ export class UserDataService {
     }
     return null;
   }
+  /**
+   * 自分の提案履歴を取得
+   */
+  async getMyProposals(type?: string): Promise<any[]> {
+    try {
+      let sql = 'SELECT data_json FROM my_proposals';
+      const params: any[] = [];
+      if (type) {
+        sql += ' WHERE type = ?';
+        params.push(type);
+      }
+      sql += ' ORDER BY synced_at DESC';
+
+      const results = await userDbEngine.getAllAsync<{ data_json: string }>(sql, params);
+      return results.map(row => JSON.parse(row.data_json));
+    } catch (error) {
+      console.error('[UserDataService] Failed to get my proposals:', error);
+      return [];
+    }
+  }
 }
 
 export const userDataService = new UserDataService();
