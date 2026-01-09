@@ -18,15 +18,15 @@ export const Home = () => {
   // Logic: Combining log usage (local/global?) and bookmarks.
   // Since we don't have global log count per point easily, use local + bookmarks.
   const featuredSpots = points
-    .map(point => ({
+    .map((point: any) => ({
       ...point,
-      score: (point.bookmarkCount || 0) * 2 + (logs.filter(l => l.spotId === point.id).length)
+      score: (point.bookmarkCount || 0) * 2 + (logs.filter((l: any) => l.spotId === point.id).length)
     }))
     .sort((a, b) => b.score - a.score)
     .slice(0, 5);
 
   // 2. Popular Creatures (Global Popularity Stats)
-  const popularCreatures = Array.from(new Map(creatures.map(c => [c.id, c])).values())
+  const popularCreatures = Array.from(new Map(creatures.map((c: any) => [c.id, c])).values())
     .sort((a, b) => (b.stats?.popularity || 0) - (a.stats?.popularity || 0))
     .slice(0, 10);
 
@@ -148,7 +148,7 @@ export const Home = () => {
                         {featuredSpots[currentSlide].level}
                       </span>
                       <span className="px-4 py-1 rounded-full text-sm font-bold bg-gray-100 text-gray-600">
-                        {areas.find(a => a.id === featuredSpots[currentSlide].areaId)?.name}
+                        {areas.find((a: any) => a.id === featuredSpots[currentSlide].areaId)?.name}
                       </span>
                     </div>
 
@@ -198,10 +198,10 @@ export const Home = () => {
 
         {recentLogs.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {recentLogs.slice(0, 8).map(log => {
+            {recentLogs.slice(0, 8).map((log: any) => {
               const mainPhoto = log.photos.length > 0 ? log.photos[0] :
-                (creatures.find(c => c.id === log.creatureId)?.imageUrl ||
-                  points.find(p => p.id === log.location.pointId)?.imageUrl); // Fallback handled by ImageWithFallback
+                (creatures.find((c: any) => c.id === log.creatureId)?.imageUrl ||
+                  points.find((p: any) => p.id === log.location.pointId)?.imageUrl); // Fallback handled by ImageWithFallback
 
               // Determine type for fallback
               const fallbackType = log.creatureId ? 'creature' : 'point';
@@ -233,7 +233,7 @@ export const Home = () => {
                     {(log.creatureId || (log.sightedCreatures && log.sightedCreatures.length > 0)) && (
                       <div className="flex items-center gap-2 mb-2">
                         {log.creatureId && (() => {
-                          const c = creatures.find(c => c.id === log.creatureId);
+                          const c = creatures.find((c: any) => c.id === log.creatureId);
                           if (!c) return null;
                           return (
                             <div className="flex items-center gap-1 bg-orange-50 text-orange-600 px-2 py-1 rounded-md text-xs font-bold border border-orange-100 truncate max-w-[150px]">
@@ -241,9 +241,9 @@ export const Home = () => {
                             </div>
                           );
                         })()}
-                        {log.sightedCreatures && log.sightedCreatures.filter(id => id !== log.creatureId).length > 0 && (
+                        {log.sightedCreatures && log.sightedCreatures.filter((id: string) => id !== log.creatureId).length > 0 && (
                           <span className="text-xs text-gray-400 font-bold">
-                            +{log.sightedCreatures.filter(id => id !== log.creatureId).length}
+                            +{log.sightedCreatures.filter((id: string) => id !== log.creatureId).length}
                           </span>
                         )}
                       </div>
@@ -284,7 +284,7 @@ export const Home = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {popularPoints.map((point) => (
+          {popularPoints.map((point: any) => (
             <Link key={point.id} to={`/point/${point.id}`} className="flex bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-all group h-[120px]">
               <div className="w-[120px] bg-gray-200 relative shrink-0">
                 <ImageWithFallback
@@ -297,7 +297,7 @@ export const Home = () => {
               <div className="p-4 flex flex-col justify-center flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-xs font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">{point.level}</span>
-                  <span className="text-xs text-gray-500">{areas.find(a => a.id === point.areaId)?.name}</span>
+                  <span className="text-xs text-gray-500">{areas.find((a: any) => a.id === point.areaId)?.name}</span>
                 </div>
                 <h3 className="font-bold text-gray-800 text-lg mb-1 group-hover:text-purple-600 transition-colors line-clamp-1">{point.name}</h3>
                 <div className="flex items-center gap-3 text-xs text-gray-400 mt-auto">
@@ -324,7 +324,7 @@ export const Home = () => {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {popularCreatures.map((creature) => {
+          {popularCreatures.map((creature: any) => {
             const isFavorite = currentUser.favoriteCreatureIds?.includes(creature.id);
             return (
               <Link key={creature.id} to={`/creature/${creature.id}`} className="group relative block bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
@@ -346,7 +346,7 @@ export const Home = () => {
                   <h3 className="font-bold text-gray-900 truncate">{creature.name}</h3>
                   <div className="flex items-center justify-between mt-2">
                     <div className="flex gap-0.5">
-                      {Array.from({ length: 4 }).map((_, i) => {
+                      {Array.from({ length: 4 }).map((_: any, i: number) => {
                         const r = creature.rarity === 'Legendary' ? 4 : creature.rarity === 'Epic' ? 3 : creature.rarity === 'Rare' ? 2 : 1;
                         return <Star key={i} size={8} className={i < r ? "fill-orange-400 text-orange-400" : "text-gray-200"} />;
                       })}

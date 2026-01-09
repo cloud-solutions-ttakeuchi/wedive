@@ -14,9 +14,9 @@ export const Pokedex = () => {
 
   const allCreatures = creatures;
   const userLogs = isAuthenticated ? logs : [];
-  const discoveredCreatureIds = new Set(userLogs.flatMap(l => [l.creatureId, ...(l.sightedCreatures || [])]).filter(Boolean) as string[]);
+  const discoveredCreatureIds = new Set(userLogs.flatMap((l: any) => [l.creatureId, ...(l.sightedCreatures || [])]).filter(Boolean) as string[]);
 
-  const filteredCreatures = allCreatures.filter(creature => {
+  const filteredCreatures = allCreatures.filter((creature: any) => {
     const term = searchTerm.toLowerCase();
 
     if (!term) return true;
@@ -26,25 +26,25 @@ export const Pokedex = () => {
       (creature.name && String(creature.name).toLowerCase().includes(term)) ||
       (creature.scientificName && String(creature.scientificName).toLowerCase().includes(term)) ||
       (creature.family && String(creature.family).toLowerCase().includes(term)) ||
-      (creature.tags && creature.tags.some(tag => tag && String(tag).toLowerCase().includes(term))) ||
-      (creature.specialAttributes && creature.specialAttributes.some(attr => attr && String(attr).toLowerCase().includes(term)));
+      (creature.tags && creature.tags.some((tag: any) => tag && String(tag).toLowerCase().includes(term))) ||
+      (creature.specialAttributes && creature.specialAttributes.some((attr: any) => attr && String(attr).toLowerCase().includes(term)));
 
     if (matchesProperty) return true;
 
     // 2. Area/Location Search
     const matchedPointIds = points
-      .filter(p => p && (
+      .filter((p: any) => p && (
         (p.name && String(p.name).toLowerCase().includes(term)) ||
         (p.area && String(p.area).toLowerCase().includes(term)) ||
         (p.zone && String(p.zone).toLowerCase().includes(term)) ||
         (p.region && String(p.region).toLowerCase().includes(term))
       ))
-      .map(p => p.id);
+      .map((p: any) => p.id);
 
     // Check if this creature is linked to any of those points
     if (matchedPointIds.length > 0) {
       // Find entries in pointCreatures matching this creature AND one of the matched points
-      const isLinkedToArea = pointCreatures.some(pc =>
+      const isLinkedToArea = pointCreatures.some((pc: any) =>
         pc.creatureId === creature.id && matchedPointIds.includes(pc.pointId)
       );
       if (isLinkedToArea) return true;
@@ -92,7 +92,7 @@ export const Pokedex = () => {
       {/* Grid */}
       {filteredCreatures.length > 0 ? (
         <div className="grid grid-cols-2 gap-4 px-1">
-          {filteredCreatures.map(creature => {
+          {filteredCreatures.map((creature: any) => {
             const isDiscovered = discoveredCreatureIds.has(creature.id);
 
             return (

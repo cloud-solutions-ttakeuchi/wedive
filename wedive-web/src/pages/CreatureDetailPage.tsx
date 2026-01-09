@@ -17,9 +17,9 @@ export const CreatureDetailPage = () => {
 
   // Calculate Discovery Points
   const discoveryPoints = pointCreatures
-    .filter(pc => pc.creatureId === id && pc.status === 'approved')
-    .map(pc => {
-      const point = points.find(p => p.id === pc.pointId);
+    .filter((pc: any) => pc.creatureId === id && pc.status === 'approved')
+    .map((pc: any) => {
+      const point = points.find((p: any) => p.id === pc.pointId);
       return point ? { point, rarity: pc.localRarity } : null;
     })
     .filter((item): item is { point: import('../types').Point, rarity: import('../types').Rarity } => item !== null);
@@ -44,7 +44,7 @@ export const CreatureDetailPage = () => {
     try {
       const isAdmin = currentUser.role === 'admin' || currentUser.role === 'moderator';
       if (isAdmin) {
-        await addPointCreature(selectedSpotId, creature.id, selectedRarity);
+        await addPointCreature({ pointId: selectedSpotId, creatureId: creature.id, localRarity: selectedRarity });
         alert('生物を追加しました！');
       } else {
         await addPointCreatureProposal({
@@ -170,7 +170,7 @@ export const CreatureDetailPage = () => {
                 </div>
                 {/* Rarity Stars */}
                 <div className="flex gap-1">
-                  {Array.from({ length: 4 }).map((_, i) => {
+                  {Array.from({ length: 4 }).map((_: any, i: number) => {
                     const rarityLevel = creature.rarity === 'Legendary' ? 4 :
                       creature.rarity === 'Epic' ? 3 :
                         creature.rarity === 'Rare' ? 2 : 1;
@@ -250,7 +250,7 @@ export const CreatureDetailPage = () => {
                   )}>
                     {creature.rarity}
                   </span>
-                  {creature.specialAttributes?.map(attr => (
+                  {creature.specialAttributes?.map((attr: any) => (
                     <span key={attr} className="inline-flex items-center justify-center px-3 py-1 rounded bg-gray-100 text-gray-700 text-xs font-bold">
                       {attr}
                     </span>

@@ -11,19 +11,19 @@ export const SpotDetail = () => {
 
   if (!point) return <div className="text-center mt-20 text-gray-500 font-medium">{t('spot.not_found')}</div>;
 
-  const area = areas.find(a => a.id === point.areaId);
-  const pointReviews = reviews.filter(r => r.pointId === id && r.status === 'approved');
+  const area = areas.find((a: any) => a.id === point.areaId);
+  const pointReviews = reviews.filter((r: any) => r.pointId === id && r.status === 'approved');
 
   // Filter pointCreatures from context
   const inhabitants = pointCreatures
-    .filter(pc => pc.pointId === id)
-    .map(pc => {
-      const creature = creatures.find(c => c.id === pc.creatureId);
+    .filter((pc: any) => pc.pointId === id)
+    .map((pc: any) => {
+      const creature = creatures.find((c: any) => c.id === pc.creatureId);
       if (!creature) return null;
       return { ...creature, rarity: pc.localRarity };
     })
     .filter(Boolean);
-  const userLogs = isAuthenticated ? logs.filter(l => l.spotId === point.id) : [];
+  const userLogs = isAuthenticated ? logs.filter((l: any) => l.spotId === point.id) : [];
 
   const getTrustBadge = (level: string) => {
     switch (level) {
@@ -69,7 +69,7 @@ export const SpotDetail = () => {
                   {point.name}
                 </h1>
                 <div className="flex flex-wrap gap-2">
-                  {point.features.map((feature) => (
+                  {point.features.map((feature: string) => (
                     <span
                       key={feature}
                       className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full"
@@ -241,8 +241,8 @@ export const SpotDetail = () => {
 
           {/* Creatures Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {inhabitants.map((creature) => {
-              const isDiscovered = userLogs.some(l => l.creatureId === creature!.id || l.sightedCreatures?.includes(creature!.id));
+            {inhabitants.map((creature: any) => {
+              const isDiscovered = userLogs.some((l: any) => l.creatureId === creature!.id || l.sightedCreatures?.includes(creature!.id));
 
               return (
                 <Link
@@ -304,7 +304,7 @@ export const SpotDetail = () => {
 
           {pointReviews.length > 0 ? (
             <div className="space-y-6">
-              {pointReviews.slice(0, 5).map((review) => (
+              {pointReviews.slice(0, 5).map((review: any) => (
                 <div key={review.id} className="bg-white rounded-2xl border border-gray-200 p-8 transition-all hover:border-gray-300 shadow-sm">
                   <div className="flex flex-col md:flex-row gap-8">
                     {/* User Info (Left) */}
@@ -349,7 +349,7 @@ export const SpotDetail = () => {
                       {/* Photo Gallery (if any) */}
                       {review.images && review.images.length > 0 && (
                         <div className="flex gap-3 mb-8 overflow-x-auto pb-2 scrollbar-hide">
-                          {review.images.map((img, idx) => (
+                          {review.images.map((img: string, idx: number) => (
                             <img
                               key={idx}
                               src={img}

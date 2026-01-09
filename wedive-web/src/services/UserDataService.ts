@@ -1,4 +1,4 @@
-import { collection, query, getDocs, doc, setDoc, updateDoc, deleteDoc, orderBy, where } from 'firebase/firestore';
+import { collection, query, getDocs, doc, setDoc, updateDoc, deleteDoc, orderBy, where, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db as firestoreDb } from '../lib/firebase';
 import type { Log, User, Review, PointCreatureProposal } from '../types';
 import { userDbEngine } from './WebSQLiteEngine';
@@ -171,9 +171,75 @@ export class UserDataService {
       await userDbEngine.runAsync('DELETE FROM my_logs WHERE id = ?', [logId]);
       const logRef = doc(firestoreDb, 'users', userId, 'logs', logId);
       await deleteDoc(logRef);
+      // パブリックログも削除 (もし存在すれば)
+      const publicLogRef = doc(firestoreDb, 'public_logs', logId);
+      await deleteDoc(publicLogRef).catch(() => { });
     } catch (error) {
       console.error('[UserDataService] Failed to delete log:', error);
     }
+  }
+
+  /**
+   * ログのいいね
+   */
+  async toggleLikeLog(userId: string, logId: string): Promise<void> {
+    try {
+      const publicLogRef = doc(firestoreDb, 'public_logs', logId);
+      // Note: 簡易実装。本来は自分自身の likes 配列を arrayUnion/arrayRemove する
+      await updateDoc(publicLogRef, {
+        likes: arrayUnion(userId) // TODO: Toggle logic (check if already liked)
+      }).catch(() => { });
+    } catch (error) {
+      console.error('[UserDataService] Failed to toggle like:', error);
+    }
+  }
+
+  /**
+   * レビューを保存
+   */
+  async saveReview(userId: string, review: Review): Promise<void> {
+    const now = new Date().toISOString();
+    try {
+      await userDbEngine.runAsync(
+        'INSERT OR REPLACE INTO my_reviews (id, point_id, data_json, status, created_at, synced_at) VALUES (?, ?, ?, ?, ?, ?)',
+        [review.id, review.pointId, JSON.stringify(review), review.status || 'approved', review.date || now, now]
+      );
+
+      const reviewRef = doc(firestoreDb, 'reviews', review.id);
+      await setDoc(reviewRef, { ...review, userId, updatedAt: now });
+    } catch (error) {
+      console.error('[UserDataService] Failed to save review:', error);
+    }
+  }
+
+  /**
+   * レビューを削除
+   */
+  async deleteReview(reviewId: string): Promise<void> {
+    try {
+      await userDbEngine.runAsync('DELETE FROM my_reviews WHERE id = ?', [reviewId]);
+      await deleteDoc(doc(firestoreDb, 'reviews', reviewId));
+    } catch (error) {
+      console.error('[UserDataService] Failed to delete review:', error);
+    }
+  }
+
+  /**
+   * アカウント削除
+   */
+  async deleteAccount(userId: string): Promise<void> {
+    // 関連データをFirestoreから削除 (バッチ処理推奨)
+    console.log('[UserDataService] Deleting account:', userId);
+    await deleteDoc(doc(firestoreDb, 'users', userId));
+    await userDbEngine.runAsync('DELETE FROM my_logs');
+    await userDbEngine.runAsync('DELETE FROM my_reviews');
+  }
+
+  /**
+   * 全ユーザーリストを取得 (管理者用)
+   */
+  async getAllUsers(): Promise<any[]> {
+    return await this.getSetting<any[]>('all_users_cache') || [];
   }
 
   /**
@@ -210,7 +276,7 @@ export class UserDataService {
       console.log('[Sync] Initial sync completed.');
 
       // 3. 管理者データの同期 (Role が admin/moderator の場合)
-      const isAdmin = localProfile?.role === 'admin' || localProfile?.role === 'moderator';
+      const isAdmin = (localProfile as User | null)?.role === 'admin' || (localProfile as User | null)?.role === 'moderator';
       if (isAdmin) {
         console.log('[Sync] Starting admin data sync...');
         const collections = [

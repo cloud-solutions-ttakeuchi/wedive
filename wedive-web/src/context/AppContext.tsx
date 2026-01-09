@@ -46,13 +46,37 @@ interface AppContextType {
   // アクション
   deleteLogs: (ids: string[]) => Promise<void>;
   updateLogs: (ids: string[], data: any) => Promise<void>;
-  toggleLikeLog: (logId: string) => Promise<void>;
+  toggleLikeLog: (logOrId: any) => Promise<void>;
   toggleFavorite: (creatureId: string) => Promise<void>;
   toggleWanted: (creatureId: string) => Promise<void>;
   toggleBookmarkPoint: (pointId: string) => Promise<void>;
   deleteReview: (id: string) => Promise<void>;
 
+  // ログ操作
+  addLog: (log: any) => Promise<void>;
+  updateLog: (id: string, data: any) => Promise<void>;
+  deleteLog: (id: string) => Promise<void>;
+
+  // レビュー・申請
+  reviews: any[];
+  addReview: (review: any) => Promise<void>;
+  updateReview: (id: string, data: any) => Promise<void>;
+  addCreature: (creature: any) => Promise<void>;
+  addCreatureProposal: (proposal: any) => Promise<void>;
+  addPoint: (point: any) => Promise<void>;
+  addPointProposal: (proposal: any) => Promise<void>;
+  addPointCreature: (rel: any) => Promise<void>;
+  addPointCreatureProposal: (proposal: any) => Promise<void>;
+  proposalPointCreatures: any[];
+  deleteAccount: () => Promise<void>;
+
   // 管理者アクション
+  allUsers: any[];
+  updateUserRole: (userId: string, role: string) => Promise<void>;
+  updateCreature: (id: string, data: any) => Promise<void>;
+  updatePoint: (id: string, data: any) => Promise<void>;
+  removePointCreature: (id: string) => Promise<void>;
+  removePointCreatureProposal: (id: string) => Promise<void>;
   approveProposal: (type: 'creature' | 'point' | 'point-creature', id: string, item: any) => Promise<void>;
   rejectProposal: (type: 'creature' | 'point' | 'point-creature', id: string) => Promise<void>;
   approveReview: (id: string) => Promise<void>;
@@ -77,7 +101,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     queryFn: async () => {
       const q = query(collection(firestore, 'public_logs'), orderBy('date', 'desc'), limit(20));
       const snap = await getDocs(q);
-      return snap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+      return snap.docs.map((doc: any) => ({ ...doc.data(), id: doc.id }));
     },
     staleTime: 1000 * 60 * 10,
   });
@@ -132,6 +156,25 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  // 4. その他のデータの取得 (互換性のための暫定実装)
+  const reviewsQuery = useQuery({
+    queryKey: ['reviews', auth.currentUser.id],
+    queryFn: () => userDataService.getReviews(),
+    enabled: auth.isAuthenticated && auth.currentUser.id !== 'guest'
+  });
+
+  const proposalPointCreaturesQuery = useQuery({
+    queryKey: ['proposalPointCreatures'],
+    queryFn: () => userDataService.getAdminProposals('point-creature'),
+    enabled: auth.isAuthenticated && (auth.currentUser.role === 'admin' || auth.currentUser.role === 'moderator')
+  });
+
+  const allUsersQuery = useQuery({
+    queryKey: ['allUsers'],
+    queryFn: () => userDataService.getAllUsers(),
+    enabled: auth.isAuthenticated && (auth.currentUser.role === 'admin' || auth.currentUser.role === 'moderator')
+  });
+
   const value = useMemo(() => ({
     ...auth,
     ...adminActions,
@@ -144,16 +187,105 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     agencies: agencies.data || [],
     logs: logsQuery.data || [],
     recentLogs: recentLogsQuery.data || [],
+    reviews: reviewsQuery.data || [],
+    proposalPointCreatures: proposalPointCreaturesQuery.data || [],
     proposalReviews: [], // TODO: 汎用フック化
+    allUsers: allUsersQuery.data || [],
+
+    // ログ操作
+    addLog: async (log: any) => {
+      if (!auth.isAuthenticated) return;
+      await userDataService.saveLog(auth.currentUser.id, log);
+      logsQuery.refetch();
+    },
+    updateLog: async (id: string, data: any) => {
+      if (!auth.isAuthenticated) return;
+      const log = (logsQuery.data || []).find((l: any) => l.id === id);
+      if (log) {
+        await userDataService.saveLog(auth.currentUser.id, { ...log, ...data });
+        logsQuery.refetch();
+      }
+    },
+    deleteLog: async (id: string) => {
+      if (!auth.isAuthenticated) return;
+      await userDataService.deleteLog(auth.currentUser.id, id);
+      logsQuery.refetch();
+    },
     deleteLogs,
     updateLogs,
+
+    // レビュー・申請
+    addReview: async (review: any) => {
+      if (!auth.isAuthenticated) return;
+      await userDataService.saveReview(auth.currentUser.id, review);
+      reviewsQuery.refetch();
+    },
+    updateReview: async (id: string, data: any) => {
+      if (!auth.isAuthenticated) return;
+      await userDataService.saveReview(auth.currentUser.id, { id, ...data });
+      reviewsQuery.refetch();
+    },
+    deleteReview: async (id: string) => {
+      await userDataService.deleteReview(id);
+      reviewsQuery.refetch();
+    },
+    addCreature: async (creature: any) => {
+      await adminActions.approveProposal('creature', creature.id || Date.now().toString(), creature);
+    },
+    addCreatureProposal: async (proposal: any) => {
+      await userDataService.saveLog(auth.currentUser.id, proposal as any); // Dummy for now
+    },
+    addPoint: async (point: any) => {
+      await adminActions.approveProposal('point', point.id || Date.now().toString(), point);
+    },
+    addPointProposal: async (proposal: any) => {
+      console.log("Point proposal:", proposal);
+    },
+    addPointCreature: async (rel: any) => {
+      console.log("addPointCreature in AppContext:", rel);
+    },
+    addPointCreatureProposal: async (proposal: any) => {
+      console.log("Point creature proposal:", proposal);
+    },
+    deleteAccount: async () => {
+      if (!auth.isAuthenticated) return;
+      await userDataService.deleteAccount(auth.currentUser.id);
+      auth.logout();
+    },
+
+    // 管理者
+    updateUserRole: async (userId: string, role: string) => {
+      await updateDoc(doc(firestore, 'users', userId), { role });
+    },
+    updateCreature: async (id: string, data: any) => {
+      await updateDoc(doc(firestore, 'creatures', id), data);
+    },
+    updatePoint: async (id: string, data: any) => {
+      await updateDoc(doc(firestore, 'points', id), data);
+    },
+    removePointCreature: async (id: string) => {
+      await deleteDoc(doc(firestore, 'point_creatures', id));
+    },
+    removePointCreatureProposal: async (id: string) => {
+      await deleteDoc(doc(firestore, 'point_creature_proposals', id));
+    },
+
     toggleFavorite,
     toggleWanted,
     toggleBookmarkPoint,
-    toggleLikeLog: async () => { }, // TODO
-    deleteReview: async () => { }, // TODO
+    toggleLikeLog: async (logOrId: any) => {
+      const logId = typeof logOrId === 'string' ? logOrId : logOrId.id;
+      if (!auth.isAuthenticated || !logId) return;
+      await userDataService.toggleLikeLog(auth.currentUser.id, logId);
+      logsQuery.refetch();
+      recentLogsQuery.refetch();
+    },
     isLoading: auth.isLoading || points.isLoading || creatures.isLoading || zones.isLoading || areas.isLoading || agencies.isLoading || regions.isLoading || logsQuery.isLoading || recentLogsQuery.isLoading
-  }), [auth, adminActions, points.data, creatures.data, pointCreatures.data, regions.data, zones.data, areas.data, agencies.data, logsQuery.data, recentLogsQuery.data]);
+  }), [
+    auth, adminActions, points.data, creatures.data, pointCreatures.data,
+    regions.data, zones.data, areas.data, agencies.data,
+    logsQuery.data, recentLogsQuery.data, reviewsQuery.data, proposalPointCreaturesQuery.data
+  ]);
 
   return (
     <AppContext.Provider value={value}>
