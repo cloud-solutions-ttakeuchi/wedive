@@ -168,7 +168,7 @@ export const EditLogPage = () => {
     return creatures.filter(c =>
       (c?.name || '').includes(creatureSearchTerm) ||
       (c?.scientificName || '').includes(creatureSearchTerm) ||
-      (c?.tags || []).some(tag => (tag || '').includes(creatureSearchTerm))
+      (c?.tags || []).some((tag: string) => (tag || '').includes(creatureSearchTerm))
     ).slice(0, 10); // Limit results
   }, [creatureSearchTerm, creatures]);
 

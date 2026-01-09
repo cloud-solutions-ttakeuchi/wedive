@@ -178,13 +178,14 @@ export const AdminCreatureCleansingPage = () => {
 
     try {
       if (isLinked) {
-        // Use context method (handles composite ID internally)
-        await removePointCreature(pointId, managingCreature.id);
+        // removePointCreature expects one ID. If it's composite, we need to find it or construct it.
+        // Assuming removePointCreature expects the composite ID 'pointId_creatureId'
+        await removePointCreature(`${pointId}_${managingCreature.id}`);
         setLinkedPointIds(prev => prev.filter(id => id !== pointId));
       } else {
         // Add with context method
         // Use creature's global rarity as default local rarity
-        await addPointCreature(pointId, managingCreature.id, managingCreature.rarity);
+        await addPointCreature({ pointId, creatureId: managingCreature.id, rarity: managingCreature.rarity });
         setLinkedPointIds(prev => [...prev, pointId]);
       }
     } catch (e: any) {

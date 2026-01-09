@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { ArrowLeft, Edit2, Trash2, Save, X, RefreshCw, Layers, Map as MapIcon, Globe, MapPin, ChevronDown, ChevronUp, AlertTriangle, GitMerge, Plus, Download, Check, CircleOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { writeBatch, collection, getDocs, query, where, doc, updateDoc, arrayRemove, arrayUnion, deleteDoc, setDoc, deleteField } from 'firebase/firestore';
+import { writeBatch, collection, getDocs, getDoc, query, where, doc, updateDoc, arrayRemove, arrayUnion, deleteDoc, setDoc, deleteField } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import type { Point } from '../types';
 import { seedFirestore } from '../utils/seeder';
@@ -610,8 +610,8 @@ export const AdminAreaCleansingPage = () => {
 
           // Delete Source Master Doc
           batchMaster.delete(doc(db, targetField + 's', sourceItem.id as string));
-          if (targetField === 'zone') localPromises.push(masterDataService.deleteZoneFromCache(sourceItem.id));
-          else localPromises.push(masterDataService.deleteRegionFromCache(sourceItem.id));
+          if (targetField === 'zone') localPromises.push(masterDataService.deleteZoneFromCache(sourceItem.id as string));
+          else localPromises.push(masterDataService.deleteRegionFromCache(sourceItem.id as string));
           ops++;
 
           if (ops > 0) {

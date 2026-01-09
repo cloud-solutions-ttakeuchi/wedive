@@ -307,9 +307,9 @@ export const PointDetailPage = () => {
                           const isAdmin = currentUser.role === 'admin' || currentUser.role === 'moderator';
                           if (window.confirm(isAdmin ? 'この生物の報告を削除しますか？' : '削除リクエストを送信しますか？')) {
                             if (isAdmin) {
-                              removePointCreature(point.id, creature.id);
+                              removePointCreature(`${point.id}_${creature.id}`);
                             } else {
-                              removePointCreatureProposal(point.id, creature.id);
+                              removePointCreatureProposal(`${point.id}_${creature.id}`);
                               alert('削除リクエストを送信しました');
                             }
                           }
@@ -490,7 +490,7 @@ const AddCreatureModal = ({
     try {
       if (currentUser.role === 'admin' || currentUser.role === 'moderator') {
         // Direct Create
-        await addPointCreature(pointId, creatureId, selectedRarity);
+        await addPointCreature({ pointId, creatureId, rarity: selectedRarity });
         alert('生物を追加しました！');
       } else {
         // Proposal Flow

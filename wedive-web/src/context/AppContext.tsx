@@ -41,7 +41,7 @@ interface AppContextType {
   // ログ・レビュー
   logs: any[];
   recentLogs: any[];
-  proposalReviews: any[];
+
 
   // アクション
   deleteLogs: (ids: string[]) => Promise<void>;
@@ -53,14 +53,14 @@ interface AppContextType {
   deleteReview: (id: string) => Promise<void>;
 
   // ログ操作
-  addLog: (log: any) => Promise<void>;
-  updateLog: (id: string, data: any) => Promise<void>;
+  addLog: (log: any) => Promise<any>;
+  updateLog: (id: string, data: any) => Promise<any>;
   deleteLog: (id: string) => Promise<void>;
 
   // レビュー・申請
   reviews: any[];
-  addReview: (review: any) => Promise<void>;
-  updateReview: (id: string, data: any) => Promise<void>;
+  addReview: (review: any) => Promise<any>;
+  updateReview: (id: string, data: any) => Promise<any>;
   addCreature: (creature: any) => Promise<void>;
   addCreatureProposal: (proposal: any) => Promise<void>;
   addPoint: (point: any) => Promise<void>;
@@ -68,6 +68,9 @@ interface AppContextType {
   addPointCreature: (rel: any) => Promise<void>;
   addPointCreatureProposal: (proposal: any) => Promise<void>;
   proposalPointCreatures: any[];
+  proposalCreatures: any[];
+  proposalPoints: any[];
+  proposalReviews: any[];
   deleteAccount: () => Promise<void>;
 
   // 管理者アクション
@@ -169,6 +172,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     enabled: auth.isAuthenticated && (auth.currentUser.role === 'admin' || auth.currentUser.role === 'moderator')
   });
 
+  const proposalCreaturesQuery = useQuery({
+    queryKey: ['proposalCreatures'],
+    queryFn: () => userDataService.getAdminProposals('creature'),
+    enabled: auth.isAuthenticated && (auth.currentUser.role === 'admin' || auth.currentUser.role === 'moderator')
+  });
+
+  const proposalPointsQuery = useQuery({
+    queryKey: ['proposalPoints'],
+    queryFn: () => userDataService.getAdminProposals('point'),
+    enabled: auth.isAuthenticated && (auth.currentUser.role === 'admin' || auth.currentUser.role === 'moderator')
+  });
+
   const allUsersQuery = useQuery({
     queryKey: ['allUsers'],
     queryFn: () => userDataService.getAllUsers(),
@@ -189,21 +204,25 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     recentLogs: recentLogsQuery.data || [],
     reviews: reviewsQuery.data || [],
     proposalPointCreatures: proposalPointCreaturesQuery.data || [],
+    proposalCreatures: proposalCreaturesQuery.data || [],
+    proposalPoints: proposalPointsQuery.data || [],
     proposalReviews: [], // TODO: 汎用フック化
     allUsers: allUsersQuery.data || [],
 
     // ログ操作
     addLog: async (log: any) => {
       if (!auth.isAuthenticated) return;
-      await userDataService.saveLog(auth.currentUser.id, log);
+      const res = await userDataService.saveLog(auth.currentUser.id, log);
       logsQuery.refetch();
+      return { id: res };
     },
     updateLog: async (id: string, data: any) => {
       if (!auth.isAuthenticated) return;
       const log = (logsQuery.data || []).find((l: any) => l.id === id);
       if (log) {
-        await userDataService.saveLog(auth.currentUser.id, { ...log, ...data });
+        const res = await userDataService.saveLog(auth.currentUser.id, { ...log, ...data });
         logsQuery.refetch();
+        return { id: res };
       }
     },
     deleteLog: async (id: string) => {
@@ -217,13 +236,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     // レビュー・申請
     addReview: async (review: any) => {
       if (!auth.isAuthenticated) return;
-      await userDataService.saveReview(auth.currentUser.id, review);
+      const res = await userDataService.saveReview(auth.currentUser.id, review);
       reviewsQuery.refetch();
+      return { id: res };
     },
     updateReview: async (id: string, data: any) => {
       if (!auth.isAuthenticated) return;
-      await userDataService.saveReview(auth.currentUser.id, { id, ...data });
+      const res = await userDataService.saveReview(auth.currentUser.id, { id, ...data });
       reviewsQuery.refetch();
+      return { id: res };
     },
     deleteReview: async (id: string) => {
       await userDataService.deleteReview(id);

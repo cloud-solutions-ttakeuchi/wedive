@@ -146,7 +146,7 @@ export class UserDataService {
   /**
    * ログを保存
    */
-  async saveLog(userId: string, log: Log, skipFirestore = false): Promise<void> {
+  async saveLog(userId: string, log: Log, skipFirestore = false): Promise<string> {
     const now = new Date().toISOString();
     try {
       await userDbEngine.runAsync(
@@ -158,8 +158,10 @@ export class UserDataService {
         const logRef = doc(firestoreDb, 'users', userId, 'logs', log.id);
         await setDoc(logRef, { ...log, updatedAt: now });
       }
+      return log.id;
     } catch (error) {
       console.error('[UserDataService] Failed to save log:', error);
+      throw error;
     }
   }
 
@@ -197,7 +199,7 @@ export class UserDataService {
   /**
    * レビューを保存
    */
-  async saveReview(userId: string, review: Review): Promise<void> {
+  async saveReview(userId: string, review: Review): Promise<string> {
     const now = new Date().toISOString();
     try {
       await userDbEngine.runAsync(
@@ -207,8 +209,10 @@ export class UserDataService {
 
       const reviewRef = doc(firestoreDb, 'reviews', review.id);
       await setDoc(reviewRef, { ...review, userId, updatedAt: now });
+      return review.id;
     } catch (error) {
       console.error('[UserDataService] Failed to save review:', error);
+      throw error;
     }
   }
 
