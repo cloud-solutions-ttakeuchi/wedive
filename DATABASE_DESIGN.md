@@ -317,6 +317,47 @@ AIによる再構築結果や検索結果を保存し、費用の抑制と高速
 | `iconUrl` | string | アイコン画像URL |
 | `condition` | map | 獲得条件定義 |
 
+### 4.14 管理画面におけるデータフロー（審査・承認プロセス）
+
+管理画面（Admin/Moderator）におけるデータの取得と更新は、以下の原則に従う。
+
+1.  **一回限りの取得 (One-off Fetch)**:
+    *   Firestore 側の `onSnapshot`（常時監視）は**全廃**している。コスト削減と無限ループ防止のため、リアルタイムリスナーは一切使用しない。
+    *   `@tanstack/react-query` の `useQuery` を利用し、画面初期表示時またはユーザー操作時に `getDocs` を実行する。
+
+2.  **型安全性の担保**:
+    *   Firestore から取得したデータは、各コレクションに対応する TypeScript インターフェース（`CreatureProposal`, `PointProposal` 等）へキャストして処理する。
+    *   `implicit any` を排除し、管理 UI の堅牢性を確保する。
+
+3.  **更新と整合性**:
+    *   承認/却下アクションを実行した後は、Firestore のドキュメントを直接更新（`updateDoc` / `setDoc`）する。
+    *   更新成功後、`queryClient.invalidateQueries` を呼び出し、React Query のキャッシュを無効化する。
+    *   自動的に最新のデータを再取得（Refetch）することで、UI 上のステータスを同期する。
+
+**データフロー図 (Mermaid)**:
+
+```mermaid
+sequenceDiagram
+    participant AdminUI as Administrative UI
+    participant RQuery as @tanstack/react-query
+    participant FS as Firestore (Cloud)
+    participant MasterTable as SQL Master (Local-First)
+
+    Note over AdminUI, FS: [データ閲覧]
+    AdminUI->>RQuery: 申請データを要求 (useQuery)
+    RQuery->>FS: getDocs (One-off fetch)
+    FS-->>RQuery: 申請一覧データ
+    RQuery-->>AdminUI: 型定義済みデータで表示
+
+    Note over AdminUI, MasterTable: [承認アクション]
+    AdminUI->>FS: 申請ドキュメントの更新 (status="approved")
+    AdminUI->>FS: 本番マスタコレクションへの反映 (setDoc)
+    FS-->>AdminUI: 成功
+    AdminUI->>RQuery: キャッシュ無効化 (invalidateQueries)
+    RQuery->>FS: getDocs (再表示用)
+    Note over AdminUI, MasterTable: ※ Web版では同期後、次回の初期化時に<br/>SQLite エンジンが最新マスタを取り込む
+```
+
 ---
 
 ## 5. SQLite テーブル定義 (Mobile Local)
