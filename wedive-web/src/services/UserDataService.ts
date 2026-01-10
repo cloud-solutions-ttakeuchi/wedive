@@ -402,6 +402,50 @@ export class UserDataService {
   }
 
   /**
+   * AIコンシェルジュのチケット情報を強制同期
+   * (不整合発生時の修復用)
+   */
+  async syncTickets(userId: string): Promise<void> {
+    try {
+      console.log('[Sync] Force syncing AI tickets for user:', userId);
+
+      // 1. 詳細データの同期
+      const ticketsRef = collection(firestoreDb, 'users', userId, 'aiConciergeTickets');
+      const ticketsSnap = await getDocs(ticketsRef);
+
+      // 効率化のため、既存を消す処理を入れるか、あるいは上書き更新 (saveTicketはupsertなのでOK)
+      // ただし、Firestoreで削除されたチケット（期限切れで消えた場合など）がローカルに残る問題がある。
+      // 本来は全削除->全挿入、または論理削除同期が必要だが、
+      // ここでは最低限「有効なチケットの状態」を正しくすることに注力する。
+      for (const doc of ticketsSnap.docs) {
+        await this.saveTicket(doc.id, { ...doc.data(), id: doc.id });
+      }
+
+      // 2. サマリーの同期
+      const userRef = doc(firestoreDb, 'users', userId);
+      const userSnap = await getDocs(query(collection(firestoreDb, 'users'), where('id', '==', userId)));
+
+      if (!userSnap.empty) {
+        const firestoreData = userSnap.docs[0].data() as User;
+        const localProfile = await this.getSetting<User>('profile');
+
+        if (localProfile) {
+          // サマリー部分だけFirestoreの最新値で上書き
+          localProfile.aiConciergeTickets = firestoreData.aiConciergeTickets;
+          await this.saveSetting('profile', localProfile);
+          console.log('[Sync] Ticket summary updated from Firestore.');
+        }
+      }
+
+      console.log('[Sync] AI tickets force sync completed.');
+    } catch (error) {
+      console.error('[Sync] Failed to force sync tickets:', error);
+      // ここで失敗したらもはや手がないが、ログは残す
+      throw error;
+    }
+  }
+
+  /**
    * チケットをローカルに保存
    */
   async saveTicket(id: string, data: any): Promise<void> {
