@@ -2,13 +2,18 @@
   "expo": {
     "name": "wedive-app",
     "slug": "wedive-app",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.wedive.dev",
+      "buildNumber": "2",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
+    },
+    "android": {
+      "package": "com.wedive.dev",
+      "versionCode": 2
     }
   }
 }

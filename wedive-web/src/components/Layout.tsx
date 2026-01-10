@@ -57,7 +57,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
             </button>
 
             {/* Search Button - Zukan Style */}
-            <Link to="/pokedex" className="flex items-center gap-2 bg-gray-100/80 hover:bg-gray-200/80 text-gray-700 px-5 py-2 rounded-full transition-all group">
+            <Link to="/creatures" className="flex items-center gap-2 bg-gray-100/80 hover:bg-gray-200/80 text-gray-700 px-5 py-2 rounded-full transition-all group">
               <Search size={18} className="text-gray-400 group-hover:text-gray-700" />
               <span className="text-sm font-bold">図鑑</span>
             </Link>
@@ -80,7 +80,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
             <Link to="/" onClick={() => setIsMenuOpen(false)} className="text-xl font-bold py-4 border-b border-gray-100 hover:text-red-500">
               {t('nav.home')}
             </Link>
-            <Link to="/pokedex" onClick={() => setIsMenuOpen(false)} className="text-xl font-bold py-4 border-b border-gray-100 hover:text-red-500">
+            <Link to="/creatures" onClick={() => setIsMenuOpen(false)} className="text-xl font-bold py-4 border-b border-gray-100 hover:text-red-500">
               {t('nav.pokedex')}
             </Link>
             <Link to="/points" onClick={() => setIsMenuOpen(false)} className="text-xl font-bold py-4 border-b border-gray-100 hover:text-red-500">
@@ -142,7 +142,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
         <div className="max-w-[1280px] mx-auto px-4 text-center">
           <div className="flex justify-center gap-6 mb-6 flex-wrap">
             <Link to="/" className="text-sm text-gray-500 hover:text-gray-900 font-bold">TOP</Link>
-            <Link to="/pokedex" className="text-sm text-gray-500 hover:text-gray-900 font-bold">POKEDEX</Link>
+            <Link to="/creatures" className="text-sm text-gray-500 hover:text-gray-900 font-bold">ENCYCLOPEDIA</Link>
             <Link to="/points" className="text-sm text-gray-500 hover:text-gray-900 font-bold">POINTS</Link>
             {isAuthenticated && (
               <Link to="/mypage" className="text-sm text-gray-500 hover:text-gray-900 font-bold">MY PAGE</Link>

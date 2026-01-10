@@ -2,7 +2,19 @@
 
 プロジェクトの変更履歴を記録します。
 
-## [Unreleased] - 2026-01-09
+## [1.1.0] - 2026-01-10
+
+### Fixed
+- **AI Concierge Data Integrity (Web/App)**:
+    - **Optimistic Locking**: チケット消費時に Firestore トランザクション内で最新状態を再確認 (`get`) し、競合時のデータ不整合（二重消費など）を防止。
+    - **Self-Healing**: チケット実体がないにもかかわらずサマリーが残っている不整合状態を検知し、自動的にサマリーをリセット・再同期するロジックを実装。
+    - **Retry Sync**: ローカルデータ同期（SQLite）失敗時に最大3回の即時リトライを行い、それでも失敗した場合は `syncTickets` で全件補正を行う堅牢なリペアフローを構築。
+    - **Multi-Use Logic**: チケット消費時に残数 (`remainingCount`) を正しく減算し、0になった場合のみステータスを `used` に更新する仕様に修正（マルチユース対応）。
+- **App Performance & Behavior**:
+    - **Refetch Optimization (Web)**: ブラウザタブの切り替えやフォーカス戻り時に発生していた全画面ローディング（React Query `refetchOnWindowFocus`）を無効化し、Local-First アーキテクチャ本来の高速なUXを実現。
+    - **Firestore Index Error (App)**: AIコンシェルジュのチケット取得クエリから `orderBy` を削除し、Web版同様にクライアントサイド（メモリ内）でソートすることで、新たな複合インデックス作成なしで動作するように修正。
+
+## [1.0.1] - 2026-01-09
 ### Fixed
 - **AI Concierge Ticket Display & Sync (Web/App)**:
     - **JST Date Awarding**: 日次ログインボーナスの判定を JST (Asia/Tokyo) に統一し、日付の変わり目での付与漏れを解消。
