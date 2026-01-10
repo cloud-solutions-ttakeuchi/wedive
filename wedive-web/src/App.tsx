@@ -55,7 +55,7 @@ function App() {
                 <TermsAgreementModal />
                 <Routes>
                   <Route path="/" element={<Home />} />
-                  <Route path="/pokedex" element={<Pokedex />} />
+                  <Route path="/creatures" element={<Pokedex />} />
                   <Route path="/spot/:id" element={<SpotDetail />} />
                   <Route path="/creature/:id" element={<CreatureDetailPage />} />
                   <Route path="/mypage" element={<MyPage />} />

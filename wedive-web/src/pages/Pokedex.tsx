@@ -58,7 +58,7 @@ export const Pokedex = () => {
       <div className="flex items-end justify-between px-2">
         <div>
           <h2 className="text-3xl font-bold text-deepBlue-900 tracking-tight">{t('pokedex.title')}</h2>
-          <p className="text-gray-500 text-sm mt-1">Collection</p>
+          <p className="text-gray-500 text-sm mt-1 font-medium tracking-wide">Ocean Encyclopedia</p>
         </div>
         <div className="flex items-center gap-2">
           <Link to="/add-creature" className="flex items-center gap-1 text-xs font-bold bg-ocean-100 text-ocean-700 px-3 py-1.5 rounded-full hover:bg-ocean-200 transition-colors">
@@ -91,7 +91,7 @@ export const Pokedex = () => {
 
       {/* Grid */}
       {filteredCreatures.length > 0 ? (
-        <div className="grid grid-cols-2 gap-4 px-1">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3 md:gap-4 px-1">
           {filteredCreatures.map((creature: any) => {
             const isDiscovered = discoveredCreatureIds.has(creature.id);
 
@@ -99,7 +99,7 @@ export const Pokedex = () => {
               <Link
                 key={creature.id}
                 to={`/creature/${creature.id}`}
-                className="group relative aspect-[4/5] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                className="group relative aspect-[3/4] rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
               >
                 {/* Image Background */}
                 <ImageWithFallback
@@ -117,23 +117,19 @@ export const Pokedex = () => {
 
                 {/* Status Badge */}
                 {creature.status === 'pending' ? (
-                  <div className="absolute top-2 left-2 bg-amber-500 text-white px-2 py-1 rounded-lg shadow-lg z-10 flex items-center gap-1">
-                    <Clock size={12} className="animate-pulse" />
-                    <span className="text-[10px] font-black tracking-tight uppercase">提案中</span>
+                  <div className="absolute top-2 left-2 bg-amber-500 text-white px-1.5 py-0.5 rounded text-[10px] font-bold shadow-sm z-10 flex items-center gap-1">
+                    <Clock size={10} className="animate-pulse" />
+                    <span>提案中</span>
                   </div>
                 ) : isDiscovered ? (
-                  <div className="absolute top-2 right-2 bg-green-500 text-white p-1.5 rounded-full shadow-lg shadow-green-500/30 z-10 animate-in zoom-in duration-300">
-                    <CheckCircle size={16} strokeWidth={3} />
+                  <div className="absolute top-2 right-2 bg-green-500 text-white p-1 rounded-full shadow-lg shadow-green-500/30 z-10 animate-in zoom-in duration-300">
+                    <CheckCircle size={12} strokeWidth={3} />
                   </div>
-                ) : (
-                  <div className="absolute top-2 right-2 bg-black/40 backdrop-blur-md text-white/50 p-1.5 rounded-full z-10">
-                    <Filter size={16} />
-                  </div>
-                )}
+                ) : null}
 
                 {/* Content */}
-                <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-                  <h3 className="font-bold text-white text-lg leading-tight drop-shadow-md mb-1">{creature.name}</h3>
+                <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+                  <h3 className="font-bold text-white text-sm md:text-base leading-tight drop-shadow-md mb-0.5 line-clamp-1">{creature.name}</h3>
                   <div className="flex items-center justify-between">
                     <div className="flex gap-0.5">
                       {Array.from({ length: 4 }).map((_, i) => {
