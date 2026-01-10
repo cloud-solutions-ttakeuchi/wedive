@@ -2,6 +2,21 @@
 
 本ドキュメントは、WeDive アプリケーションで使用される Firestore データベースの技術仕様、命名規則、およびデータ構造を「正確かつ完全」に定義します。
 
+# 🛑 CRITICAL: NO FIRESTORE REALTIME LISTENERS (onSnapshot) 🛑
+
+**STOP AND READ THIS FIRST:**
+
+## ⚠️ ABSOLUTE PROHIBITION ⚠️
+
+Usage of Firestore `onSnapshot` (real-time listeners) is **STRICTLY PROHIBITED** across the entire system (Web & Mobile).
+
+### 🚫 DO NOT USE `onSnapshot`
+- **Reason**: To prevent Firestore read cost explosion and memory leaks.
+- **Alternative**: Use standard `getDocs` / `getDoc` for initial fetch, and rely on **Local SQLite** for subsequent reads.
+- **Exception**: Firebase Auth `onAuthStateChanged` is the **ONLY** allowed listener.
+
+**ANY CODE VIOLATING THIS RULE WILL BE REJECTED.**
+
 ---
 
 ## 1. ID 命名規則 (ID Policy)

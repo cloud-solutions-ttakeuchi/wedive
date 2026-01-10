@@ -388,8 +388,39 @@ export class UserDataService {
           await this.saveMyProposal(p.type, doc.id, { ...doc.data(), id: doc.id });
         }
       }
+
+      // 5. AIコンシェルジュチケットの同期
+      console.log('[Sync] Syncing AI tickets...');
+      const ticketsSnap = await getDocs(collection(firestoreDb, 'users', userId, 'aiConciergeTickets'));
+      for (const doc of ticketsSnap.docs) {
+        await this.saveTicket(doc.id, { ...doc.data(), id: doc.id });
+      }
+
     } catch (error) {
       console.error('[Sync] Initial sync failed:', error);
+    }
+  }
+
+  /**
+   * チケットをローカルに保存
+   */
+  async saveTicket(id: string, data: any): Promise<void> {
+    try {
+      await userDbEngine.runAsync(
+        'INSERT OR REPLACE INTO my_ai_concierge_tickets (id, type, remaining_count, granted_at, expires_at, status, reason, synced_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [
+          id,
+          data.type || 'daily',
+          data.remainingCount || 0,
+          data.grantedAt || null,
+          data.expiresAt || null,
+          data.status || 'valid',
+          data.reason || '',
+          new Date().toISOString()
+        ]
+      );
+    } catch (error) {
+      console.error('[UserDataService] Failed to save ticket:', error);
     }
   }
 
