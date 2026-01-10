@@ -4,6 +4,7 @@ import { auth, db } from '../firebase';
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { User, DiveLog } from '../types';
 import { userDataService } from '../services/UserDataService';
+import { aiConciergeService } from '../services/AiConciergeService';
 
 type AuthContextType = {
   user: User | null;
@@ -13,6 +14,7 @@ type AuthContextType = {
   isLoading: boolean;
   signOut: () => Promise<void>;
   updateUser: (userData: Partial<User>) => Promise<void>;
+  refreshProfile: () => Promise<void>;
   deleteAccount: () => Promise<void>;
 };
 
@@ -24,6 +26,7 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   signOut: async () => { },
   updateUser: async () => { },
+  refreshProfile: async () => { },
   deleteAccount: async () => { },
 });
 
@@ -53,7 +56,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // 2. 必要に応じた初回同期（Firestore -> SQLite）
           await userDataService.syncInitialData(fbUser.uid);
 
-          // 3. 常に最新の SQLite からデータをロード
+          // 3. AIコンシェルジュチケットの付与チェックと同期
+          await aiConciergeService.grantDailyTicket(fbUser.uid);
+          await aiConciergeService.syncTickets(fbUser.uid);
+
+          // 4. 常に最新の SQLite からデータをロード
           const [localLogs, localProfile] = await Promise.all([
             userDataService.getLogs(),
             userDataService.getSetting<User>('profile')
@@ -108,6 +115,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const refreshProfile = async () => {
+    if (!firebaseUser) return;
+    try {
+      const localProfile = await userDataService.getSetting<User>('profile');
+      if (localProfile) {
+        setUser(localProfile);
+      }
+    } catch (error) {
+      console.error("Error refreshing profile:", error);
+    }
+  };
+
   const deleteAccount = async () => {
     if (!firebaseUser) return;
     try {
@@ -132,6 +151,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isLoading,
       signOut,
       updateUser,
+      refreshProfile,
       deleteAccount
     }}>
       {children}

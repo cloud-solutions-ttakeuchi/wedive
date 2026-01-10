@@ -18,15 +18,15 @@ export const Home = () => {
   // Logic: Combining log usage (local/global?) and bookmarks.
   // Since we don't have global log count per point easily, use local + bookmarks.
   const featuredSpots = points
-    .map(point => ({
+    .map((point: any) => ({
       ...point,
-      score: (point.bookmarkCount || 0) * 2 + (logs.filter(l => l.spotId === point.id).length)
+      score: (point.bookmarkCount || 0) * 2 + (logs.filter((l: any) => l.spotId === point.id).length)
     }))
     .sort((a, b) => b.score - a.score)
     .slice(0, 5);
 
   // 2. Popular Creatures (Global Popularity Stats)
-  const popularCreatures = Array.from(new Map(creatures.map(c => [c.id, c])).values())
+  const popularCreatures = Array.from(new Map(creatures.map((c: any) => [c.id, c])).values())
     .sort((a, b) => (b.stats?.popularity || 0) - (a.stats?.popularity || 0))
     .slice(0, 10);
 
@@ -51,42 +51,40 @@ export const Home = () => {
   return (
     <div className="pb-24 space-y-16">
       {/* 0. AI Concierge Promo */}
-      {(FEATURE_FLAGS.ENABLE_V2_AI_CONCIERGE || currentUser?.role === 'admin') && (
-
-        <section className="max-w-[1280px] mx-auto px-4 pt-12 animate-fade-in">
-          <Link to="/concierge" className="block group">
-            <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-r from-ocean-600 to-indigo-600 p-[1px]">
-              <div className="relative bg-white/95 backdrop-blur-xl rounded-[2.5rem] p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 transition-all group-hover:bg-white/90">
-                <div className="flex-1 space-y-4 text-center md:text-left">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-ocean-50 text-ocean-600 rounded-full text-xs font-black uppercase tracking-widest shadow-sm">
-                    <Sparkles size={14} /> NEW AI FEATURE
-                  </div>
-                  <h2 className="text-3xl md:text-4xl font-black text-gray-900 leading-tight" style={{ fontFamily: '"M PLUS Rounded 1c", sans-serif' }}>
-                    あなただけの<span className="text-ocean-600">ダイビング<br className="md:hidden" />コンシェルジュ</span>
-                  </h2>
-                  <p className="text-gray-500 font-medium text-lg leading-relaxed max-w-xl">
-                    「今週末、カメに会えるおすすめの場所は？」「初心者が楽しめる沖縄のスポットは？」AIに相談して、最高のダイビングプランを見つけましょう。
-                  </p>
-                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 pt-2">
-                    <span className="px-8 py-4 bg-slate-900 text-white rounded-2xl font-black shadow-xl shadow-slate-200 transition-all hover:bg-slate-800 hover:scale-105 flex items-center gap-2">
-                      AIに相談する <ChevronRight size={20} />
-                    </span>
-                  </div>
+      {/* 0. AI Concierge Promo */}
+      <section className="max-w-[1280px] mx-auto px-4 pt-12 animate-fade-in">
+        <Link to="/concierge" className="block group">
+          <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-r from-ocean-600 to-indigo-600 p-[1px]">
+            <div className="relative bg-white/95 backdrop-blur-xl rounded-[2.5rem] p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 transition-all group-hover:bg-white/90">
+              <div className="flex-1 space-y-4 text-center md:text-left">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-ocean-50 text-ocean-600 rounded-full text-xs font-black uppercase tracking-widest shadow-sm">
+                  <Sparkles size={14} /> NEW AI FEATURE
                 </div>
-                <div className="relative w-48 h-48 md:w-64 md:h-64 shrink-0 flex items-center justify-center">
-                  <div className="absolute inset-0 bg-ocean-100 rounded-full scale-90 animate-pulse"></div>
-                  <div className="relative z-10 w-full h-full bg-white rounded-full shadow-2xl flex items-center justify-center border-4 border-ocean-50 transition-transform group-hover:rotate-12 duration-500">
-                    <Bot size={80} className="text-ocean-600" />
-                  </div>
-                  <div className="absolute top-0 right-0 p-3 bg-white rounded-2xl shadow-xl animate-bounce">
-                    <Sparkles size={24} className="text-ocean-400" />
-                  </div>
+                <h2 className="text-3xl md:text-4xl font-black text-gray-900 leading-tight" style={{ fontFamily: '"M PLUS Rounded 1c", sans-serif' }}>
+                  あなただけの<span className="text-ocean-600">ダイビング<br className="md:hidden" />コンシェルジュ</span>
+                </h2>
+                <p className="text-gray-500 font-medium text-lg leading-relaxed max-w-xl">
+                  「今週末、カメに会えるおすすめの場所は？」「初心者が楽しめる沖縄のスポットは？」AIに相談して、最高のダイビングプランを見つけましょう。
+                </p>
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 pt-2">
+                  <span className="px-8 py-4 bg-slate-900 text-white rounded-2xl font-black shadow-xl shadow-slate-200 transition-all hover:bg-slate-800 hover:scale-105 flex items-center gap-2">
+                    AIに相談する <ChevronRight size={20} />
+                  </span>
+                </div>
+              </div>
+              <div className="relative w-48 h-48 md:w-64 md:h-64 shrink-0 flex items-center justify-center">
+                <div className="absolute inset-0 bg-ocean-100 rounded-full scale-90 animate-pulse"></div>
+                <div className="relative z-10 w-full h-full bg-white rounded-full shadow-2xl flex items-center justify-center border-4 border-ocean-50 transition-transform group-hover:rotate-12 duration-500">
+                  <Bot size={80} className="text-ocean-600" />
+                </div>
+                <div className="absolute top-0 right-0 p-3 bg-white rounded-2xl shadow-xl animate-bounce">
+                  <Sparkles size={24} className="text-ocean-400" />
                 </div>
               </div>
             </div>
-          </Link>
-        </section>
-      )}
+          </div>
+        </Link>
+      </section>
 
       {/* 1. Slideshow: Featured / New / Popular Points */}
       <section className="bg-white pt-8 pb-4 relative overflow-hidden">
@@ -148,7 +146,7 @@ export const Home = () => {
                         {featuredSpots[currentSlide].level}
                       </span>
                       <span className="px-4 py-1 rounded-full text-sm font-bold bg-gray-100 text-gray-600">
-                        {areas.find(a => a.id === featuredSpots[currentSlide].areaId)?.name}
+                        {areas.find((a: any) => a.id === featuredSpots[currentSlide].areaId)?.name}
                       </span>
                     </div>
 
@@ -198,10 +196,10 @@ export const Home = () => {
 
         {recentLogs.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {recentLogs.slice(0, 8).map(log => {
+            {recentLogs.slice(0, 8).map((log: any) => {
               const mainPhoto = log.photos.length > 0 ? log.photos[0] :
-                (creatures.find(c => c.id === log.creatureId)?.imageUrl ||
-                  points.find(p => p.id === log.location.pointId)?.imageUrl); // Fallback handled by ImageWithFallback
+                (creatures.find((c: any) => c.id === log.creatureId)?.imageUrl ||
+                  points.find((p: any) => p.id === log.location.pointId)?.imageUrl); // Fallback handled by ImageWithFallback
 
               // Determine type for fallback
               const fallbackType = log.creatureId ? 'creature' : 'point';
@@ -233,7 +231,7 @@ export const Home = () => {
                     {(log.creatureId || (log.sightedCreatures && log.sightedCreatures.length > 0)) && (
                       <div className="flex items-center gap-2 mb-2">
                         {log.creatureId && (() => {
-                          const c = creatures.find(c => c.id === log.creatureId);
+                          const c = creatures.find((c: any) => c.id === log.creatureId);
                           if (!c) return null;
                           return (
                             <div className="flex items-center gap-1 bg-orange-50 text-orange-600 px-2 py-1 rounded-md text-xs font-bold border border-orange-100 truncate max-w-[150px]">
@@ -241,9 +239,9 @@ export const Home = () => {
                             </div>
                           );
                         })()}
-                        {log.sightedCreatures && log.sightedCreatures.filter(id => id !== log.creatureId).length > 0 && (
+                        {log.sightedCreatures && log.sightedCreatures.filter((id: string) => id !== log.creatureId).length > 0 && (
                           <span className="text-xs text-gray-400 font-bold">
-                            +{log.sightedCreatures.filter(id => id !== log.creatureId).length}
+                            +{log.sightedCreatures.filter((id: string) => id !== log.creatureId).length}
                           </span>
                         )}
                       </div>
@@ -284,7 +282,7 @@ export const Home = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {popularPoints.map((point) => (
+          {popularPoints.map((point: any) => (
             <Link key={point.id} to={`/point/${point.id}`} className="flex bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-all group h-[120px]">
               <div className="w-[120px] bg-gray-200 relative shrink-0">
                 <ImageWithFallback
@@ -297,7 +295,7 @@ export const Home = () => {
               <div className="p-4 flex flex-col justify-center flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-xs font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">{point.level}</span>
-                  <span className="text-xs text-gray-500">{areas.find(a => a.id === point.areaId)?.name}</span>
+                  <span className="text-xs text-gray-500">{areas.find((a: any) => a.id === point.areaId)?.name}</span>
                 </div>
                 <h3 className="font-bold text-gray-800 text-lg mb-1 group-hover:text-purple-600 transition-colors line-clamp-1">{point.name}</h3>
                 <div className="flex items-center gap-3 text-xs text-gray-400 mt-auto">
@@ -324,7 +322,7 @@ export const Home = () => {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {popularCreatures.map((creature) => {
+          {popularCreatures.map((creature: any) => {
             const isFavorite = currentUser.favoriteCreatureIds?.includes(creature.id);
             return (
               <Link key={creature.id} to={`/creature/${creature.id}`} className="group relative block bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
@@ -346,7 +344,7 @@ export const Home = () => {
                   <h3 className="font-bold text-gray-900 truncate">{creature.name}</h3>
                   <div className="flex items-center justify-between mt-2">
                     <div className="flex gap-0.5">
-                      {Array.from({ length: 4 }).map((_, i) => {
+                      {Array.from({ length: 4 }).map((_: any, i: number) => {
                         const r = creature.rarity === 'Legendary' ? 4 : creature.rarity === 'Epic' ? 3 : creature.rarity === 'Rare' ? 2 : 1;
                         return <Star key={i} size={8} className={i < r ? "fill-orange-400 text-orange-400" : "text-gray-200"} />;
                       })}

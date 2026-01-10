@@ -51,18 +51,18 @@ export const AddCreaturePage = () => {
   });
 
   const handleSeasonToggle = (season: string) => {
-    setFormData(prev => {
+    setFormData((prev: any) => {
       const newSeason = prev.season.includes(season)
-        ? prev.season.filter(s => s !== season)
+        ? prev.season.filter((s: string) => s !== season)
         : [...prev.season, season];
       return { ...prev, season: newSeason };
     });
   };
 
   const handleLocationToggle = (pointId: string) => {
-    setFormData(prev => {
+    setFormData((prev: any) => {
       const newLocations = prev.locationIds.includes(pointId)
-        ? prev.locationIds.filter(id => id !== pointId)
+        ? prev.locationIds.filter((id: string) => id !== pointId)
         : [...prev.locationIds, pointId];
       return { ...prev, locationIds: newLocations };
     });
@@ -73,8 +73,8 @@ export const AddCreaturePage = () => {
 
     try {
       // Process inputs
-      const tags = formData.tagsInput.split(',').map(t => t.trim()).filter(Boolean);
-      const specialAttributes = formData.specialAttributesInput.split(',').map(t => t.trim()).filter(Boolean);
+      const tags = formData.tagsInput.split(',').map((t: string) => t.trim()).filter(Boolean);
+      const specialAttributes = formData.specialAttributesInput.split(',').map((t: string) => t.trim()).filter(Boolean);
 
       const isAdmin = currentUser.role === 'admin' || currentUser.role === 'moderator';
 
@@ -173,7 +173,7 @@ export const AddCreaturePage = () => {
       };
 
       // Safe Merge
-      setFormData(prev => ({
+      setFormData((prev: any) => ({
         ...prev,
         scientificName: aiResult.scientific_name || prev.scientificName,
         category: (aiResult.category as any) || prev.category,
@@ -212,7 +212,7 @@ export const AddCreaturePage = () => {
       const data = result.data as any;
 
       if (data.imageUrl) {
-        setFormData(prev => ({
+        setFormData((prev: any) => ({
           ...prev,
           imageUrl: data.imageUrl,
           imageCredit: data.imageCredit,
@@ -243,7 +243,7 @@ export const AddCreaturePage = () => {
         <Info size={10} /> 引用元ソース
       </div>
       <ul className="space-y-0.5">
-        {groundingSources.map((source, i) => (
+        {groundingSources.map((source: string, i: number) => (
           <li key={i} className="text-[10px] text-blue-600 truncate hover:underline cursor-pointer">
             <a href={source} target="_blank" rel="noopener noreferrer">{source}</a>
           </li>
@@ -254,7 +254,7 @@ export const AddCreaturePage = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev: any) => ({ ...prev, [name]: value }));
   };
 
   return (
@@ -431,7 +431,7 @@ export const AddCreaturePage = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">見られる季節</label>
                 <div className="flex gap-2 flex-wrap">
-                  {['spring', 'summer', 'autumn', 'winter'].map(season => (
+                  {['spring', 'summer', 'autumn', 'winter'].map((season: string) => (
                     <button
                       key={season}
                       type="button"
@@ -452,20 +452,20 @@ export const AddCreaturePage = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">特殊属性</label>
                 <div className="flex flex-wrap gap-2">
-                  {['毒', '擬態', '夜行性', '共生', '固有種', '群れ', '幼魚', '大物', 'レア', '危険'].map(attr => (
+                  {['毒', '擬態', '夜行性', '共生', '固有種', '群れ', '幼魚', '大物', 'レア', '危険'].map((attr: string) => (
                     <label key={attr} className="inline-flex items-center gap-2 cursor-pointer bg-white border border-gray-200 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
                       <input
                         type="checkbox"
-                        checked={formData.specialAttributesInput.split(',').map(s => s.trim()).includes(attr)}
-                        onChange={(e) => {
-                          const currentAttrs = formData.specialAttributesInput.split(',').map(s => s.trim()).filter(Boolean);
+                        checked={formData.specialAttributesInput.split(',').map((s: string) => s.trim()).includes(attr)}
+                        onChange={(e: any) => {
+                          const currentAttrs = formData.specialAttributesInput.split(',').map((s: string) => s.trim()).filter(Boolean);
                           let newAttrs;
                           if (e.target.checked) {
                             newAttrs = [...currentAttrs, attr];
                           } else {
-                            newAttrs = currentAttrs.filter(a => a !== attr);
+                            newAttrs = currentAttrs.filter((a: string) => a !== attr);
                           }
-                          setFormData(prev => ({ ...prev, specialAttributesInput: newAttrs.join(',') }));
+                          setFormData((prev: any) => ({ ...prev, specialAttributesInput: newAttrs.join(',') }));
                         }}
                         className="rounded text-blue-500 focus:ring-blue-500"
                       />
@@ -534,7 +534,7 @@ export const AddCreaturePage = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">発見可能ポイント</label>
                 <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 border border-gray-200 rounded-lg">
-                  {points.map(point => (
+                  {points.map((point: any) => (
                     <label key={point.id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
                       <input
                         type="checkbox"
@@ -607,7 +607,7 @@ export const AddCreaturePage = () => {
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setFormData(prev => ({ ...prev, imageUrl: '/images/reef_fish.png', imageCredit: '', imageLicense: '' }));
+                        setFormData((prev: any) => ({ ...prev, imageUrl: '/images/reef_fish.png', imageCredit: '', imageLicense: '' }));
                       }}
                       className="text-xs text-red-500 mt-2 hover:underline"
                     >

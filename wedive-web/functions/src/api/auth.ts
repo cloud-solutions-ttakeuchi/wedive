@@ -28,6 +28,9 @@ export const basicAuth = onRequest({
 
   if (login === user && password === pass) {
     // Auth Success: Serve the SPA index.html
+    res.set("Cross-Origin-Embedder-Policy", "credentialless");
+    res.set("Cross-Origin-Opener-Policy", "same-origin");
+    res.set("Cross-Origin-Resource-Policy", "same-origin");
     res.sendFile(path.join(__dirname, "../../index.html"));
   } else {
     // Auth Failure: Trigger browser basic auth dialog

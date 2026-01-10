@@ -78,6 +78,7 @@ export interface Point {
   status: 'pending' | 'approved' | 'rejected';
   submitterId: string;
   createdAt: string;
+  updatedAt?: string;
 
   images: string[];
   imageUrl: string;
@@ -211,6 +212,27 @@ export interface User {
   agreedTermsVersion?: string;
   isTermsAgreed?: boolean;
   agreedAt?: string;
+  aiConciergeTickets?: {
+    totalAvailable: number;
+    lastDailyGrant?: string; // YYYY-MM-DD
+    periodContribution?: {
+      points: number;
+      creatures: number;
+      reviews: number;
+    };
+  };
+}
+
+export interface ConciergeTicket {
+  id: string;
+  type: 'daily' | 'contribution' | 'bonus' | 'purchased';
+  count: number;
+  remainingCount: number;
+  grantedAt: string;
+  expiresAt?: string | null;
+  status: 'active' | 'used' | 'expired';
+  reason?: string;
+  metadata?: Record<string, any>;
 }
 
 export type UserStatus = 'provisional' | 'active' | 'suspended' | 'withdrawn';
@@ -241,6 +263,7 @@ export interface Creature {
   imageLicense?: string;
   imageKeyword?: string;
   createdAt?: string;
+  updatedAt?: string;
 }
 
 export type CreatureStats = {

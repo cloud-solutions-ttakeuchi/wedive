@@ -125,9 +125,9 @@ export const AddLogPage = () => {
   useEffect(() => {
     if (currentUser?.favorites) {
       // 1. Point Defaults
-      const primaryPointId = currentUser.favorites.points?.find(p => p.isPrimary)?.id;
+      const primaryPointId = currentUser.favorites.points?.find((p: any) => p.isPrimary)?.id;
       if (primaryPointId && !formData.pointId) {
-        const point = points.find(p => p.id === primaryPointId);
+        const point = points.find((p: any) => p.id === primaryPointId);
         if (point) {
           setFormData(prev => ({
             ...prev,
@@ -135,17 +135,17 @@ export const AddLogPage = () => {
             region: point.region,
             zone: point.zone,
             area: point.area,
-            shopName: prev.shopName || (currentUser.favorites.shops?.find(s => s.isPrimary)?.name || '')
+            shopName: prev.shopName || (currentUser.favorites.shops?.find((s: any) => s.isPrimary)?.name || '')
           }));
         }
       } else if (!formData.shopName) {
         // Just Shop
-        const primaryShop = currentUser.favorites.shops?.find(s => s.isPrimary)?.name;
+        const primaryShop = currentUser.favorites.shops?.find((s: any) => s.isPrimary)?.name;
         if (primaryShop) setFormData(prev => ({ ...prev, shopName: primaryShop }));
       }
 
       // 2. Gear Defaults
-      const primaryTank = currentUser.favorites.gear?.tanks?.find(t => t.isPrimary);
+      const primaryTank = currentUser.favorites.gear?.tanks?.find((t: any) => t.isPrimary);
       if (primaryTank && !formData.tankCapacity) { // Only if not set
         setFormData(prev => ({
           ...prev,
@@ -171,11 +171,11 @@ export const AddLogPage = () => {
       targetPointIds = [formData.pointId];
     } else {
       // Filter points based on current hierarchy
-      targetPointIds = points.filter(p =>
+      targetPointIds = points.filter((p: any) =>
         (!formData.region || p.region === formData.region) &&
         (!formData.zone || p.zone === formData.zone) &&
         (!formData.area || p.area === formData.area)
-      ).map(p => p.id);
+      ).map((p: any) => p.id);
     }
 
     // Find all creatures linked to these points
@@ -191,8 +191,8 @@ export const AddLogPage = () => {
   // Filtered Creatures for Search
   const searchResults = useMemo(() => {
     if (!creatureSearchTerm) return [];
-    return creatures.filter(c =>
-      c.name.includes(creatureSearchTerm) || c.scientificName?.includes(creatureSearchTerm) || c.tags?.some(tag => tag.includes(creatureSearchTerm))
+    return creatures.filter((c: any) =>
+      c.name.includes(creatureSearchTerm) || c.scientificName?.includes(creatureSearchTerm) || c.tags?.some((tag: any) => tag.includes(creatureSearchTerm))
     ).slice(0, 10); // Limit results
   }, [creatureSearchTerm, creatures]);
 

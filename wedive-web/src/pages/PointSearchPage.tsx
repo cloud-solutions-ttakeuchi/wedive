@@ -2,16 +2,16 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { ChevronRight, MapPin, Droplets, Anchor, Wind, Mountain, ArrowRight, Bookmark, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import clsx from 'clsx';
-import type { Region, Zone, Area } from '../types';
+import type { Region, Zone, Area, Point } from '../types';
 
 export const PointSearchPage = () => {
   const { points: allPoints, regions: allRegions, zones: allZones, areas: allAreas, currentUser, logs, toggleBookmarkPoint } = useApp();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Derived Selection State from URL
-  const selectedRegion = allRegions.find(r => r.name === searchParams.get('region')) || null;
-  const selectedZone = selectedRegion ? allZones.find(z => z.name === searchParams.get('zone') && z.regionId === selectedRegion.id) : null;
-  const selectedArea = selectedZone ? allAreas.find(a => a.name === searchParams.get('area') && a.zoneId === selectedZone.id) : null;
+  const selectedRegion = allRegions.find((r: any) => r.name === searchParams.get('region')) || null;
+  const selectedZone = selectedRegion ? allZones.find((z: any) => z.name === searchParams.get('zone') && z.regionId === selectedRegion.id) : null;
+  const selectedArea = selectedZone ? allAreas.find((a: any) => a.name === searchParams.get('area') && a.zoneId === selectedZone.id) : null;
 
   // Navigation handlers
   const setSelectedRegion = (region: Region | null) => {
@@ -40,9 +40,9 @@ export const PointSearchPage = () => {
 
   // Data Helpers
   const regions = allRegions;
-  const zones = selectedRegion ? allZones.filter(z => z.regionId === selectedRegion.id) : [];
-  const areas = selectedZone ? allAreas.filter(a => a.zoneId === selectedZone.id) : [];
-  const points = selectedArea ? allPoints.filter(p => p.areaId === selectedArea.id) : [];
+  const zones = selectedRegion ? allZones.filter((z: any) => z.regionId === selectedRegion.id) : [];
+  const areas = selectedZone ? allAreas.filter((a: any) => a.zoneId === selectedZone.id) : [];
+  const points = selectedArea ? allPoints.filter((p: any) => p.areaId === selectedArea.id) : [];
 
   // Reset handlers
   const resetToTop = () => setSelectedRegion(null);
@@ -117,7 +117,7 @@ export const PointSearchPage = () => {
               <GlobeIcon /> 地域から探す
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {regions.map(region => (
+              {regions.map((region: any) => (
                 <button
                   key={region.id}
                   onClick={() => setSelectedRegion(region)}
@@ -141,7 +141,7 @@ export const PointSearchPage = () => {
               <MapPin size={24} className="text-ocean" /> エリアを選択
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {zones.map(zone => (
+              {zones.map((zone: any) => (
                 <button
                   key={zone.id}
                   onClick={() => setSelectedZone(zone)}
@@ -165,7 +165,7 @@ export const PointSearchPage = () => {
               <MapPin size={24} className="text-ocean" /> 詳細エリアを選択
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {areas.map(area => (
+              {areas.map((area: any) => (
                 <button
                   key={area.id}
                   onClick={() => setSelectedArea(area)}
@@ -173,7 +173,7 @@ export const PointSearchPage = () => {
                 >
                   <h3 className="font-bold text-gray-900 group-hover:text-ocean transition-colors mb-1">{area.name}</h3>
                   <div className="text-xs text-gray-400">
-                    {allPoints.filter(p => p.areaId === area.id).length} ポイント
+                    {allPoints.filter((p: any) => p.areaId === area.id).length} ポイント
                   </div>
                 </button>
               ))}
@@ -194,7 +194,7 @@ export const PointSearchPage = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-4">
-                {points.map(point => (
+                {points.map((point: Point) => (
                   <Link
                     key={point.id}
                     to={`/point/${point.id}`}
@@ -288,7 +288,7 @@ export const PointSearchPage = () => {
 
                         {/* Tags */}
                         <div className="flex flex-wrap gap-2 mb-4">
-                          {point.features.map(feature => (
+                          {point.features.map((feature: string) => (
                             <span key={feature} className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded">
                               #{feature}
                             </span>

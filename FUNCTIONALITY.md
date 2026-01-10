@@ -125,6 +125,90 @@
     - **閲覧（承認待ち）**: 「管理者・モデレーター」または「投稿者本人」のみが閲覧可能。
     - **編集・削除**: 「管理者・モデレーター」または「投稿者本人」のみが可能。投稿者本人が承認済みレビューを編集した場合、ステータスは自動的に `pending`（承認待ち）に戻ります（管理者による再確認のため）。
 
+### 2.6 AI コンシェルジュ・チケット・報酬システム (v2026.01+) (参照: `users`, `users/aiConciergeTickets`)
+AI コンシェルジュの利用（API コスト）をコントロールしつつ、コンテンツへの貢献を加速させるための報酬システム。期間限定キャンペーン（2026年1月〜4月）として実装。
+
+- **チケット付与条件**:
+  - **ログインボーナス**: 1日1回ログイン時に付与（使用期限あり）。
+  - **コンテンツ貢献**: 以下の登録が承認された際に付与（使用期限あり）。
+    - ダイビングポイントの登録
+    - 生物の登録
+    - ポイントレビューの投稿
+- **チケット管理**:
+  - **サブコレクション**: `aiConciergeTickets` にて個別チケットの有効期限（発行から30日間等）、使用ステータスを管理。
+  - **サマリー保持**: `User` ドキュメントに `totalAvailable` と最終付与日を保持し、リスト取得なしでマイページ等に残高を表示可能（Web/App共通）。マイページ表示の即時反映を実現。
+- **ランキングキャンペーン**:
+  - 期間中の累計承認数に基づき、トップ貢献者へボーナスチケット（100チャット分）をプレゼントする仕掛け。
+- **有料誘導**:
+  - チケット消費時に「残りのチケット数」を表示し、無料体験を通じて有用性を実感させ、サブスクリプションプランへ誘導。
+
+#### アーキテクチャ構成とデータフロー
+
+AIコンシェルジュ・チケットシステムは、保守性とプラットフォーム間の整合性を両立させるため、**「共有抽象層 + プラットフォーム別実装」** のハイブリッド構成を採用しています。
+
+1. **抽象層 (`BaseAiConciergeService`)**:
+   - `wedive-shared` に配置され、WebとAppで共通のキャンペーン設定（開始日・終了日）やチケット生成の基本ロジック（有効期限計算など）を定義します。これにより、両OS間での仕様決定の乖離を防ぎます。
+2. **Web実装 (`AiConciergeService.ts` in web)**:
+   - 管理画面での「承認」ワークフローに統合されています。管理者がコンテンツを承認した瞬間、Firestore トランザクションを介してユーザーにチケットを付与し、同時にキャンペーン期間中の貢献カウントを更新します。
+3. **Mobile実装 (`AiConciergeService.ts` in app)**:
+   - オフライン操作を考慮し、ローカル SQLite (`user.db / my_ai_concierge_tickets`) をキャッシュレイヤーとして活用します。チャット送信時は、まずローカルの件数を消費し、オンライン復帰時に Firestore との整合性を担保します。
+4. **整合性管理**:
+   - チケットの付与および消費は、すべて Firestore の `runTransaction` を使用しています。これにより、「チケットは付与されたがユーザープロファイルの残高が増えていない」といった不整合を防止し、原子性を保証します。
+
+#### 概念図 (Architecture Diagram)
+
+```mermaid
+graph TD
+    subgraph "Client Assets"
+        Web[wedive-web]
+        App[wedive-app]
+    end
+
+    subgraph "Service Layer (Shared)"
+        BaseService[BaseAiConciergeService]
+        BaseService ---|共通定数・ロジック| CONCIERGE_CAMPAIGN
+    end
+
+    subgraph "Service Layer (Implementation)"
+        AiWeb[AiConciergeService Web]
+        AiApp[AiConciergeService App]
+        AiWeb --- AiApp
+        AiWeb -.->|extends| BaseService
+        AiApp -.->|extends| BaseService
+    end
+
+    subgraph "Data Store"
+        Firestore[Cloud Firestore]
+        SQLite[Local SQLite]
+    end
+
+    %% Web Calls
+    Web -->|Login| AiWeb
+    Web -->|Proposal Approval| AiWeb
+    Web -->|Chat Send| AiWeb
+    AiWeb <-->|Atomic Transaction| Firestore
+
+    %% App Calls
+    App -->|Login / Sync| AiApp
+    App -->|Chat Send| AiApp
+    AiApp <-->|Sync / Transaction| Firestore
+    AiApp <-->|Offline Cache| SQLite
+```
+
+#### 呼び出し元一覧 (Traceability)
+
+| 呼び出し元 (File) | メソッド | タイミング / 目的 |
+| :--- | :--- | :--- |
+| **wedive-app** | | |
+| `AuthContext.tsx` | `grantDailyTicket` | ログイン/起動時。1日1回の無料チケット付与。 |
+| `AuthContext.tsx` | `syncTickets` | ログイン直後。Firestoreからローカルへのチケット同期。 |
+| `app/(tabs)/ai.tsx` | `getRemainingCount` | AIチャット画面表示時。現在のチケット残数を取得。 |
+| `app/(tabs)/ai.tsx` | `askConcierge` | チャット送信。チケットを1枚消費してからAI APIをコール。 |
+| **wedive-web** | | |
+| `AppContext.tsx` | `grantDailyTicket` | ログイン時。1日1回の無料チケット付与。 |
+| `AppContext.tsx` | `grantContributionTicket` | ポイント・生物・レビューの「承認」時。貢献報酬を付与。 |
+| `ConciergePage.tsx` | `askConcierge` | コンシェルジュ送信時。チケットを1枚消費。 |
+
 ---
 
 ## 3. 運営・管理機能
@@ -134,22 +218,17 @@
 - **承認・却下 (`/admin/proposals`)**: 管理者・モデレーターによる申請の精査。
 
 ### 3.2 管理者向け管理ページ (Admin Only)
-- **ユーザー管理 (`/admin/users`)** (参照: `users`): ユーザーロール (User/Moderator/Admin) の変更。
-- **生物図鑑管理 (`/admin/creatures`)** (参照: `creatures`, `points`, `point_creatures`):
-  - データの直接編集・削除。
-  - **地点紐付け管理**: 特定の生物をダイビングポイントへ手動でリンク/解除。
-- **マスタデータ整理 (`/admin/areas`)** (参照: `regions`, `zones`, `areas`):
-  - **エリア統合**: 表記揺れ（Orphan データ）をマスタデータ (ID 保持) へ統合。
-  - **DB同期**: シードファイルからの Firestore 同期実行。
-  - **エクスポート機能**:
-    - **Locations**: `locations_seed_export_*.json` (階層データ)
-    - **Creatures**: `creatures_real_export_*.json` (生物データ)
-    - **Relations**: `point_creatures_seed_export_*.json` (紐付けデータ)
-  - **DBメンテナンス**: Truncate (全削除), Hard Reset (全削除+初期化), Delete My Logs。
-- **AI データクレンジング (`/admin/cleansing`)** (参照: `creatures`, `point_creatures`, `points`, `regions`, `zones`, `areas`):
-  - **Dashboard**: クレンジングパイプラインの実行条件設定（範囲/モード）。
-  - **Review Engine**: AI が生成した「地点×生物」の紐付け案の承認・却下。
-  - **エクスポート**: `EXPORT SEED` ボタン（※現在は UI プレースホルダー、ロジックは `/admin/areas` に実装済み）。
+- **ユーザー管理 (`/admin/users`)** (参照: `users`):
+    - **権限変更**: 全ユーザーリスト（SQLite `admin_users_cache`）からユーザーを選択し、ロール（User / Moderator / Admin）を即時変更。
+    - **トラストスコア管理**: ユーザーの貢献度に基づくトラストランクの確認と調整。
+- **マスタデータ整理・クレンジング (`/admin/areas`, `/admin/cleansing`)** (参照: `regions`, `zones`, `areas`, `points`):
+    - **Direct CRUD**: エリア、ゾーン、地域の名称変更、階層の移動、および新規作成。
+    - **エリア統合 (Merge)**: 重複・表記揺れのあるエリアを一つの正解 ID へ統合し、紐付く全ポイントの denormalized フィールドを一括置換。
+    - **Local-First 同期**: 管理者が編集したマスタデータは、Firestore を更新すると同時に管理者の手元のローカル SQLite 検索にも即時反映（更新後の名前で即座に再検索可能）される仕様。
+    - **データ保守**: Truncate (全削除), Hard Reset (全削除+初期化), Export Seed (GCS配信用データの生成)。
+- **生物図鑑管理 (`/admin/creatures`)** (参照: `creatures`, `point_creatures`):
+    - 生物情報の直接編集、一括削除。ポイントとの生息紐付け。
+    - **AI レビューエンジン**: AI が提案した紐付け案（Pending）の承認・却下。
 
 ---
 
@@ -208,7 +287,7 @@ WeDive では、新機能のリリースに際して「フィーチャートグ�
 - 目的: 実装されたバージョンを明示し、将来的なクリーンアップを容易にします。
 
 ### 6.2 主な制御フラグ
-- **ENABLE_V2_AI_CONCIERGE**: AI コンシェルジュ機能の表示制御。
+
 - **ENABLE_V2_AI_AUTO_FILL**: スポット・生物登録時の自動下書き生成。
 - **ENABLE_V2_VERTEX_SEARCH**: コンシェルジュの回答エンジン切り替え。
 - **ENABLE_V6_REVIEW_LOG_LINKING**: v6.2.3 ログとレビューの双方向連携機能。

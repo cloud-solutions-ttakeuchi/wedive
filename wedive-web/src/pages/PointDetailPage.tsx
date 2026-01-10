@@ -35,23 +35,23 @@ export const PointDetailPage = () => {
     // Merge approved reviews and relevant pending reviews (self or admin)
     const isAdmin = currentUser.role === 'admin' || currentUser.role === 'moderator';
     const allUnique = new Map<string, Review>();
-    reviews.forEach(r => allUnique.set(r.id, r));
-    proposalReviews.filter(r => isAdmin || r.userId === currentUser.id).forEach(r => allUnique.set(r.id, r));
+    reviews.forEach((r: any) => allUnique.set(r.id, r));
+    proposalReviews.filter((r: any) => isAdmin || r.userId === currentUser.id).forEach((r: any) => allUnique.set(r.id, r));
 
     const allRelevantReviews = Array.from(allUnique.values());
-    return allRelevantReviews.filter(r => r.pointId === id);
+    return allRelevantReviews.filter((r: any) => r.pointId === id);
   }, [reviews, proposalReviews, currentUser, id]);
 
   const areaReviews = useMemo(() => {
     if (!point) return [];
     const isAdmin = currentUser.role === 'admin' || currentUser.role === 'moderator';
     const allUnique = new Map<string, Review>();
-    reviews.forEach(r => allUnique.set(r.id, r));
-    proposalReviews.filter(r => isAdmin || r.userId === currentUser.id).forEach(r => allUnique.set(r.id, r));
+    reviews.forEach((r: any) => allUnique.set(r.id, r));
+    proposalReviews.filter((r: any) => isAdmin || r.userId === currentUser.id).forEach((r: any) => allUnique.set(r.id, r));
 
     const allRelevantReviews = Array.from(allUnique.values());
-    return allRelevantReviews.filter(r => {
-      const p = points.find(pointItem => pointItem.id === r.pointId);
+    return allRelevantReviews.filter((r: any) => {
+      const p = points.find((pointItem: any) => pointItem.id === r.pointId);
       return p && p.area === point.area && p.id !== point.id;
     });
   }, [reviews, proposalReviews, currentUser, point, points]);
@@ -164,7 +164,7 @@ export const PointDetailPage = () => {
             )}>
               {point.level}
             </div>
-            {point.features.map(f => (
+            {point.features.map((f: string) => (
               <span key={f} className="bg-white/5 backdrop-blur-md px-4 py-2 rounded-xl text-xs md:text-sm font-bold border border-white/10 hover:bg-white/10 transition-colors cursor-default">
                 #{f}
               </span>
@@ -307,9 +307,9 @@ export const PointDetailPage = () => {
                           const isAdmin = currentUser.role === 'admin' || currentUser.role === 'moderator';
                           if (window.confirm(isAdmin ? 'この生物の報告を削除しますか？' : '削除リクエストを送信しますか？')) {
                             if (isAdmin) {
-                              removePointCreature(point.id, creature.id);
+                              removePointCreature(`${point.id}_${creature.id}`);
                             } else {
-                              removePointCreatureProposal(point.id, creature.id);
+                              removePointCreatureProposal(`${point.id}_${creature.id}`);
                               alert('削除リクエストを送信しました');
                             }
                           }
@@ -467,7 +467,7 @@ const AddCreatureModal = ({
       .filter(c =>
         // Filter out creatures already in the point
         !currentCreatureIds.includes(c.id) &&
-        (c.name.includes(searchTerm) || c.tags.some(t => t.includes(searchTerm)))
+        (c.name.includes(searchTerm) || c.tags.some((t: string) => t.includes(searchTerm)))
       )
       .slice(0, 20);
   }, [searchTerm, creatures, currentCreatureIds]);
@@ -490,7 +490,7 @@ const AddCreatureModal = ({
     try {
       if (currentUser.role === 'admin' || currentUser.role === 'moderator') {
         // Direct Create
-        await addPointCreature(pointId, creatureId, selectedRarity);
+        await addPointCreature({ pointId, creatureId, rarity: selectedRarity });
         alert('生物を追加しました！');
       } else {
         // Proposal Flow

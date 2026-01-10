@@ -1,3 +1,18 @@
+# AI Agent Behavior Rules
+
+## CRITICAL: MASTER DATA SYNC POLICY
+**ABSOLUTELY PROHIBITED**: Attempting to sync master data (Points, Creatures, Areas, etc.) directly from Firestore using `getDocs`, `onSnapshot`, or `query`.
+
+**REQUIRED BEHAVIOR**:
+1. ALWAYS use the Google Cloud Storage (GCS) -> SQLite import flow for master data.
+2. If master data is missing or broken, investigate logic in `MasterDataService.ts` (SQLite mapping) or the GCS file itself.
+3. NEVER propose reverting to Firestore direct sync for master data.
+
+## CRITICAL: FILE EDITING RESTRICTIONS
+- Do not edit `.ts`, `.tsx`, `.js` files without explicit user approval or a clear plan proposed first.
+- Always check `DATABASE_DESIGN.md` before making schema-related changes.
+
+
 # WeDive プロジェクト開発ルール
 
 このファイルは、AIアシスタント（Agent）の振る舞いを規定する**絶対的なルール**です。Agentは作業を開始する前に必ずこの内容を確認し、遵守しなければなりません。ユーザーからの明示的な例外許可がない限り、本ルールを最優先してください。

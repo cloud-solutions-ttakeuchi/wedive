@@ -18,5 +18,11 @@ export type {
   CertificationMaster,
   BadgeMaster,
   RankMaster,
-  AgencyMaster
+  AgencyMaster,
+  ConciergeTicket,
+} from 'wedive-shared';
+
+export {
+  BaseAiConciergeService,
+  CONCIERGE_CAMPAIGN,
 } from 'wedive-shared';

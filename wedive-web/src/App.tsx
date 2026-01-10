@@ -29,47 +29,63 @@ import { ConciergePage } from './pages/ConciergePage';
 import { AddReviewPage } from './pages/AddReviewPage';
 import { TermsAgreementModal } from './components/TermsAgreementModal';
 import { LanguageProvider } from './context/LanguageContext';
+import { AuthProvider } from './context/AuthContext';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+    },
+  },
+});
 
 function App() {
   return (
-    <Router>
-      <AppProvider>
-        <LanguageProvider>
-          <Layout>
-            <TermsAgreementModal />
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/pokedex" element={<Pokedex />} />
-              <Route path="/spot/:id" element={<SpotDetail />} />
-              <Route path="/creature/:id" element={<CreatureDetailPage />} />
-              <Route path="/mypage" element={<MyPage />} />
-              <Route path="/mypage/point/:id" element={<MyPointDetail />} />
-              <Route path="/add-creature" element={<AddCreaturePage />} />
-              <Route path="/add-point" element={<AddPointPage />} />
-              <Route path="/add-log" element={<AddLogPage />} />
-              <Route path="/edit-log/:id" element={<EditLogPage />} />
-              <Route path="/edit-creature/:id" element={<EditCreaturePage />} />
-              <Route path="/edit-point/:id" element={<EditPointPage />} />
-              <Route path="/concierge" element={<ConciergePage />} />
-              <Route path="/propose-creature" element={<ProposeCreaturePage />} />
-              <Route path="/propose-point" element={<ProposePointPage />} />
-              <Route path="/admin/proposals" element={<AdminProposalsPage />} />
-              <Route path="/admin/users" element={<AdminUsersPage />} />
-              <Route path="/admin/areas" element={<AdminAreaCleansingPage />} />
-              <Route path="/admin/creatures" element={<AdminCreatureCleansingPage />} />
-              <Route path="/admin/cleansing" element={<AdminDataCleansingPage />} />
-              <Route path="/points" element={<PointSearchPage />} />
-              <Route path="/logs" element={<PublicLogsPage />} />
-              <Route path="/point/:id" element={<PointDetailPage />} />
-              <Route path="/add-review/:pointId/:reviewId?" element={<AddReviewPage />} />
-              <Route path="/edit-review/:reviewId" element={<AddReviewPage />} />
-              <Route path="/terms" element={<TermsPage />} />
-              <Route path="/privacy" element={<PrivacyPage />} />
-            </Routes>
-          </Layout>
-        </LanguageProvider>
-      </AppProvider>
-    </Router>
+    <QueryClientProvider client={queryClient}>
+      <Router>
+        <AuthProvider>
+          <AppProvider>
+            <LanguageProvider>
+              <Layout>
+                <TermsAgreementModal />
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/pokedex" element={<Pokedex />} />
+                  <Route path="/spot/:id" element={<SpotDetail />} />
+                  <Route path="/creature/:id" element={<CreatureDetailPage />} />
+                  <Route path="/mypage" element={<MyPage />} />
+                  <Route path="/mypage/point/:id" element={<MyPointDetail />} />
+                  <Route path="/add-creature" element={<AddCreaturePage />} />
+                  <Route path="/add-point" element={<AddPointPage />} />
+                  <Route path="/add-log" element={<AddLogPage />} />
+                  <Route path="/edit-log/:id" element={<EditLogPage />} />
+                  <Route path="/edit-creature/:id" element={<EditCreaturePage />} />
+                  <Route path="/edit-point/:id" element={<EditPointPage />} />
+                  <Route path="/concierge" element={<ConciergePage />} />
+                  <Route path="/propose-creature" element={<ProposeCreaturePage />} />
+                  <Route path="/propose-point" element={<ProposePointPage />} />
+                  <Route path="/admin/proposals" element={<AdminProposalsPage />} />
+                  <Route path="/admin/users" element={<AdminUsersPage />} />
+                  <Route path="/admin/areas" element={<AdminAreaCleansingPage />} />
+                  <Route path="/admin/creatures" element={<AdminCreatureCleansingPage />} />
+                  <Route path="/admin/cleansing" element={<AdminDataCleansingPage />} />
+                  <Route path="/points" element={<PointSearchPage />} />
+                  <Route path="/logs" element={<PublicLogsPage />} />
+                  <Route path="/point/:id" element={<PointDetailPage />} />
+                  <Route path="/add-review/:pointId/:reviewId?" element={<AddReviewPage />} />
+                  <Route path="/edit-review/:reviewId" element={<AddReviewPage />} />
+                  <Route path="/terms" element={<TermsPage />} />
+                  <Route path="/privacy" element={<PrivacyPage />} />
+                </Routes>
+              </Layout>
+            </LanguageProvider>
+          </AppProvider>
+        </AuthProvider>
+      </Router>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
   );
 }
 

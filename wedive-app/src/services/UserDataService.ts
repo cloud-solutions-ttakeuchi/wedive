@@ -18,6 +18,10 @@ export class UserDataService {
   private isInitializing = false;
   private currentUserId: string | null = null;
 
+  getCurrentUserId(): string | null {
+    return this.currentUserId;
+  }
+
   /**
    * SQLite接続とテーブルの初期化
    * @param userId ログイン中のユーザーID（物理隔離用）
@@ -121,6 +125,16 @@ export class UserDataService {
           dive_count INTEGER,
           discovered_creatures_count INTEGER,
           last_visit_date TEXT
+        );
+        CREATE TABLE IF NOT EXISTS my_ai_concierge_tickets (
+          id TEXT PRIMARY KEY,
+          type TEXT,
+          remaining_count INTEGER,
+          granted_at TEXT,
+          expires_at TEXT,
+          status TEXT,
+          reason TEXT,
+          synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
       `);
 

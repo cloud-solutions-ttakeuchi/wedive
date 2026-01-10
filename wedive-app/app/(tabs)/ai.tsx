@@ -1,25 +1,69 @@
-import React, { useState, useRef } from 'react';
-import { StyleSheet, FlatList, Image, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ScrollView, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { StyleSheet, FlatList, Image, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ScrollView, Keyboard, TouchableWithoutFeedback, Alert } from 'react-native';
 import { Text, View } from '@/components/Themed';
-import { Bot, Send, User, Sparkles } from 'lucide-react-native';
-import { aiService } from '../../src/api/aiService';
+import { Bot, Send, User, Sparkles, Ticket } from 'lucide-react-native';
+import { aiConciergeService } from '../../src/services/AiConciergeService';
+import { useAuth } from '../../src/context/AuthContext';
 
 export default function AIScreen() {
+  const { firebaseUser, refreshProfile } = useAuth();
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant', content: string }[]>([
     { role: 'assistant', content: 'こんにちは！WeDiveコンシェルジュです。ダイビングのスポットや生物について何でも聞いてくださいね。' }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [ticketCount, setTicketCount] = useState<number | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
 
+  useEffect(() => {
+    loadTicketCount();
+  }, [firebaseUser]);
+
+  const loadTicketCount = async () => {
+    if (firebaseUser) {
+      // まずFirestoreとSQLiteを同期
+      await aiConciergeService.syncTickets(firebaseUser.uid);
+      const count = await aiConciergeService.getRemainingCount(firebaseUser.uid);
+      setTicketCount(count);
+      // マイページ表示用のプロフィールデータもリフレッシュ
+      await refreshProfile();
+    }
+  };
+
+  const handleTestGrant = async () => {
+    if (!firebaseUser) return;
+    setIsLoading(true);
+    try {
+      // 日次制限のないテスト用付与を呼び出す
+      await aiConciergeService.grantTestTicket(firebaseUser.uid);
+      await loadTicketCount();
+      Alert.alert('Success', 'テストチケット(1枚)を付与しました。');
+    } catch (e) {
+      Alert.alert('Error', '付与に失敗しました。');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isLoading || !firebaseUser) return;
+
+    // チケット残数チェック
+    const currentCount = await aiConciergeService.getRemainingCount(firebaseUser.uid);
+    if (currentCount <= 0) {
+      Alert.alert(
+        'チケット不足',
+        '本日の無料チャットチケットを使い切りました。明日またログインすると新しいチケットが付与されます。',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
 
     const userMessage = { role: 'user' as const, content: input.trim() };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
-    Keyboard.dismiss(); // 送信時にキーボードを閉じる
+    Keyboard.dismiss();
 
     try {
       const history = messages.map(m => ({
@@ -27,8 +71,18 @@ export default function AIScreen() {
         parts: [{ text: m.content }]
       }));
 
-      const response = await aiService.sendMessage(userMessage.content, history);
-      setMessages(prev => [...prev, { role: 'assistant', content: response.content }]);
+      const response = await aiConciergeService.askConcierge(firebaseUser.uid, userMessage.content, history);
+
+      if (response.error === 'tickets_exhausted') {
+        setMessages(prev => [...prev, { role: 'assistant', content: '申し訳ありません。チケットが不足しています。' }]);
+      } else if (response.error) {
+        setMessages(prev => [...prev, { role: 'assistant', content: '申し訳ありません、エラーが発生しました。' }]);
+      } else {
+        setMessages(prev => [...prev, { role: 'assistant', content: response.content }]);
+      }
+
+      // 送信後に残数を再取得
+      await loadTicketCount();
     } catch (error) {
       console.error(error);
       setMessages(prev => [...prev, { role: 'assistant', content: '申し訳ありません、エラーが発生しました。' }]);
@@ -45,13 +99,23 @@ export default function AIScreen() {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         <View style={styles.header}>
-          <View style={styles.botIconContainer}>
+          <TouchableOpacity
+            style={styles.botIconContainer}
+            onLongPress={handleTestGrant}
+            activeOpacity={0.7}
+          >
             <Bot size={24} color="#0284c7" />
-          </View>
-          <View style={{ backgroundColor: 'transparent' }}>
+          </TouchableOpacity>
+          <View style={{ flex: 1, backgroundColor: 'transparent' }}>
             <Text style={styles.title}>AIコンシェルジュ</Text>
             <Text style={styles.status}>Online • Powered by Gemini</Text>
           </View>
+          {ticketCount !== null && (
+            <View style={styles.ticketBadge}>
+              <Ticket size={14} color="#0284c7" />
+              <Text style={styles.ticketText}>{ticketCount}</Text>
+            </View>
+          )}
         </View>
 
         <ScrollView
@@ -147,6 +211,22 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#0ea5e9',
     fontWeight: '600',
+  },
+  ticketBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f9ff',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e0f2fe',
+  },
+  ticketText: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#0284c7',
+    marginLeft: 4,
   },
   chatContainer: {
     flex: 1,

@@ -38,7 +38,7 @@ export const LogDetailModal = ({ log, isOpen, onClose, isOwner }: Props) => {
     const newIsLiked = !isLiked;
     setIsLiked(newIsLiked);
     setLikeCount(prev => newIsLiked ? prev + 1 : Math.max(0, prev - 1));
-    toggleLikeLog(log);
+    toggleLikeLog(log.id);
   };
 
 
@@ -110,7 +110,7 @@ export const LogDetailModal = ({ log, isOpen, onClose, isOwner }: Props) => {
               </Link>
               <button
                 onClick={async () => {
-                  if (window.confirm('このログを削除してもよろしいですか？この操作は取り消せません。')) {
+                  if (window.confirm('このログを削除しますか？')) {
                     await deleteLog(log.id);
                     onClose();
                   }
@@ -521,6 +521,6 @@ export const LogDetailModal = ({ log, isOpen, onClose, isOwner }: Props) => {
 
         </div>
       </div>
-    </div>
+    </div >
   );
 };

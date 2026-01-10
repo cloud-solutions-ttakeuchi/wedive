@@ -35,7 +35,7 @@ export const AddReviewPage = () => {
 
   const { points, logs, currentUser, addReview, updateReview, isAuthenticated, updateUser, reviews, proposalReviews, agencies } = useApp();
   const isEdit = !!reviewId;
-  const existingReview = isEdit ? (reviews.find(r => r.id === reviewId) || proposalReviews.find(r => r.id === reviewId)) : null;
+  const existingReview = isEdit ? (reviews.find((r: any) => r.id === reviewId) || proposalReviews.find((r: any) => r.id === reviewId)) : null;
 
   const [step, setStep] = useState(1);
   const [uploading, setUploading] = useState(false);
@@ -84,7 +84,7 @@ export const AddReviewPage = () => {
   const point = useMemo(() => {
     const pid = isEdit ? (existingReview?.pointId || formData.pointId) : pointId;
     if (!pid) return null;
-    return points.find(p => p.id === pid);
+    return points.find((p: any) => p.id === pid);
   }, [isEdit, existingReview?.pointId, formData.pointId, pointId, points]);
 
   // Ensure existingReview is loaded (including direct fetch if not in context) & Merge Log Data
@@ -93,7 +93,7 @@ export const AddReviewPage = () => {
 
     const mergeLogData = (baseData: Partial<Review>) => {
       if (!logId || logs.length === 0) return baseData;
-      const log = logs.find(l => l.id === logId);
+      const log = logs.find((l: any) => l.id === logId);
       if (!log) return baseData;
 
       console.log("Merging latest log data into review form");
@@ -118,7 +118,7 @@ export const AddReviewPage = () => {
     };
 
     if (isEdit && reviewId && !isDataLoaded) {
-      const found = reviews.find(r => r.id === reviewId) || proposalReviews.find(r => r.id === reviewId);
+      const found = reviews.find((r: any) => r.id === reviewId) || proposalReviews.find((r: any) => r.id === reviewId);
       if (found) {
         setFormData(mergeLogData({ ...found, pointId: found.pointId }));
         setIsDataLoaded(true);
@@ -408,7 +408,7 @@ const Step1Env = ({ data, date, onDateChange, onChange }: any) => {
                 },
                 color: 'text-indigo-600 bg-indigo-50'
               }
-            ].map(chip => {
+            ].map((chip: any) => {
               const d = new Date();
               const offset = ('offset' in chip) ? (chip.offset as number) : (chip as any).getOffset();
               d.setDate(d.getDate() - offset);
@@ -462,7 +462,7 @@ const Step1Env = ({ data, date, onDateChange, onChange }: any) => {
       <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">天候</p>
         <div className="grid grid-cols-3 gap-3">
-          {weatherOptions.map(opt => (
+          {weatherOptions.map((opt: any) => (
             <button
               key={opt.id}
               onClick={() => onChange({ weather: opt.id })}
@@ -485,7 +485,7 @@ const Step1Env = ({ data, date, onDateChange, onChange }: any) => {
             { id: 'none', label: '穏やか', color: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
             { id: 'low', label: '低波', color: 'bg-sky-50 text-sky-600 border-sky-200' },
             { id: 'high', label: '高波', color: 'bg-rose-50 text-rose-600 border-rose-200' },
-          ].map(opt => (
+          ].map((opt: any) => (
             <button
               key={opt.id}
               onClick={() => onChange({ wave: opt.id })}
@@ -641,7 +641,7 @@ const Step2Metrics = ({ data, onChange }: any) => {
               { id: 'weak', label: '弱い' },
               { id: 'strong', label: '強い' },
               { id: 'drift', label: 'ドリフト' },
-            ].map(opt => (
+            ].map((opt: any) => (
               <button
                 key={opt.id}
                 onClick={() => onChange({ flow: opt.id })}
@@ -668,7 +668,7 @@ const Step2Metrics = ({ data, onChange }: any) => {
               { id: 'easy', label: '余裕' },
               { id: 'normal', label: '普通' },
               { id: 'hard', label: '必死' },
-            ].map(opt => (
+            ].map((opt: any) => (
               <button
                 key={opt.id}
                 onClick={() => onChange({ difficulty: opt.id })}
@@ -779,7 +779,7 @@ const Step2Metrics = ({ data, onChange }: any) => {
             { id: 'weak', label: '弱い (Weak)', icon: '🌬️', desc: '心地よい適度な流れ' },
             { id: 'strong', label: '強い (Strong)', icon: '🌪️', desc: '注意が必要な強い流れ' },
             { id: 'drift', label: '流す (Drift)', icon: '🚤', desc: '爽快なドリフト！' }
-          ].map(f => (
+          ].map((f: any) => (
             <motion.button
               key={f.id}
               whileHover={{ y: -4, scale: 1.02 }}
@@ -817,7 +817,7 @@ const Step2Metrics = ({ data, onChange }: any) => {
       <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 text-center">体感難易度</p>
         <div className="grid grid-cols-3 gap-3">
-          {[{ id: 'easy', label: '余裕', icon: '😊' }, { id: 'normal', label: '普通', icon: '👌' }, { id: 'hard', label: '必死', icon: '😰' }].map(opt => (
+          {[{ id: 'easy', label: '余裕', icon: '😊' }, { id: 'normal', label: '普通', icon: '👌' }, { id: 'hard', label: '必死', icon: '😰' }].map((opt: any) => (
             <button key={opt.id} onClick={() => onChange({ difficulty: opt.id })} className={clsx("p-4 rounded-3xl border-2 transition-all flex flex-col items-center gap-1",
               data.difficulty === opt.id ? "bg-sky-50 border-sky-500 text-sky-600 ring-4 ring-sky-500/10" : "bg-white border-slate-100 text-slate-500")}>
               <span className="text-xl">{opt.icon}</span><span className="text-[10px] font-black uppercase">{opt.label}</span>
@@ -913,7 +913,7 @@ const Step3Evaluation = ({ data, onChange, onRadarChange, onImageUpload, uploadi
         <div>
           <p className="text-slate-500 font-bold mb-4 px-1 flex items-center gap-2"><Tag size={16} /> タグを選択</p>
           <div className="flex flex-wrap gap-2">
-            {tags.map(tag => (
+            {tags.map((tag: string) => (
               <button key={tag} onClick={() => { const isSelected = (data.tags || []).includes(tag); const newTags = isSelected ? data.tags.filter((t: string) => t !== tag) : [...(data.tags || []), tag]; onChange({ tags: newTags }); }} className={clsx("px-4 py-2 rounded-xl text-[10px] font-black transition-all border shadow-sm", (data.tags || []).includes(tag) ? "bg-emerald-500 border-emerald-500 text-white shadow-emerald-100" : "bg-white border-slate-100 text-slate-500 hover:bg-slate-50 hover:border-slate-200")}>#{tag}</button>
             ))}
           </div>
@@ -1020,7 +1020,7 @@ const RadarRating = ({ label, value, onChange, color = 'slate' }: any) => {
     <div className="flex flex-col gap-4">
       <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter decoration-slate-200">{label}</span>
       <div className="flex gap-1">
-        {[1, 2, 3, 4, 5].map(v => (
+        {[1, 2, 3, 4, 5].map((v: number) => (
           <button
             key={v}
             onClick={() => onChange(v)}

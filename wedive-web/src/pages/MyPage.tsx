@@ -6,12 +6,13 @@ import { LogImportModal } from '../components/LogImportModal';
 import { ProfileEditModal } from '../components/ProfileEditModal';
 import { LogCard } from '../components/LogCard';
 import { BulkEditModal } from '../components/BulkEditModal';
-import { Award, MapPin, Grid, List, BookOpen, Heart, Bookmark, Check, Star, PenTool, ChevronRight, Compass, Droplet, Map as MapIcon, Aperture, Crown, Shield, Info, Settings, X, Activity, Droplets, Image as ImageIcon, Upload, Trash2, MessageSquare } from 'lucide-react';
+import { Award, MapPin, Grid, List, BookOpen, Heart, Bookmark, Check, Star, PenTool, ChevronRight, Compass, Droplet, Map as MapIcon, Aperture, Crown, Shield, Info, Settings, X, Activity, Droplets, Image as ImageIcon, Upload, Trash2, MessageSquare, Sparkles, Ticket } from 'lucide-react';
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { useState } from 'react';
+import { FEATURE_FLAGS } from '../config/features';
 
 import { BADGE_MASTER, TRUST_RANKS } from '../constants/masterData';
 
@@ -28,7 +29,7 @@ export const MyPage = () => {
   const [showRankInfo, setShowRankInfo] = useState(false);
 
   // Refactor: Use logs from context
-  const selectedLog = selectedLogId ? (logs.find(l => l.id === selectedLogId) || null) : null;
+  const selectedLog = selectedLogId ? (logs.find((l: any) => l.id === selectedLogId) || null) : null;
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
 
@@ -50,7 +51,7 @@ export const MyPage = () => {
 
   // Refactor: logs is already the user's logs
   const userLogs = logs;
-  const uniqueCreatureIds = Array.from(new Set(userLogs.flatMap(l => [l.creatureId, ...(l.sightedCreatures || [])]).filter(Boolean)));
+  const uniqueCreatureIds = Array.from(new Set(userLogs.flatMap((l: any) => [l.creatureId, ...(l.sightedCreatures || [])]).filter(Boolean)));
   const uniqueCreatures = uniqueCreatureIds.length;
   // Refactor: use creatures from context
   const totalCreatures = creatures.length;
@@ -59,28 +60,28 @@ export const MyPage = () => {
 
   // Certification Info
   const userCert = currentUser.certification;
-  const certOrg = userCert ? agencies.find(o => o.id === userCert.orgId) : null;
-  const certRank = userCert && certOrg ? certOrg.ranks.find(r => r.id === userCert.rankId) : null;
+  const certOrg = userCert ? agencies.find((o: any) => o.id === userCert.orgId) : null;
+  const certRank = userCert && certOrg ? certOrg.ranks.find((r: any) => r.id === userCert.rankId) : null;
 
   // Badges Info
-  const userBadges = currentUser.badges?.map(b => {
-    const master = BADGE_MASTER.find(m => m.id === b.badgeId);
+  const userBadges = currentUser.badges?.map((b: any) => {
+    const master = BADGE_MASTER.find((m: any) => m.id === b.badgeId);
     return master ? { ...master, earnedAt: b.earnedAt } : null;
   }).filter(Boolean) || [];
 
   // 1. Basic Info & Stats
   // Refactor: use zones, areas, points from context
-  const zoneStats = zones.map(zone => {
-    const areaIds = areas.filter(a => a.zoneId === zone.id).map(a => a.id);
-    const pointIds = points.filter(p => areaIds.includes(p.areaId)).map(p => p.id);
-    const logsInZone = userLogs.filter(l => pointIds.includes(l.spotId));
+  const zoneStats = zones.map((zone: any) => {
+    const areaIds = areas.filter((a: any) => a.zoneId === zone.id).map((a: any) => a.id);
+    const pointIds = points.filter((p: any) => areaIds.includes(p.areaId)).map((p: any) => p.id);
+    const logsInZone = userLogs.filter((l: any) => pointIds.includes(l.spotId));
     return { name: zone.name, value: logsInZone.length };
-  }).filter(d => d.value > 0);
+  }).filter((d: any) => d.value > 0);
 
   // Trust Rank Logic
   const currentScore = currentUser.trustScore || 0;
-  const currentRank = TRUST_RANKS.slice().slice().reverse().find(r => currentScore >= r.minScore) || TRUST_RANKS[0];
-  const nextRank = TRUST_RANKS.find(r => r.minScore > currentScore);
+  const currentRank = TRUST_RANKS.slice().slice().reverse().find((r: any) => currentScore >= r.minScore) || TRUST_RANKS[0];
+  const nextRank = TRUST_RANKS.find((r: any) => r.minScore > currentScore);
 
   let progress = 100;
   let pointsToNext = 0;
@@ -96,14 +97,14 @@ export const MyPage = () => {
 
   // 4. Point Mastery (History & Mastery)
   // Refactor: use points from context
-  const pointMastery = points.map(point => {
-    const pointLogs = userLogs.filter(l => l.spotId === point.id);
+  const pointMastery = points.map((point: any) => {
+    const pointLogs = userLogs.filter((l: any) => l.spotId === point.id);
     if (pointLogs.length === 0) return null;
 
-    const validPointCreatures = pointCreatures.filter(pc => pc.pointId === point.id && (pc.status === 'approved' || pc.status === undefined));
+    const validPointCreatures = pointCreatures.filter((pc: any) => pc.pointId === point.id && (pc.status === 'approved' || pc.status === undefined));
     const totalInhabitants = validPointCreatures.length;
     const discoveredInhabitants = new Set(
-      pointLogs.flatMap(l => [l.creatureId, ...(l.sightedCreatures || [])]).filter(Boolean)
+      pointLogs.flatMap((l: any) => [l.creatureId, ...(l.sightedCreatures || [])]).filter(Boolean)
     ).size;
     const masteryRate = totalInhabitants > 0 ? Math.round((discoveredInhabitants / totalInhabitants) * 100) : 0;
 
@@ -114,11 +115,11 @@ export const MyPage = () => {
       discoveredCount: discoveredInhabitants,
       totalCount: totalInhabitants
     };
-  }).filter(Boolean).sort((a, b) => b!.diveCount - a!.diveCount);
+  }).filter(Boolean).sort((a: any, b: any) => b!.diveCount - a!.diveCount);
 
   // 5. Collection
   // Refactor: use creatures from context
-  const discoveredCreatures = uniqueCreatureIds.map(id => creatures.find(c => c.id === id)).filter((c): c is Creature => c !== undefined);
+  const discoveredCreatures = uniqueCreatureIds.map((id: string) => creatures.find((c: any) => c.id === id)).filter((c): c is Creature => c !== undefined);
 
   return (
     <div className="space-y-8 pb-32 max-w-5xl mx-auto">
@@ -161,7 +162,7 @@ export const MyPage = () => {
 
             {userBadges.length > 0 && (
               <div className="flex justify-center md:justify-start gap-2 pt-2">
-                {userBadges.map(badge => (
+                {userBadges.map((badge: any) => (
                   <div key={badge!.id} className="w-8 h-8 rounded-full bg-yellow-50 border border-yellow-200 flex items-center justify-center text-sm shadow-sm" title={badge!.name}>
                     🏆
                   </div>
@@ -185,6 +186,56 @@ export const MyPage = () => {
               <div className="text-3xl font-bold text-ocean-500">{completionRate}<span className="text-base">%</span></div>
               <div className="text-xs text-gray-500 font-bold tracking-wider mt-1">{t('mypage.comp')}</div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-3xl p-6 border-l-4 border-purple-500 shadow-sm relative overflow-hidden group">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-2xl bg-purple-50 text-purple-600">
+                <Ticket size={24} />
+              </div>
+              <div>
+                <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">AI Concierge Tickets</div>
+                <div className="text-2xl font-black text-gray-800">{currentUser.aiConciergeTickets?.totalAvailable || 0} <span className="text-sm font-bold text-gray-400">枚</span></div>
+              </div>
+            </div>
+            <Link
+              to="/concierge"
+              className="flex items-center gap-2 bg-purple-600 text-white px-6 py-2.5 rounded-2xl font-bold hover:bg-purple-700 transition-all shadow-lg shadow-purple-200 hover:-translate-y-0.5"
+            >
+              <span>使ってみる</span>
+              <Sparkles size={18} />
+            </Link>
+          </div>
+
+          <div className="h-px bg-gray-100 w-full mb-6" />
+
+          <div>
+            <div className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+              冬の冒険者キャンペーン貢献度
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="bg-gray-50 rounded-2xl p-4 text-center border border-transparent hover:border-purple-100 transition-colors">
+                <div className="text-xl font-black text-gray-800">{currentUser.aiConciergeTickets?.periodContribution?.points || 0}</div>
+                <div className="text-[10px] text-gray-400 font-bold uppercase">スポット</div>
+              </div>
+              <div className="bg-gray-50 rounded-2xl p-4 text-center border border-transparent hover:border-purple-100 transition-colors">
+                <div className="text-xl font-black text-gray-800">{currentUser.aiConciergeTickets?.periodContribution?.creatures || 0}</div>
+                <div className="text-[10px] text-gray-400 font-bold uppercase">生物</div>
+              </div>
+              <div className="bg-gray-50 rounded-2xl p-4 text-center border border-transparent hover:border-purple-100 transition-colors">
+                <div className="text-xl font-black text-gray-800">{currentUser.aiConciergeTickets?.periodContribution?.reviews || 0}</div>
+                <div className="text-[10px] text-gray-400 font-bold uppercase">レビュー</div>
+              </div>
+            </div>
+            <p className="mt-4 text-[11px] text-gray-400 font-medium text-center bg-purple-50/50 py-2 rounded-lg">
+              計10件承認されるごとに <span className="text-purple-600 font-bold">100チャット分</span> のチケットをプレゼント！
+            </p>
           </div>
         </div>
       </div>
@@ -277,7 +328,7 @@ export const MyPage = () => {
             { id: 'wanted', label: 'Wanted', icon: Bookmark },
             { id: 'bookmarks', label: 'Plan', icon: MapPin },
             { id: 'reviews', label: 'My Reviews', icon: MessageSquare },
-          ].map(tab => (
+          ].map((tab: any) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
@@ -318,7 +369,7 @@ export const MyPage = () => {
                       dataKey="value"
                       stroke="none"
                     >
-                      {zoneStats.map((_entry, index) => (
+                      {zoneStats.map((_entry: any, index: number) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
@@ -335,7 +386,7 @@ export const MyPage = () => {
                 <MapPin size={18} className="text-ocean" />
                 {t('mypage.mastery')}
               </h3>
-              {pointMastery.map(pm => (
+              {pointMastery.map((pm: any) => (
                 <Link to={`/mypage/point/${pm!.point.id}`} key={pm!.point.id} className="block bg-white rounded-xl p-4 border border-deepBlue-100 shadow-sm">
                   <div className="flex justify-between items-start mb-3">
                     <div>
@@ -353,11 +404,11 @@ export const MyPage = () => {
                   {/* Creature Locks */}
                   <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                     {pointCreatures
-                      .filter(pc => pc.pointId === pm!.point.id && (pc.status === 'approved' || pc.status === undefined))
-                      .map(pc => pc.creatureId)
-                      .map(cId => creatures.find(c => c.id === cId))
-                      .filter((c): c is Creature => c !== undefined)
-                      .sort((a, b) => {
+                      .filter((pc: any) => pc.pointId === pm!.point.id && (pc.status === 'approved' || pc.status === undefined))
+                      .map((pc: any) => pc.creatureId)
+                      .map((cId: string) => creatures.find((c: any) => c.id === cId))
+                      .filter((c: Creature | undefined): c is Creature => c !== undefined)
+                      .sort((a: Creature, b: Creature) => {
                         const rarityOrder: Record<string, number> = {
                           'Legendary': 4,
                           'Epic': 3,
@@ -366,8 +417,8 @@ export const MyPage = () => {
                         };
                         return (rarityOrder[b.rarity] || 0) - (rarityOrder[a.rarity] || 0);
                       })
-                      .map(creature => {
-                        const isDiscovered = userLogs.some(l => l.spotId === pm!.point.id && (l.creatureId === creature.id || l.sightedCreatures?.includes(creature.id)));
+                      .map((creature: Creature) => {
+                        const isDiscovered = userLogs.some((l: any) => l.spotId === pm!.point.id && (l.creatureId === creature.id || l.sightedCreatures?.includes(creature.id)));
                         return (
                           <div key={creature.id} className="relative w-8 h-8 rounded-full overflow-hidden border border-gray-100">
                             <img
@@ -402,7 +453,7 @@ export const MyPage = () => {
                     <PenTool size={20} />
                   </div>
                   <div className="text-left">
-                    <div className="font-bold text-lg text-slate-900 group-hover:text-ocean-600 transition-colors">新しいレビューを書く</div>
+                    <div className="font-bold text-lg text-slate-900 group-hover:text-ocean-600 transition-colors">ダイビングログを記録する</div>
                     <div className="text-xs text-gray-400 font-mono">My Diving Log</div>
                   </div>
                 </div>
@@ -449,9 +500,9 @@ export const MyPage = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-20">
-                  {userLogs.map(log => {
-                    const creature = creatures.find(c => c.id === log.creatureId);
-                    const point = points.find(p => p.id === log.spotId);
+                  {userLogs.map((log: any) => {
+                    const creature = creatures.find((c: any) => c.id === log.creatureId);
+                    const point = points.find((p: any) => p.id === log.spotId);
 
                     return (
                       <LogCard
@@ -460,13 +511,13 @@ export const MyPage = () => {
                         currentUser={currentUser}
                         creature={creature}
                         point={point}
-                        onLike={toggleLikeLog}
-                        onClick={(id) => setSelectedLogId(id)}
+                        onLike={toggleLikeLog as any}
+                        onClick={(id: string) => setSelectedLogId(id)}
                         selectable={isSelectionMode}
                         isSelected={selectedLogIds.includes(log.id)}
-                        onSelect={(id) => {
-                          setSelectedLogIds(prev =>
-                            prev.includes(id) ? prev.filter(pid => pid !== id) : [...prev, id]
+                        onSelect={(id: string) => {
+                          setSelectedLogIds((prev: string[]) =>
+                            prev.includes(id) ? prev.filter((pid: string) => pid !== id) : [...prev, id]
                           );
                         }}
                       />
@@ -561,7 +612,7 @@ export const MyPage = () => {
             </div>
 
             <div className={viewMode === 'grid' ? "grid grid-cols-2 gap-4" : "space-y-3"}>
-              {discoveredCreatures.map(creature => (
+              {discoveredCreatures.map((creature: any) => (
                 <Link
                   key={creature.id}
                   to={`/creature/${creature.id}`}
@@ -587,7 +638,7 @@ export const MyPage = () => {
                       <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
                         <h4 className="font-bold text-white text-lg leading-tight drop-shadow-md mb-1">{creature.name}</h4>
                         <div className="flex gap-0.5">
-                          {Array.from({ length: 4 }).map((_, i) => {
+                          {Array.from({ length: 4 }).map((_: any, i: number) => {
                             const rarityLevel = creature.rarity === 'Legendary' ? 4 :
                               creature.rarity === 'Epic' ? 3 :
                                 creature.rarity === 'Rare' ? 2 : 1;
@@ -610,7 +661,7 @@ export const MyPage = () => {
                       <div className="font-bold text-deepBlue-900 truncate">{creature.name}</div>
                       <div className="text-xs text-gray-500 italic">{creature.scientificName}</div>
                       <div className="flex gap-0.5 mt-1">
-                        {Array.from({ length: 4 }).map((_, i) => {
+                        {Array.from({ length: 4 }).map((_: any, i: number) => {
                           const rarityLevel = creature.rarity === 'Legendary' ? 4 :
                             creature.rarity === 'Epic' ? 3 :
                               creature.rarity === 'Rare' ? 2 : 1;
@@ -642,8 +693,8 @@ export const MyPage = () => {
               Favorites <span className="text-gray-400 text-sm font-normal">({currentUser.favoriteCreatureIds?.length || 0})</span>
             </h3>
             <div className="grid grid-cols-2 gap-4">
-              {currentUser.favoriteCreatureIds?.map(id => {
-                const creature = creatures.find(c => c.id === id);
+              {currentUser.favoriteCreatureIds?.map((id: string) => {
+                const creature = creatures.find((c: any) => c.id === id);
                 if (!creature) return null;
                 return (
                   <Link
@@ -656,7 +707,7 @@ export const MyPage = () => {
                     <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
                       <h4 className="font-bold text-white text-lg leading-tight drop-shadow-md mb-1">{creature.name}</h4>
                       <div className="flex gap-0.5">
-                        {Array.from({ length: 4 }).map((_, i) => {
+                        {Array.from({ length: 4 }).map((_: any, i: number) => {
                           const rarityLevel = creature.rarity === 'Legendary' ? 4 :
                             creature.rarity === 'Epic' ? 3 :
                               creature.rarity === 'Rare' ? 2 : 1;
@@ -693,10 +744,10 @@ export const MyPage = () => {
               Wanted <span className="text-gray-400 text-sm font-normal">({currentUser.wanted.length})</span>
             </h3>
             <div className="grid grid-cols-2 gap-4">
-              {currentUser.wanted.map(id => {
-                const creature = creatures.find(c => c.id === id);
+              {currentUser.wanted.map((id: string) => {
+                const creature = creatures.find((c: any) => c.id === id);
                 if (!creature) return null;
-                const isDiscovered = userLogs.some(l => l.creatureId === id);
+                const isDiscovered = userLogs.some((l: any) => l.creatureId === id);
                 return (
                   <Link
                     key={id}
@@ -715,7 +766,7 @@ export const MyPage = () => {
                     <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
                       <h4 className="font-bold text-white text-lg leading-tight drop-shadow-md mb-1">{creature.name}</h4>
                       <div className="flex gap-0.5">
-                        {Array.from({ length: 4 }).map((_, i) => {
+                        {Array.from({ length: 4 }).map((_: any, i: number) => {
                           const rarityLevel = creature.rarity === 'Legendary' ? 4 :
                             creature.rarity === 'Epic' ? 3 :
                               creature.rarity === 'Rare' ? 2 : 1;
@@ -773,13 +824,13 @@ export const MyPage = () => {
                 {/* Group by Zone */}
                 {Array.from(new Set(
                   currentUser.bookmarkedPointIds
-                    .map(id => points.find(p => p.id === id))
-                    .filter(p => p !== undefined)
-                    .map(p => p!.zone)
-                )).map(zoneName => {
+                    .map((id: string) => points.find((p: any) => p.id === id))
+                    .filter((p: any) => p !== undefined)
+                    .map((p: any) => p!.zone)
+                )).map((zoneName: any) => {
                   const zonePoints = currentUser.bookmarkedPointIds
-                    .map(id => points.find(p => p.id === id))
-                    .filter(p => p !== undefined && p!.zone === zoneName);
+                    .map((id: string) => points.find((p: any) => p.id === id))
+                    .filter((p: any) => p !== undefined && p!.zone === zoneName);
 
                   return (
                     <div key={zoneName} className="space-y-3">
@@ -787,7 +838,7 @@ export const MyPage = () => {
                         <MapPin size={14} /> {zoneName}
                       </h4>
                       <div className="grid grid-cols-1 gap-3">
-                        {zonePoints.map(point => (
+                        {zonePoints.map((point: any) => (
                           <Link
                             key={point!.id}
                             to={`/point/${point!.id}`}
@@ -857,11 +908,11 @@ export const MyPage = () => {
               </div>
             ) : (
               // Use regular div with styled card for MyPage
-              proposalReviews.map(rv => (
+              proposalReviews.map((rv: any) => (
                 <div key={rv.id} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all group">
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex gap-1">
-                      {[1, 2, 3, 4, 5].map(star => (
+                      {[1, 2, 3, 4, 5].map((star: number) => (
                         <Star key={star} size={14} className={star <= rv.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-100"} />
                       ))}
                     </div>
@@ -874,7 +925,7 @@ export const MyPage = () => {
                   </div>
 
                   <Link to={`/point/${rv.pointId}`} className="block mb-3">
-                    <h4 className="font-bold text-gray-900 hover:text-ocean-600 transition-colors">Point: {points.find(p => p.id === rv.pointId)?.name || rv.pointId}</h4>
+                    <h4 className="font-bold text-gray-900 hover:text-ocean-600 transition-colors">Point: {points.find((p: any) => p.id === rv.pointId)?.name || rv.pointId}</h4>
                   </Link>
 
                   <p className={clsx(

@@ -33,27 +33,27 @@ export const ReviewListView: React.FC<ReviewListViewProps> = ({ initialViewMode 
     if (viewMode === 'point') {
       // Point -> [Creatures]
       const map = new Map<string, (PointCreature & { creature?: Creature })[]>();
-      pcList.forEach(pc => {
+      pcList.forEach((pc: PointCreature) => {
         if (!map.has(pc.pointId)) map.set(pc.pointId, []);
-        const creature = creatures.find(c => c.id === pc.creatureId);
+        const creature = creatures.find((c: Creature) => c.id === pc.creatureId);
         map.get(pc.pointId)!.push({ ...pc, creature });
       });
       return Array.from(map.entries()).map(([pointId, items]) => ({
         id: pointId,
-        parent: points.find(p => p.id === pointId),
+        parent: points.find((p: Point) => p.id === pointId),
         items: items.sort((a, b) => (b.confidence || 0) - (a.confidence || 0))
       })).filter(g => g.parent);
     } else {
       // Creature -> [Points]
       const map = new Map<string, (PointCreature & { point?: Point })[]>();
-      pcList.forEach(pc => {
+      pcList.forEach((pc: PointCreature) => {
         if (!map.has(pc.creatureId)) map.set(pc.creatureId, []);
-        const point = points.find(p => p.id === pc.pointId);
+        const point = points.find((p: Point) => p.id === pc.pointId);
         map.get(pc.creatureId)!.push({ ...pc, point });
       });
       return Array.from(map.entries()).map(([creatureId, items]) => ({
         id: creatureId,
-        parent: creatures.find(c => c.id === creatureId),
+        parent: creatures.find((c: Creature) => c.id === creatureId),
         items: items.sort((a, b) => (b.confidence || 0) - (a.confidence || 0))
       })).filter(g => g.parent);
     }

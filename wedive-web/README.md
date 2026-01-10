@@ -59,6 +59,20 @@ The following variables can be set in GitHub Actions Variables or Firebase Confi
 
 ---
 
+## 🔐 Admin Data Sync & Concurrency Control (Local-First)
+
+管理操作におけるデータの整合性と、複数管理者による同時編集の衝突回避は以下の仕組みで制御されています。
+
+### 1. Optimistic Concurrency Control (楽観的排他制御)
+- **直接編集**: マスタデータ（Point/Creature等）の更新時に `updatedAt` を比較し、他の管理者による先行更新を検知します。
+- **承認フロー**: 提案（Proposal）の処理時に `processedAt` および `status` をチェックし、二重処理を防止します。
+
+### 2. Local-First Synchronization
+- 管理画面（Admin Area Cleansing等）からの操作は、Firestore への書き込みと同時に、管理者のブラウザ上の **Local SQLite (`master.db`)** にも即座に反映されます。
+- これにより、大がかりなデータ整理（マージや移動）を行った後も、ページの再読み込みなしで最新の状態に基づいた操作を継続できます。
+
+---
+
 ## 🛠 Admin Operations
 - **Charts / Visualization**:
   - [Recharts](https://recharts.org/) `v3.5.1` (Depth Profile)

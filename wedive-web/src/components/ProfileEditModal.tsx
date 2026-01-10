@@ -238,7 +238,7 @@ export const ProfileEditModal = ({ isOpen, onClose }: Props) => {
                       onChange={(e) => setRankId(e.target.value)}
                       className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-ocean outline-none"
                     >
-                      {agencies.find(o => o.id === orgId)?.ranks.map(rank => (
+                      {agencies.find(o => o.id === orgId)?.ranks.map((rank: any) => (
                         <option key={rank.id} value={rank.id}>{rank.name}</option>
                       ))}
                     </select>

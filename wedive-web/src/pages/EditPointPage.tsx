@@ -11,7 +11,7 @@ export const EditPointPage = () => {
   const navigate = useNavigate();
   const { points, updatePoint, isAuthenticated, currentUser, addPointProposal, regions, zones, areas } = useApp();
 
-  const existingPoint = points.find(p => p.id === id);
+  const existingPoint = points.find((p: any) => p.id === id);
 
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -73,13 +73,13 @@ export const EditPointPage = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev: any) => ({ ...prev, [name]: value }));
   };
 
   const handleTopographyChange = (type: string) => {
-    setFormData(prev => {
+    setFormData((prev: any) => {
       const newTopography = prev.topography.includes(type)
-        ? prev.topography.filter(t => t !== type)
+        ? prev.topography.filter((t: string) => t !== type)
         : [...prev.topography, type];
       return { ...prev, topography: newTopography };
     });
@@ -89,9 +89,9 @@ export const EditPointPage = () => {
     const files = Array.from(e.target.files || []);
     try {
       const compressedImages = await Promise.all(
-        files.map(file => compressImage(file))
+        files.map((file: File) => compressImage(file))
       );
-      setFormData(prev => ({
+      setFormData((prev: any) => ({
         ...prev,
         images: [...prev.images, ...compressedImages]
       }));
@@ -102,9 +102,9 @@ export const EditPointPage = () => {
   };
 
   const removePhoto = (index: number) => {
-    setFormData(prev => ({
+    setFormData((prev: any) => ({
       ...prev,
-      images: prev.images.filter((_, i) => i !== index)
+      images: prev.images.filter((_: any, i: number) => i !== index)
     }));
   };
 
@@ -138,7 +138,7 @@ export const EditPointPage = () => {
         current: formData.current as any,
         topography: formData.topography,
         description: formData.description,
-        features: formData.features.split(',').map(f => f.trim()).filter(Boolean),
+        features: formData.features.split(',').map((f: string) => f.trim()).filter(Boolean),
         coordinates: (formData.lat && formData.lng) ? {
           lat: Number(formData.lat),
           lng: Number(formData.lng)
@@ -157,7 +157,7 @@ export const EditPointPage = () => {
         // Proposal
         const diff = getDiff(fullUpdateState, existingPoint);
         // Clean undefined
-        Object.keys(diff).forEach(key => diff[key] === undefined && delete diff[key]);
+        Object.keys(diff).forEach((key: string) => diff[key] === undefined && delete (diff as any)[key]);
 
         if (Object.keys(diff).length === 0) {
           alert('変更点がありません。');
@@ -189,7 +189,7 @@ export const EditPointPage = () => {
           initialLng={formData.lng}
           initialSearchQuery={formData.name || existingPoint.name} // Use point name as initial query
           onConfirm={(lat, lng, placeId, address) => {
-            setFormData(prev => ({
+            setFormData((prev: any) => ({
               ...prev,
               lat,
               lng,
@@ -241,16 +241,16 @@ export const EditPointPage = () => {
                 zoneId={formData.zoneId}
                 areaId={formData.areaId}
                 onRegionChange={(id) => {
-                  const r = regions.find(x => x.id === id);
-                  setFormData(prev => ({ ...prev, regionId: id, region: r?.name || '', zoneId: '', zone: '', areaId: '', area: '' }));
+                  const r = regions.find((x: any) => x.id === id);
+                  setFormData((prev: any) => ({ ...prev, regionId: id, region: r?.name || '', zoneId: '', zone: '', areaId: '', area: '' }));
                 }}
                 onZoneChange={(id) => {
-                  const z = zones.find(x => x.id === id);
-                  setFormData(prev => ({ ...prev, zoneId: id, zone: z?.name || '', areaId: '', area: '' }));
+                  const z = zones.find((x: any) => x.id === id);
+                  setFormData((prev: any) => ({ ...prev, zoneId: id, zone: z?.name || '', areaId: '', area: '' }));
                 }}
                 onAreaChange={(id) => {
-                  const a = areas.find(x => x.id === id);
-                  setFormData(prev => ({ ...prev, areaId: id, area: a?.name || '' }));
+                  const a = areas.find((x: any) => x.id === id);
+                  setFormData((prev: any) => ({ ...prev, areaId: id, area: a?.name || '' }));
                 }}
                 className="mb-4"
               />
@@ -406,7 +406,7 @@ export const EditPointPage = () => {
                   onChange={handlePhotoUpload}
                 />
               </div>
-              {formData.images.map((photo, index) => (
+              {formData.images.map((photo: string, index: number) => (
                 <div key={index} className="aspect-square rounded-xl overflow-hidden relative group">
                   <img src={photo} alt={`Point photo ${index + 1}`} className="w-full h-full object-cover" />
                   <button

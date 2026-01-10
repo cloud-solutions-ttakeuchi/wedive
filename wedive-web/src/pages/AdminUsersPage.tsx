@@ -39,7 +39,7 @@ export const AdminUsersPage = () => {
 
   // Sort users: Admins first, then Mods, then by Trust Score high->low
   const sortedUsers = [...allUsers].sort((a, b) => {
-    const roleOrder = { admin: 3, moderator: 2, user: 1 };
+    const roleOrder: Record<string, number> = { admin: 3, moderator: 2, user: 1 };
     const roleDiff = roleOrder[b.role] - roleOrder[a.role];
     if (roleDiff !== 0) return roleDiff;
     return (b.trustScore || 0) - (a.trustScore || 0);
@@ -78,7 +78,7 @@ export const AdminUsersPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {sortedUsers.map(user => (
+              {sortedUsers.map((user: any) => (
                 <tr key={user.id} className="hover:bg-indigo-50/30 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">

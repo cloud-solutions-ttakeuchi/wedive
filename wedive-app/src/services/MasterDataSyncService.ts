@@ -93,11 +93,59 @@ export class MasterDataSyncService {
       console.error('[Sync] Master data sync failed:', error);
 
       if (isFirstSync) {
-        // 初回起動でダウンロード失敗 → DBがないので動けない
-        throw new Error('初回起動時はネットワーク接続が必要です');
+        console.warn('[Sync] First sync failed. Creating empty tables locallly as fallback.');
+        await this.createLocalTables(dbPath);
+      } else {
+        // 2回目以降 → ローカルDBを使い続ける（オフライン対応）
+        console.warn('[Sync] Could not update master data. Using local database.');
       }
-      // 2回目以降 → ローカルDBを使い続ける（オフライン対応）
-      console.warn('[Sync] Could not update master data. Using local database.');
+    }
+  }
+
+  /**
+   * ローカルフォールバック用の空テーブル作成
+   */
+  private static async createLocalTables(dbPath: string): Promise<void> {
+    try {
+      const SQLite = require('expo-sqlite');
+      const db = await SQLite.openDatabaseAsync(MASTER_DB_NAME);
+
+      await db.execAsync(`
+        CREATE TABLE IF NOT EXISTS master_points (
+          id TEXT PRIMARY KEY, name TEXT, name_kana TEXT, area_id TEXT, zone_id TEXT, region_id TEXT,
+          region_name TEXT, area_name TEXT, zone_name TEXT,
+          latitude REAL, longitude REAL, level TEXT, max_depth REAL, main_depth_json TEXT,
+          entry_type TEXT, current_condition TEXT, topography_json TEXT, description TEXT,
+          features_json TEXT, google_place_id TEXT, formatted_address TEXT, image_url TEXT,
+          images_json TEXT, image_keyword TEXT, submitter_id TEXT, bookmark_count INTEGER,
+          official_stats_json TEXT, actual_stats_json TEXT, rating REAL,
+          search_text TEXT, updated_at TEXT
+        );
+        CREATE TABLE IF NOT EXISTS master_creatures (
+          id TEXT PRIMARY KEY, name TEXT, name_kana TEXT, scientific_name TEXT, english_name TEXT, category TEXT, family TEXT,
+          description TEXT, rarity TEXT, image_url TEXT, tags_json TEXT, depth_range_json TEXT,
+          special_attributes_json TEXT, water_temp_range_json TEXT, size TEXT, season_json TEXT,
+          gallery_json TEXT, stats_json TEXT, image_credit TEXT, image_license TEXT, image_keyword TEXT,
+          search_text TEXT, updated_at TEXT
+        );
+        CREATE TABLE IF NOT EXISTS master_geography (
+          area_id TEXT, area_name TEXT, area_description TEXT, area_status TEXT,
+          zone_id TEXT, zone_name TEXT, zone_description TEXT, zone_status TEXT,
+          region_id TEXT, region_name TEXT, region_description TEXT, region_status TEXT,
+          full_path TEXT
+        );
+        CREATE TABLE IF NOT EXISTS master_point_creatures (
+          id TEXT PRIMARY KEY, point_id TEXT, creature_id TEXT, localRarity TEXT, updatedAt TEXT
+        );
+        CREATE TABLE IF NOT EXISTS master_point_reviews (
+          id TEXT PRIMARY KEY, point_id TEXT, area_id TEXT, user_id TEXT,
+          rating REAL, comment TEXT, created_at TEXT
+        );
+        CREATE TABLE IF NOT EXISTS master_agencies (id TEXT PRIMARY KEY, name TEXT);
+      `);
+      console.log('[Sync] Local fallback tables created successfully.');
+    } catch (e) {
+      console.error('[Sync] Failed to create local fallback tables:', e);
     }
   }
 
@@ -107,13 +155,20 @@ export class MasterDataSyncService {
    */
   private static async cleanupProposals(): Promise<void> {
     try {
+      // ログイン中のユーザーがいなければスキップ
+      const userId = userDataService.getCurrentUserId();
+      if (!userId) {
+        console.log('[Sync] No user logged in. Skipping proposal cleanup.');
+        return;
+      }
+
       // user.db が初期化されていることを確認
-      await userDataService.initialize();
+      await userDataService.initialize(userId);
 
       // 仮の SQLite モジュール（expo-sqlite）を再取得
       const SQLite = require('expo-sqlite');
       const masterDb = await SQLite.openDatabaseAsync(MASTER_DB_NAME);
-      const userDb = await SQLite.openDatabaseAsync('user.db');
+      const userDb = await SQLite.openDatabaseAsync(`user_${userId}.db`);
 
       // (A) マスタ反映済みポイントの ID リストを取得
       const masterPoints = await masterDb.getAllAsync('SELECT id FROM master_points');

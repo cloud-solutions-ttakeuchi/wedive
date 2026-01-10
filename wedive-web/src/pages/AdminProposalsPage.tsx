@@ -97,7 +97,7 @@ export const AdminProposalsPage = () => {
   }
 
   const getSubmitterInfo = (submitterId: string) => {
-    const user = allUsers.find(u => u.id === submitterId);
+    const user = allUsers.find((u: any) => u.id === submitterId);
     if (!user) return <div className="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-400">Unknown Submitter (ID: {submitterId})</div>;
 
     const currentScore = user.trustScore || 0;
@@ -161,7 +161,7 @@ export const AdminProposalsPage = () => {
           ⚠️ 変更内容 (対象: {original.name})
         </div>
         <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
-          {Object.keys(diff).filter(k => k !== 'reason' && k !== 'requestedDeletion').map(key => {
+          {Object.keys(diff).filter((k: string) => k !== 'reason' && k !== 'requestedDeletion').map((key: string) => {
             const oldValue = (original as any)[key];
             const newValue = diff[key];
 
@@ -252,7 +252,7 @@ export const AdminProposalsPage = () => {
           <section>
             <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><Fish className="text-blue-500" /> 生物提案 ({proposalCreatures.length})</h2>
             <div className="grid gap-4">
-              {proposalCreatures.map(c => {
+              {proposalCreatures.map((c: any) => {
                 const title = (c as any).proposalTitle || '';
                 const type = c.proposalType || (c as any).type || '';
                 const isDelete = type === 'delete' || c.diffData?.requestedDeletion || !!c.diffData?.reason || !!c.reason || (c as any).isDeletionRequest || title.includes('削除');
@@ -269,7 +269,7 @@ export const AdminProposalsPage = () => {
                     <div className="flex-1 py-1">
                       <div className="flex justify-between items-start">
                         <h3 className="text-lg font-bold text-gray-900">
-                          {(isUpdate || isDelete) ? (creatures.find(x => x.id === c.targetId)?.name || c.name || 'Unknown') : c.name}
+                          {(isUpdate || isDelete) ? (creatures.find((x: any) => x.id === c.targetId)?.name || c.name || 'Unknown') : c.name}
                           {(isUpdate || isDelete) && <span className="text-sm font-normal text-gray-500 ml-2">(ID: {c.targetId})</span>}
                           {(!isUpdate && !isDelete) && <span className="text-sm font-normal text-gray-500 ml-2">({c.scientificName})</span>}
                         </h3>
@@ -325,9 +325,9 @@ export const AdminProposalsPage = () => {
             </h2>
             {proposalPointCreatures.length > 0 ? (
               <div className="grid gap-4">
-                {proposalPointCreatures.map(req => {
-                  const targetPoint = points.find(p => p.id === req.pointId);
-                  const targetCreature = creatures.find(c => c.id === req.creatureId);
+                {proposalPointCreatures.map((req: any) => {
+                  const targetPoint = points.find((p: any) => p.id === req.pointId);
+                  const targetCreature = creatures.find((c: any) => c.id === req.creatureId);
                   const isDelete = req.proposalType === 'delete';
                   return (
                     <div key={req.id} className={clsx(
@@ -387,7 +387,7 @@ export const AdminProposalsPage = () => {
           <section>
             <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><MapPin className="text-green-500" /> ポイント提案 ({proposalPoints.length})</h2>
             <div className="grid gap-4">
-              {proposalPoints.map(p => {
+              {proposalPoints.map((p: any) => {
                 const tid = (p as any).targetId || (p.id && !p.id.startsWith('prop') ? p.id : '');
                 const hasTargetId = tid !== '';
                 const rawType = String(p.proposalType || '').toLowerCase();
@@ -397,7 +397,7 @@ export const AdminProposalsPage = () => {
                 const isUpdate = (rawType === 'update' || hasTargetId) && !isDelete;
                 const isCreate = !hasTargetId && !isDelete;
 
-                const isDuplicate = isCreate && points.some(existing => existing.name === p.name);
+                const isDuplicate = isCreate && points.some((existing: any) => existing.name === p.name);
 
                 return (
                   <div key={p.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col gap-4">
@@ -408,7 +408,7 @@ export const AdminProposalsPage = () => {
                       <div className="flex-1 py-1">
                         <div className="flex justify-between items-start">
                           <h3 className="text-lg font-bold text-gray-900">
-                            {(isUpdate || isDelete) ? (points.find(x => x.id === tid || x.id.replace(/_/g, '') === tid.replace(/_/g, ''))?.name || p.name || 'Unknown') : p.name}
+                            {(isUpdate || isDelete) ? (points.find((x: any) => x.id === tid || x.id.replace(/_/g, '') === tid.replace(/_/g, ''))?.name || p.name || 'Unknown') : p.name}
                             {hasTargetId && <span className="text-xs font-mono text-gray-400 ml-2">[{tid}]</span>}
                             {isCreate && <span className="text-sm font-normal text-gray-500 ml-2">in {p.area}, {p.zone}</span>}
                           </h3>
@@ -488,8 +488,8 @@ export const AdminProposalsPage = () => {
               </div>
             ) : (
               <div className="grid gap-6">
-                {proposalReviews.map(rv => {
-                  const targetPoint = points.find(p => p.id === rv.pointId);
+                {proposalReviews.map((rv: any) => {
+                  const targetPoint = points.find((p: any) => p.id === rv.pointId);
                   return (
                     <div key={rv.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row gap-6">
                       <div className="flex-1">

@@ -24,6 +24,7 @@ SELECT
   JSON_VALUE(c.data, '$.imageKeyword') AS image_keyword,
   e.search_text,
   JSON_VALUE(c.data, '$.status') AS status,
-  JSON_VALUE(c.data, '$.createdAt') AS created_at
+  JSON_VALUE(c.data, '$.createdAt') AS created_at,
+  JSON_VALUE(c.data, '$.updatedAt') AS updated_at
 FROM `${PROJECT_ID}.${DATASET}`.creatures_raw_latest c
 LEFT JOIN `${PROJECT_ID}.${DATASET}`.creatures_enriched e ON c.document_id = e.id
