@@ -806,23 +806,40 @@ sequenceDiagram
 ### 9.4 アプリ固有アーキテクチャ
 Web版の OPFS と異なり、ネイティブアプリでは `FileSystem` と `GzipHelper` を使用して効率的なファイル操作を行います。
 
-### 9.5 個人データとAIコンシェルジュのフロー
+### 9.5 個人データとAIコンシェルジュのフロー（コスト視点）
+**Local-First のコスト優位性**: 画面表示ごとの Firestore 読み取り（課金）を排除し、必要なアクション（消費・同期）のみにコストを限定します。
 
 ```mermaid
 sequenceDiagram
     participant User
     participant UI
+    participant LocalDB as SQLite (Local)
     participant BE as Cloud Functions
-    participant FS as Firestore
-    participant App as AppContext
+    participant FS as Firestore (Cloud)
 
-    User->>UI: チャット送信
+    rect rgb(240, 255, 240)
+    note over UI, LocalDB: 【画面表示フェーズ】 $0 Cost
+    User->>UI: マイページ表示 / 残高確認
+    UI->>LocalDB: select * from my_tickets
+    LocalDB-->>UI: 残数表示 (Firestoreアクセスなし)
+    end
+
+    rect rgb(255, 240, 240)
+    note over UI, FS: 【チケット消費フェーズ】 Transaction Cost
+    User->>UI: チャット送信 (消費)
     UI->>BE: callFunction
-    BE->>FS: チケット確認と消費 (Transaction)
-    BE-->>UI: レスポンス
-    UI->>App: syncTickets (整合性確保)
-    App->>FS: 最新チケット情報の取得
-    App->>UI: 表示更新
+    BE->>FS: runTransaction (Read + Write)
+    FS-->>BE: Success
+    BE-->>UI: Response
+    UI->>LocalDB: update my_tickets (ローカル同期)
+    end
+
+    rect rgb(240, 240, 255)
+    note over UI, FS: 【初期同期フェーズ】 Sync Cost (起動時のみ)
+    User->>UI: アプリ起動 / リロード
+    UI->>FS: getDocs (aiConciergeTickets)
+    FS-->>LocalDB: insert/update (マスターデータ同期)
+    end
 ```
 
 -----
