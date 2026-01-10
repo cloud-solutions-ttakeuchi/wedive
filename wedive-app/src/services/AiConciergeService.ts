@@ -167,12 +167,11 @@ export class AiConciergeService extends BaseAiConciergeService {
 
     try {
       // 1. 最新のチケット候補をFirestoreから取得（この時点ではロックなし）
+      // インデックス節約のため、Web版同様にソートはクライアントサイドで行う
       const ticketsRef = collection(firestoreDb, 'users', userId, 'aiConciergeTickets');
       const q = query(
         ticketsRef,
-        where('status', '==', 'active'),
-        orderBy('expiresAt', 'asc'), // 古い順
-        limit(1)
+        where('status', '==', 'active')
       );
       const snapshot = await getDocs(q);
 
@@ -203,7 +202,13 @@ export class AiConciergeService extends BaseAiConciergeService {
         return false;
       }
 
-      const ticketCandidate = snapshot.docs[0];
+      // クライアントサイドでソート（期限が近い順）
+      const sortedDocs = snapshot.docs.sort((a, b) => {
+        const valA = (a.data() as ConciergeTicket).expiresAt || '9999-12-31';
+        const valB = (b.data() as ConciergeTicket).expiresAt || '9999-12-31';
+        return valA.localeCompare(valB);
+      });
+      const ticketCandidate = sortedDocs[0]; // 最も期限が近いチケット
 
       // 変数を外出し
       let currentData: ConciergeTicket | null = null;

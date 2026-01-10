@@ -36,7 +36,10 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      staleTime: 1000 * 60 * 30, // 30 minutes (Local Firstなので長めに)
+      refetchOnWindowFocus: false, // タブ切り替えでの再取得を停止
+      refetchOnMount: false, // コンポーネントマウント時の再取得を停止
+      retry: 1, // 失敗時のリトライ回数削減
     },
   },
 });
