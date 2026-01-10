@@ -107,25 +107,7 @@ export const ConciergePage = () => {
     );
   }
 
-  // Feature Flag: Admin Only (if not explicitly enabled for all)
-  // if (!FEATURE_FLAGS.ENABLE_V2_AI_CONCIERGE && !isAdmin) {
-  // return (
-  //   <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-  //     <div className="bg-white rounded-3xl p-10 shadow-xl text-center max-w-md w-full border border-gray-100 animate-fade-in">
-  //       <div className="w-20 h-20 bg-ocean-50 rounded-2xl flex items-center justify-center mx-auto mb-6 text-ocean-500 shadow-inner">
-  //         <Sparkles size={40} className="animate-pulse" />
-  //       </div>
-  //       <h2 className="text-2xl font-black text-gray-900 mb-3">AIコンシェルジュ準備中</h2>
-  //       <p className="text-gray-500 mb-8 leading-relaxed font-medium">
-  //         現在、より高度な検索機能を実装するため、一部のユーザーのみに限定公開しています。一般公開までしばらくお待ちください。
-  //       </p>
-  //       <Link to="/" className="block w-full py-4 rounded-2xl font-bold text-white bg-ocean-500 hover:bg-ocean-600 transition-all shadow-lg shadow-ocean-100 hover:scale-[1.02] active:scale-[0.98]">
-  //         トップページへ戻る
-  //       </Link>
-  //     </div>
-  //   </div>
-  // );
-  // }
+
 
   return (
     <div className="flex flex-col h-[calc(100vh-72px)] bg-gray-50">
