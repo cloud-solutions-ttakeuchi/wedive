@@ -122,50 +122,128 @@ class AiConciergeServiceImpl extends BaseAiConciergeService {
    */
   consumeTicket = async (userId: string): Promise<boolean> => {
     try {
-      return await runTransaction(firestoreDb, async (transaction) => {
-        const ticketsRef = collection(firestoreDb, 'users', userId, 'aiConciergeTickets');
-        const q = query(
-          ticketsRef,
-          where('status', '==', 'active')
-        );
+      // 1. 最新のチケット候補を取得（この時点ではロックなし）
+      const ticketsRef = collection(firestoreDb, 'users', userId, 'aiConciergeTickets');
+      const q = query(
+        ticketsRef,
+        where('status', '==', 'active')
+      );
+      const snapshot = await getDocs(q);
 
-        const snapshot = await getDocs(q);
-        if (snapshot.empty) return false;
+      // 2. 自己修復ロジック: チケットがないのにサマリーが残っている場合
+      if (snapshot.empty) {
+        let shouldAutoCorrect = false;
+        try {
+          const localProfile = await userDataService.getSetting<User>('profile');
+          if ((localProfile?.aiConciergeTickets?.totalAvailable || 0) > 0) {
+            shouldAutoCorrect = true;
+          }
+        } catch (e) { /* ignore */ }
 
-        // メモリ上で有効期限順にソートして最古の1件を選択
-        const sortedDocs = snapshot.docs.sort((a, b) => {
-          const valA = (a.data() as ConciergeTicket).expiresAt || '9999-12-31';
-          const valB = (b.data() as ConciergeTicket).expiresAt || '9999-12-31';
-          return valA.localeCompare(valB);
-        });
+        if (shouldAutoCorrect) {
+          console.warn('[AiConcierge] Inconsistency detected: No active tickets but totalAvailable > 0. Correcting...');
+          await runTransaction(firestoreDb, async (transaction) => {
+            const userRef = doc(firestoreDb, 'users', userId);
+            const d = await transaction.get(userRef);
+            if (d.exists() && (d.data().aiConciergeTickets?.totalAvailable || 0) > 0) {
+              transaction.update(userRef, { 'aiConciergeTickets.totalAvailable': 0 });
+            }
+          });
+          // ローカルも補正
+          try {
+            const localProfile = await userDataService.getSetting<User>('profile');
+            if (localProfile && localProfile.aiConciergeTickets) {
+              localProfile.aiConciergeTickets.totalAvailable = 0;
+              await userDataService.saveSetting('profile', localProfile);
+            }
+          } catch (e) { /* ignore */ }
+        }
+        return false;
+      }
 
-        const ticketDoc = sortedDocs[0];
-        const ticketData = ticketDoc.data() as ConciergeTicket;
+      // 3. メモリ上で期限順にソート（Firestore index節約のためクライアント側で実施）
+      const sortedDocs = snapshot.docs.sort((a, b) => {
+        const valA = (a.data() as ConciergeTicket).expiresAt || '9999-12-31';
+        const valB = (b.data() as ConciergeTicket).expiresAt || '9999-12-31';
+        return valA.localeCompare(valB);
+      });
+      const ticketCandidates = sortedDocs[0]; // 最も期限が近いチケット
 
-        const newCount = ticketData.remainingCount - 1;
-        const newStatus = newCount <= 0 ? 'used' : 'active';
+      // 変数を外出ししてトランザクション後に参照可能にする
+      let currentData: ConciergeTicket | null = null;
+      let newCount = 0;
 
-        const userRef = doc(firestoreDb, 'users', userId);
+      // 4. トランザクション実行 (消費 + サマリー更新)
+      await runTransaction(firestoreDb, async (transaction) => {
+        const tRef = ticketCandidates.ref;
+        // 楽観的ロック: トランザクション内で最新状態を再確認
+        const latestTicket = await transaction.get(tRef);
+        if (!latestTicket.exists() || latestTicket.data().status !== 'active') {
+          throw new Error('Ticket state changed concurrenty');
+        }
 
-        transaction.update(ticketDoc.ref, {
+        currentData = latestTicket.data() as ConciergeTicket;
+        newCount = (currentData.remainingCount || 1) - 1;
+
+        // チケット更新
+        transaction.update(tRef, {
           remainingCount: newCount,
-          status: newStatus
+          status: newCount <= 0 ? 'used' : 'active',
+          usedAt: new Date().toISOString()
         });
+
+        // サマリー更新
+        const userRef = doc(firestoreDb, 'users', userId);
         transaction.update(userRef, {
           'aiConciergeTickets.totalAvailable': increment(-1)
         });
-
-        // Update local SQLite cache
-        const localProfile = await userDataService.getSetting<User>('profile');
-        if (localProfile) {
-          const tickets = localProfile.aiConciergeTickets || { totalAvailable: 0 };
-          tickets.totalAvailable = Math.max(0, (tickets.totalAvailable || 0) - 1);
-          localProfile.aiConciergeTickets = tickets;
-          await userDataService.saveSetting('profile', localProfile);
-        }
-
-        return true;
       });
+
+      if (!currentData) {
+        throw new Error('Transaction succeeded but data missing');
+      }
+
+      // 5. ローカルキャッシュの同期 (Dual-Write Consistency)
+      // リトライロジック (Max 3 times)
+      let syncSuccess = false;
+      for (let i = 0; i < 3; i++) {
+        try {
+          const localProfile = await userDataService.getSetting<User>('profile');
+          if (localProfile) {
+            const tickets = localProfile.aiConciergeTickets || { totalAvailable: 0 };
+            tickets.totalAvailable = Math.max(0, (tickets.totalAvailable || 0) - 1);
+            localProfile.aiConciergeTickets = tickets;
+            await userDataService.saveSetting('profile', localProfile);
+          }
+
+          // チケット実体の状態もローカルへ反映 (Step 3で確定した値を使用)
+          await userDataService.saveTicket(ticketCandidates.id, {
+            ...(currentData as ConciergeTicket), // 元データ
+            status: newCount <= 0 ? 'used' : 'active', // 新ステータス
+            remainingCount: newCount // 新残数
+          });
+
+          syncSuccess = true;
+          break; // Success
+        } catch (localError) {
+          console.warn(`[AiConcierge] Local sync attempt ${i + 1} failed:`, localError);
+          // Wait a bit before retry? (Optional, but immediate retry is specified)
+        }
+      }
+
+      if (!syncSuccess) {
+        console.error('[AiConcierge] All local sync attempts failed. Triggering Self-Healing...');
+        // 最終手段: 全同期による修復
+        try {
+          await userDataService.syncTickets(userId);
+          console.log('[AiConcierge] Self-Healing (syncTickets) completed.');
+        } catch (healingError) {
+          console.error('[AiConcierge] Self-Healing failed. Local data might be inconsistent until next reload.', healingError);
+        }
+      }
+
+      return true;
+
     } catch (error) {
       console.error('[AiConciergeService] Failed to consume ticket:', error);
       return false;

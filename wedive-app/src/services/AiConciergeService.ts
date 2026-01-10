@@ -1,4 +1,4 @@
-import { collection, query, getDocs, doc, increment, orderBy, where, runTransaction } from 'firebase/firestore';
+import { collection, query, getDocs, doc, increment, orderBy, where, runTransaction, limit } from 'firebase/firestore';
 import { db as firestoreDb } from '../firebase';
 import { ConciergeTicket, User, BaseAiConciergeService, CONCIERGE_CAMPAIGN } from '../types';
 import { aiService } from '../api/aiService';
@@ -165,48 +165,115 @@ export class AiConciergeService extends BaseAiConciergeService {
     const dbName = `user_${userId}.db`;
     const db = await SQLite.openDatabaseAsync(dbName);
 
-    const oldestTicket: any = await db.getFirstAsync(
-      'SELECT id, remaining_count FROM my_ai_concierge_tickets WHERE status = "active" AND (expires_at IS NULL OR expires_at > ?) ORDER BY expires_at ASC LIMIT 1',
-      [new Date().toISOString()]
-    );
-
-    if (!oldestTicket) return false;
-
-    const newCount = oldestTicket.remaining_count - 1;
-    const newStatus = newCount <= 0 ? 'used' : 'active';
-
     try {
-      const ticketRef = doc(firestoreDb, 'users', userId, 'aiConciergeTickets', oldestTicket.id);
-      const userRef = doc(firestoreDb, 'users', userId);
+      // 1. 最新のチケット候補をFirestoreから取得（この時点ではロックなし）
+      const ticketsRef = collection(firestoreDb, 'users', userId, 'aiConciergeTickets');
+      const q = query(
+        ticketsRef,
+        where('status', '==', 'active'),
+        orderBy('expiresAt', 'asc'), // 古い順
+        limit(1)
+      );
+      const snapshot = await getDocs(q);
 
+      // 2. 自己修復ロジック: チケットがないのにサマリーが残っている場合
+      if (snapshot.empty) {
+        let shouldAutoCorrect = false;
+        try {
+          // SQLiteのサマリーを確認
+          const profileRow: any = await db.getFirstAsync('SELECT value FROM my_settings WHERE key = "profile"');
+          if (profileRow) {
+            const p = JSON.parse(profileRow.value);
+            if ((p.aiConciergeTickets?.totalAvailable || 0) > 0) shouldAutoCorrect = true;
+          }
+        } catch (e) { /* ignore */ }
+
+        if (shouldAutoCorrect) {
+          console.warn('[AiConcierge] Inconsistency detected: No active tickets but totalAvailable > 0. Correcting...');
+          await runTransaction(firestoreDb, async (transaction) => {
+            const userRef = doc(firestoreDb, 'users', userId);
+            const d = await transaction.get(userRef);
+            if (d.exists() && (d.data().aiConciergeTickets?.totalAvailable || 0) > 0) {
+              transaction.update(userRef, { 'aiConciergeTickets.totalAvailable': 0 });
+            }
+          });
+          // ローカルも補正 (syncTicketsを呼ぶのが確実)
+          await this.syncTickets(userId);
+        }
+        return false;
+      }
+
+      const ticketCandidate = snapshot.docs[0];
+
+      // 変数を外出し
+      let currentData: ConciergeTicket | null = null;
+      let newCount = 0;
+
+      // 3. トランザクション実行 (消費 + サマリー更新)
       await runTransaction(firestoreDb, async (transaction) => {
-        transaction.update(ticketRef, {
+        const tRef = ticketCandidate.ref;
+        // 楽観的ロック: トランザクション内で最新状態を再確認
+        const latestTicket = await transaction.get(tRef);
+        if (!latestTicket.exists() || latestTicket.data().status !== 'active') {
+          throw new Error('Ticket state changed concurrenty');
+        }
+
+        currentData = latestTicket.data() as ConciergeTicket;
+        newCount = (currentData.remainingCount || 1) - 1;
+
+        // チケット更新
+        transaction.update(tRef, {
           remainingCount: newCount,
-          status: newStatus
+          status: newCount <= 0 ? 'used' : 'active',
+          usedAt: new Date().toISOString()
         });
-        transaction.update(userRef, {
+
+        transaction.update(doc(firestoreDb, 'users', userId), {
           'aiConciergeTickets.totalAvailable': increment(-1)
         });
       });
 
-      await db.runAsync(
-        'UPDATE my_ai_concierge_tickets SET remaining_count = ?, status = ? WHERE id = ?',
-        [newCount, newStatus, oldestTicket.id]
-      );
+      if (!currentData) throw new Error('Transaction succeeded but data missing');
 
-      // SQLiteのプロフィールも更新
-      const profileRow: any = await db.getFirstAsync('SELECT value FROM my_settings WHERE key = "profile"');
-      if (profileRow) {
-        const profile = JSON.parse(profileRow.value);
-        if (profile.aiConciergeTickets) {
-          profile.aiConciergeTickets.totalAvailable = Math.max(0, (profile.aiConciergeTickets.totalAvailable || 1) - 1);
-          await db.runAsync('UPDATE my_settings SET value = ? WHERE key = "profile"', [JSON.stringify(profile)]);
+      // 4. ローカルキャッシュの同期 (Dual-Write Consistency)
+      // リトライロジック (Max 3 times)
+      let syncSuccess = false;
+      for (let i = 0; i < 3; i++) {
+        try {
+          await db.runAsync(
+            'UPDATE my_ai_concierge_tickets SET remaining_count = ?, status = ? WHERE id = ?',
+            [newCount, newCount <= 0 ? 'used' : 'active', ticketCandidate.id]
+          );
+
+          // SQLiteのプロフィールも更新
+          const profileRow: any = await db.getFirstAsync('SELECT value FROM my_settings WHERE key = "profile"');
+          if (profileRow) {
+            const profile = JSON.parse(profileRow.value);
+            if (profile.aiConciergeTickets) {
+              profile.aiConciergeTickets.totalAvailable = Math.max(0, (profile.aiConciergeTickets.totalAvailable || 1) - 1);
+              await db.runAsync('UPDATE my_settings SET value = ? WHERE key = "profile"', [JSON.stringify(profile)]);
+            }
+          }
+
+          syncSuccess = true;
+          break;
+        } catch (localError) {
+          console.warn(`[AiConcierge] Local sync attempt ${i + 1} failed:`, localError);
         }
+      }
+
+      if (!syncSuccess) {
+        console.error('[AiConcierge] All local sync attempts failed. Triggering Self-Healing...');
+        try {
+          await this.syncTickets(userId);
+        } catch (e) { console.error('Healing failed', e); }
       }
 
       return true;
     } catch (error) {
       console.error('[AiConciergeService] Failed to consume ticket:', error);
+      // 失敗時は念のため同期して整合性を回復させておく
+      try { await this.syncTickets(userId); } catch (e) { }
       return false;
     }
   }
