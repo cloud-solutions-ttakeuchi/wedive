@@ -644,30 +644,44 @@ Managed RAG (Vertex AI Search) 連携用設定。
 
 ---
 
-## 8. データ整合性と同期設計 (Integrity & Sync Design)
+## 8. データ整合性和同期設計 (Integrity & Sync Design)
 
-### 8.1 Basic Principles
-WeDive adopts a **Local-First** architecture. Direct reads from Firestore for Master Data are **Strictly Prohibited**.
+### 8.1 基本原則
+WeDive は **Local-First（ローカルファースト）** アーキテクチャを採用しています。
+Firestore からのマスタデータの直接読み取りは **厳格に禁止** されています。
 
-### 8.2 Master Data Sync Strategy
-1.  **Source**: GCS `v1/master/latest.db.gz`.
-2.  **Client**: `MasterDataSyncService` downloads, decompresses (`pako`/`GzipHelper`), and imports to SQLite.
-3.  **Fallback**: If download fails, create **Empty Tables** (`master_geography` etc.) locally.
+### 8.2 マスタデータの同期戦略
+1.  **データソース**: GCS 上の `v1/master/latest.db.gz`。
+2.  **クライアント処理**: `MasterDataSyncService` がダウンロード、解凍 (`pako`/`GzipHelper`)、SQLite へのインポートを行います。
+3.  **フォールバック**: ダウンロード失敗時は、ローカルに **空のテーブル** (`master_geography` 等) を作成し、アプリがクラッシュしないようにします。
 
-### 8.3 User Data Sync Strategy (Personal)
-1.  **Sync**: On launch (`syncInitialData`), fetch `logs`, `reviews`, `tickets`, `proposals` from Firestore.
-2.  **Storage**: Save to `user.db` (`my_logs`, `my_reviews`...).
-3.  **Proposals**: Dual-write to Firestore and local `my_proposals`.
+### 8.3 ユーザーデータの同期戦略 (Personal)
+1.  **初期同期**: 起動時 (`syncInitialData`) に、`logs`、`reviews`、`tickets`、`proposals` を Firestore から取得します。
+2.  **保存先**: `user.db` (`my_logs`, `my_reviews` 等) に保存します。
+3.  **申請データ**: Firestore への書き込みと同時に、ローカルの `my_proposals` にも保存する「Dual-Write」を行います。
+
+### 8.4 重要なデータの一貫性 (Transaction Policy)
+チケット消費やユーザー情報更新など、資産性のあるデータについては、以下の4モデル間の一貫性を保証します。
+
+1. **Firestore (詳細)**: チケット実体など
+2. **Firestore (サマリー)**: ユーザー保有数など
+3. **ローカル SQLite (詳細)**: オフライン用キャッシュ
+4. **ローカル SQLite (サマリー)**: 画面表示用キャッシュ
+
+**実装ルール:**
+*   **アトミックな更新**: Firestore 上の関連データ（詳細とサマリー）は、必ず `runTransaction` を用いて矛盾なく同時に更新すること。
+*   **ローカル同期の徹底**: Firestore の更新成功直後に、必ずローカル SQLite も更新すること。これを怠るとユーザーに誤った残高が表示される。
+*   **自動修復**: データのズレ（不整合）を検知した場合、Firestore の状態を正としてローカルを自動補正するロジックを組み込むこと。
 
 ---
 
-## 9. Architecture & Class Relationships
+## 9. アーキテクチャとクラス関係
 
-### 9.1 Component & Service Dependency (Class Diagram)
+### 9.1 コンポーネントとサービスの依存関係
 
 ```mermaid
 classDiagram
-    %% --- Abstractions (Shared Library: wedive-shared) ---
+    %% --- 抽象層 (Shared Library: wedive-shared) ---
     class SQLiteExecutor {
         <<Interface>>
         +getAllAsync(sql, params)
@@ -686,7 +700,7 @@ classDiagram
         #mapCreatureFromSQLite(row)
     }
 
-    %% --- Implementations (Web/App Local) ---
+    %% --- 実装層 (Web/App Local) ---
     class WebSQLiteEngine {
         +getAllAsync()
         +runAsync()
@@ -703,20 +717,20 @@ classDiagram
         +updatePointInCache(point)
     }
 
-    %% --- Dependencies & Inheritance ---
+    %% --- 依存と継承 ---
     SQLiteExecutor <|.. WebSQLiteEngine : Implements
-    BaseMasterDataService <|-- WebMasterDataService : INHERITS Logic (Do Not Duplicate SQL)
-    BaseMasterDataService o-- SQLiteExecutor : INJECTS Dependency (Platform Agnostic)
-    WebMasterDataService ..> WebSQLiteEngine : Uses (passed to super)
+    BaseMasterDataService <|-- WebMasterDataService : 継承 (SQLロジックの共通化)
+    BaseMasterDataService o-- SQLiteExecutor : 依存注入 (プラットフォーム非依存)
+    WebMasterDataService ..> WebSQLiteEngine : 利用 (superへ渡す)
 
-    %% --- Consumer ---
+    %% --- 利用者 ---
     class AppContext {
         +initMasterData()
     }
     AppContext ..> WebMasterDataService : Calls
 ```
 
-### 9.2 Initialization & Sync Flow (Sequence Diagram)
+### 9.2 初期化と同期フロー
 
 ```mermaid
 sequenceDiagram
@@ -727,20 +741,20 @@ sequenceDiagram
     participant GCS
     participant SQLite
 
-    UI->>CTX: Mount
+    UI->>CTX: マウント
     CTX->>MDSync: syncMasterData()
-    MDSync->>GCS: Download latest.db.gz
-    alt Success
-        MDSync->>SQLite: Import DB
-    else Fail
-        MDSync->>SQLite: Create Empty Tables (master_geography...)
+    MDSync->>GCS: latest.db.gz のダウンロード
+    alt 成功
+        MDSync->>SQLite: DBインポート
+    else 失敗
+        MDSync->>SQLite: 空テーブル作成 (master_geography...)
     end
     CTX->>UDS: syncInitialData()
-    UDS->>SQLite: Update my_logs, my_proposals
-    CTX->>UI: Ready
+    UDS->>SQLite: my_logs, my_proposals 等の更新
+    CTX->>UI: 準備完了
 ```
 
-### 9.3 User Proposal Data Flow
+### 9.3 ユーザー申請データのフロー
 
 ```mermaid
 sequenceDiagram
@@ -750,20 +764,20 @@ sequenceDiagram
     participant FS as Firestore
     participant SQLite
 
-    User->>Page: Propose Change
+    User->>Page: 変更を提案
     Page->>UDS: saveCreatureProposal()
     par Firestore
         UDS->>FS: setDoc(*_proposals)
     and Local
         UDS->>SQLite: insert(my_proposals)
     end
-    Page-->>User: Done
+    Page-->>User: 完了
 ```
 
-### 9.4 App Architecture (Native Specifics)
-Use `FileSystem` and `GzipHelper` instead of `OPFS`.
+### 9.4 アプリ固有アーキテクチャ
+Web版の OPFS と異なり、ネイティブアプリでは `FileSystem` と `GzipHelper` を使用して効率的なファイル操作を行います。
 
-### 9.5 Personal Data & AI Concierge Flow
+### 9.5 個人データとAIコンシェルジュのフロー
 
 ```mermaid
 sequenceDiagram
@@ -773,15 +787,13 @@ sequenceDiagram
     participant FS as Firestore
     participant App as AppContext
 
-    User->>UI: Chat Message
+    User->>UI: チャット送信
     UI->>BE: callFunction
-    BE->>FS: Check & Consume Ticket
-    BE-->>UI: Response
-    UI->>App: Sync Tickets
-    App->>FS: Fetch latest tickets
-    App->>UI: Update Display
+    BE->>FS: チケット確認と消費 (Transaction)
+    BE-->>UI: レスポンス
+    UI->>App: syncTickets (整合性確保)
+    App->>FS: 最新チケット情報の取得
+    App->>UI: 表示更新
 ```
 
-
-
----
+-----
