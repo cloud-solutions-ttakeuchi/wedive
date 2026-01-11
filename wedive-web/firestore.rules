@@ -35,34 +35,34 @@ service cloud.firestore {
       allow read: if resource.data.isPrivate == false || (request.auth != null && request.auth.uid == resource.data.userId);
     }
 
-    // Global Creatures/Points (Read Public, Write Admin/Auth)
+    // Global Creatures/Points (Read Public, Write Admin/Moderator)
     match /creatures/{creatureId} {
       allow read: if true;
-      allow write: if isAuthenticated(); // Refine for moderation later
+      allow write: if isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'moderator'];
     }
 
     match /points/{pointId} {
       allow read: if true;
-      allow write: if isAuthenticated(); // Refine later
+      allow write: if isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'moderator'];
     }
 
     match /point_creatures/{relId} {
       allow read: if true;
-      allow write: if isAuthenticated();
+      allow write: if isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'moderator'];
     }
 
     // Zones and Areas (Master Data)
     match /zones/{zoneId} {
       allow read: if true;
-      allow write: if isAuthenticated();
+      allow write: if isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'moderator'];
     }
     match /areas/{areaId} {
       allow read: if true;
-      allow write: if isAuthenticated();
+      allow write: if isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'moderator'];
     }
     match /regions/{regionId} {
       allow read: if true;
-      allow write: if isAuthenticated();
+      allow write: if isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'moderator'];
     }
 
     // Proposals
@@ -71,6 +71,10 @@ service cloud.firestore {
       allow write: if isAuthenticated();
     }
     match /point_proposals/{propId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+    match /point_creature_proposals/{propId} {
       allow read: if isAuthenticated();
       allow write: if isAuthenticated();
     }

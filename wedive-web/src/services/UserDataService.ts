@@ -249,7 +249,7 @@ export class UserDataService {
    * 生物申請を保存
    */
   async saveCreatureProposal(userId: string, proposal: any): Promise<void> {
-    const propId = proposal.id || `prop_c_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const propId = proposal.id || `propc${Date.now()}`;
     const propRef = doc(firestoreDb, 'creature_proposals', propId);
     const data = { ...proposal, id: propId, userId, status: 'pending', updatedAt: new Date().toISOString() };
     await setDoc(propRef, data);
@@ -260,7 +260,7 @@ export class UserDataService {
    * 地点申請を保存
    */
   async savePointProposal(userId: string, proposal: any): Promise<void> {
-    const propId = proposal.id || `prop_p_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const propId = proposal.id || `propp${Date.now()}`;
     const propRef = doc(firestoreDb, 'point_proposals', propId);
     const data = { ...proposal, id: propId, userId, status: 'pending', updatedAt: new Date().toISOString() };
     await setDoc(propRef, data);
@@ -280,6 +280,8 @@ export class UserDataService {
    * 地点生物関連を保存
    */
   async savePointCreature(rel: any): Promise<void> {
+    // 設計仕様: [PointID]_[CreatureID] (例: p123_c456)
+    // ルール: 区切り文字として アンダースコアを1つだけ 使用する。
     const id = rel.id || `${rel.pointId}_${rel.creatureId}`;
     const relRef = doc(firestoreDb, 'point_creatures', id);
     await setDoc(relRef, { ...rel, id, updatedAt: new Date().toISOString() });
@@ -290,7 +292,7 @@ export class UserDataService {
    * 地点生物申請を保存
    */
   async savePointCreatureProposal(proposal: any): Promise<void> {
-    const propId = proposal.id || `prop_pc_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const propId = proposal.id || `proppc${Date.now()}`;
     const propRef = doc(firestoreDb, 'point_creature_proposals', propId);
     const data = { ...proposal, id: propId, status: 'pending', updatedAt: new Date().toISOString() };
     await setDoc(propRef, data);
