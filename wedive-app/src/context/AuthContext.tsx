@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User as FirebaseUser, onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 import { auth, db } from '../firebase';
-import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { User, DiveLog } from '../types';
 import { userDataService } from '../services/UserDataService';
 import { aiConciergeService } from '../services/AiConciergeService';
@@ -121,6 +121,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const localProfile = await userDataService.getSetting<User>('profile');
       if (localProfile) {
         setUser(localProfile);
+      } else {
+        // Fallback: SQLiteにない場合はFirestoreから直接取得
+        const userDocRef = doc(db, 'users', firebaseUser.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists()) {
+          const remoteUser = userDocSnap.data() as User;
+          setUser(remoteUser);
+          // ついでにローカル保存
+          await userDataService.saveSetting('profile', remoteUser);
+        }
       }
     } catch (error) {
       console.error("Error refreshing profile:", error);
