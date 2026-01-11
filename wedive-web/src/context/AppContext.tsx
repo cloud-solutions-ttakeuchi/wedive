@@ -218,6 +218,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     enabled: auth.isAuthenticated && (auth.currentUser.role === 'admin' || auth.currentUser.role === 'moderator')
   });
 
+  useEffect(() => {
+    const syncAdmin = async () => {
+      if (auth.isAuthenticated && (auth.currentUser?.role === 'admin' || auth.currentUser?.role === 'moderator')) {
+        await userDataService.syncAdminData(auth.currentUser.id);
+        proposalPointsQuery.refetch();
+        proposalCreaturesQuery.refetch();
+        proposalPointCreaturesQuery.refetch();
+      }
+    };
+    syncAdmin();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auth.isAuthenticated, auth.currentUser?.role, auth.currentUser?.id]);
+
   const value = useMemo(() => ({
     ...auth,
     ...adminActions,

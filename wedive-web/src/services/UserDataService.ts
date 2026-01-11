@@ -531,6 +531,32 @@ export class UserDataService {
       return [];
     }
   }
+  /**
+   * 管理者用データを強制同期
+   */
+  async syncAdminData(userId: string): Promise<void> {
+    if (!await this.initialize(userId)) return;
+
+    try {
+      console.log('[Sync] Force syncing admin data...');
+      const collections = [
+        { name: 'creature_proposals', type: 'creature' },
+        { name: 'point_proposals', type: 'point' },
+        { name: 'point_creature_proposals', type: 'point-creature' },
+        { name: 'unapproved_reviews', type: 'review' }
+      ];
+
+      for (const col of collections) {
+        const snap = await getDocs(collection(firestoreDb, col.name));
+        for (const doc of snap.docs) {
+          await this.saveAdminProposal(col.type, doc.id, { ...doc.data(), id: doc.id });
+        }
+      }
+      console.log('[Sync] Admin data sync completed.');
+    } catch (error) {
+      console.error('[Sync] Failed to sync admin data:', error);
+    }
+  }
 }
 
 export const userDataService = new UserDataService();
