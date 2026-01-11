@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User as FirebaseUser, onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 import { auth, db } from '../firebase';
-import { doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc, getDoc, runTransaction } from 'firebase/firestore';
 import { User, DiveLog } from '../types';
 import { userDataService } from '../services/UserDataService';
 import { aiConciergeService } from '../services/AiConciergeService';
@@ -101,14 +101,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateUser = async (userData: Partial<User>) => {
-    if (!firebaseUser || !user) return;
+    if (!firebaseUser) return;
     try {
-      const updatedUser = { ...user, ...userData };
-      setUser(updatedUser);
-      // SQLite に即時保存
-      await userDataService.saveSetting('profile', updatedUser);
-      // Firestore に非同期で反映
-      await updateDoc(doc(db, 'users', firebaseUser.uid), userData);
+      // 1. Transactional Update (Firestore)
+      await runTransaction(db, async (transaction) => {
+        const userRef = doc(db, 'users', firebaseUser.uid);
+        const userDoc = await transaction.get(userRef);
+        if (!userDoc.exists()) {
+          throw new Error("User document does not exist!");
+        }
+        transaction.update(userRef, {
+          ...userData,
+          updatedAt: new Date().toISOString()
+        });
+      });
+
+      // 2. Local Update (after success)
+      // userステートはまだ未ロード(null)の可能性もあるため、既存があればマージ、なければ作成してセット
+      setUser(prev => {
+        const base = prev || { id: firebaseUser.uid, ...userData } as User;
+        const newVal = { ...base, ...userData };
+        // 3. SQLite Update (Background)
+        userDataService.saveSetting('profile', newVal).catch(e => console.error("SQLite save failed", e));
+        return newVal;
+      });
+
     } catch (error) {
       console.error("Error updating user:", error);
       throw error;
