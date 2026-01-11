@@ -173,7 +173,7 @@ export class MasterDataSyncService {
       // 仮の SQLite モジュール（expo-sqlite）を再取得
       const SQLite = require('expo-sqlite');
       const masterDb = await SQLite.openDatabaseAsync(MASTER_DB_NAME);
-      const userDb = await SQLite.openDatabaseAsync(\`user_\${userId}.db\`);
+      const userDb = await SQLite.openDatabaseAsync(`user_${userId}.db`);
 
       // (A) マスタ反映済みポイントの ID リストを取得
       const masterPoints = await masterDb.getAllAsync('SELECT id FROM master_points');
@@ -191,11 +191,11 @@ export class MasterDataSyncService {
       // SQLite の IN 句の上限に配慮しつつ処理
       const placeholders = allMasterIds.map(() => '?').join(',');
       await userDb.runAsync(
-        \`DELETE FROM my_proposals WHERE target_id IN (\${placeholders})\`,
+        `DELETE FROM my_proposals WHERE target_id IN (${placeholders})`,
         allMasterIds
       );
 
-      console.log(\`[Sync] Cleanup completed: Removed matching proposals from local.\`);
+      console.log(`[Sync] Cleanup completed: Removed matching proposals from local.`);
 
     } catch (error) {
       console.error('[Sync] Proposal cleanup failed:', error);
