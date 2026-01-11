@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { ExpoConfig, ConfigContext } from 'expo/config';
 
 export default ({ config }: ConfigContext): ExpoConfig => {
-  const APP_VARIANT = process.env.APP_VARIANT || 'development';
+  const APP_VARIANT = process.env.APP_VARIANT;
 
   // APP_VARIANTに応じてアプリ名やIDを切り替える
   // 未設定時は元の app.json (開発環境) の値をデフォルトにする
@@ -24,15 +24,14 @@ export default ({ config }: ConfigContext): ExpoConfig => {
 
   const getScheme = () => {
     switch (APP_VARIANT) {
-      case 'production': return "wediveapp";
-      case 'staging': return "wediveapp-stg";
-      default: return "wediveapp"; // 元のapp.jsonに合わせてデフォルトはwediveappに
+      case 'production': return "wedive-app";
+      case 'staging': return "wedive-app-stg";
+      default: return "wedive-app"; // 元のapp.jsonに合わせてデフォルトはwediveappに
     }
   };
 
   // Determine iOS Client ID: use WEB_CLIENT_ID (which is used for everything in this project)
-  const associatedIosClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ||
-    "1066677586396-1avhn8hbahfrc1kmv9rbefi3toacjqn3.apps.googleusercontent.com";
+  const associatedIosClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
 
   // Determine iOS URL Scheme: specific var -> derived from client ID -> dev fallback
   const getIosUrlScheme = (clientId: string) => {
