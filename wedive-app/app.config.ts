@@ -44,7 +44,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         return `com.googleusercontent.apps.${match[1]}`;
       }
     }
-    return "com.googleusercontent.apps.1066677586396-1avhn8hbahfrc1kmv9rbefi3toacjqn3";
+    // 環境変数設定漏れなどでClient IDが不正/不在の場合はエラーを投げる（隠蔽しない）
+    throw new Error("Failed to generate iOS URL Scheme. EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID or EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID matching *.apps.googleusercontent.com is required.");
   };
 
   return {
