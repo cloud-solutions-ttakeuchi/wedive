@@ -36,9 +36,10 @@ export class UserDataService {
     const dbName = `user_${targetUserId}.db`;
 
     // 既に同じユーザーのDBが開いている場合は何もしない
-    if (this.sqliteDb && this.currentUserId === targetUserId) {
-      return true;
-    }
+    // FIX: テーブル追加等があるため、接続済みでも初期化SQL（CREATE IF NOT EXISTS）を通すようにする
+    // if (this.sqliteDb && this.currentUserId === targetUserId) {
+    //   return true;
+    // }
 
     if (this.isInitializing) return false;
     if (!SQLite || !SQLite.openDatabaseAsync) {
