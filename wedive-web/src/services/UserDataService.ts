@@ -251,7 +251,7 @@ export class UserDataService {
   async saveCreatureProposal(userId: string, proposal: any): Promise<void> {
     const propId = proposal.id || doc(collection(firestoreDb, 'creature_proposals')).id;
     const propRef = doc(firestoreDb, 'creature_proposals', propId);
-    const data = { ...proposal, id: propId, userId, updatedAt: new Date().toISOString() };
+    const data = { ...proposal, id: propId, userId, status: 'pending', updatedAt: new Date().toISOString() };
     await setDoc(propRef, data);
     await this.saveMyProposal('creature', propId, data);
   }
@@ -262,7 +262,7 @@ export class UserDataService {
   async savePointProposal(userId: string, proposal: any): Promise<void> {
     const propId = proposal.id || doc(collection(firestoreDb, 'point_proposals')).id;
     const propRef = doc(firestoreDb, 'point_proposals', propId);
-    const data = { ...proposal, id: propId, userId, updatedAt: new Date().toISOString() };
+    const data = { ...proposal, id: propId, userId, status: 'pending', updatedAt: new Date().toISOString() };
     await setDoc(propRef, data);
     await this.saveMyProposal('point', propId, data);
   }
@@ -292,7 +292,7 @@ export class UserDataService {
   async savePointCreatureProposal(proposal: any): Promise<void> {
     const propId = proposal.id || doc(collection(firestoreDb, 'point_creature_proposals')).id;
     const propRef = doc(firestoreDb, 'point_creature_proposals', propId);
-    const data = { ...proposal, id: propId, updatedAt: new Date().toISOString() };
+    const data = { ...proposal, id: propId, status: 'pending', updatedAt: new Date().toISOString() };
     await setDoc(propRef, data);
     await this.saveMyProposal('point-creature', propId, data);
   }
