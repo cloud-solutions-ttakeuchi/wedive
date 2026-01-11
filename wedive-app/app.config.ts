@@ -30,9 +30,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     }
   };
 
-  // Determine iOS Client ID: specific var -> web var -> dev fallback
-  const associatedIosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ||
-    process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ||
+  // Determine iOS Client ID: use WEB_CLIENT_ID (which is used for everything in this project)
+  const associatedIosClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ||
     "1066677586396-1avhn8hbahfrc1kmv9rbefi3toacjqn3.apps.googleusercontent.com";
 
   // Determine iOS URL Scheme: specific var -> derived from client ID -> dev fallback
