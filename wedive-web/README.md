@@ -99,13 +99,23 @@ The following variables can be set in GitHub Actions Variables or Firebase Confi
 
 ### Setup
 ```bash
+rm -rf node_modules package-lock.json
+
 # Install dependencies
 npm install
 
 # Important: To avoid CI failures on Linux (GitHub Actions), 
 # ensure package-lock.json includes dependencies for both macOS and Linux.
 # Run this command when adding/updating packages:
-npm install --os=linux --os=darwin --cpu=x64 --cpu=arm64
+# すべてのプラットフォーム（Linux用など）をロックファイルに強制的に書き込む
+npm install --save-optional --os=linux --libc=glibc --cpu=x64
+npm install --save-optional --os=linux --libc=musl --cpu=x64
+npm install --save-optional --os=linux --libc=glibc --cpu=arm64
+npm install @tailwindcss/oxide-linux-x64-gnu --save-optional
+npm install --save-optional --os=linux --os=darwin --os=win32 --os=android --os=freebsd --cpu=x64 --cpu=arm64 --cpu=arm
+
+# プロジェクトルートに作成されるため
+cp ../package-lock.json package-lock.json
 ```
 
 ### Run Locally
