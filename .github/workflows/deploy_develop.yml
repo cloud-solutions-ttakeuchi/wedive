@@ -73,7 +73,7 @@ jobs:
       - name: Deploy Functions
         run: |
           cp dist/index.html functions/index.html
-          mv dist/index.html dist/_app.html
+
 
           echo "LOG_LEVEL=${{ vars.LOG_LEVEL }}" >> functions/.env
           echo "BASIC_AUTH_USER=${{ vars.BASIC_AUTH_USER }}" >> functions/.env
