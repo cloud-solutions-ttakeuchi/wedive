@@ -63,8 +63,7 @@ jobs:
         run: |
           # Copy index.html to functions folder so the Function can serve it
           cp dist/index.html functions/index.html
-          # Rename original so Hosting doesn't serve it directly (bypassing Function)
-          mv dist/index.html dist/_app.html
+
 
           echo "LOG_LEVEL=${{ vars.LOG_LEVEL }}" >> functions/.env
           echo "BASIC_AUTH_USER=${{ vars.BASIC_AUTH_USER }}" >> functions/.env
