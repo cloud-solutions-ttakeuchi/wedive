@@ -224,6 +224,7 @@ export class MasterDataService extends BaseMasterDataService {
       zone: p.zone_name || '',
       latitude: p.latitude,
       longitude: p.longitude,
+      coordinates: (p.latitude != null && p.longitude != null) ? { lat: p.latitude, lng: p.longitude } : undefined,
       level: p.level || 'Unknown',
       maxDepth: p.max_depth,
       mainDepth: p.main_depth_json ? JSON.parse(p.main_depth_json) : undefined,
