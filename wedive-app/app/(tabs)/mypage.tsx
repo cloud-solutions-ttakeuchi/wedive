@@ -83,19 +83,19 @@ export default function MyPageScreen() {
   const uniqueCreatureIds = useMemo(() => mapLogToIds(logs || []), [logs]);
 
   const discoveredCreatures = useMemo(() =>
-    uniqueCreatureIds.map(id => creatures.find(c => c.id === id)).filter((c): c is Creature => c !== undefined),
+    uniqueCreatureIds.map((id: string) => creatures.find((c: Creature) => c.id === id)).filter((c: Creature | undefined): c is Creature => c !== undefined),
     [uniqueCreatureIds, creatures]);
 
   const favoriteCreatures = useMemo(() =>
-    (user?.favoriteCreatureIds || []).map(id => creatures.find(c => c.id === id)).filter((c): c is Creature => c !== undefined),
+    (user?.favoriteCreatureIds || []).map((id: string) => creatures.find((c: Creature) => c.id === id)).filter((c: Creature | undefined): c is Creature => c !== undefined),
     [user?.favoriteCreatureIds, creatures]);
 
   const wantedCreatures = useMemo(() =>
-    (user?.wanted || []).map(id => creatures.find(c => c.id === id)).filter((c): c is Creature => c !== undefined),
+    (user?.wanted || []).map((id: string) => creatures.find((c: Creature) => c.id === id)).filter((c: Creature | undefined): c is Creature => c !== undefined),
     [user?.wanted, creatures]);
 
   const bookmarkedPoints = useMemo(() =>
-    (user?.bookmarkedPointIds || []).map(id => points.find(p => p.id === id)).filter((p): p is Point => p !== undefined),
+    (user?.bookmarkedPointIds || []).map((id: string) => points.find((p: Point) => p.id === id)).filter((p: Point | undefined): p is Point => p !== undefined),
     [user?.bookmarkedPointIds, points]);
 
   // Use server-side calculated stats directly
@@ -390,7 +390,7 @@ export default function MyPageScreen() {
               <View style={{ marginBottom: 24 }}>
                 <Text style={styles.sectionTitle}>お気に入りのスポット</Text>
                 <View style={{ gap: 12 }}>
-                  {bookmarkedPoints.map(point => (
+                  {bookmarkedPoints.map((point: Point) => (
                     <TouchableOpacity
                       key={point.id}
                       style={styles.pointRowCard}
@@ -415,7 +415,7 @@ export default function MyPageScreen() {
             <View>
               <Text style={styles.sectionTitle}>お気に入りの生物</Text>
               <View style={styles.creatureGrid}>
-                {favoriteCreatures.map(creature => (
+                {favoriteCreatures.map((creature: Creature) => (
                   <TouchableOpacity
                     key={creature.id}
                     style={styles.creatureSmallCard}
@@ -446,7 +446,7 @@ export default function MyPageScreen() {
         return (
           <View style={styles.tabContent}>
             <View style={styles.creatureGrid}>
-              {wantedCreatures.map(creature => (
+              {wantedCreatures.map((creature: Creature) => (
                 <TouchableOpacity
                   key={creature.id}
                   style={styles.creatureSmallCard}
@@ -481,7 +481,7 @@ export default function MyPageScreen() {
         return (
           <View style={styles.tabContent}>
             <View style={{ gap: 12 }}>
-              {bookmarkedPoints.map(point => (
+              {bookmarkedPoints.map((point: Point) => (
                 <TouchableOpacity
                   key={point.id}
                   style={styles.pointRowCard}
