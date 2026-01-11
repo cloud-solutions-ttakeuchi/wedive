@@ -30,6 +30,25 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     }
   };
 
+  // Determine iOS Client ID: specific var -> web var -> dev fallback
+  const associatedIosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ||
+    process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ||
+    "1066677586396-1avhn8hbahfrc1kmv9rbefi3toacjqn3.apps.googleusercontent.com";
+
+  // Determine iOS URL Scheme: specific var -> derived from client ID -> dev fallback
+  const getIosUrlScheme = (clientId: string) => {
+    if (process.env.EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME) {
+      return process.env.EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME;
+    }
+    // Attempt to derive scheme from Client ID (reverse DNS for Google IDs)
+    // Client ID: XXXXX.apps.googleusercontent.com -> Scheme: com.googleusercontent.apps.XXXXX
+    const match = clientId.match(/^([^.]+)\.apps\.googleusercontent\.com$/);
+    if (match && match[1]) {
+      return `com.googleusercontent.apps.${match[1]}`;
+    }
+    return "com.googleusercontent.apps.1066677586396-1avhn8hbahfrc1kmv9rbefi3toacjqn3";
+  };
+
   return {
     ...config,
     name: getName(),
@@ -75,8 +94,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       [
         "@react-native-google-signin/google-signin",
         {
-          iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || "1066677586396-1avhn8hbahfrc1kmv9rbefi3toacjqn3.apps.googleusercontent.com",
-          iosUrlScheme: process.env.EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME || "com.googleusercontent.apps.1066677586396-1avhn8hbahfrc1kmv9rbefi3toacjqn3"
+          iosClientId: associatedIosClientId,
+          iosUrlScheme: getIosUrlScheme(associatedIosClientId)
         }
       ]
     ],
