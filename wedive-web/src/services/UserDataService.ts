@@ -240,7 +240,7 @@ export class UserDataService {
    * 地点を保存
    */
   async savePoint(userId: string, point: any): Promise<void> {
-    const pointRef = doc(firestoreDb, 'points', point.id || doc(collection(firestoreDb, 'points')).id);
+    const pointRef = doc(firestoreDb, 'points', point.id || `p${Date.now()}`);
     await setDoc(pointRef, { ...point, updatedAt: new Date().toISOString() });
     await masterDataService.updatePointInCache({ ...point, id: pointRef.id });
   }
@@ -249,7 +249,7 @@ export class UserDataService {
    * 生物申請を保存
    */
   async saveCreatureProposal(userId: string, proposal: any): Promise<void> {
-    const propId = proposal.id || doc(collection(firestoreDb, 'creature_proposals')).id;
+    const propId = proposal.id || `prop_c_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const propRef = doc(firestoreDb, 'creature_proposals', propId);
     const data = { ...proposal, id: propId, userId, status: 'pending', updatedAt: new Date().toISOString() };
     await setDoc(propRef, data);
@@ -260,7 +260,7 @@ export class UserDataService {
    * 地点申請を保存
    */
   async savePointProposal(userId: string, proposal: any): Promise<void> {
-    const propId = proposal.id || doc(collection(firestoreDb, 'point_proposals')).id;
+    const propId = proposal.id || `prop_p_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const propRef = doc(firestoreDb, 'point_proposals', propId);
     const data = { ...proposal, id: propId, userId, status: 'pending', updatedAt: new Date().toISOString() };
     await setDoc(propRef, data);
@@ -271,7 +271,7 @@ export class UserDataService {
    * 生物を保存
    */
   async saveCreature(userId: string, creature: any): Promise<void> {
-    const creatureRef = doc(firestoreDb, 'creatures', creature.id || doc(collection(firestoreDb, 'creatures')).id);
+    const creatureRef = doc(firestoreDb, 'creatures', creature.id || `c${Date.now()}`);
     await setDoc(creatureRef, { ...creature, updatedAt: new Date().toISOString() });
     await masterDataService.updateCreatureInCache({ ...creature, id: creatureRef.id });
   }
@@ -290,7 +290,7 @@ export class UserDataService {
    * 地点生物申請を保存
    */
   async savePointCreatureProposal(proposal: any): Promise<void> {
-    const propId = proposal.id || doc(collection(firestoreDb, 'point_creature_proposals')).id;
+    const propId = proposal.id || `prop_pc_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const propRef = doc(firestoreDb, 'point_creature_proposals', propId);
     const data = { ...proposal, id: propId, status: 'pending', updatedAt: new Date().toISOString() };
     await setDoc(propRef, data);
