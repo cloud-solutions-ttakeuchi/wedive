@@ -149,6 +149,11 @@ export const EditPointPage = () => {
         imageUrl: formData.images.length > 0 ? formData.images[0] : (existingPoint.imageUrl || '/images/seascape.png'), // Fallback updated
       };
 
+      // Remove undefined fields to prevent Firestore errors
+      Object.keys(fullUpdateState).forEach(key =>
+        fullUpdateState[key] === undefined && delete fullUpdateState[key]
+      );
+
       if (currentUser.role === 'admin' || currentUser.role === 'moderator') {
         await updatePoint(id, fullUpdateState);
         alert('ポイント情報を更新しました！');
