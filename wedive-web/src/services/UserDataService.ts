@@ -11,13 +11,11 @@ export class UserDataService {
    * SQLite接続とテーブルの初期化
    */
   async initialize(userId: string): Promise<boolean> {
-    if (this.currentUserId === userId) return true;
-
     try {
       await userDbEngine.initialize();
       this.currentUserId = userId;
 
-      // テーブル作成
+      // テーブル作成 (IF NOT EXISTS なので毎回実行してスキーマを保証する)
       await userDbEngine.runAsync(`
         CREATE TABLE IF NOT EXISTS my_logs (
           id TEXT PRIMARY KEY,

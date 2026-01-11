@@ -286,7 +286,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     addCreatureProposal: async (proposal: any) => {
       if (!auth.isAuthenticated) return;
       await userDataService.saveCreatureProposal(auth.currentUser.id, proposal);
-      proposalCreaturesQuery.refetch();
+      if (auth.currentUser.role === 'admin' || auth.currentUser.role === 'moderator') {
+        proposalCreaturesQuery.refetch();
+      }
     },
     addPoint: async (point: any) => {
       if (!auth.isAuthenticated) return;
@@ -296,7 +298,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     addPointProposal: async (proposal: any) => {
       if (!auth.isAuthenticated) return;
       await userDataService.savePointProposal(auth.currentUser.id, proposal);
-      proposalPointsQuery.refetch();
+      if (auth.currentUser.role === 'admin' || auth.currentUser.role === 'moderator') {
+        proposalPointsQuery.refetch();
+      }
     },
     addPointCreature: async (rel: any) => {
       if (!auth.isAuthenticated) return;
@@ -306,7 +310,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     addPointCreatureProposal: async (proposal: any) => {
       if (!auth.isAuthenticated) return;
       await userDataService.savePointCreatureProposal(proposal);
-      proposalPointCreaturesQuery.refetch();
+      if (auth.currentUser.role === 'admin' || auth.currentUser.role === 'moderator') {
+        proposalPointCreaturesQuery.refetch();
+      }
     },
     deleteAccount: async () => {
       if (!auth.isAuthenticated) return;
