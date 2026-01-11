@@ -67,9 +67,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           ]);
 
           setLogs(localLogs || []);
-          setUser(localProfile);
+
+          if (localProfile) {
+            setUser(localProfile);
+          } else {
+            // SQLiteにない場合(初回ログイン等)、Firestoreから取得
+            const userDocRef = doc(db, 'users', fbUser.uid);
+            const userDocSnap = await getDoc(userDocRef);
+            if (userDocSnap.exists()) {
+              const remoteUser = userDocSnap.data() as User;
+              setUser(remoteUser);
+              // 次回のために保存
+              await userDataService.saveSetting('profile', remoteUser);
+            }
+          }
 
           setIsLoading(false);
+
+          // バックグラウンドで最新プロフィールを確認・更新
+          refreshProfile();
+
         } catch (err) {
           console.error("Initial data load error:", err);
           setIsLoading(false);
@@ -91,9 +108,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
-      // セキュリティのためログアウト時にローカルデータをクリアするか検討が必要ですが、
-      // 今回は「ログイン時の UID チェック」で不一致なら消すロジックに倒しています。
-      // 仕様通り「退会時」は確実に消します。
       await userDataService.logout();
     } catch (error) {
       console.error("Error signing out:", error);
@@ -116,15 +130,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
       });
 
-      // 2. Local Update (after success)
-      // userステートはまだ未ロード(null)の可能性もあるため、既存があればマージ、なければ作成してセット
-      setUser(prev => {
-        const base = prev || { id: firebaseUser.uid, ...userData } as User;
-        const newVal = { ...base, ...userData };
-        // 3. SQLite Update (Background)
-        userDataService.saveSetting('profile', newVal).catch(e => console.error("SQLite save failed", e));
-        return newVal;
-      });
+      // 2. Local Update
+      const newUser = { ...(user || { id: firebaseUser.uid } as User), ...userData };
+      setUser(newUser);
+      await userDataService.saveSetting('profile', newUser);
 
     } catch (error) {
       console.error("Error updating user:", error);
@@ -135,18 +144,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshProfile = async () => {
     if (!firebaseUser) return;
     try {
-      const localProfile = await userDataService.getSetting<User>('profile');
-      if (localProfile) {
-        setUser(localProfile);
-      } else {
-        // Fallback: SQLiteにない場合はFirestoreから直接取得
-        const userDocRef = doc(db, 'users', firebaseUser.uid);
-        const userDocSnap = await getDoc(userDocRef);
-        if (userDocSnap.exists()) {
-          const remoteUser = userDocSnap.data() as User;
+      // リモートの最新情報を取得してローカルと同期
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (userDocSnap.exists()) {
+        const remoteUser = userDocSnap.data() as User;
+        const localProfile = await userDataService.getSetting<User>('profile');
+
+        // ローカルがない、あるいはリモートと異なれば更新
+        if (!localProfile || JSON.stringify(remoteUser) !== JSON.stringify(localProfile)) {
+          console.log("[AuthContext] Profile synced with remote");
           setUser(remoteUser);
-          // ついでにローカル保存
           await userDataService.saveSetting('profile', remoteUser);
+        } else {
+          // ローカルがある場合、まずはそれをセット（初期ロードの補助）
+          setUser(localProfile);
         }
       }
     } catch (error) {
