@@ -30,8 +30,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     }
   };
 
-  // Determine iOS Client ID: use WEB_CLIENT_ID (which is used for everything in this project)
-  const associatedIosClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+  // Determine iOS Client ID: use IOS_CLIENT_ID
+  const associatedIosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
 
   // Determine iOS URL Scheme: specific var -> derived from client ID -> dev fallback
   // Determine iOS URL Scheme: derived from client ID -> dev fallback
@@ -45,7 +45,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       }
     }
     // 環境変数設定漏れなどでClient IDが不正/不在の場合はエラーを投げる（隠蔽しない）
-    throw new Error("Failed to generate iOS URL Scheme. EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID or EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID matching *.apps.googleusercontent.com is required.");
+    throw new Error("Failed to generate iOS URL Scheme. EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID matching *.apps.googleusercontent.com is required.");
   };
 
   return {
