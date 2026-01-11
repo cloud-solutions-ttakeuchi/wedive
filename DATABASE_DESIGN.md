@@ -671,7 +671,7 @@ Firestore からのマスタデータの直接読み取りは **厳格に禁止*
 
 **実装詳細仕様 (Implementation Specs):**
 
-1.  **チケット消費トランザクション (AI Concierge Consumption)**
+1.  **チケット消費とユーザーデータ更新トランザクション (AI Concierge / User Data Update)**
     *   **Scope**: Firestore トランザクション (`runTransaction`) 内で完結させる。
     *   **Step 1 (Read & Lock)**:
         *   ユーザーサマリー (`users/{uid}`) を読み取り、`ticketSummary.totalAvailable` を確認。
@@ -684,15 +684,24 @@ Firestore からのマスタデータの直接読み取りは **厳格に禁止*
         *   もし **残数が 0 になる場合のみ**、`status='used'` に更新する。残数がある場合は `status` を変更しない（`active` のまま）。
         *   同時に、ユーザーサマリーの `totalAvailable` をアトミックにデクリメント (-1) する。
 
-2.  **ローカル同期フロー (Local Sync Flow)**
+2.  **ユーザープロフィール更新トランザクション (Profile Update)**
+    *   **Scope**: Firestore トランザクション (`runTransaction`) 内で完結させる。
+    *   **Target**: `users/{uid}` ドキュメント（ユーザー基本情報）。
+    *   **Logic (Read-Modify-Write)**:
+        *   `transaction.get()` で現在のドキュメントを取得し、存在チェックを行う。
+        *   `transaction.update()` で、変更差分 (`Partial<User>`) を既存データにマージして更新する。これにより、読み込み〜書き込み間に他端末で行われた変更を不用意に上書きすることを防ぐ（Last Write Wins だが、アトミック性は保証される）。
+        *   同時に `updatedAt` を現在時刻で更新する。
+    *   **Dual-Write**: トランザクション成功後、即座にメモリストア（React State）およびローカル SQLite (`my_settings`) を更新する。
+
+3.  **ローカル同期フロー (Local Sync Flow)**
     *   Firestore トランザクションが成功した直後（`await` 完了後）、**必ず** 以下のローカル更新を実行する。
     *   **アクション**: `UserDataService.saveTicket()` 等を使用し、SQLite の `my_ai_concierge_tickets` テーブルにある該当チケットの `remaining_count` と `status` を、**Step 3 で確定した最新の値**に更新する（決め打ちで 0 にしない）。
     *   **目的**: オフライン時や次回起動時に、消費済みのチケットが復活して見えるのを防ぐため。
 
-3.  **複数端末間の競合解決**
+4.  **複数端末間の競合解決**
     *   トランザクション内でドキュメントの最新状態 (`get()`) を確認してから書き込む「楽観的ロック」パターンを使用するため、他端末で同時に消費されていた場合はトランザクションが失敗（再試行）し、二重消費は防止される。
 
-4.  **ロールバックとエラーハンドリング戦略 (Rollback & Error Handling)**
+5.  **ロールバックとエラーハンドリング戦略 (Rollback & Error Handling)**
     *   **Firestore 失敗時**:
         *   `runTransaction` が失敗した場合、Firestore 上のデータは自動的にロールバックされる（何も変更されない）。
         *   この段階ではローカル SQLite への書き込みを行っていないため、ローカルデータも変更されず、整合性は保たれる。
