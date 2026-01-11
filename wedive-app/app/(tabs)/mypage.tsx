@@ -27,7 +27,7 @@ type TabType = 'dashboard' | 'logbook' | 'collection' | 'favorites' | 'wanted' |
 
 export default function MyPageScreen() {
   const router = useRouter();
-  const { user, logs, isLoading: authLoading, signOut, updateUser, refreshProfile } = useAuth();
+  const { user: authUser, logs, isLoading: authLoading, signOut, updateUser, refreshProfile, firebaseUser } = useAuth();
 
   // 画面が表示されるたびに最新のプロフィール（チケット枚数など）を読み込む
   React.useEffect(() => {
@@ -40,6 +40,20 @@ export default function MyPageScreen() {
   const { data: stats, isLoading: loadingStats } = useUserStats();
   const { reviews: userReviews, isLoading: loadingReviews } = useUserReviews();
   const { agencies } = useAgencies();
+
+  // Fallback user object if profile is not yet loaded but auth exists
+  const user = authUser || (firebaseUser ? {
+    id: firebaseUser.uid,
+    name: firebaseUser.displayName || 'Diver',
+    profileImage: firebaseUser.photoURL,
+    role: 'user',
+    trustScore: 0,
+    aiConciergeTickets: { totalAvailable: 0, periodContribution: { points: 0, creatures: 0, reviews: 0 } },
+    favoriteCreatureIds: [],
+    bookmarkedPointIds: [],
+    wanted: [],
+    certification: undefined
+  } : null) as any;
 
   // ユーザーの認定ランク短縮形を取得
   const userCertAbbreviation = useMemo(() => {
@@ -97,7 +111,7 @@ export default function MyPageScreen() {
     );
   }
 
-  if (!user) {
+  if (!firebaseUser) {
     return (
       <View style={[styles.container, styles.center, { padding: 40 }]}>
         <View style={styles.guestIconBg}>
