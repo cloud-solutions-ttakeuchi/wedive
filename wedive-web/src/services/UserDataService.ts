@@ -11,13 +11,11 @@ export class UserDataService {
    * SQLite接続とテーブルの初期化
    */
   async initialize(userId: string): Promise<boolean> {
-    if (this.currentUserId === userId) return true;
-
     try {
       await userDbEngine.initialize();
       this.currentUserId = userId;
 
-      // テーブル作成
+      // テーブル作成 (IF NOT EXISTS なので毎回実行してスキーマを保証する)
       await userDbEngine.runAsync(`
         CREATE TABLE IF NOT EXISTS my_logs (
           id TEXT PRIMARY KEY,
@@ -242,7 +240,7 @@ export class UserDataService {
    * 地点を保存
    */
   async savePoint(userId: string, point: any): Promise<void> {
-    const pointRef = doc(firestoreDb, 'points', point.id || doc(collection(firestoreDb, 'points')).id);
+    const pointRef = doc(firestoreDb, 'points', point.id || `p${Date.now()}`);
     await setDoc(pointRef, { ...point, updatedAt: new Date().toISOString() });
     await masterDataService.updatePointInCache({ ...point, id: pointRef.id });
   }
@@ -251,9 +249,9 @@ export class UserDataService {
    * 生物申請を保存
    */
   async saveCreatureProposal(userId: string, proposal: any): Promise<void> {
-    const propId = proposal.id || doc(collection(firestoreDb, 'creature_proposals')).id;
+    const propId = proposal.id || `propc${Date.now()}`;
     const propRef = doc(firestoreDb, 'creature_proposals', propId);
-    const data = { ...proposal, id: propId, userId, updatedAt: new Date().toISOString() };
+    const data = { ...proposal, id: propId, userId, status: 'pending', updatedAt: new Date().toISOString() };
     await setDoc(propRef, data);
     await this.saveMyProposal('creature', propId, data);
   }
@@ -262,9 +260,9 @@ export class UserDataService {
    * 地点申請を保存
    */
   async savePointProposal(userId: string, proposal: any): Promise<void> {
-    const propId = proposal.id || doc(collection(firestoreDb, 'point_proposals')).id;
+    const propId = proposal.id || `propp${Date.now()}`;
     const propRef = doc(firestoreDb, 'point_proposals', propId);
-    const data = { ...proposal, id: propId, userId, updatedAt: new Date().toISOString() };
+    const data = { ...proposal, id: propId, userId, status: 'pending', updatedAt: new Date().toISOString() };
     await setDoc(propRef, data);
     await this.saveMyProposal('point', propId, data);
   }
@@ -273,7 +271,7 @@ export class UserDataService {
    * 生物を保存
    */
   async saveCreature(userId: string, creature: any): Promise<void> {
-    const creatureRef = doc(firestoreDb, 'creatures', creature.id || doc(collection(firestoreDb, 'creatures')).id);
+    const creatureRef = doc(firestoreDb, 'creatures', creature.id || `c${Date.now()}`);
     await setDoc(creatureRef, { ...creature, updatedAt: new Date().toISOString() });
     await masterDataService.updateCreatureInCache({ ...creature, id: creatureRef.id });
   }
@@ -282,6 +280,8 @@ export class UserDataService {
    * 地点生物関連を保存
    */
   async savePointCreature(rel: any): Promise<void> {
+    // 設計仕様: [PointID]_[CreatureID] (例: p123_c456)
+    // ルール: 区切り文字として アンダースコアを1つだけ 使用する。
     const id = rel.id || `${rel.pointId}_${rel.creatureId}`;
     const relRef = doc(firestoreDb, 'point_creatures', id);
     await setDoc(relRef, { ...rel, id, updatedAt: new Date().toISOString() });
@@ -292,9 +292,9 @@ export class UserDataService {
    * 地点生物申請を保存
    */
   async savePointCreatureProposal(proposal: any): Promise<void> {
-    const propId = proposal.id || doc(collection(firestoreDb, 'point_creature_proposals')).id;
+    const propId = proposal.id || `proppc${Date.now()}`;
     const propRef = doc(firestoreDb, 'point_creature_proposals', propId);
-    const data = { ...proposal, id: propId, updatedAt: new Date().toISOString() };
+    const data = { ...proposal, id: propId, status: 'pending', updatedAt: new Date().toISOString() };
     await setDoc(propRef, data);
     await this.saveMyProposal('point-creature', propId, data);
   }
@@ -529,6 +529,32 @@ export class UserDataService {
     } catch (error) {
       console.error('[UserDataService] Failed to get my proposals:', error);
       return [];
+    }
+  }
+  /**
+   * 管理者用データを強制同期
+   */
+  async syncAdminData(userId: string): Promise<void> {
+    if (!await this.initialize(userId)) return;
+
+    try {
+      console.log('[Sync] Force syncing admin data...');
+      const collections = [
+        { name: 'creature_proposals', type: 'creature' },
+        { name: 'point_proposals', type: 'point' },
+        { name: 'point_creature_proposals', type: 'point-creature' },
+        { name: 'unapproved_reviews', type: 'review' }
+      ];
+
+      for (const col of collections) {
+        const snap = await getDocs(collection(firestoreDb, col.name));
+        for (const doc of snap.docs) {
+          await this.saveAdminProposal(col.type, doc.id, { ...doc.data(), id: doc.id });
+        }
+      }
+      console.log('[Sync] Admin data sync completed.');
+    } catch (error) {
+      console.error('[Sync] Failed to sync admin data:', error);
     }
   }
 }

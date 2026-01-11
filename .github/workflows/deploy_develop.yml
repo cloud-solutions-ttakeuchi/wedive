@@ -34,7 +34,7 @@ jobs:
           # npm自体を最新の安定版に更新してバグを回避
           npm install -g npm@latest
           # ワークスペース全体の依存関係をルートで一括インストール
-          npm ci
+          npm install
       - name: Build shared library
         run: npm run build -w wedive-shared
       - name: Build web application
@@ -73,7 +73,7 @@ jobs:
       - name: Deploy Functions
         run: |
           cp dist/index.html functions/index.html
-          mv dist/index.html dist/_app.html
+
 
           echo "LOG_LEVEL=${{ vars.LOG_LEVEL }}" >> functions/.env
           echo "BASIC_AUTH_USER=${{ vars.BASIC_AUTH_USER }}" >> functions/.env

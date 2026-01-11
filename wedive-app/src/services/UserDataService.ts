@@ -1,4 +1,4 @@
-import { collection, query, getDocs, doc, setDoc, updateDoc, deleteDoc, orderBy, where } from 'firebase/firestore';
+import { collection, query, getDocs, doc, setDoc, updateDoc, deleteDoc, orderBy, where, getDoc } from 'firebase/firestore';
 import * as FileSystem from 'expo-file-system/legacy';
 import { db as firestoreDb } from '../firebase';
 import { DiveLog, User } from '../types';
@@ -36,9 +36,10 @@ export class UserDataService {
     const dbName = `user_${targetUserId}.db`;
 
     // 既に同じユーザーのDBが開いている場合は何もしない
-    if (this.sqliteDb && this.currentUserId === targetUserId) {
-      return true;
-    }
+    // FIX: テーブル追加等があるため、接続済みでも初期化SQL（CREATE IF NOT EXISTS）を通すようにする
+    // if (this.sqliteDb && this.currentUserId === targetUserId) {
+    //   return true;
+    // }
 
     if (this.isInitializing) return false;
     if (!SQLite || !SQLite.openDatabaseAsync) {
@@ -348,9 +349,10 @@ export class UserDataService {
       for (const doc of favSnap.docs) await this.sqliteDb.runAsync('INSERT OR REPLACE INTO my_favorites (creature_id) VALUES (?)', [doc.id]);
 
       // 5. プロフィールの取得
-      const userSnap = await getDocs(query(collection(firestoreDb, 'users'), where('id', '==', userId)));
-      if (!userSnap.empty) {
-        await this.saveSetting('profile', userSnap.docs[0].data());
+      const userDocRef = doc(firestoreDb, 'users', userId);
+      const userDocSnap = await getDoc(userDocRef);
+      if (userDocSnap.exists()) {
+        await this.saveSetting('profile', userDocSnap.data());
       }
 
       console.log('Initial sync completed successfully.');

@@ -2,6 +2,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { app } from '../firebase';
 import { ref, getDownloadURL, getMetadata, getStorage } from 'firebase/storage';
+import { getAuth } from 'firebase/auth';
 import { appDbEngine } from './AppSQLiteEngine';
 import { GzipHelper } from '../utils/GzipHelper';
 import { userDataService } from './UserDataService';
@@ -26,6 +27,10 @@ export class MasterDataSyncService {
    * 同期実行（Firebase Storage メタデータチェック -> DL -> 解凍 -> クリーンアップ）
    */
   static async syncMasterData(): Promise<void> {
+    // 認証状態の初期化完了を待つ（Storageのセキュリティルール対策）
+    const auth = getAuth(app);
+    await auth.authStateReady();
+
     // ローカルDBの存在確認（catchブロックでも使うため先に宣言）
     const sqliteDir = (documentDirectory || '') + 'SQLite/';
     const dbPath = sqliteDir + MASTER_DB_NAME;
@@ -141,7 +146,7 @@ export class MasterDataSyncService {
           id TEXT PRIMARY KEY, point_id TEXT, area_id TEXT, user_id TEXT,
           rating REAL, comment TEXT, created_at TEXT
         );
-        CREATE TABLE IF NOT EXISTS master_agencies (id TEXT PRIMARY KEY, name TEXT);
+        CREATE TABLE IF NOT EXISTS master_agencies (id TEXT PRIMARY KEY, name TEXT, ranks_json TEXT);
       `);
       console.log('[Sync] Local fallback tables created successfully.');
     } catch (e) {

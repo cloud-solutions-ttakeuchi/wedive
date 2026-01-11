@@ -102,7 +102,7 @@ export const ProposalService = {
    * Submit a proposal for a new point.
    */
   async addPointProposal(data: Omit<Point, 'id'>): Promise<string> {
-    const id = `propp_${Date.now()}`;
+    const id = `propp${Date.now()}`;
     const ref = doc(db, 'point_proposals', id);
     await setDoc(ref, sanitizePayload({
       ...data,
@@ -118,7 +118,7 @@ export const ProposalService = {
    * Submit a proposal to update an existing point.
    */
   async updatePointProposal(id: string, diffData: Partial<Point>, submitterId: string): Promise<string> {
-    const propId = `propp_${Date.now()}`;
+    const propId = `propp${Date.now()}`;
     const ref = doc(db, 'point_proposals', propId);
     await setDoc(ref, sanitizePayload({
       targetId: id,
@@ -135,7 +135,7 @@ export const ProposalService = {
    * Submit a proposal for a new creature.
    */
   async addCreatureProposal(data: Omit<Creature, 'id'>): Promise<string> {
-    const id = `propc_${Date.now()}`;
+    const id = `propc${Date.now()}`;
     const ref = doc(db, 'creature_proposals', id);
     await setDoc(ref, sanitizePayload({
       ...data,
@@ -151,7 +151,7 @@ export const ProposalService = {
    * Submit a proposal to update an existing creature.
    */
   async updateCreatureProposal(id: string, diffData: Partial<Creature>, submitterId: string): Promise<string> {
-    const propId = `propc_${Date.now()}`;
+    const propId = `propc${Date.now()}`;
     const ref = doc(db, 'creature_proposals', propId);
     await setDoc(ref, {
       targetId: id,
@@ -168,7 +168,7 @@ export const ProposalService = {
    * Submit a deletion proposal for a point.
    */
   async removePointProposal(id: string, submitterId: string, reason?: string): Promise<string> {
-    const propId = `propp_${Date.now()}`;
+    const propId = `propp${Date.now()}`;
     const ref = doc(db, 'point_proposals', propId);
     await setDoc(ref, {
       targetId: id,
@@ -185,7 +185,7 @@ export const ProposalService = {
    * Submit a deletion proposal for a creature.
    */
   async removeCreatureProposal(id: string, submitterId: string, reason?: string): Promise<string> {
-    const propId = `propc_${Date.now()}`;
+    const propId = `propc${Date.now()}`;
     const ref = doc(db, 'creature_proposals', propId);
     await setDoc(ref, {
       targetId: id,
@@ -208,7 +208,7 @@ export const ProposalService = {
     submitterId: string;
     proposalType?: 'create' | 'delete';
   }): Promise<string> {
-    const id = `proppc_${Date.now()}`;
+    const id = `proppc${Date.now()}`;
     const targetId = `${params.pointId}_${params.creatureId}`;
 
     const proposal: any = sanitizePayload({

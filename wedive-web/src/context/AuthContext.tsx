@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react';
 import { auth, googleProvider, db as firestore } from '../lib/firebase';
 import { signInWithRedirect, signOut, onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, runTransaction } from 'firebase/firestore';
 import type { User } from '../types';
 import { userDataService } from '../services/UserDataService';
 import { AiConciergeService } from '../services/AiConciergeService';
@@ -100,10 +100,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const updateUser = async (userData: Partial<User>) => {
     if (!isAuthenticated || currentUser.id === 'guest') return;
-    const updatedUser = { ...currentUser, ...userData };
-    setCurrentUser(updatedUser);
-    await userDataService.saveSetting('profile', updatedUser);
-    await updateDoc(doc(firestore, 'users', currentUser.id), userData);
+
+    try {
+      await runTransaction(firestore, async (transaction) => {
+        const userRef = doc(firestore, 'users', currentUser.id);
+        const userDoc = await transaction.get(userRef);
+        if (!userDoc.exists()) {
+          throw new Error("User document does not exist!");
+        }
+        transaction.update(userRef, {
+          ...userData,
+          updatedAt: new Date().toISOString()
+        });
+      });
+
+      // Update local state only after successful transaction
+      const updatedUser = { ...currentUser, ...userData };
+      setCurrentUser(updatedUser);
+      await userDataService.saveSetting('profile', updatedUser);
+    } catch (error) {
+      console.error("Failed to update user profile:", error);
+    }
   };
 
   const refreshProfile = async () => {

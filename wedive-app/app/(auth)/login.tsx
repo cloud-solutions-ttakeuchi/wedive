@@ -4,7 +4,7 @@ import { Text, View } from '@/components/Themed';
 import { useRouter, Link } from 'expo-router';
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import { auth, db } from '../../src/firebase';
-import { Mail, Lock, ArrowRight } from 'lucide-react-native';
+import { Mail, Lock, ArrowRight, X } from 'lucide-react-native';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 
 
@@ -17,7 +17,7 @@ export default function LoginScreen() {
   useEffect(() => {
     GoogleSignin.configure({
       webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-      iosClientId: '1066677586396-1avhn8hbahfrc1kmv9rbefi3toacjqn3.apps.googleusercontent.com',
+      iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || '1066677586396-1avhn8hbahfrc1kmv9rbefi3toacjqn3.apps.googleusercontent.com',
       offlineAccess: true,
     });
   }, []);
@@ -100,6 +100,13 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.canGoBack() ? router.back() : router.replace('/')}
+        >
+          <X size={24} color="#64748b" />
+        </TouchableOpacity>
+
         <View style={styles.header}>
           <View style={styles.logoContainer}>
             <Text style={styles.logoText}>WeDive</Text>
@@ -194,6 +201,13 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     padding: 24,
+    paddingTop: Platform.OS === 'ios' ? 60 : 24,
+  },
+  backButton: {
+    alignSelf: 'flex-start',
+    padding: 8,
+    marginLeft: -8,
+    marginBottom: 10,
   },
   header: {
     alignItems: 'center',

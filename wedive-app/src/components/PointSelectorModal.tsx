@@ -41,7 +41,7 @@ export const PointSelectorModal: React.FC<PointSelectorModalProps> = ({
   const points = masterPoints.map(p => ({
     id: p.id,
     name: p.name,
-    name_kana: p.name_kana,
+    nameKana: p.name_kana,
     region: p.region_name || '',
     area: p.area_name || '',
     zone: p.zone_name || '',

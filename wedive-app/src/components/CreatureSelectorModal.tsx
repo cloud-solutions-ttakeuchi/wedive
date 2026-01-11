@@ -41,7 +41,7 @@ export const CreatureSelectorModal: React.FC<CreatureSelectorModalProps> = ({
   const creatures = masterCreatures.map(c => ({
     id: c.id,
     name: c.name,
-    name_kana: c.name_kana,
+    nameKana: c.name_kana,
     category: c.category || '',
     status: 'approved',
   } as unknown as Creature));

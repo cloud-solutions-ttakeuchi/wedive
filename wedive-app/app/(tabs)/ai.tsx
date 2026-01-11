@@ -92,90 +92,89 @@ export default function AIScreen() {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.container}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-      >
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.botIconContainer}
-            onLongPress={handleTestGrant}
-            activeOpacity={0.7}
-          >
-            <Bot size={24} color="#0284c7" />
-          </TouchableOpacity>
-          <View style={{ flex: 1, backgroundColor: 'transparent' }}>
-            <Text style={styles.title}>AIコンシェルジュ</Text>
-            <Text style={styles.status}>Online • Powered by Gemini</Text>
-          </View>
-          {ticketCount !== null && (
-            <View style={styles.ticketBadge}>
-              <Ticket size={14} color="#0284c7" />
-              <Text style={styles.ticketText}>{ticketCount}</Text>
-            </View>
-          )}
-        </View>
-
-        <ScrollView
-          style={styles.chatContainer}
-          contentContainerStyle={styles.scrollContent}
-          ref={scrollViewRef}
-          onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.container}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+    >
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.botIconContainer}
+          onLongPress={handleTestGrant}
+          activeOpacity={0.7}
         >
-          {messages.map((message, index) => (
+          <Bot size={24} color="#0284c7" />
+        </TouchableOpacity>
+        <View style={{ flex: 1, backgroundColor: 'transparent' }}>
+          <Text style={styles.title}>AIコンシェルジュ</Text>
+          <Text style={styles.status}>Online • Powered by Gemini</Text>
+        </View>
+        {ticketCount !== null && (
+          <View style={styles.ticketBadge}>
+            <Ticket size={14} color="#0284c7" />
+            <Text style={styles.ticketText}>{ticketCount}</Text>
+          </View>
+        )}
+      </View>
+
+      <ScrollView
+        style={styles.chatContainer}
+        contentContainerStyle={styles.scrollContent}
+        ref={scrollViewRef}
+        onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+        keyboardDismissMode="on-drag"
+      >
+        {messages.map((message, index) => (
+          <View
+            key={index}
+            style={[
+              styles.messageWrapper,
+              message.role === 'user' ? styles.userMessageWrapper : styles.botMessageWrapper
+            ]}
+          >
             <View
-              key={index}
               style={[
-                styles.messageWrapper,
-                message.role === 'user' ? styles.userMessageWrapper : styles.botMessageWrapper
+                styles.messageBubble,
+                message.role === 'user' ? styles.userBubble : styles.botBubble
               ]}
             >
-              <View
-                style={[
-                  styles.messageBubble,
-                  message.role === 'user' ? styles.userBubble : styles.botBubble
-                ]}
-              >
-                <Text style={[
-                  styles.messageText,
-                  message.role === 'user' ? styles.userMessageText : styles.botMessageText
-                ]}>
-                  {message.content}
-                </Text>
-              </View>
+              <Text style={[
+                styles.messageText,
+                message.role === 'user' ? styles.userMessageText : styles.botMessageText
+              ]}>
+                {message.content}
+              </Text>
             </View>
-          ))}
-          {isLoading && (
-            <View style={styles.botMessageWrapper}>
-              <View style={[styles.messageBubble, styles.botBubble]}>
-                <Text style={styles.botMessageText}>考え中...</Text>
-              </View>
+          </View>
+        ))}
+        {isLoading && (
+          <View style={styles.botMessageWrapper}>
+            <View style={[styles.messageBubble, styles.botBubble]}>
+              <Text style={styles.botMessageText}>考え中...</Text>
             </View>
-          )}
-        </ScrollView>
+          </View>
+        )}
+      </ScrollView>
 
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="AIに相談する..."
-            value={input}
-            onChangeText={setInput}
-            multiline
-            autoFocus={false} // ← 自動フォーカスを確実にオフ
-            blurOnSubmit={true}
-          />
-          <TouchableOpacity
-            style={[styles.sendButton, !input.trim() && styles.sendButtonDisabled]}
-            onPress={handleSend}
-            disabled={!input.trim() || isLoading}
-          >
-            <Send size={20} color="#fff" />
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
-    </TouchableWithoutFeedback>
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder="AIに相談する..."
+          value={input}
+          onChangeText={setInput}
+          multiline
+          autoFocus={false} // ← 自動フォーカスを確実にオフ
+          blurOnSubmit={true}
+        />
+        <TouchableOpacity
+          style={[styles.sendButton, !input.trim() && styles.sendButtonDisabled]}
+          onPress={handleSend}
+          disabled={!input.trim() || isLoading}
+        >
+          <Send size={20} color="#fff" />
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 
