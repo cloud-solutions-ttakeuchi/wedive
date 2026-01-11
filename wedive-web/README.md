@@ -113,6 +113,7 @@ npm install --save-optional --os=linux --libc=musl --cpu=x64
 npm install --save-optional --os=linux --libc=glibc --cpu=arm64
 npm install @tailwindcss/oxide-linux-x64-gnu --save-optional
 npm install --save-optional --os=linux --os=darwin --os=win32 --os=android --os=freebsd --cpu=x64 --cpu=arm64 --cpu=arm
+npm install --save-optional lightningcss-linux-x64-gnu@1.30.2 lightningcss-linux-arm64-gnu@1.30.2 lightningcss-linux-x64-musl@1.30.2
 
 # プロジェクトルートに作成されるため
 cp ../package-lock.json package-lock.json
