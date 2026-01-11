@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
@@ -325,11 +325,29 @@ export const PointReviewStats: React.FC<PointReviewStatsProps> = ({ point, revie
                 <MessageSquare size={32} />
               </div>
               <p className="font-black text-slate-400">まだレビューはありません</p>
+              <Link
+                to={`/add-review/${point.id}`}
+                className="mt-4 flex items-center gap-2 px-8 py-3 bg-sky-500 hover:bg-sky-400 text-white rounded-full font-bold shadow-xl shadow-sky-200 transition-all transform hover:scale-105 active:scale-95 text-sm"
+              >
+                <Pencil size={18} />
+                最初のレビューを書く
+              </Link>
             </div>
           ) : (
-            sortedReviews.map(review => (
-              <ReviewCard key={review.id} review={review} />
-            ))
+            <>
+              {sortedReviews.map(review => (
+                <ReviewCard key={review.id} review={review} />
+              ))}
+              <div className="flex justify-center mt-8">
+                <Link
+                  to={`/add-review/${point.id}`}
+                  className="flex items-center gap-2 px-8 py-3 bg-white text-slate-600 border border-slate-200 hover:border-sky-300 hover:text-sky-500 rounded-full font-bold shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-1 active:scale-95 text-sm"
+                >
+                  <Pencil size={18} />
+                  レビューを書く
+                </Link>
+              </div>
+            </>
           )}
         </div>
       </section>
