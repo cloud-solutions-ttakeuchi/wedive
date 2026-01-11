@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "3941072f-494b-42ae-9595-8c46f79170d8"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.wedive.wedive",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    }
+  }
+}
