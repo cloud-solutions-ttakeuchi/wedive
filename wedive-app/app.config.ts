@@ -34,15 +34,15 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   const associatedIosClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
 
   // Determine iOS URL Scheme: specific var -> derived from client ID -> dev fallback
+  // Determine iOS URL Scheme: derived from client ID -> dev fallback
   const getIosUrlScheme = (clientId: string) => {
-    if (process.env.EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME) {
-      return process.env.EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME;
-    }
     // Attempt to derive scheme from Client ID (reverse DNS for Google IDs)
     // Client ID: XXXXX.apps.googleusercontent.com -> Scheme: com.googleusercontent.apps.XXXXX
-    const match = clientId.match(/^([^.]+)\.apps\.googleusercontent\.com$/);
-    if (match && match[1]) {
-      return `com.googleusercontent.apps.${match[1]}`;
+    if (clientId) {
+      const match = clientId.match(/^([^.]+)\.apps\.googleusercontent\.com$/);
+      if (match && match[1]) {
+        return `com.googleusercontent.apps.${match[1]}`;
+      }
     }
     return "com.googleusercontent.apps.1066677586396-1avhn8hbahfrc1kmv9rbefi3toacjqn3";
   };
