@@ -101,6 +101,11 @@ The following variables can be set in GitHub Actions Variables or Firebase Confi
 ```bash
 # Install dependencies
 npm install
+
+# Important: To avoid CI failures on Linux (GitHub Actions), 
+# ensure package-lock.json includes dependencies for both macOS and Linux.
+# Run this command when adding/updating packages:
+npm install --os=linux --os=darwin --cpu=x64 --cpu=arm64
 ```
 
 ### Run Locally
