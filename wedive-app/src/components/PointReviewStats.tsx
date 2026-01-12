@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
   },
   metricsList: {
     flex: 1,
-    paddingLeft: 20,
+    paddingLeft: 32, // チャートとの干渉を防ぐためパディングを増やす
   },
   visBox: {
     marginBottom: 20,
@@ -307,10 +307,9 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   visValueRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 8,
-    flexWrap: 'wrap',
+    flexDirection: 'column', // 横並びから縦並びに変更して重なりを回避
+    alignItems: 'flex-start',
+    gap: 4,
   },
   visValue: {
     fontSize: 24,
