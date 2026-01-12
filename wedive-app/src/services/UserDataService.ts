@@ -297,6 +297,42 @@ export class UserDataService {
   }
 
   /**
+   * ログの差分同期
+   */
+  async syncLogs(userId: string): Promise<void> {
+    const isAvailable = await this.initialize(userId);
+    if (!isAvailable || !this.sqliteDb) return;
+
+    try {
+      const lastSync = await this.getSetting<string>('last_log_sync_at');
+      // 日付比較のための文字列生成（ISO形式）
+      // FirestoreのupdatedAtはStringとして保存されている前提
+      const lastSyncIso = lastSync || '1970-01-01T00:00:00.000Z';
+
+      console.log(`[Sync] Checking for logs updated after: ${lastSyncIso}`);
+
+      const logsRef = collection(firestoreDb, 'users', userId, 'logs');
+      const q = query(logsRef, where('updatedAt', '>', lastSyncIso));
+
+      const snapshot = await getDocs(q);
+
+      if (!snapshot.empty) {
+        console.log(`[Sync] Found ${snapshot.size} logs to update.`);
+        for (const doc of snapshot.docs) {
+          const log = { id: doc.id, ...doc.data() } as DiveLog;
+          await this.saveLog(userId, log, true);
+        }
+      }
+
+      // 同期完了時刻を保存
+      await this.saveSetting('last_log_sync_at', new Date().toISOString());
+
+    } catch (error) {
+      console.error('[Sync] Log sync failed:', error);
+    }
+  }
+
+  /**
    * 初回同期：SQLiteが空の場合にFirestoreから全件取得
    */
   async syncInitialData(userId: string): Promise<void> {

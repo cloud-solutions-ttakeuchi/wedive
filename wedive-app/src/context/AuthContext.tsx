@@ -60,6 +60,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           await aiConciergeService.grantDailyTicket(fbUser.uid);
           await aiConciergeService.syncTickets(fbUser.uid);
 
+          // 3.5. ログの差分同期
+          await userDataService.syncLogs(fbUser.uid);
+
           // 4. 常に最新の SQLite からデータをロード
           const [localLogs, localProfile] = await Promise.all([
             userDataService.getLogs(),
