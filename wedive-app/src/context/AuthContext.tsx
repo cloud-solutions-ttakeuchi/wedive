@@ -54,7 +54,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           await userDataService.cleanupOtherUsersData(fbUser.uid);
 
           // 2. 必要に応じた初回同期（Firestore -> SQLite）
-          await userDataService.syncInitialData(fbUser.uid);
+          // Issue #146: ログインの度にデータを同期する仕様のため、force=true で実行
+          await userDataService.syncInitialData(fbUser.uid, true);
 
           // 3. AIコンシェルジュチケットの付与チェックと同期
           await aiConciergeService.grantDailyTicket(fbUser.uid);
