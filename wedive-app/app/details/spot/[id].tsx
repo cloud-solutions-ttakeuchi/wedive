@@ -286,7 +286,7 @@ export default function SpotDetailScreen() {
           <View style={styles.statsGrid}>
             <StatItem icon={<Droplets size={20} color="#0ea5e9" />} label="DEPTH" value={`${point.maxDepth || '-'}m`} color="#e0f2fe" />
             <StatItem icon={<Wind size={20} color="#22c55e" />} label="CURRENT" value={point.current || 'None'} color="#f0fdf4" />
-            <StatItem icon={<Mountain size={20} color="#d946ef" />} label="TERRAIN" value={point.topography?.[0] || 'Natural'} color="#fdf4ff" />
+            <StatItem icon={<Mountain size={20} color="#d946ef" />} label="TERRAIN" value={point.topography?.join(' / ') || 'Natural'} color="#fdf4ff" />
             <StatItem icon={<Anchor size={20} color="#f97316" />} label="ENTRY" value={point.entryType || 'Boat'} color="#fff7ed" />
           </View>
 
