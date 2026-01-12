@@ -68,6 +68,10 @@ export const AdminProposalDetailModal: React.FC<AdminProposalDetailModalProps> =
       // If the proposed value is undefined, it means "touch nothing", so no change.
       if (newVal === undefined) return false;
 
+      // SAFETY: If update mode, ignore empty arrays in proposal to prevent accidental deletion.
+      // (Unless we explicity want to support clearing arrays via proposal, but user feedback suggests this is dangerous)
+      if (Array.isArray(newVal) && newVal.length === 0) return false;
+
       // Compare values (simple equality for now, could be improved for arrays/objects)
       return JSON.stringify(newVal) !== JSON.stringify(oldVal);
     });

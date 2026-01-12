@@ -268,7 +268,7 @@ export const AdminProposalsPage = () => {
                     <div className="w-32 h-32 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden border border-gray-100">
                       <img src={isUpdate && c.diffData?.imageUrl ? c.diffData.imageUrl : c.imageUrl} className="w-full h-full object-cover" alt={c.name} />
                     </div>
-                    <div className="flex-1 py-1">
+                    <div className="flex-1 py-1 min-w-0">
                       <div className="flex justify-between items-start">
                         <h3 className="text-lg font-bold text-gray-900">
                           {(isUpdate || isDelete) ? (creatures.find((x: any) => x.id === c.targetId)?.name || c.name || 'Unknown') : c.name}
@@ -345,7 +345,7 @@ export const AdminProposalsPage = () => {
                       <div className="w-20 h-20 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden border border-gray-100">
                         <img src={targetCreature?.imageUrl} className="w-full h-full object-cover" alt={targetCreature?.name} />
                       </div>
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start">
                           <h3 className="text-lg font-bold text-gray-900">
                             {targetCreature?.name} <span className="text-sm font-normal text-gray-400">at</span> {targetPoint?.name}
@@ -512,7 +512,7 @@ export const AdminProposalsPage = () => {
                   const targetPoint = points.find((p: any) => p.id === rv.pointId);
                   return (
                     <div key={rv.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row gap-6">
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-4">
                           <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100">
                             {rv.userProfileImage ? <img src={rv.userProfileImage} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-400 font-bold">{rv.userName.charAt(0)}</div>}
