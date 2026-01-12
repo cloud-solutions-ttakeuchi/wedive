@@ -198,7 +198,7 @@ export const PointDetailPage = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
                   <SpecItem icon={<Droplets />} label="最大水深" value={`${point.maxDepth}m`} color="sky" />
                   <SpecItem icon={<Wind />} label="流れ" value={point.current} color="indigo" />
-                  <SpecItem icon={<Mountain />} label="地形" value={point.topography[0]} color="emerald" />
+                  <SpecItem icon={<Mountain />} label="地形" value={point.topography.join(' / ')} color="emerald" />
                   <SpecItem icon={<MapPin />} label="ポイント種別" value={point.entryType} color="rose" />
                 </div>
               </div>
