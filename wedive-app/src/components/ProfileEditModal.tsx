@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Alert, SafeAreaView, Platform } from 'react-native';
-import { X, Check, Award, Star, Activity, User as UserIcon } from 'lucide-react-native';
+import { X, Check, Award, Star, Activity, User as UserIcon, RefreshCw } from 'lucide-react-native';
 import { useAgencies } from '../hooks/useAgencies';
-import { User, AgencyMaster } from 'wedive-shared';
+import { User, AgencyMaster } from '../types';
+import { userDataService } from '../services/UserDataService';
 
 type Props = {
   visible: boolean;
@@ -136,6 +137,41 @@ export const ProfileEditModal = ({ visible, onClose, initialData, onSave }: Prop
               </ScrollView>
             </View>
           </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>高度な設定</Text>
+            <TouchableOpacity
+              style={styles.dangerBtn}
+              onPress={async () => {
+                if (!initialData?.id) return;
+                Alert.alert(
+                  'データの再同期',
+                  'サーバーからデータを強制的に再取得します。この操作は時間がかかる場合があります。',
+                  [
+                    { text: 'キャンセル', style: 'cancel' },
+                    {
+                      text: '実行する',
+                      onPress: async () => {
+                        setSaving(true);
+                        try {
+                          await userDataService.syncInitialData(initialData.id, true);
+                          await userDataService.syncLogs(initialData.id);
+                          Alert.alert('完了', 'データの同期が完了しました。');
+                        } catch (e: any) {
+                          Alert.alert('エラー', `同期に失敗しました: ${e.message}`);
+                        } finally {
+                          setSaving(false);
+                        }
+                      }
+                    }
+                  ]
+                );
+              }}
+            >
+              <RefreshCw size={20} color="#64748b" />
+              <Text style={styles.dangerBtnText}>データを強制再取得する</Text>
+            </TouchableOpacity>
+          </View>
         </ScrollView>
       </SafeAreaView>
     </Modal>
@@ -243,5 +279,18 @@ const styles = StyleSheet.create({
   },
   chipTextActive: {
     color: '#fff',
+  },
+  dangerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f1f5f9',
+    padding: 16,
+    borderRadius: 12,
+    gap: 12,
+  },
+  dangerBtnText: {
+    color: '#64748b',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });

@@ -202,8 +202,16 @@ export class UserDataService {
    * ログアウト処理
    */
   async logout(): Promise<void> {
-    this.sqliteDb = null;
-    this.currentUserId = null;
+    try {
+      // Issue #146: ログアウト時に端末内のデータを削除する
+      // これにより次回ログイン時に確実に最新データを取得できる
+      await this.clearUserData();
+    } catch (e) {
+      console.error('Failed to clear data on logout:', e);
+    } finally {
+      this.sqliteDb = null;
+      this.currentUserId = null;
+    }
   }
 
   /**
@@ -335,16 +343,18 @@ export class UserDataService {
   /**
    * 初回同期：SQLiteが空の場合にFirestoreから全件取得
    */
-  async syncInitialData(userId: string): Promise<void> {
+  async syncInitialData(userId: string, force = false): Promise<void> {
     const isAvailable = await this.initialize(userId);
     if (!isAvailable) return;
 
     try {
-      // プロフィールの有無で初期同期済みか判断
-      const localProfile = await this.getSetting<User>('profile');
-      if (localProfile) {
-        console.log('[Sync] Local data exists for this user. Skipping initial sync.');
-        return;
+      // プロフィールの有無で初期同期済みか判断 (強制フラグがある場合は無視)
+      if (!force) {
+        const localProfile = await this.getSetting<User>('profile');
+        if (localProfile) {
+          console.log('[Sync] Local data exists for this user. Skipping initial sync.');
+          return;
+        }
       }
 
       console.log('Starting initial sync from Firestore for user:', userId);

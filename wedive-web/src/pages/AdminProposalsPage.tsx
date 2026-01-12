@@ -419,7 +419,7 @@ export const AdminProposalsPage = () => {
                       <div className="w-32 h-32 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden border border-gray-100">
                         <img src={isUpdate && p.diffData?.imageUrl ? p.diffData.imageUrl : p.imageUrl} className="w-full h-full object-cover" alt={p.name} />
                       </div>
-                      <div className="flex-1 py-1">
+                      <div className="flex-1 py-1 min-w-0">
                         <div className="flex justify-between items-start">
                           <h3 className="text-lg font-bold text-gray-900">
                             {(isUpdate || isDelete) ? (points.find((x: any) => x.id === tid || x.id.replace(/_/g, '') === tid.replace(/_/g, ''))?.name || p.name || 'Unknown') : p.name}

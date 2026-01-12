@@ -55,12 +55,19 @@ export const AdminProposalDetailModal: React.FC<AdminProposalDetailModalProps> =
       return Object.keys(displayData).filter(k => !ignoredKeys.includes(k) && displayData[k] !== undefined && displayData[k] !== null && displayData[k] !== '');
     }
 
-    // For update mode, show keys that differ or are in diffData
-    const keys = new Set([...Object.keys(displayData), ...Object.keys(originalData)]);
+    // For update mode:
+    // Only verify keys that are actually present in the proposal (displayData).
+    // If a key is undefined in displayData, it means "no change proposed", not "delete this value".
+    const keys = new Set(Object.keys(displayData));
+
     return Array.from(keys).filter(key => {
       if (ignoredKeys.includes(key)) return false;
       const newVal = displayData[key];
       const oldVal = originalData[key];
+
+      // If the proposed value is undefined, it means "touch nothing", so no change.
+      if (newVal === undefined) return false;
+
       // Compare values (simple equality for now, could be improved for arrays/objects)
       return JSON.stringify(newVal) !== JSON.stringify(oldVal);
     });
