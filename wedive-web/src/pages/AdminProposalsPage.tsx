@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { Check, X, MapPin, Fish, Database, Award, Star } from 'lucide-react';
+import { Check, X, MapPin, Fish, Database, Award, Star, Eye } from 'lucide-react';
 import clsx from 'clsx';
 import { seedFirestore } from '../utils/seeder';
 import { TRUST_RANKS } from '../constants/masterData';
+import { AdminProposalDetailModal } from '../components/AdminProposalDetailModal';
 
 export const AdminProposalsPage = () => {
   const navigate = useNavigate();
@@ -25,6 +26,7 @@ export const AdminProposalsPage = () => {
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [isSeeding, setIsSeeding] = useState(false);
   const [activeCategory, setActiveCategory] = useState<'creature' | 'point' | 'rel' | 'review'>('creature');
+  const [selectedProposal, setSelectedProposal] = useState<any | null>(null);
 
   // ハンドラを統合
   const handleApproveRel = async (item: any) => {
@@ -296,6 +298,12 @@ export const AdminProposalsPage = () => {
                     </div>
                     <div className="flex flex-col gap-2 justify-center min-w-[140px]">
                       <button
+                        onClick={() => setSelectedProposal(c)}
+                        className="flex items-center justify-center gap-2 bg-gray-100 text-gray-600 px-4 py-2 rounded-lg font-bold hover:bg-gray-200 transition-colors text-sm"
+                      >
+                        <Eye size={14} /> 詳細
+                      </button>
+                      <button
                         onClick={() => handleApprove('creature', c)}
                         disabled={processingId === c.id}
                         className="flex items-center justify-center gap-2 bg-green-500 text-white px-4 py-2.5 rounded-lg font-bold hover:bg-green-600 transition-colors disabled:opacity-50 shadow-sm"
@@ -355,6 +363,12 @@ export const AdminProposalsPage = () => {
                         {getSubmitterInfo(req.submitterId)}
                       </div>
                       <div className="flex flex-col gap-2 justify-center min-w-[140px]">
+                        <button
+                          onClick={() => setSelectedProposal(req)}
+                          className="flex items-center justify-center gap-2 bg-gray-100 text-gray-600 px-4 py-2 rounded-lg font-bold hover:bg-gray-200 transition-colors text-sm"
+                        >
+                          <Eye size={14} /> 詳細
+                        </button>
                         <button
                           onClick={() => handleApproveRel(req)}
                           disabled={processingId === req.id}
@@ -441,6 +455,12 @@ export const AdminProposalsPage = () => {
                       </div>
                       <div className="flex flex-col gap-2 justify-center min-w-[140px]">
                         <button
+                          onClick={() => setSelectedProposal(p)}
+                          className="flex items-center justify-center gap-2 bg-gray-100 text-gray-600 px-4 py-2 rounded-lg font-bold hover:bg-gray-200 transition-colors text-sm"
+                        >
+                          <Eye size={14} /> 詳細
+                        </button>
+                        <button
                           onClick={() => handleApprove('point', p)}
                           disabled={processingId === p.id}
                           className="flex items-center justify-center gap-2 bg-green-500 text-white px-4 py-2.5 rounded-lg font-bold hover:bg-green-600 transition-colors disabled:opacity-50 shadow-sm"
@@ -522,6 +542,12 @@ export const AdminProposalsPage = () => {
 
                       <div className="flex flex-col gap-2 justify-center min-w-[140px]">
                         <button
+                          onClick={() => setSelectedProposal(rv)}
+                          className="flex items-center justify-center gap-2 bg-gray-100 text-gray-600 px-4 py-2 rounded-lg font-bold hover:bg-gray-200 transition-colors text-sm"
+                        >
+                          <Eye size={14} /> 詳細
+                        </button>
+                        <button
                           onClick={() => handleApproveReview(rv.id)}
                           disabled={processingId === rv.id}
                           className="flex items-center justify-center gap-2 bg-green-500 text-white px-4 py-2.5 rounded-lg font-bold hover:bg-green-600 transition-colors disabled:opacity-50 shadow-sm"
@@ -550,6 +576,26 @@ export const AdminProposalsPage = () => {
           </section>
         )}
       </div>
+
+      <AdminProposalDetailModal
+        isOpen={!!selectedProposal}
+        onClose={() => setSelectedProposal(null)}
+        proposal={selectedProposal}
+        type={activeCategory}
+        onApprove={(item) => {
+          if (activeCategory === 'review') handleApproveReview(item.id);
+          else if (activeCategory === 'rel') handleApproveRel(item);
+          else handleApprove(activeCategory as 'creature' | 'point', item);
+          setSelectedProposal(null);
+        }}
+        onReject={(id) => {
+          if (activeCategory === 'review') handleRejectReview(id);
+          else if (activeCategory === 'rel') handleRejectRel(id);
+          else handleReject(activeCategory as 'creature' | 'point', id);
+          setSelectedProposal(null);
+        }}
+        processingId={processingId}
+      />
     </div>
   );
 };
