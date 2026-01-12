@@ -158,7 +158,7 @@ export default function SearchScreen() {
     >
       <View style={{ position: 'relative' }}>
         <ImageWithFallback
-          source={item.imageUrl ? { uri: item.imageUrl } : (item.images && item.images.length > 0 ? { uri: item.images[0] } : null)}
+          source={item.imageUrl ? { uri: item.imageUrl } : null}
           fallbackSource={NO_IMAGE_POINT}
           style={styles.spotImage}
         />
