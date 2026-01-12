@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, TextInput, TouchableOpacity, FlatList, Dimensions, ActivityIndicator, Platform } from 'react-native';
+import { StyleSheet, TextInput, TouchableOpacity, FlatList, Dimensions, ActivityIndicator, Platform, BackHandler } from 'react-native';
 import { Text, View } from '@/components/Themed';
-import { Search as SearchIcon, MapPin, Star, ChevronRight, Anchor, BookOpen, Clock, Droplets, Plus as PlusIcon } from 'lucide-react-native';
+import { Search as SearchIcon, MapPin, Star, ChevronRight, Anchor, BookOpen, Clock, Plus as PlusIcon, ArrowLeft } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Point, Creature } from '../../src/types';
 import { ImageWithFallback } from '../../src/components/ImageWithFallback';
 import { useMasterSearch } from '../../src/hooks/useMasterSearch';
+import { masterDataService } from '../../src/services/MasterDataService';
 
 const { width } = Dimensions.get('window');
 
@@ -13,6 +14,13 @@ const NO_IMAGE_POINT = require('../../assets/images/no-image-point.png');
 const NO_IMAGE_CREATURE = require('../../assets/images/no-image-creature.png');
 
 type SearchMode = 'spots' | 'creatures' | 'logs';
+type NavLevel = 'root' | 'region' | 'zone' | 'area';
+
+interface NavItem {
+  type: NavLevel;
+  id?: string;
+  name: string;
+}
 
 export default function SearchScreen() {
   const router = useRouter();
@@ -20,7 +28,12 @@ export default function SearchScreen() {
   const [mode, setMode] = useState<SearchMode>((tab as SearchMode) || 'spots');
 
   // 爆速検索フック！
-  const { keyword, setKeyword, points: masterPoints, creatures: masterCreatures, isLoading } = useMasterSearch();
+  const { keyword, setKeyword, points: masterPoints, creatures: masterCreatures, isLoading: isSearchLoading } = useMasterSearch();
+
+  // 階層ナビゲーション用State
+  const [navStack, setNavStack] = useState<NavItem[]>([{ type: 'root', name: 'エリア選択' }]);
+  const [hierarchyData, setHierarchyData] = useState<any[]>([]);
+  const [isHierarchyLoading, setIsHierarchyLoading] = useState(false);
 
   useEffect(() => {
     if (tab && ['spots', 'creatures', 'logs'].includes(tab as string)) {
@@ -28,7 +41,53 @@ export default function SearchScreen() {
     }
   }, [tab]);
 
-  // マスターデータをUI用のPoint型にマッピング
+  // Android Back Button handling for custom navigation
+  useEffect(() => {
+    const backAction = () => {
+      if (!keyword && mode === 'spots' && navStack.length > 1) {
+        setNavStack(prev => prev.slice(0, -1));
+        return true;
+      }
+      return false;
+    };
+
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+    return () => backHandler.remove();
+  }, [keyword, mode, navStack]);
+
+  // 階層データのロード (検索ワードがない時のみ)
+  useEffect(() => {
+    if (mode === 'spots' && !keyword) {
+      const current = navStack[navStack.length - 1];
+      const loadData = async () => {
+        setIsHierarchyLoading(true);
+        try {
+          let data: any[] = [];
+          if (current.type === 'root') {
+            data = await masterDataService.getRegions();
+          } else if (current.type === 'region') {
+            data = await masterDataService.getZones(current.id);
+          } else if (current.type === 'zone') {
+            data = await masterDataService.getAreas(current.id);
+          } else if (current.type === 'area') {
+            // ポイント一覧
+            const points = await masterDataService.getPointsByArea(current.id!);
+            // マッピング済みのPointが返ってくる
+            data = points;
+          }
+          setHierarchyData(data);
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setIsHierarchyLoading(false);
+        }
+      };
+      loadData();
+    }
+  }, [navStack, mode, keyword]);
+
+
+  // マスターデータをUI用のPoint型にマッピング (検索時)
   const filteredSpots = masterPoints.map(p => ({
     ...p,
     region: (p as any).region_name || '',
@@ -37,11 +96,60 @@ export default function SearchScreen() {
     status: 'approved',
   } as unknown as Point));
 
-  // マスターデータをUI用のCreature型にマッピング
   const filteredCreatures = masterCreatures.map(c => ({
     ...c,
     status: 'approved',
   } as unknown as Creature));
+
+  const handleNavBack = () => {
+    if (navStack.length > 1) {
+      setNavStack(prev => prev.slice(0, -1));
+    }
+  };
+
+  const handleItemPress = (item: any) => {
+    const current = navStack[navStack.length - 1];
+    if (current.type === 'root') {
+      setNavStack([...navStack, { type: 'region', id: item.id, name: item.name }]);
+    } else if (current.type === 'region') {
+      setNavStack([...navStack, { type: 'zone', id: item.id, name: item.name }]);
+    } else if (current.type === 'zone') {
+      setNavStack([...navStack, { type: 'area', id: item.id, name: item.name }]);
+    } else if (current.type === 'area') {
+      // ポイント詳細へ
+      router.push(`/details/spot/${item.id}`);
+    }
+  };
+
+  const renderNavHeader = () => {
+    if (Boolean(keyword) || mode !== 'spots' || navStack.length === 1) return null;
+    return (
+      <View style={styles.navHeader}>
+        <TouchableOpacity onPress={handleNavBack} style={styles.navBackBtn}>
+          <ArrowLeft size={20} color="#1e293b" />
+          <Text style={styles.navBackText}>{navStack[navStack.length - 2].name}</Text>
+        </TouchableOpacity>
+        <Text style={styles.navTitle} numberOfLines={1}>
+          {navStack[navStack.length - 1].name}
+        </Text>
+      </View>
+    );
+  };
+
+  const renderHierarchyItem = ({ item }: { item: any }) => {
+    // 最終階層（ポイント）の場合
+    if (navStack[navStack.length - 1].type === 'area') {
+      return renderSpotItem({ item });
+    }
+
+    // 階層メニューアイテム
+    return (
+      <TouchableOpacity style={styles.navItem} onPress={() => handleItemPress(item)}>
+        <Text style={styles.navItemText}>{item.name}</Text>
+        <ChevronRight size={20} color="#cbd5e1" />
+      </TouchableOpacity>
+    );
+  };
 
   const renderSpotItem = ({ item }: { item: Point }) => (
     <TouchableOpacity
@@ -70,7 +178,7 @@ export default function SearchScreen() {
         </View>
         <View style={styles.locationRow}>
           <MapPin size={12} color="#64748b" />
-          <Text style={styles.locationText}>{item.region} • {item.area}</Text>
+          <Text style={styles.locationText}>{item.region || navStack.find(n => n.type === 'region')?.name} • {item.area || navStack.find(n => n.type === 'area')?.name}</Text>
         </View>
         <View style={styles.featuresRow}>
           {item.features && item.features.map((f, i) => (
@@ -121,6 +229,34 @@ export default function SearchScreen() {
     </View>
   );
 
+  // 表示データの切り替え
+  let dataToRender: any[] = [];
+  let isLoading = isSearchLoading;
+  let ItemRenderer: any = renderSpotItem;
+
+  if (Boolean(keyword)) {
+    // 検索モード
+    if (mode === 'spots') {
+      dataToRender = filteredSpots;
+      ItemRenderer = renderSpotItem;
+    } else if (mode === 'creatures') {
+      dataToRender = filteredCreatures;
+      ItemRenderer = renderCreatureItem;
+    }
+  } else {
+    // 階層ブラウズモード (spotsのみ)
+    if (mode === 'spots') {
+      isLoading = isHierarchyLoading;
+      dataToRender = hierarchyData;
+      ItemRenderer = renderHierarchyItem;
+    } else if (mode === 'creatures') {
+      // 生物はまだ階層がないので空または検索推奨
+      // 必要なら生物分類階層を実装するが、今回はPointのみ
+      isLoading = false;
+      dataToRender = [];
+    }
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -132,7 +268,7 @@ export default function SearchScreen() {
               onPress={() => router.push(mode === 'spots' ? '/details/spot/add' : '/details/creature/add')}
             >
               <PlusIcon size={20} color="#0ea5e9" />
-              <Text style={styles.headerAddText}>{mode === 'spots' ? 'スポット登録' : '生物登録'}</Text>
+              <Text style={styles.headerAddText}>{mode === 'spots' ? 'ポイント登録' : '生物登録'}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -140,7 +276,7 @@ export default function SearchScreen() {
           <SearchIcon size={20} color="#94a3b8" />
           <TextInput
             style={styles.input}
-            placeholder={mode === 'spots' ? "スポットを検索..." : mode === 'creatures' ? "生物を検索..." : "ログを検索..."}
+            placeholder={mode === 'spots' ? "ポイントを検索..." : mode === 'creatures' ? "生物を検索..." : "ログを検索..."}
             value={keyword || ''}
             onChangeText={setKeyword}
             placeholderTextColor="#94a3b8"
@@ -152,7 +288,7 @@ export default function SearchScreen() {
             onPress={() => setMode('spots')}
           >
             <MapPin size={16} color={mode === 'spots' ? '#fff' : '#64748b'} />
-            <Text style={[styles.modeText, mode === 'spots' && styles.activeModeText]}>スポット</Text>
+            <Text style={[styles.modeText, mode === 'spots' && styles.activeModeText]}>ポイント</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.modeBtn, mode === 'creatures' && styles.activeModeBtn]}
@@ -171,26 +307,32 @@ export default function SearchScreen() {
         </View>
       </View>
 
+      {renderNavHeader()}
+
       {isLoading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color="#0ea5e9" />
         </View>
       ) : (
         <FlatList
-          data={(mode === 'spots' ? filteredSpots : mode === 'creatures' ? filteredCreatures : []) as any[]}
-          renderItem={(mode === 'spots' ? renderSpotItem : mode === 'creatures' ? renderCreatureItem : renderLogItem) as any}
+          data={dataToRender}
+          renderItem={dataToRender.length > 0 ? ItemRenderer : () => null}
           keyExtractor={item => item.id || Math.random().toString()}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>見つかりませんでした</Text>
+              <Text style={styles.emptyText}>
+                {mode === 'spots' && !keyword && navStack.length === 1
+                  ? 'エリアデータが見つかりません'
+                  : '見つかりませんでした'}
+              </Text>
               {mode !== 'logs' && (
                 <TouchableOpacity
                   style={styles.addProposalBtn}
                   onPress={() => router.push(mode === 'spots' ? '/details/spot/add' : '/details/creature/add')}
                 >
                   <Text style={styles.addProposalText}>
-                    新しい{mode === 'spots' ? 'スポット' : '生物'}を登録する
+                    新しい{mode === 'spots' ? 'ポイント' : '生物'}を登録する
                   </Text>
                 </TouchableOpacity>
               )}
@@ -213,6 +355,44 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#f1f5f9',
+  },
+  navHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+    backgroundColor: '#f8fafc',
+  },
+  navBackBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  navBackText: {
+    color: '#64748b',
+    fontSize: 14,
+    marginLeft: 4,
+  },
+  navTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1e293b',
+    flex: 1,
+  },
+  navItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  navItemText: {
+    fontSize: 16,
+    color: '#334155',
   },
   title: {
     fontSize: 28,

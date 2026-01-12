@@ -210,6 +210,135 @@ export class MasterDataService extends BaseMasterDataService {
     }
     return [];
   }
+
+  /**
+   * 地域一覧を取得
+   */
+  async getRegions(): Promise<any[]> {
+    if (await this.initialize()) {
+      try {
+        // master_geography から取得（Web版と同様）
+        const res = await appDbEngine.getAllAsync(`
+          SELECT DISTINCT
+            region_id as id,
+            region_name as name
+          FROM master_geography
+          WHERE (region_status IS NULL OR region_status != 'rejected')
+          ORDER BY region_id
+        `);
+        if (res.length > 0) return res;
+      } catch (e: any) {
+        // master_geography がない場合のフォールバック: master_points から抽出
+        if (e.message?.includes('no such table')) {
+          console.warn('[MasterData] master_geography not found, falling back to master_points distinct.');
+          try {
+            const res = await appDbEngine.getAllAsync(`
+              SELECT DISTINCT region_name as name FROM master_points WHERE region_name IS NOT NULL AND region_name != ''
+            `);
+            // IDがないのでnameをIDにする
+            return res.map((r: any) => ({ id: r.name, name: r.name }));
+          } catch (e2) {
+            console.error('getRegions fallback failed:', e2);
+          }
+        } else {
+          console.error('getRegions failed:', e);
+        }
+      }
+    }
+    return [];
+  }
+
+  /**
+   * ゾーン一覧を取得
+   */
+  async getZones(regionId?: string): Promise<any[]> {
+    if (await this.initialize()) {
+      try {
+        let sql = `
+          SELECT DISTINCT
+            zone_id as id,
+            zone_name as name,
+            region_id as regionId
+          FROM master_geography
+          WHERE (zone_status IS NULL OR zone_status != 'rejected')
+        `;
+        const params: any[] = [];
+        if (regionId) {
+          sql += ' AND region_id = ?';
+          params.push(regionId);
+        }
+        sql += ' ORDER BY zone_id';
+
+        const res = await appDbEngine.getAllAsync<any>(sql, params);
+        if (res.length > 0) return res.map(r => ({ ...r, parentId: r.regionId }));
+      } catch (e: any) {
+        console.error('getZones failed:', e);
+      }
+    }
+    return [];
+  }
+
+  /**
+   * エリア一覧を取得
+   */
+  async getAreas(zoneId?: string): Promise<any[]> {
+    if (await this.initialize()) {
+      try {
+        let sql = `
+          SELECT DISTINCT
+            area_id as id,
+            area_name as name,
+            zone_id as zoneId
+          FROM master_geography
+          WHERE (area_status IS NULL OR area_status != 'rejected')
+        `;
+        const params: any[] = [];
+        if (zoneId) {
+          sql += ' AND zone_id = ?';
+          params.push(zoneId);
+        }
+        sql += ' ORDER BY area_id';
+
+        const res = await appDbEngine.getAllAsync<any>(sql, params);
+        if (res.length > 0) return res.map(r => ({ ...r, parentId: r.zoneId }));
+      } catch (e: any) {
+        console.error('getAreas failed:', e);
+      }
+    }
+    return [];
+  }
+
+  /**
+   * エリアIDからポイント一覧を取得
+   */
+  async getPointsByArea(areaId: string): Promise<Point[]> {
+    if (await this.initialize()) {
+      try {
+        // master_points には area_id カラムがある前提だが、
+        // Web版同期ロジックによっては master_geography と JOIN が必要かも。
+        // ここでは単純に master_points の area_id を信じる（App版定義による）
+        const sql = 'SELECT * FROM master_points WHERE area_id = ? ORDER BY name ASC';
+        const results = await appDbEngine.getAllAsync<any>(sql, [areaId]);
+        if (results.length > 0) {
+          return results.map(p => ({
+            id: p.id,
+            name: p.name,
+            name_kana: p.name_kana,
+            region: p.region_name || '',
+            area: p.area_name || '',
+            zone: p.zone_name || '',
+            latitude: p.latitude,
+            longitude: p.longitude,
+            status: 'approved',
+            imageUrl: p.image_url
+          } as unknown as Point));
+        }
+      } catch (e) {
+        console.error('getPointsByArea failed:', e);
+      }
+    }
+    return [];
+  }
 }
 
 export const masterDataService = new MasterDataService(appDbEngine);
