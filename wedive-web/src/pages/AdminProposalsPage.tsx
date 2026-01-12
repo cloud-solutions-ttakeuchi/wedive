@@ -100,7 +100,7 @@ export const AdminProposalsPage = () => {
 
   const getSubmitterInfo = (submitterId: string) => {
     const user = allUsers.find((u: any) => u.id === submitterId);
-    if (!user) return <div className="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-400">Unknown Submitter (ID: {submitterId})</div>;
+    if (!user) return <div className="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-400 break-all">Unknown Submitter (ID: {submitterId})</div>;
 
     const currentScore = user.trustScore || 0;
     const rank = TRUST_RANKS.slice().reverse().find(r => currentScore >= r.minScore) || TRUST_RANKS[0];
@@ -146,11 +146,11 @@ export const AdminProposalsPage = () => {
     if (isDelete) {
       const original = list.find((i: any) => i.id === proposal.targetId || i.id.replace(/_/g, '') === proposal.targetId?.replace(/_/g, ''));
       return (
-        <div className="mt-3 bg-red-50 rounded-lg border border-red-200 p-3 text-sm">
+        <div className="mt-3 bg-red-50 rounded-lg border border-red-200 p-3 text-sm break-words">
           <div className="font-bold text-red-800 mb-2 flex items-center gap-1">
             🚨 削除申請理由 (対象: {original?.name || proposal.name})
           </div>
-          <div className="p-3 bg-white rounded border border-red-100 italic text-gray-700">
+          <div className="p-3 bg-white rounded border border-red-100 italic text-gray-700 break-words">
             "{diff.reason || proposal.reason || '理由の入力はありません'}"
           </div>
         </div>
@@ -158,7 +158,7 @@ export const AdminProposalsPage = () => {
     }
 
     return (
-      <div className="mt-3 bg-yellow-50 rounded-lg border border-yellow-200 p-3 text-sm">
+      <div className="mt-3 bg-yellow-50 rounded-lg border border-yellow-200 p-3 text-sm break-words">
         <div className="font-bold text-yellow-800 mb-2 flex items-center gap-1">
           ⚠️ 変更内容 (対象: {original.name})
         </div>
@@ -175,9 +175,9 @@ export const AdminProposalsPage = () => {
               <div key={key} className="contents">
                 <div className="font-bold text-gray-500 text-right">{key}:</div>
                 <div className="grid grid-cols-[1fr_auto_1fr] gap-2 items-center">
-                  <div className="text-gray-400 line-through bg-white px-2 py-0.5 rounded border border-gray-100">{displayOld}</div>
+                  <div className="text-gray-400 line-through bg-white px-2 py-0.5 rounded border border-gray-100 break-all">{displayOld}</div>
                   <div className="text-gray-400">→</div>
-                  <div className="font-bold text-gray-900 bg-white px-2 py-0.5 rounded border border-green-200">{displayNew}</div>
+                  <div className="font-bold text-gray-900 bg-white px-2 py-0.5 rounded border border-green-200 break-all">{displayNew}</div>
                 </div>
               </div>
             );
