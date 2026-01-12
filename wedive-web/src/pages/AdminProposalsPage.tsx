@@ -595,6 +595,8 @@ export const AdminProposalsPage = () => {
           setSelectedProposal(null);
         }}
         processingId={processingId}
+        masterPoints={points}
+        masterCreatures={creatures}
       />
     </div>
   );

@@ -53,12 +53,29 @@ npx eas-cli build --platform ios --profile production --auto-submit
 
 ビルドだけ先に行う場合:
 ```bash
+# expoクラウドでビルド（基本無料枠＋有料）
 npx eas-cli build --platform ios --profile production
+
+
+# ローカルPCでビルド
+# 本番用 (推奨: 普段は .env を本番にしておく)
+cp .env.production .env  # もしバックアップがあれば
+EAS_NO_DOCTOR=1 npx eas-cli build --platform ios --profile production --local
+
+# 開発用
+cp .env.local .env
+EAS_NO_DOCTOR=1 npx eas-cli build --platform ios --profile development --local
+
+# EAS_NO_DOCTOR=1 は、ビルド開始時に実行される健全性チェックツール expo doctor を無効化（スキップ）する 環境変数
+# EAS_NO_DOCTOR=1 をつけることで、そのチェックをバイパスして強制的にビルドを進める
 ```
 
 完了後、最新のビルドをアップロードする場合:
 ```bash
+# 自動でリモートあるいはローカルの最新のバージョンをデプロイしてくれる ビルド番号は明示的に指定する必要あり
 npx eas-cli submit -p ios --latest
+# パスを指定する場合
+npx eas-cli submit -p ios --path  ./build-1768203054273.ipa
 ```
 
 ### TestFlight での確認

@@ -10,6 +10,8 @@ interface AdminProposalDetailModalProps {
   onApprove: (item: any) => void;
   onReject: (id: string) => void;
   processingId: string | null;
+  masterPoints?: any[];
+  masterCreatures?: any[];
 }
 
 export const AdminProposalDetailModal: React.FC<AdminProposalDetailModalProps> = ({
@@ -19,7 +21,9 @@ export const AdminProposalDetailModal: React.FC<AdminProposalDetailModalProps> =
   type,
   onApprove,
   onReject,
-  processingId
+  processingId,
+  masterPoints = [],
+  masterCreatures = []
 }) => {
   if (!isOpen || !proposal) return null;
 
@@ -34,9 +38,47 @@ export const AdminProposalDetailModal: React.FC<AdminProposalDetailModalProps> =
     return String(ts);
   };
 
+  // Find original data for comparison
+  let originalData: any = null;
+  if (proposal.targetId) {
+    if (type === 'point') originalData = masterPoints.find(p => p.id === proposal.targetId);
+    else if (type === 'creature') originalData = masterCreatures.find(c => c.id === proposal.targetId);
+  }
+
+  // Determine what data to display (diff or full)
+  const displayData = proposal.diffData || proposal;
+  const ignoredKeys = ['id', 'targetId', 'submitterId', 'createdAt', 'updatedAt', 'proposalType', 'isDeletionRequest', 'reason', 'reasoning', 'comment', 'evidence', 'diffData', 'confidence', 'status', 'approvedBy', 'approvedAt'];
+
+  const getChangedKeys = () => {
+    if (!originalData) {
+      // For create mode, show all non-ignored keys
+      return Object.keys(displayData).filter(k => !ignoredKeys.includes(k) && displayData[k] !== undefined && displayData[k] !== null && displayData[k] !== '');
+    }
+
+    // For update mode, show keys that differ or are in diffData
+    const keys = new Set([...Object.keys(displayData), ...Object.keys(originalData)]);
+    return Array.from(keys).filter(key => {
+      if (ignoredKeys.includes(key)) return false;
+      const newVal = displayData[key];
+      const oldVal = originalData[key];
+      // Compare values (simple equality for now, could be improved for arrays/objects)
+      return JSON.stringify(newVal) !== JSON.stringify(oldVal);
+    });
+  };
+
+  const changedKeys = getChangedKeys();
+
+  const renderValue = (val: any) => {
+    if (val === undefined || val === null) return <span className="text-gray-300 italic">empty</span>;
+    if (Array.isArray(val)) return val.length > 0 ? val.join(', ') : <span className="text-gray-300 italic">empty array</span>;
+    if (typeof val === 'object') return JSON.stringify(val); // Keep simple for objects
+    if (typeof val === 'boolean') return val ? 'True' : 'False';
+    return String(val);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
+      <div className="bg-white w-full max-w-3xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
 
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-gray-50">
@@ -45,13 +87,13 @@ export const AdminProposalDetailModal: React.FC<AdminProposalDetailModalProps> =
               <FileText className="text-blue-500" />
               提案詳細
               <span className={`text-xs px-2 py-1 rounded-full border ${isDelete ? 'bg-red-50 text-red-700 border-red-200' :
-                  isUpdate ? 'bg-orange-50 text-orange-700 border-orange-200' :
-                    'bg-green-50 text-green-700 border-green-200'
+                isUpdate ? 'bg-orange-50 text-orange-700 border-orange-200' :
+                  'bg-green-50 text-green-700 border-green-200'
                 }`}>
                 {isDelete ? 'DELETE' : isUpdate ? 'UPDATE' : 'CREATE'}
               </span>
             </h2>
-            <p className="text-xs text-gray-500 mt-1 font-mono">ID: {proposal.id}</p>
+            <p className="text-xs text-gray-500 mt-1 font-mono">ID: {proposal.id} {originalData ? `(Target: ${originalData.name})` : ''}</p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
             <X size={20} className="text-gray-500" />
@@ -84,6 +126,73 @@ export const AdminProposalDetailModal: React.FC<AdminProposalDetailModalProps> =
               </div>
             </section>
           )}
+
+          {/* Diff View Comparison */}
+          <section>
+            <h3 className="text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+              <AlertTriangle size={16} className="text-orange-500" />
+              {isUpdate ? '変更内容 (Before / After)' : '登録内容'}
+            </h3>
+
+            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-gray-50 text-gray-500 border-b border-gray-200 text-xs uppercase">
+                  <tr>
+                    <th className="px-4 py-3 w-1/4">Field</th>
+                    {originalData && <th className="px-4 py-3 w-1/3 border-l border-gray-200">Before (Current)</th>}
+                    <th className="px-4 py-3 w-1/3 border-l border-gray-200 bg-green-50/50">After (Proposal)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {changedKeys.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="px-4 py-8 text-center text-gray-400 italic">
+                        変更点はありません（または表示対象外のデータのみです）
+                      </td>
+                    </tr>
+                  ) : (
+                    changedKeys.map(key => {
+                      const oldVal = originalData ? originalData[key] : undefined;
+                      const newVal = displayData[key];
+
+                      // Images special handling
+                      if (key === 'imageUrl' || key === 'images') {
+                        return (
+                          <tr key={key} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 font-medium text-gray-600 font-mono text-xs">{key}</td>
+                            {originalData && (
+                              <td className="px-4 py-3 border-l border-gray-200">
+                                {oldVal && typeof oldVal === 'string' && <img src={oldVal} className="h-16 w-16 object-cover rounded border" />}
+                                {oldVal && Array.isArray(oldVal) && <div className="flex gap-1">{oldVal.map((src, i) => <img key={i} src={src} className="h-10 w-10 object-cover rounded border" />)}</div>}
+                              </td>
+                            )}
+                            <td className="px-4 py-3 border-l border-gray-200 bg-green-50/30">
+                              {newVal && typeof newVal === 'string' && <img src={newVal} className="h-16 w-16 object-cover rounded border border-green-300" />}
+                              {newVal && Array.isArray(newVal) && <div className="flex gap-1">{newVal.map((src: string, i: number) => <img key={i} src={src} className="h-10 w-10 object-cover rounded border border-green-300" />)}</div>}
+                            </td>
+                          </tr>
+                        );
+                      }
+
+                      return (
+                        <tr key={key} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-4 py-3 font-medium text-gray-600 font-mono text-xs">{key}</td>
+                          {originalData && (
+                            <td className="px-4 py-3 border-l border-gray-200 text-gray-500 line-through decoration-gray-300 break-all">
+                              {renderValue(oldVal)}
+                            </td>
+                          )}
+                          <td className="px-4 py-3 border-l border-gray-200 bg-green-50/30 text-gray-900 font-medium break-all">
+                            {renderValue(newVal)}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
 
           {/* AI Info (if available) */}
           {proposal.confidence !== undefined && (
