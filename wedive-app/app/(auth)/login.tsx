@@ -6,6 +6,9 @@ import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithCredential } 
 import { auth, db } from '../../src/firebase';
 import { Mail, Lock, ArrowRight, X } from 'lucide-react-native';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import * as Crypto from 'expo-crypto';
+import { OAuthProvider } from 'firebase/auth';
 
 
 export default function LoginScreen() {
@@ -45,6 +48,55 @@ export default function LoginScreen() {
       } else {
         console.error("Google Sign-In Error:", error);
         setError('Googleログインに失敗しました');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAppleLogin = async () => {
+    try {
+      setIsLoading(true);
+      const csrf = Math.random().toString(36).substring(2, 15);
+      const nonce = Math.random().toString(36).substring(2, 10);
+      const hashedNonce = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        nonce,
+        { encoding: Crypto.CryptoEncoding.HEX }
+      );
+
+      const appleCredential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+        state: csrf,
+        nonce: hashedNonce,
+      });
+
+      const { identityToken, email: appleEmail, fullName } = appleCredential;
+
+      if (!identityToken) {
+        throw new Error('Apple Identity Token not found');
+      }
+
+      const provider = new OAuthProvider('apple.com');
+      const credential = provider.credential({
+        idToken: identityToken,
+        rawNonce: nonce,
+      });
+
+      await signInWithCredential(auth, credential);
+      console.log("Apple Login successful");
+      router.replace('/(tabs)/mypage');
+
+    } catch (e: any) {
+      if (e.code === 'ERR_REQUEST_CANCELED') {
+        // user cancelled
+      } else {
+        console.error("Apple Sign-In Error:", e);
+        Alert.alert('Apple Login Error', `Code: ${e.code}\nMessage: ${e.message}`);
+        setError(`Appleログインに失敗しました (${e.code})`);
       }
     } finally {
       setIsLoading(false);
@@ -176,6 +228,16 @@ export default function LoginScreen() {
             {/* Google Icon SVG or Image here if available, using text for now */}
             <Text style={styles.googleBtnText}>Googleでログイン</Text>
           </TouchableOpacity>
+
+          {Platform.OS === 'ios' && (
+            <AppleAuthentication.AppleAuthenticationButton
+              buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+              buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+              cornerRadius={16}
+              style={styles.appleBtn}
+              onPress={handleAppleLogin}
+            />
+          )}
 
 
           <View style={styles.footer}>
@@ -313,6 +375,11 @@ const styles = StyleSheet.create({
     color: '#1e293b',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  appleBtn: {
+    width: '100%',
+    height: 56,
+    marginTop: 10,
   },
   footer: {
     flexDirection: 'row',

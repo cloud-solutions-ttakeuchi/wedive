@@ -25,6 +25,7 @@ import { AdminDataCleansingPage } from './pages/AdminDataCleansingPage';
 import { PublicLogsPage } from './pages/PublicLogsPage';
 import { TermsPage } from './pages/TermsPage';
 import { PrivacyPage } from './pages/PrivacyPage';
+import SupportPage from './pages/SupportPage';
 import { ConciergePage } from './pages/ConciergePage';
 import { AddReviewPage } from './pages/AddReviewPage';
 import { TermsAgreementModal } from './components/TermsAgreementModal';
@@ -81,6 +82,7 @@ function App() {
                   <Route path="/edit-review/:reviewId" element={<AddReviewPage />} />
                   <Route path="/terms" element={<TermsPage />} />
                   <Route path="/privacy" element={<PrivacyPage />} />
+                  <Route path="/support" element={<SupportPage />} />
                 </Routes>
               </Layout>
             </LanguageProvider>
