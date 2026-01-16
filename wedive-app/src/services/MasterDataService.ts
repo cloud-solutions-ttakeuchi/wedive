@@ -24,6 +24,33 @@ export class MasterDataService extends BaseMasterDataService {
     }
   }
 
+  private mapReview(r: any) {
+    const parseJson = (val: any) => {
+      if (typeof val === 'string' && (val.startsWith('{') || val.startsWith('['))) {
+        try { return JSON.parse(val); } catch (e) { return val; }
+      }
+      return val;
+    };
+
+    return {
+      id: r.id,
+      pointId: r.point_id,
+      pointName: r.point_name,
+      userId: r.user_id,
+      rating: r.rating,
+      comment: r.comment,
+      createdAt: r.created_at,
+      date: r.created_at,
+      tags: parseJson(r.tags),
+      images: parseJson(r.images),
+      metrics: parseJson(r.metrics),
+      condition: parseJson(r.condition),
+      radar: parseJson(r.radar),
+      helpfulCount: r.helpful_count,
+      status: r.status,
+    };
+  }
+
   /**
    * ポイント検索（ハイブリッド）
    */
@@ -72,8 +99,15 @@ export class MasterDataService extends BaseMasterDataService {
   async getLatestReviews(limitCount = 20): Promise<any[]> {
     if (await this.initialize()) {
       try {
-        const sql = 'SELECT * FROM master_point_reviews ORDER BY created_at DESC LIMIT ?';
-        return await appDbEngine.getAllAsync<any>(sql, [limitCount]);
+        const sql = `
+          SELECT r.*, p.name as point_name
+          FROM master_point_reviews r
+          LEFT JOIN master_points p ON r.point_id = p.id
+          ORDER BY r.created_at DESC
+          LIMIT ?
+        `;
+        const results = await appDbEngine.getAllAsync<any>(sql, [limitCount]);
+        return results.map(r => this.mapReview(r));
       } catch (e) {
         console.error('SQLite getLatestReviews failed:', e);
       }
@@ -87,8 +121,15 @@ export class MasterDataService extends BaseMasterDataService {
   async getReviewsByPoint(pointId: string): Promise<any[]> {
     if (await this.initialize()) {
       try {
-        const sql = 'SELECT * FROM master_point_reviews WHERE point_id = ? ORDER BY created_at DESC';
-        return await appDbEngine.getAllAsync<any>(sql, [pointId]);
+        const sql = `
+          SELECT r.*, p.name as point_name
+          FROM master_point_reviews r
+          LEFT JOIN master_points p ON r.point_id = p.id
+          WHERE r.point_id = ?
+          ORDER BY r.created_at DESC
+        `;
+        const results = await appDbEngine.getAllAsync<any>(sql, [pointId]);
+        return results.map(r => this.mapReview(r));
       } catch (e) {
         console.error('SQLite getReviewsByPoint failed:', e);
       }
@@ -102,10 +143,44 @@ export class MasterDataService extends BaseMasterDataService {
   async getReviewsByArea(areaId: string): Promise<any[]> {
     if (await this.initialize()) {
       try {
-        const sql = 'SELECT * FROM master_point_reviews WHERE area_id = ? ORDER BY created_at DESC';
-        return await appDbEngine.getAllAsync<any>(sql, [areaId]);
+        const sql = `
+          SELECT r.*, p.name as point_name
+          FROM master_point_reviews r
+          LEFT JOIN master_points p ON r.point_id = p.id
+          WHERE r.area_id = ?
+          ORDER BY r.created_at DESC
+        `;
+        const results = await appDbEngine.getAllAsync<any>(sql, [areaId]);
+        return results.map(r => this.mapReview(r));
       } catch (e) {
         console.error('SQLite getReviewsByArea failed:', e);
+      }
+    }
+    return [];
+  }
+
+  /**
+   * レビュー検索
+   */
+  async searchReviews(text: string, limitCount = 50): Promise<any[]> {
+    const normalizedQuery = text.trim();
+    if (!normalizedQuery) return this.getLatestReviews(limitCount);
+
+    if (await this.initialize()) {
+      try {
+        const sql = `
+          SELECT r.*, p.name as point_name
+          FROM master_point_reviews r
+          LEFT JOIN master_points p ON r.point_id = p.id
+          WHERE r.comment LIKE ? OR p.name LIKE ?
+          ORDER BY r.created_at DESC
+          LIMIT ?
+        `;
+        const param = `%${normalizedQuery}%`;
+        const results = await appDbEngine.getAllAsync<any>(sql, [param, param, limitCount]);
+        return results.map(r => this.mapReview(r));
+      } catch (e) {
+        console.error('SQLite searchReviews failed:', e);
       }
     }
     return [];

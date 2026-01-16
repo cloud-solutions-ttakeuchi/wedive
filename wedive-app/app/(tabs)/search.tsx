@@ -1,19 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, TextInput, TouchableOpacity, FlatList, Dimensions, ActivityIndicator, Platform, BackHandler } from 'react-native';
 import { Text, View } from '@/components/Themed';
-import { Search as SearchIcon, MapPin, Star, ChevronRight, Anchor, BookOpen, Clock, Plus as PlusIcon, ArrowLeft } from 'lucide-react-native';
+import { Search as SearchIcon, MapPin, Star, ChevronRight, Anchor, Clock, Plus as PlusIcon, ArrowLeft } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Point, Creature } from '../../src/types';
 import { ImageWithFallback } from '../../src/components/ImageWithFallback';
 import { useMasterSearch } from '../../src/hooks/useMasterSearch';
 import { masterDataService } from '../../src/services/MasterDataService';
-
-const { width } = Dimensions.get('window');
+import { ReviewCard } from '../../src/components/ReviewCard';
 
 const NO_IMAGE_POINT = require('../../assets/images/no-image-point.png');
 const NO_IMAGE_CREATURE = require('../../assets/images/no-image-creature.png');
 
-type SearchMode = 'spots' | 'creatures' | 'logs';
+type SearchMode = 'spots' | 'creatures' | 'reviews';
 type NavLevel = 'root' | 'region' | 'zone' | 'area';
 
 interface NavItem {
@@ -28,18 +27,62 @@ export default function SearchScreen() {
   const [mode, setMode] = useState<SearchMode>((tab as SearchMode) || 'spots');
 
   // 爆速検索フック！
-  const { keyword, setKeyword, points: masterPoints, creatures: masterCreatures, isLoading: isSearchLoading } = useMasterSearch();
+  const {
+    keyword,
+    setKeyword,
+    points: masterPoints,
+    creatures: masterCreatures,
+    reviews: foundReviews,
+    isLoading: isSearchLoading
+  } = useMasterSearch();
 
   // 階層ナビゲーション用State
   const [navStack, setNavStack] = useState<NavItem[]>([{ type: 'root', name: 'エリア選択' }]);
   const [hierarchyData, setHierarchyData] = useState<any[]>([]);
   const [isHierarchyLoading, setIsHierarchyLoading] = useState(false);
 
+  // レビューデータ (最新フィード)
+  const [latestReviews, setLatestReviews] = useState<any[]>([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
+
+  // 生物データ (初期表示)
+  const [initialCreatures, setInitialCreatures] = useState<Creature[]>([]);
+
   useEffect(() => {
-    if (tab && ['spots', 'creatures', 'logs'].includes(tab as string)) {
+    if (tab && ['spots', 'creatures', 'reviews'].includes(tab as string)) {
       setMode(tab as SearchMode);
     }
   }, [tab]);
+
+  // データ読み込み (フィード/初期表示)
+  useEffect(() => {
+    if (mode === 'reviews') {
+      const loadReviews = async () => {
+        setLoadingReviews(true);
+        try {
+          // SQLiteから最新レビューを取得
+          const data = await masterDataService.getLatestReviews(20);
+          setLatestReviews(data);
+        } catch (e) {
+          console.error("Failed to load reviews:", e);
+        } finally {
+          setLoadingReviews(false);
+        }
+      };
+      loadReviews();
+    } else if (mode === 'creatures' && initialCreatures.length === 0) {
+      const loadCreatures = async () => {
+        try {
+          // 生物一覧を取得して、先頭20件を表示（Apple審査対策：空コンテンツ防止）
+          const all = await masterDataService.getAllCreatures();
+          setInitialCreatures(all.slice(0, 20));
+        } catch (e) {
+          console.error("Failed to load creatures:", e);
+        }
+      };
+      loadCreatures();
+    }
+  }, [mode]);
 
   // Android Back Button handling for custom navigation
   useEffect(() => {
@@ -72,7 +115,6 @@ export default function SearchScreen() {
           } else if (current.type === 'area') {
             // ポイント一覧
             const points = await masterDataService.getPointsByArea(current.id!);
-            // マッピング済みのPointが返ってくる
             data = points;
           }
           setHierarchyData(data);
@@ -223,10 +265,17 @@ export default function SearchScreen() {
     </TouchableOpacity>
   );
 
-  const renderLogItem = ({ item }: { item: any }) => (
-    <View style={styles.emptyState}>
-      <Text style={styles.emptyText}>ログ機能は準備中です</Text>
-    </View>
+  const renderReviewItem = ({ item }: { item: any }) => (
+    <ReviewCard
+      review={item}
+      onEdit={() => { }} // 検索画面からは編集不可
+      onDelete={() => { }} // 検索画面からは削除不可
+      onPress={() => {
+        if (item.pointId) {
+          router.push(`/details/spot/${item.pointId}`);
+        }
+      }}
+    />
   );
 
   // 表示データの切り替え
@@ -242,18 +291,25 @@ export default function SearchScreen() {
     } else if (mode === 'creatures') {
       dataToRender = filteredCreatures;
       ItemRenderer = renderCreatureItem;
+    } else if (mode === 'reviews') {
+      dataToRender = foundReviews;
+      ItemRenderer = renderReviewItem;
     }
   } else {
-    // 階層ブラウズモード (spotsのみ)
+    // 階層/フィードモード
     if (mode === 'spots') {
       isLoading = isHierarchyLoading;
       dataToRender = hierarchyData;
       ItemRenderer = renderHierarchyItem;
     } else if (mode === 'creatures') {
-      // 生物はまだ階層がないので空または検索推奨
-      // 必要なら生物分類階層を実装するが、今回はPointのみ
+      // 先頭20件を表示（空にならないように）
       isLoading = false;
-      dataToRender = [];
+      dataToRender = initialCreatures;
+      ItemRenderer = renderCreatureItem;
+    } else if (mode === 'reviews') {
+      isLoading = loadingReviews;
+      dataToRender = latestReviews;
+      ItemRenderer = renderReviewItem;
     }
   }
 
@@ -262,7 +318,7 @@ export default function SearchScreen() {
       <View style={styles.header}>
         <View style={styles.titleRow}>
           <Text style={styles.title}>探す</Text>
-          {mode !== 'logs' && (
+          {mode !== 'reviews' && (
             <TouchableOpacity
               style={styles.headerAddBtn}
               onPress={() => router.push(mode === 'spots' ? '/details/spot/add' : '/details/creature/add')}
@@ -276,7 +332,7 @@ export default function SearchScreen() {
           <SearchIcon size={20} color="#94a3b8" />
           <TextInput
             style={styles.input}
-            placeholder={mode === 'spots' ? "ポイントを検索..." : mode === 'creatures' ? "生物を検索..." : "ログを検索..."}
+            placeholder={mode === 'spots' ? "ポイントを検索..." : mode === 'creatures' ? "生物を検索..." : "レビュー内を検索..."}
             value={keyword || ''}
             onChangeText={setKeyword}
             placeholderTextColor="#94a3b8"
@@ -298,11 +354,11 @@ export default function SearchScreen() {
             <Text style={[styles.modeText, mode === 'creatures' && styles.activeModeText]}>生物</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.modeBtn, mode === 'logs' && styles.activeModeBtn]}
-            onPress={() => setMode('logs')}
+            style={[styles.modeBtn, mode === 'reviews' && styles.activeModeBtn]}
+            onPress={() => setMode('reviews')}
           >
-            <BookOpen size={16} color={mode === 'logs' ? '#fff' : '#64748b'} />
-            <Text style={[styles.modeText, mode === 'logs' && styles.activeModeText]}>ログ</Text>
+            <Star size={16} color={mode === 'reviews' ? '#fff' : '#64748b'} />
+            <Text style={[styles.modeText, mode === 'reviews' && styles.activeModeText]}>レビュー</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -326,7 +382,7 @@ export default function SearchScreen() {
                   ? 'エリアデータが見つかりません'
                   : '見つかりませんでした'}
               </Text>
-              {mode !== 'logs' && (
+              {mode !== 'reviews' && (
                 <TouchableOpacity
                   style={styles.addProposalBtn}
                   onPress={() => router.push(mode === 'spots' ? '/details/spot/add' : '/details/creature/add')}
@@ -617,6 +673,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 14,
+    marginLeft: 4,
   },
   pendingBadge: {
     position: 'absolute',

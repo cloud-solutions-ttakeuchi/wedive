@@ -60,7 +60,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, onDelet
         </View>
         <View style={styles.ratingBadge}>
           <Star size={12} color="#f59e0b" fill="#f59e0b" />
-          <Text style={styles.ratingText}>{review.rating.toFixed(1)}</Text>
+          <Text style={styles.ratingText}>{review.rating?.toFixed(1) ?? '-'}</Text>
         </View>
       </View>
 
@@ -114,15 +114,15 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, onDelet
       <View style={styles.metricsRow}>
         <View style={styles.metric}>
           <Droplets size={14} color="#0ea5e9" />
-          <Text style={styles.metricText}>{review.metrics.visibility}m</Text>
+          <Text style={styles.metricText}>{review.metrics?.visibility ?? '--'}m</Text>
         </View>
         <View style={styles.metric}>
           <Thermometer size={14} color="#f43f5e" />
-          <Text style={styles.metricText}>{review.condition.waterTemp || '--'}°C</Text>
+          <Text style={styles.metricText}>{review.condition?.waterTemp ?? '--'}°C</Text>
         </View>
         <View style={styles.metric}>
           <Wind size={14} color="#10b981" />
-          <Text style={styles.metricText}>{review.metrics.flow === 'none' ? 'なし' : review.metrics.flow === 'weak' ? '弱' : '強'}</Text>
+          <Text style={styles.metricText}>{!review.metrics?.flow || review.metrics.flow === 'none' ? 'なし' : review.metrics.flow === 'weak' ? '弱' : '強'}</Text>
         </View>
       </View>
 
@@ -143,7 +143,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, onDelet
       {/* Footer: Tags and Helpfulness */}
       <View style={styles.footer}>
         <View style={styles.tags}>
-          {review.tags.slice(0, 2).map((tag, i) => (
+          {review.tags?.slice(0, 2).map((tag, i) => (
             <View key={i} style={styles.tag}>
               <Text style={styles.tagText}>#{tag}</Text>
             </View>

@@ -4,8 +4,10 @@ import { Text, View } from '@/components/Themed';
 import { Bot, Send, User, Sparkles, Ticket } from 'lucide-react-native';
 import { aiConciergeService } from '../../src/services/AiConciergeService';
 import { useAuth } from '../../src/context/AuthContext';
+import { useRouter } from 'expo-router';
 
 export default function AIScreen() {
+  const router = useRouter();
   const { firebaseUser, refreshProfile } = useAuth();
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant', content: string }[]>([
     { role: 'assistant', content: 'こんにちは！WeDiveコンシェルジュです。ダイビングのスポットや生物について何でも聞いてくださいね。' }
@@ -46,7 +48,11 @@ export default function AIScreen() {
   };
 
   const handleSend = async () => {
-    if (!input.trim() || isLoading || !firebaseUser) return;
+    if (!firebaseUser) {
+      Alert.alert('エラー', 'ログインが必要です。');
+      return;
+    }
+    if (!input.trim() || isLoading) return;
 
     // チケット残数チェック
     const currentCount = await aiConciergeService.getRemainingCount(firebaseUser.uid);
@@ -91,6 +97,36 @@ export default function AIScreen() {
     }
   };
 
+  // ログインしていない場合はログイン要求画面を表示
+  if (!firebaseUser) {
+    return (
+      <View style={[styles.container, styles.center, { padding: 40 }]}>
+        <View style={styles.header}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>AIコンシェルジュ</Text>
+            <Text style={styles.status}>Online • Powered by Gemini</Text>
+          </View>
+        </View>
+        <View style={[styles.center, { flex: 1 }]}>
+          <View style={styles.guestIconBg}>
+            <Bot size={48} color="#0284c7" />
+          </View>
+          <Text style={styles.guestTitle}>ログインが必要です</Text>
+          <Text style={styles.guestText}>
+            AIコンシェルジュへの相談にはログインが必要です。
+            ログインすると毎日無料チケットが付与されます。
+          </Text>
+          <TouchableOpacity style={styles.loginBtn} onPress={() => router.push('/(auth)/login')}>
+            <Text style={styles.loginBtnText}>ログインする</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.signupBtn} onPress={() => router.push('/(auth)/signup')}>
+            <Text style={styles.signupBtnText}>アカウント作成</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -105,7 +141,7 @@ export default function AIScreen() {
         >
           <Bot size={24} color="#0284c7" />
         </TouchableOpacity>
-        <View style={{ flex: 1, backgroundColor: 'transparent' }}>
+        <View style={{ flex: 1 }}>
           <Text style={styles.title}>AIコンシェルジュ</Text>
           <Text style={styles.status}>Online • Powered by Gemini</Text>
         </View>
@@ -169,7 +205,7 @@ export default function AIScreen() {
         <TouchableOpacity
           style={[styles.sendButton, !input.trim() && styles.sendButtonDisabled]}
           onPress={handleSend}
-          disabled={!input.trim() || isLoading}
+          disabled={!input.trim() || isLoading || !firebaseUser}
         >
           <Send size={20} color="#fff" />
         </TouchableOpacity>
@@ -182,6 +218,60 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  center: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  guestIconBg: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#f0f9ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  guestTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#0f172a',
+    marginBottom: 12,
+  },
+  guestText: {
+    fontSize: 14,
+    color: '#64748b',
+    textAlign: 'center',
+    marginBottom: 32,
+    lineHeight: 22,
+  },
+  loginBtn: {
+    backgroundColor: '#0ea5e9',
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    borderRadius: 30,
+    marginBottom: 16,
+    width: '100%',
+    alignItems: 'center',
+  },
+  loginBtnText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  signupBtn: {
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    borderRadius: 30,
+    borderWidth: 2,
+    borderColor: '#0ea5e9',
+    width: '100%',
+    alignItems: 'center',
+  },
+  signupBtnText: {
+    color: '#0ea5e9',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   header: {
     flexDirection: 'row',

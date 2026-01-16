@@ -9,6 +9,7 @@ export function useMasterSearch() {
   const [keyword, setKeyword] = useState('');
   const [points, setPoints] = useState<Point[]>([]);
   const [creatures, setCreatures] = useState<Creature[]>([]);
+  const [reviews, setReviews] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   /**
@@ -23,14 +24,15 @@ export function useMasterSearch() {
 
     setIsLoading(true);
     try {
-      // 並列で検索を実行
-      const [pointResults, creatureResults] = await Promise.all([
+      const [pointResults, creatureResults, reviewResults] = await Promise.all([
         masterDataService.searchPoints(text),
-        masterDataService.searchCreatures(text)
+        masterDataService.searchCreatures(text),
+        masterDataService.searchReviews(text)
       ]);
 
       setPoints(pointResults);
       setCreatures(creatureResults);
+      setReviews(reviewResults);
     } catch (error) {
       console.error('Master search error:', error);
     } finally {
@@ -54,6 +56,7 @@ export function useMasterSearch() {
     setKeyword,
     points,
     creatures,
+    reviews,
     isLoading
   };
 }

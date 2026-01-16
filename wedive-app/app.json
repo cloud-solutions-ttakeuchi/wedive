@@ -27,9 +27,11 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.wedive.dev",
-      "buildNumber": "3",
+      "buildNumber": "4",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSPhotoLibraryUsageDescription": "ダイビングログへの写真添付やプロフィール画像の設定に写真ライブラリを使用します。",
+        "NSCameraUsageDescription": "ダイビングログ用の写真撮影やプロフィール画像の撮影にカメラを使用します。"
       }
     },
     "android": {

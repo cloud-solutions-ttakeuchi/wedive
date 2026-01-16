@@ -21,6 +21,10 @@ const CATEGORIES = [
 ];
 
 export const PointReviewStats: React.FC<PointReviewStatsProps> = ({ point, reviews, areaReviews }) => {
+  if (!point) return null;
+  const safeReviews = reviews || [];
+  const safeAreaReviews = areaReviews || [];
+
   const [selectedSeason, setSelectedSeason] = useState<number | 'all'>('all');
 
   const monthlyStats = useMemo(() => {
@@ -66,27 +70,35 @@ export const PointReviewStats: React.FC<PointReviewStatsProps> = ({ point, revie
 
     // RAW Fallback for Area (or if no monthly analysis available yet)
     const calcAvgFromRaw = (revs: Review[]) => {
-      if (revs.length === 0) return null;
+      if (!revs || revs.length === 0) return null;
       const sums: ReviewRadar = { visibility: 0, encounter: 0, excite: 0, topography: 0, comfort: 0, satisfaction: 0 };
       let visSum = 0;
+      let validCount = 0;
+
       revs.forEach(r => {
+        if (!r.radar) return;
+
         Object.keys(sums).forEach(k => {
           sums[k as keyof ReviewRadar] += r.radar[k as keyof ReviewRadar] || 0;
         });
-        visSum += r.metrics.visibility || 0;
+        visSum += r.metrics?.visibility || 0;
+        validCount++;
       });
+
+      if (validCount === 0) return null;
+
       return {
-        radar: Object.fromEntries(Object.entries(sums).map(([k, v]) => [k, v / revs.length])) as unknown as ReviewRadar,
-        avgVisibility: visSum / revs.length,
-        count: revs.length
+        radar: Object.fromEntries(Object.entries(sums).map(([k, v]) => [k, v / validCount])) as unknown as ReviewRadar,
+        avgVisibility: visSum / validCount,
+        count: validCount
       };
     };
 
     return {
-      current: aggregateFromMonthly(monthlyStats, selectedSeason) || calcAvgFromRaw(reviews),
-      area: calcAvgFromRaw(areaReviews.filter(r => r.pointId !== point.id))
+      current: aggregateFromMonthly(monthlyStats, selectedSeason) || calcAvgFromRaw(safeReviews),
+      area: calcAvgFromRaw(safeAreaReviews.filter(r => r.pointId !== point.id))
     };
-  }, [monthlyStats, selectedSeason, reviews, areaReviews, point.id]);
+  }, [monthlyStats, selectedSeason, safeReviews, safeAreaReviews, point.id]);
 
   // Radar Chart Logic
   const RADIUS = 80;

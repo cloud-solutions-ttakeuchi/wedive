@@ -5,7 +5,7 @@ import { useRouter, Link } from 'expo-router';
 import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../../src/firebase';
-import { Mail, Lock, User as UserIcon, Check } from 'lucide-react-native';
+import { Mail, Lock, User as UserIcon, Check, X } from 'lucide-react-native';
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -106,6 +106,13 @@ export default function SignupScreen() {
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity
+        style={styles.closeBtn}
+        onPress={() => router.back()}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      >
+        <X size={24} color="#1e293b" />
+      </TouchableOpacity>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -290,6 +297,20 @@ export default function SignupScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  closeBtn: {
+    position: 'absolute',
+    top: 60,
+    left: 20,
+    zIndex: 10,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   scrollContent: {
     flexGrow: 1,

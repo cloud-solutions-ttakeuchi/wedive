@@ -170,7 +170,7 @@ export default function TabOneScreen() {
                         />
                         <View style={{ flex: 1 }}>
                           <Text style={styles.reviewPointName} numberOfLines={1}>
-                            {point ? point.name : 'Unknown Point'}
+                            {point ? point.name : ((item as any).pointName || 'Unknown Point')}
                           </Text>
                           <View style={styles.ratingRow}>
                             {[...Array(5)].map((_, i) => (
