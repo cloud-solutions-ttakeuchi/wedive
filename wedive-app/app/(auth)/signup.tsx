@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Alert, Modal } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { useRouter, Link } from 'expo-router';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../../src/firebase';
 import { Mail, Lock, User as UserIcon, Check } from 'lucide-react-native';
@@ -71,7 +71,16 @@ export default function SignupScreen() {
         createdAt: serverTimestamp(),
       });
 
-      router.replace('/(tabs)/mypage');
+      // 4. Send Verification Email
+      try {
+        await sendEmailVerification(user);
+        console.log("Verification email sent to:", trimmedEmail);
+      } catch (emailError) {
+        console.error("Failed to send verification email:", emailError);
+        // メール送信に失敗しても、アカウントは作成されているので画面遷移して再送を促す
+      }
+
+      router.replace('/(auth)/verify-email');
     } catch (err: any) {
       console.error("Signup Error:", err);
       Alert.alert(

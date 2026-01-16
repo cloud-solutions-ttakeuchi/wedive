@@ -27,6 +27,13 @@ export default function TabLayout() {
 
   // 退会処理（再ログイン後）のチェック - どのタブにいても発火するようにLayoutに配置
   useEffect(() => {
+    // メール認証チェック
+    if (firebaseUser && !firebaseUser.emailVerified) {
+      console.log('[TabLayout] Email not verified. Redirecting to verify-email...');
+      router.replace('/(auth)/verify-email');
+      return;
+    }
+
     const checkDeletionQueue = async () => {
       // グローバルロックでチェック（処理中なら何もしない）
       if (isGlobalProcessing) return;
