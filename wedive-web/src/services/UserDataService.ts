@@ -352,14 +352,21 @@ export class UserDataService {
       if (isAdmin) {
         console.log('[Sync] Starting admin data sync...');
         const collections = [
-          { name: 'creature_proposals', type: 'creature' },
-          { name: 'point_proposals', type: 'point' },
-          { name: 'point_creature_proposals', type: 'point-creature' },
-          { name: 'unapproved_reviews', type: 'review' }
+          { name: 'creature_proposals', type: 'creature', isReview: false },
+          { name: 'point_proposals', type: 'point', isReview: false },
+          { name: 'point_creature_proposals', type: 'point-creature', isReview: false },
+          { name: 'reviews', type: 'review', isReview: true }
         ];
 
         for (const col of collections) {
-          const snap = await getDocs(collection(firestoreDb, col.name));
+          let snap;
+          if (col.isReview) {
+            // レビューの場合は status = pending のものを取得
+            snap = await getDocs(query(collection(firestoreDb, col.name), where('status', '==', 'pending')));
+          } else {
+            snap = await getDocs(collection(firestoreDb, col.name));
+          }
+
           for (const doc of snap.docs) {
             await this.saveAdminProposal(col.type, doc.id, { ...doc.data(), id: doc.id });
           }
@@ -540,14 +547,21 @@ export class UserDataService {
     try {
       console.log('[Sync] Force syncing admin data...');
       const collections = [
-        { name: 'creature_proposals', type: 'creature' },
-        { name: 'point_proposals', type: 'point' },
-        { name: 'point_creature_proposals', type: 'point-creature' },
-        { name: 'unapproved_reviews', type: 'review' }
+        { name: 'creature_proposals', type: 'creature', isReview: false },
+        { name: 'point_proposals', type: 'point', isReview: false },
+        { name: 'point_creature_proposals', type: 'point-creature', isReview: false },
+        { name: 'reviews', type: 'review', isReview: true }
       ];
 
       for (const col of collections) {
-        const snap = await getDocs(collection(firestoreDb, col.name));
+        let snap;
+        if (col.isReview) {
+          // レビューの場合は status = pending のものを取得
+          snap = await getDocs(query(collection(firestoreDb, col.name), where('status', '==', 'pending')));
+        } else {
+          snap = await getDocs(collection(firestoreDb, col.name));
+        }
+
         for (const doc of snap.docs) {
           await this.saveAdminProposal(col.type, doc.id, { ...doc.data(), id: doc.id });
         }

@@ -11,6 +11,7 @@ import { usePoints } from '../../src/hooks/usePoints';
 import { useCreatures } from '../../src/hooks/useCreatures';
 import { useHomeData } from '../../src/hooks/useHomeData';
 import { FEATURE_FLAGS } from '../../src/constants/features';
+import { useAuth } from '../../src/context/AuthContext';
 
 const { width } = Dimensions.get('window');
 
@@ -20,6 +21,7 @@ const NO_IMAGE_USER = require('../../assets/images/no-image-user.png');
 
 export default function TabOneScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const { data: allPoints = [], isLoading: pLoading } = usePoints();
   const { data: allCreatures = [], isLoading: cLoading } = useCreatures();
   const { latestReviews, isLoading: rLoading } = useHomeData();
@@ -236,13 +238,15 @@ export default function TabOneScreen() {
         </View>
       </ScrollView>
 
-      {/* Floating Action Button for Add Log */}
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => router.push('/log/add')}
-      >
-        <Plus size={28} color="#fff" />
-      </TouchableOpacity>
+      {/* Floating Action Button for Add Log - only for logged in users */}
+      {user && (
+        <TouchableOpacity
+          style={styles.fab}
+          onPress={() => router.push('/log/add')}
+        >
+          <Plus size={28} color="#fff" />
+        </TouchableOpacity>
+      )}
     </View>
   );
 }

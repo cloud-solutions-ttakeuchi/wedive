@@ -212,6 +212,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     enabled: auth.isAuthenticated && (auth.currentUser.role === 'admin' || auth.currentUser.role === 'moderator')
   });
 
+  const proposalReviewsQuery = useQuery({
+    queryKey: ['proposalReviews'],
+    queryFn: () => userDataService.getAdminProposals('review'),
+    enabled: auth.isAuthenticated && (auth.currentUser.role === 'admin' || auth.currentUser.role === 'moderator')
+  });
+
   const allUsersQuery = useQuery({
     queryKey: ['allUsers'],
     queryFn: () => userDataService.getAllUsers(),
@@ -225,6 +231,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         proposalPointsQuery.refetch();
         proposalCreaturesQuery.refetch();
         proposalPointCreaturesQuery.refetch();
+        proposalReviewsQuery.refetch();
       }
     };
     syncAdmin();
@@ -247,7 +254,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     proposalPointCreatures: proposalPointCreaturesQuery.data || [],
     proposalCreatures: proposalCreaturesQuery.data || [],
     proposalPoints: proposalPointsQuery.data || [],
-    proposalReviews: [], // TODO: 汎用フック化
+    proposalReviews: proposalReviewsQuery.data || [],
     allUsers: allUsersQuery.data || [],
 
     // ログ操作
@@ -368,7 +375,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }), [
     auth, adminActions, points.data, creatures.data, pointCreatures.data,
     regions.data, zones.data, areas.data, agencies.data,
-    logsQuery.data, recentLogsQuery.data, reviewsQuery.data, proposalPointCreaturesQuery.data
+    logsQuery.data, recentLogsQuery.data, reviewsQuery.data, proposalPointCreaturesQuery.data,
+    proposalCreaturesQuery.data, proposalPointsQuery.data, proposalReviewsQuery.data, allUsersQuery.data
   ]);
 
   return (

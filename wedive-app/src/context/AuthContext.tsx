@@ -15,6 +15,7 @@ type AuthContextType = {
   signOut: () => Promise<void>;
   updateUser: (userData: Partial<User>) => Promise<void>;
   refreshProfile: () => Promise<void>;
+  refreshLogs: () => Promise<void>;
   deleteAccount: () => Promise<void>;
 };
 
@@ -27,6 +28,7 @@ const AuthContext = createContext<AuthContextType>({
   signOut: async () => { },
   updateUser: async () => { },
   refreshProfile: async () => { },
+  refreshLogs: async () => { },
   deleteAccount: async () => { },
 });
 
@@ -196,6 +198,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       signOut,
       updateUser,
       refreshProfile,
+      refreshLogs: async () => {
+        if (firebaseUser) {
+          const localLogs = await userDataService.getLogs();
+          setLogs(localLogs);
+        }
+      },
       deleteAccount
     }}>
       {children}

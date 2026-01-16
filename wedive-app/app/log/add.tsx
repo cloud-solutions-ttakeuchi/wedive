@@ -53,6 +53,8 @@ import { DiveLog, Point } from '../../src/types';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { FEATURE_FLAGS } from '../../src/constants/features';
+import { PointSelectorModal } from '../../src/components/PointSelectorModal';
+import { CreatureSelectorModal } from '../../src/components/CreatureSelectorModal';
 
 const { width } = Dimensions.get('window');
 
@@ -62,16 +64,17 @@ const { width } = Dimensions.get('window');
  */
 export default function AddLogScreen() {
   const router = useRouter();
-  const { user, logs } = useAuth();
+  const { user, logs, refreshLogs } = useAuth(); // Assuming refreshLogs exists or we will use standard fetch
 
   const [isLoading, setIsLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState('');
-  const [masterPoints, setMasterPoints] = useState<Point[]>([]);
-  const [masterCreatures, setMasterCreatures] = useState<any[]>([]);
-  const [pointCreatures, setPointCreatures] = useState<any[]>([]);
-  const [spotSearchTerm, setSpotSearchTerm] = useState('');
-  const [creatureSearchTerm, setCreatureSearchTerm] = useState('');
-  const [selectedRegion, setSelectedRegion] = useState('');
+
+  // Modal States
+  const [pointModalVisible, setPointModalVisible] = useState(false);
+  const [creatureModalVisible, setCreatureModalVisible] = useState(false);
+
+  // Still keep some master data for display if needed, but modals handle fetching mostly
+  const [masterCreatures, setMasterCreatures] = useState<any[]>([]); // Keep this for resolving names
   const [helpModalVisible, setHelpModalVisible] = useState(false);
 
   // Form State
@@ -133,32 +136,15 @@ export default function AddLogScreen() {
   };
 
   useEffect(() => {
-    fetchMasterData();
-    checkNetwork();
+    // Only fetch creatures for name resolution
+    const fetchMinimalMaster = async () => {
+      try {
+        const creaturesSnap = await getDocs(query(collection(db, 'creatures'), where('status', '==', 'approved')));
+        setMasterCreatures(creaturesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      } catch (e) { console.error(e); }
+    };
+    fetchMinimalMaster();
   }, []);
-
-  const checkNetwork = async () => {
-    const state = await Network.getNetworkStateAsync();
-    // 接続されていない、またはインターネットが利用不可の場合をオフラインとみなす
-    if (state.isConnected === false || state.isInternetReachable === false) {
-      // オフライン時の処理（必要に応じてフラグを立てる等）
-    }
-  };
-
-  const fetchMasterData = async () => {
-    try {
-      const pointsSnap = await getDocs(query(collection(db, 'points'), where('status', '==', 'approved')));
-      setMasterPoints(pointsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Point)));
-
-      const creaturesSnap = await getDocs(query(collection(db, 'creatures'), where('status', '==', 'approved')));
-      setMasterCreatures(creaturesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-
-      const pointCreaturesSnap = await getDocs(collection(db, 'point_creatures'));
-      setPointCreatures(pointCreaturesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    } catch (e) {
-      console.error("Master data fetch error:", e);
-    }
-  };
 
   const handleImportGarmin = async () => {
     if (isLoading) return;
@@ -340,8 +326,6 @@ export default function AddLogScreen() {
     await new Promise(resolve => setTimeout(resolve, 100));
 
     try {
-      const selectedPoint = masterPoints.find(p => p.id === formData.pointId);
-
       const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
       const entry = timeRegex.test(formData.entryTime) ? formData.entryTime.split(':').map(Number) : [0, 0];
       const exit = timeRegex.test(formData.exitTime) ? formData.exitTime.split(':').map(Number) : [0, 0];
@@ -359,8 +343,8 @@ export default function AddLogScreen() {
         diveNumber: Number(formData.diveNumber) || 0,
         location: {
           pointId: formData.pointId,
-          pointName: selectedPoint?.name || formData.pointName || '不明',
-          region: formData.region || selectedPoint?.region || '',
+          pointName: formData.pointName || '不明',
+          region: formData.region || '',
           shopName: formData.shopName,
         },
         team: {
@@ -436,11 +420,15 @@ export default function AddLogScreen() {
       }
 
       if (isActuallyOffline) {
+        // オフライン保存成功
+        await refreshLogs(); // リスト更新
         Alert.alert('オフライン保存', '現在オフラインのため、ログを端末に保存しました。次にオンラインになった時に自動的にサーバーと同期されます。', [
           { text: 'OK', onPress: () => router.back() }
         ]);
       } else {
         setSaveStatus('保存に成功しました！');
+        // 保存成功時は必ずリストを更新
+        await refreshLogs();
 
         if (formData.alsoReview && formData.pointId && FEATURE_FLAGS.ENABLE_V6_REVIEW_LOG_LINKING) {
           const logId = await savePromise;
@@ -473,29 +461,6 @@ export default function AddLogScreen() {
       setSaveStatus('');
     }
   };
-
-  const regions = useMemo(() => {
-    const rSet = new Set(masterPoints.map(p => p.region).filter(Boolean));
-    return Array.from(rSet).sort();
-  }, [masterPoints]);
-
-  const filteredPoints = useMemo(() => {
-    let results = masterPoints;
-    if (selectedRegion) {
-      results = results.filter(p => p.region === selectedRegion);
-    }
-    if (spotSearchTerm) {
-      const s = spotSearchTerm.toLowerCase();
-      results = results.filter(p =>
-        p && (
-          String(p.name || '').toLowerCase().includes(s) ||
-          String(p.area || '').toLowerCase().includes(s) ||
-          String(p.zone || '').toLowerCase().includes(s)
-        )
-      );
-    }
-    return results.slice(0, 50);
-  }, [masterPoints, spotSearchTerm, selectedRegion]);
 
   const handlePickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -552,25 +517,6 @@ export default function AddLogScreen() {
     }
   };
 
-  const filteredCreatures = useMemo(() => {
-    if (!creatureSearchTerm) return [];
-    const s = creatureSearchTerm.toLowerCase();
-    return masterCreatures.filter(c =>
-      c && (
-        String(c.name || '').toLowerCase().includes(s) ||
-        String(c.category || '').toLowerCase().includes(s)
-      )
-    ).slice(0, 50);
-  }, [masterCreatures, creatureSearchTerm]);
-
-  const pointSpecificCreatures = useMemo(() => {
-    if (!formData.pointId || !pointCreatures.length) return [];
-    const relatedIds = pointCreatures
-      .filter(pc => pc.pointId === formData.pointId)
-      .map(pc => pc.creatureId);
-    return masterCreatures.filter(c => relatedIds.includes(c.id));
-  }, [formData.pointId, pointCreatures, masterCreatures]);
-
   const removePhoto = (index: number) => {
     setFormData(prev => ({
       ...prev,
@@ -594,6 +540,27 @@ export default function AddLogScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Modals for high-performance searching */}
+      <PointSelectorModal
+        isVisible={pointModalVisible}
+        onClose={() => setPointModalVisible(false)}
+        onSelect={(p) => {
+          setFormData(prev => ({ ...prev, pointId: p.id, pointName: p.name, region: p.region }));
+          setPointModalVisible(false);
+        }}
+      />
+      <CreatureSelectorModal
+        isVisible={creatureModalVisible}
+        onClose={() => setCreatureModalVisible(false)}
+        onSelect={(c) => {
+          setFormData(prev => ({
+            ...prev,
+            sightedCreatures: [...(prev.sightedCreatures || []), c.id]
+          }));
+          setCreatureModalVisible(false);
+        }}
+      />
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
@@ -762,32 +729,15 @@ export default function AddLogScreen() {
                 </View>
                 <View style={styles.inputGroup}>
                   <Text style={styles.label}>ポイントを選択</Text>
-                  <View style={styles.searchWrapper}>
+                  <TouchableOpacity
+                    style={styles.searchWrapper}
+                    onPress={() => setPointModalVisible(true)}
+                  >
                     <Search size={16} color="#94a3b8" style={styles.searchIcon} />
-                    <TextInput
-                      style={styles.searchInput}
-                      placeholder="ポイント名で検索..."
-                      value={spotSearchTerm}
-                      onChangeText={setSpotSearchTerm}
-                    />
-                  </View>
-                  {spotSearchTerm.length > 0 && (
-                    <View style={styles.searchResults}>
-                      {filteredPoints.map(p => (
-                        <TouchableOpacity
-                          key={p.id}
-                          style={styles.searchResultItem}
-                          onPress={() => {
-                            setFormData(prev => ({ ...prev, pointId: p.id, pointName: p.name, region: p.region }));
-                            setSpotSearchTerm('');
-                          }}
-                        >
-                          <Text style={styles.searchResultName}>{p.name}</Text>
-                          <Text style={styles.searchResultSub}>{p.region} - {p.area}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  )}
+                    <Text style={[styles.searchInput, !formData.pointName && { color: '#94a3b8' }]}>
+                      {formData.pointName || "ポイントを検索..."}
+                    </Text>
+                  </TouchableOpacity>
                   {formData.pointName ? (
                     <View style={styles.selectedBadge}>
                       <Text style={styles.selectedBadgeText}>{formData.pointName} ({formData.region})</Text>
@@ -796,6 +746,27 @@ export default function AddLogScreen() {
                       </TouchableOpacity>
                     </View>
                   ) : null}
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>またはスポット名を手入力</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.pointName}
+                    onChangeText={(val) => setFormData(p => ({ ...p, pointName: val }))}
+                    placeholder="ショップ名や独自の場所"
+                    placeholderTextColor="#94a3b8"
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>ショップ名</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.shopName}
+                    onChangeText={(val) => setFormData(p => ({ ...p, shopName: val }))}
+                    placeholderTextColor="#94a3b8"
+                  />
                 </View>
 
                 <View style={styles.inputGroup}>
@@ -1105,62 +1076,15 @@ export default function AddLogScreen() {
               <View style={styles.sectionBody}>
                 <View style={styles.inputGroup}>
                   <Text style={styles.label}>生物を検索（図鑑から追加）</Text>
-                  <View style={styles.searchWrapper}>
+                  <TouchableOpacity
+                    style={styles.searchWrapper}
+                    onPress={() => setCreatureModalVisible(true)}
+                  >
                     <Search size={16} color="#94a3b8" style={styles.searchIcon} />
-                    <TextInput
-                      style={styles.searchInput}
-                      placeholder="生物名で検索..."
-                      value={creatureSearchTerm}
-                      onChangeText={setCreatureSearchTerm}
-                    />
-                  </View>
-
-                  {creatureSearchTerm.length > 0 && (
-                    <View style={styles.searchResults}>
-                      {filteredCreatures.map(c => (
-                        <TouchableOpacity
-                          key={c.id}
-                          style={styles.searchResultItem}
-                          onPress={() => {
-                            const current = formData.sightedCreatures || [];
-                            if (!current.includes(c.id)) {
-                              setFormData(prev => ({ ...prev, sightedCreatures: [...current, c.id] }));
-                            }
-                            setCreatureSearchTerm('');
-                          }}
-                        >
-                          <Text style={styles.searchResultName}>{c.name}</Text>
-                          <Text style={styles.searchResultSub}>{c.category}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  )}
-
-                  {pointSpecificCreatures.length > 0 && !creatureSearchTerm && (
-                    <View style={styles.pointCreaturesSection}>
-                      <Text style={styles.subLabel}>このポイントの生物</Text>
-                      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalTags}>
-                        {pointSpecificCreatures.map(c => {
-                          const isSelected = formData.sightedCreatures.includes(c.id);
-                          return (
-                            <TouchableOpacity
-                              key={c.id}
-                              style={[styles.pointCreatureTag, isSelected && styles.pointCreatureTagActive]}
-                              onPress={() => {
-                                if (isSelected) {
-                                  setFormData(p => ({ ...p, sightedCreatures: p.sightedCreatures.filter(id => id !== c.id) }));
-                                } else {
-                                  setFormData(p => ({ ...p, sightedCreatures: [...p.sightedCreatures, c.id] }));
-                                }
-                              }}
-                            >
-                              <Text style={[styles.pointCreatureText, isSelected && styles.pointCreatureTextActive]}>{c.name}</Text>
-                            </TouchableOpacity>
-                          );
-                        })}
-                      </ScrollView>
-                    </View>
-                  )}
+                    <Text style={{ color: '#94a3b8', fontSize: 15 }}>
+                      生物を追加...
+                    </Text>
+                  </TouchableOpacity>
 
                   <View style={styles.tagGrid}>
                     {formData.sightedCreatures.map(id => {
