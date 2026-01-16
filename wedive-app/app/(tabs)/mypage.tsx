@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { StyleSheet, Pressable, ScrollView, Image, Dimensions, TouchableOpacity, ActivityIndicator } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Text, View } from '@/components/Themed';
-import { LogOut, ChevronRight, Bookmark, Heart, Settings, Activity, BookOpen, Grid, User as UserIcon, Award, Star, MapPin, Plus, Clock, Sparkles, Ticket } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
+import { LogOut, ChevronRight, Bookmark, Heart, Settings, Activity, BookOpen, Grid, User as UserIcon, Award, Star, MapPin, Plus, Clock, Sparkles, Ticket, Trash2 } from 'lucide-react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
 import { usePoints } from '../../src/hooks/usePoints';
 import { useCreatures } from '../../src/hooks/useCreatures';
@@ -27,7 +28,8 @@ type TabType = 'dashboard' | 'logbook' | 'collection' | 'favorites' | 'wanted' |
 
 export default function MyPageScreen() {
   const router = useRouter();
-  const { user: authUser, logs, isLoading: authLoading, signOut, updateUser, refreshProfile, firebaseUser } = useAuth();
+  const params = useLocalSearchParams();
+  const { user: authUser, logs, isLoading: authLoading, signOut, updateUser, refreshProfile, firebaseUser, deleteAccount } = useAuth();
 
   // 画面が表示されるたびに最新のプロフィール（チケット枚数など）を読み込む
   React.useEffect(() => {
@@ -66,6 +68,13 @@ export default function MyPageScreen() {
   }, [user?.certification, agencies]);
 
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
+
+  // Handle tab switching via URL params
+  useEffect(() => {
+    if (params.tab && ['dashboard', 'logbook', 'collection', 'favorites', 'wanted', 'plan', 'reviews'].includes(params.tab as string)) {
+      setActiveTab(params.tab as TabType);
+    }
+  }, [params.tab]);
   const [isProfileEditOpen, setIsProfileEditOpen] = useState(false);
 
   const isLoading = authLoading || loadingPoints || loadingCreatures || loadingStats || loadingReviews;
@@ -75,7 +84,8 @@ export default function MyPageScreen() {
     router.replace('/(auth)/login');
   };
 
-  // Derived Data
+
+
   const mapLogToIds = (logs: DiveLog[]) => {
     return Array.from(new Set(logs.flatMap(l => [l.creatureId, ...(l.sightedCreatures || [])]).filter((id): id is string => !!id)));
   };
@@ -613,10 +623,17 @@ export default function MyPageScreen() {
             </View>
             <ChevronRight size={20} color="#cbd5e1" />
           </Pressable>
-          <Pressable style={[styles.menuItem, styles.lastItem]} onPress={handleSignOut}>
+          <Pressable style={styles.menuItem} onPress={handleSignOut}>
             <View style={styles.menuLeft}>
               <LogOut size={20} color="#94a3b8" />
               <Text style={styles.menuLabel}>Log Out</Text>
+            </View>
+          </Pressable>
+
+          <Pressable style={[styles.menuItem, styles.lastItem]} onPress={() => router.push('/settings/delete-account')}>
+            <View style={styles.menuLeft}>
+              <Trash2 size={20} color="#ef4444" />
+              <Text style={[styles.menuLabel, { color: '#ef4444' }]}>Delete Account</Text>
             </View>
           </Pressable>
         </View>

@@ -471,7 +471,9 @@ export default function AddReviewScreen() {
         Alert.alert('完了', 'レビューを投稿しました！');
       }
 
-      router.back();
+      // 完了後はマイページのログブックタブへ遷移
+      // router.back() だとログ登録画面に戻ってしまい、未登録と勘違いさせるため
+      router.replace('/(tabs)/mypage?tab=logbook');
     } catch (error) {
       console.error("[ReviewSubmit] Firestore Error:", error);
       Alert.alert('エラー', '投稿に失敗しました');

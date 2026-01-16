@@ -44,6 +44,7 @@ export default function TabOneScreen() {
 
   const creatures = allCreatures.filter(c => c.status === 'approved').slice(0, 10);
 
+
   /*
   useEffect(() => {
     // Legacy fetching logic removed
