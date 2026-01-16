@@ -85,9 +85,9 @@ export default function TabLayout() {
                     await deleteAccount();
                     Alert.alert('完了', 'アカウントを削除しました。');
                     router.replace('/(auth)/login');
-                  } catch (error) {
+                  } catch (error: any) {
                     console.error('Final account deletion failed:', error);
-                    Alert.alert('エラー', '削除に失敗しました。');
+                    Alert.alert('エラー', `削除に失敗しました。\n${error.message || JSON.stringify(error)}`);
                   } finally {
                     isGlobalProcessing = false; // 完了しても失敗してもロック解除（次はログイン画面なので影響なしだが、変数は残るため）
                   }

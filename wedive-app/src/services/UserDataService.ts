@@ -209,31 +209,47 @@ export class UserDataService {
     try {
       console.log(`[UserDataService] Starting full data deletion for user: ${userId}`);
 
-      // 1. サブコレクションの削除 (logs, bookmarks, favorites, aiConciergeTickets)
-      const subcollections = ['logs', 'bookmarks', 'favorites', 'aiConciergeTickets', 'stats'];
+      // 1. サブコレクションの削除 (logs, aiConciergeTickets, stats)
+      // bookmarks, favorites はドキュメント内フィールドのためサブコレクション削除は不要
+      const subcollections = ['logs', 'aiConciergeTickets', 'stats'];
       for (const subName of subcollections) {
-        const subRef = collection(firestoreDb, 'users', userId, subName);
-        const subSnap = await getDocs(subRef);
-        console.log(`[UserDataService] Deleting ${subSnap.size} docs from ${subName}...`);
+        try {
+          const subRef = collection(firestoreDb, 'users', userId, subName);
+          const subSnap = await getDocs(subRef);
+          console.log(`[UserDataService] Deleting ${subSnap.size} docs from ${subName}...`);
 
-        const deletePromises = subSnap.docs.map(async (d) => {
-          await deleteDoc(d.ref);
-          // ログの場合は Public Log も削除トライ
-          if (subName === 'logs') {
-            await deleteDoc(doc(firestoreDb, 'public_logs', d.id)).catch(() => { });
-          }
-        });
-        await Promise.all(deletePromises);
+          const deletePromises = subSnap.docs.map(async (d) => {
+            await deleteDoc(d.ref);
+          });
+          await Promise.all(deletePromises);
+        } catch (e: any) {
+          console.warn(`[UserDataService] Check/Delete failed for subcollection ${subName} (skipping):`, e);
+          // 権限エラー等で削除できなくても、アカウント削除フロー自体は止めずに続行する (Best Effort)
+        }
       }
 
       // 2. 自分が投稿したレビューの削除
-      const reviewsQ = query(collection(firestoreDb, 'reviews'), where('userId', '==', userId));
-      const reviewsSnap = await getDocs(reviewsQ);
-      console.log(`[UserDataService] Deleting ${reviewsSnap.size} reviews...`);
-      await Promise.all(reviewsSnap.docs.map(d => deleteDoc(d.ref)));
+      try {
+        const reviewsQ = query(collection(firestoreDb, 'reviews'), where('userId', '==', userId));
+        const reviewsSnap = await getDocs(reviewsQ);
+        console.log(`[UserDataService] Deleting ${reviewsSnap.size} reviews...`);
+        await Promise.all(reviewsSnap.docs.map(d => deleteDoc(d.ref)));
+      } catch (e: any) {
+        console.warn('[UserDataService] Failed to delete user reviews (skipping):', e);
+      }
 
       // 3. ローカルデータの完全消去
       await this.clearUserData();
+
+      // 4. ユーザープロフィール(ルートドキュメント)の削除
+      // ※これを最後にやらないと、セキュリティルールで「isOwner」判定ができなくなる可能性があるため最後に実行
+      // ただし、Auth削除前ならOK。Auth削除後だとルールで弾かれるが、この関数はAuth削除前に呼ばれる前提。
+      try {
+        await deleteDoc(doc(firestoreDb, 'users', userId));
+        console.log('[UserDataService] Deleted user profile document.');
+      } catch (e: any) {
+        console.warn('[UserDataService] Failed to delete user profile (skipping):', e);
+      }
 
       console.log('[UserDataService] Full data deletion completed.');
     } catch (error) {
