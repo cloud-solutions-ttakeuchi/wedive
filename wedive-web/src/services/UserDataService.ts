@@ -155,7 +155,6 @@ export class UserDataService {
    * ログを保存
    */
   async saveLog(userId: string, log: Log, skipFirestore = false): Promise<string> {
-    await this.initialize(userId);
     const now = new Date().toISOString();
     try {
       await userDbEngine.runAsync(
@@ -209,23 +208,16 @@ export class UserDataService {
    * レビューを保存
    */
   async saveReview(userId: string, review: Review): Promise<string> {
-    await this.initialize(userId);
     const now = new Date().toISOString();
-    // ID生成: 新規作成時はIDがないためここで生成する
-    const reviewId = review.id || `rv${Date.now()}`;
-    const reviewData = { ...review, id: reviewId };
-
     try {
       await userDbEngine.runAsync(
         'INSERT OR REPLACE INTO my_reviews (id, point_id, data_json, status, created_at, synced_at) VALUES (?, ?, ?, ?, ?, ?)',
-        [reviewId, reviewData.pointId, JSON.stringify(reviewData), reviewData.status || 'approved', reviewData.date || now, now]
+        [review.id, review.pointId, JSON.stringify(review), review.status || 'approved', review.date || now, now]
       );
 
-      const reviewRef = doc(firestoreDb, 'reviews', reviewId);
-      // Remove undefined fields
-      const firestoreData = JSON.parse(JSON.stringify({ ...reviewData, userId, updatedAt: now }));
-      await setDoc(reviewRef, firestoreData);
-      return reviewId;
+      const reviewRef = doc(firestoreDb, 'reviews', review.id);
+      await setDoc(reviewRef, { ...review, userId, updatedAt: now });
+      return review.id;
     } catch (error) {
       console.error('[UserDataService] Failed to save review:', error);
       throw error;
@@ -248,7 +240,6 @@ export class UserDataService {
    * 地点を保存
    */
   async savePoint(userId: string, point: any): Promise<void> {
-    await this.initialize(userId);
     const pointRef = doc(firestoreDb, 'points', point.id || `p${Date.now()}`);
     await setDoc(pointRef, { ...point, updatedAt: new Date().toISOString() });
     await masterDataService.updatePointInCache({ ...point, id: pointRef.id });
@@ -258,7 +249,6 @@ export class UserDataService {
    * 生物申請を保存
    */
   async saveCreatureProposal(userId: string, proposal: any): Promise<void> {
-    await this.initialize(userId);
     const propId = proposal.id || `propc${Date.now()}`;
     const propRef = doc(firestoreDb, 'creature_proposals', propId);
     const data = { ...proposal, id: propId, userId, status: 'pending', updatedAt: new Date().toISOString() };
@@ -270,7 +260,6 @@ export class UserDataService {
    * 地点申請を保存
    */
   async savePointProposal(userId: string, proposal: any): Promise<void> {
-    await this.initialize(userId);
     const propId = proposal.id || `propp${Date.now()}`;
     const propRef = doc(firestoreDb, 'point_proposals', propId);
     const data = { ...proposal, id: propId, userId, status: 'pending', updatedAt: new Date().toISOString() };
@@ -282,7 +271,6 @@ export class UserDataService {
    * 生物を保存
    */
   async saveCreature(userId: string, creature: any): Promise<void> {
-    await this.initialize(userId);
     const creatureRef = doc(firestoreDb, 'creatures', creature.id || `c${Date.now()}`);
     await setDoc(creatureRef, { ...creature, updatedAt: new Date().toISOString() });
     await masterDataService.updateCreatureInCache({ ...creature, id: creatureRef.id });

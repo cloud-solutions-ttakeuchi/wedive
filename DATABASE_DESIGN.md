@@ -670,6 +670,36 @@ Firestore からのマスタデータの直接読み取りは **厳格に禁止*
 2.  **保存先**: `user.db` (`my_logs`, `my_reviews` 等) に保存します。
 3.  **申請データ**: Firestore への書き込みと同時に、ローカルの `my_proposals` にも保存する「Dual-Write」を行います。
 
+#### 保存処理の共通ルール (Saving Rules)
+実装時に必ず以下のルールを遵守すること。勝手なロジック変更は禁止とする。
+
+1. **Dual-Write**: 
+   - ユーザー生成データ（ログ、レビュー、申請）は、**必ずローカルSQLiteとサーバーFirestoreの両方に書き込む**こと。
+   - アプリ版、Web版ともに共通のこの戦略に従う。
+
+2. **Status Handling (承認ステータス)**:
+   - **デフォルト**: 指定がない場合は **`pending`**（承認待ち）とする。
+   - **ステータス決定の責務**: ステータスの決定（`approved` か `pending` か）は、**呼び出し元（UI/Context/EditPage）** が担う。`UserDataService` などのデータ最下層で自動判定ロジック（`isAdmin` チェック等）を持たせないこと。
+   - **補完**: ただし、呼び出し元からのデータに `status` が欠落していた場合（`undefined`）は、データ不整合を防ぐため、`UserDataService` 層で安全側に倒して **`pending`** を補完する。
+
+3. **Data Sanitization (データ整形)**:
+   - Firestoreは `undefined` 値を受け付けない。
+   - 保存処理（`setDoc`/`updateDoc`）の直前で必ず `undefined` フィールドを除去すること（例: `JSON.parse(JSON.stringify(data))`）。
+
+#### 4. データ操作関数マッピング (Action Mapping)
+データの登録・更新・削除を行う際は、プラットフォームごとに以下の関数を必ず使用すること。
+新規に関数を作成したり、直接Firestore/SQLiteを操作することは禁止する。
+
+| データ種別 (Target) | 操作 (C/U) | Web版 Service Method | App版 Service Method | 備考 |
+| :--- | :--- | :--- | :--- | :--- |
+| **Review** | 登録・更新 | `userDataService.saveReview` | `userDataService.saveMyReview` | Dual-Write。ステータス管理は呼び出し元責務。 |
+| **Log** | 登録・更新 | `userDataService.saveLog` | `userDataService.saveLog` | Dual-Write。 |
+| **Profile** | 更新 | `userDataService.saveSetting` | `userDataService.saveSetting` | プロフィール更新。 |
+| **Proposal** | 申請 | `userDataService.save*Proposal` | `userDataService.saveMyProposal` | 一般ユーザー用。デフォルト `status='pending'`。 |
+| **Master** | 直接登録 (Admin) | `userDataService.savePoint` 等 | (N/A) | 管理者用。マスタ直接更新。Web管理画面のみ。 |
+
+※ App版の `saveMyProposal` は、引数 `data` 内に `status` が含まれない場合、自動的に `pending` を補完してFirestoreへ送信する。
+
 ### 8.4 重要なデータの一貫性 (Transaction Policy)
 チケット消費やユーザー情報更新など、資産性のあるデータについては、以下の4モデル間の一貫性を保証します。
 

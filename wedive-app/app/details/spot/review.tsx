@@ -12,7 +12,6 @@ import type { Review, ReviewRadar } from '../../../src/types';
 import { Wind, Waves, Search, Maximize, Map, Mountain, Boxes } from 'lucide-react-native';
 import { useAgencies } from '../../../src/hooks/useAgencies';
 import { AgencyMaster } from 'wedive-shared';
-import { userDataService } from '../../../src/services/UserDataService';
 import React from 'react';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Platform } from 'react-native';
@@ -471,10 +470,6 @@ export default function AddReviewScreen() {
         console.log("[ReviewSubmit] Successfully added to Firestore!");
         Alert.alert('完了', 'レビューを投稿しました！');
       }
-
-      // Dual-Write: Save to local SQLite immediately
-      console.log("[ReviewSubmit] Saving to local SQLite (Dual-Write)...");
-      await userDataService.saveMyReview(user.id, reviewData, true);
 
       // 完了後はマイページのログブックタブへ遷移
       // router.back() だとログ登録画面に戻ってしまい、未登録と勘違いさせるため
