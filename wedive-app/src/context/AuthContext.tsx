@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User as FirebaseUser, onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 import { auth, db } from '../firebase';
-import { doc, updateDoc, deleteDoc, getDoc, runTransaction } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc, getDoc, runTransaction, setDoc } from 'firebase/firestore';
 import { User, DiveLog } from '../types';
 import { userDataService } from '../services/UserDataService';
 import { aiConciergeService } from '../services/AiConciergeService';

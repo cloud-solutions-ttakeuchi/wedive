@@ -170,8 +170,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (!auth.isAuthenticated) return;
     const currentIds = Array.isArray(auth.currentUser.favoriteCreatureIds) ? auth.currentUser.favoriteCreatureIds : [];
     const isFav = currentIds.includes(id);
+
+    const newIds = isFav
+      ? currentIds.filter(cid => cid !== id)
+      : [...currentIds, id];
+
     await auth.updateUser({
-      favoriteCreatureIds: isFav ? arrayRemove(id) : arrayUnion(id) as any
+      favoriteCreatureIds: newIds
     });
   };
 
@@ -179,8 +184,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (!auth.isAuthenticated) return;
     const currentWanted = Array.isArray(auth.currentUser.wanted) ? auth.currentUser.wanted : [];
     const isWanted = currentWanted.includes(id);
+
+    const newWanted = isWanted
+      ? currentWanted.filter(wid => wid !== id)
+      : [...currentWanted, id];
+
     await auth.updateUser({
-      wanted: isWanted ? arrayRemove(id) : arrayUnion(id) as any
+      wanted: newWanted
     });
   };
 
@@ -188,8 +198,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (!auth.isAuthenticated) return;
     const currentBookmarks = Array.isArray(auth.currentUser.bookmarkedPointIds) ? auth.currentUser.bookmarkedPointIds : [];
     const isBookmarked = currentBookmarks.includes(id);
+
+    const newBookmarks = isBookmarked
+      ? currentBookmarks.filter(bid => bid !== id)
+      : [...currentBookmarks, id];
+
     await auth.updateUser({
-      bookmarkedPointIds: isBookmarked ? arrayRemove(id) : arrayUnion(id) as any
+      bookmarkedPointIds: newBookmarks
     });
   };
 

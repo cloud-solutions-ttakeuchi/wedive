@@ -15,6 +15,9 @@ export const CreatureDetailPage = () => {
   // Remove db, use state directly
   const { creatures, points, pointCreatures, currentUser, isAuthenticated, toggleFavorite, toggleWanted, addPointCreature, addPointCreatureProposal } = useApp();
 
+  const favIds = Array.isArray(currentUser?.favoriteCreatureIds) ? currentUser.favoriteCreatureIds : [];
+  const wantedIds = Array.isArray(currentUser?.wanted) ? currentUser.wanted : [];
+
   // Calculate Discovery Points
   const discoveryPoints = pointCreatures
     .filter((pc: any) => pc.creatureId === id && pc.status === 'approved')
@@ -201,25 +204,25 @@ export const CreatureDetailPage = () => {
                     onClick={() => toggleFavorite(creature.id)}
                     className={clsx(
                       "p-3 rounded-full shadow-sm border transition-all hover:scale-105 active:scale-95",
-                      currentUser.favoriteCreatureIds?.includes(creature.id)
+                      favIds.includes(creature.id)
                         ? "bg-red-50 border-red-100 text-red-500"
                         : "bg-white border-gray-100 text-gray-400 hover:text-red-500 hover:border-red-100"
                     )}
                     title="Add to Favorites"
                   >
-                    <Heart size={24} fill={currentUser.favoriteCreatureIds?.includes(creature.id) ? "currentColor" : "none"} />
+                    <Heart size={24} fill={favIds.includes(creature.id) ? "currentColor" : "none"} />
                   </button>
                   <button
                     onClick={() => toggleWanted(creature.id)}
                     className={clsx(
                       "p-3 rounded-full shadow-sm border transition-all hover:scale-105 active:scale-95",
-                      currentUser.wanted.includes(creature.id)
+                      wantedIds.includes(creature.id)
                         ? "bg-yellow-50 border-yellow-100 text-yellow-500"
                         : "bg-white border-gray-100 text-gray-400 hover:text-yellow-500 hover:border-yellow-100"
                     )}
                     title="Add to Wanted List"
                   >
-                    <Bookmark size={24} fill={currentUser.wanted.includes(creature.id) ? "currentColor" : "none"} />
+                    <Bookmark size={24} fill={wantedIds.includes(creature.id) ? "currentColor" : "none"} />
                   </button>
                 </div>
               </div>
