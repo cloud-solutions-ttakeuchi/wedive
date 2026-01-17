@@ -68,7 +68,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const newUser: User = {
               id: fbUser.uid,
               name: fbUser.displayName || 'Diver',
-              email: fbUser.email || '',
+
               role: 'user', // Default role
               trustScore: 0,
               favoriteCreatureIds: [],

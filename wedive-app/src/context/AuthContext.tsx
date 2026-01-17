@@ -94,7 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               const newUser: any = {
                 id: fbUser.uid,
                 name: fbUser.displayName || 'Diver',
-                email: fbUser.email || '',
+
                 role: 'user',
                 trustScore: 0,
                 profileImage: fbUser.photoURL || null,
