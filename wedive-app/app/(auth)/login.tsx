@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, Image, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Text, View } from '@/components/Themed';
 import { useRouter, Link } from 'expo-router';
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
@@ -22,6 +23,14 @@ export default function LoginScreen() {
       webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
       iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || '1066677586396-1avhn8hbahfrc1kmv9rbefi3toacjqn3.apps.googleusercontent.com',
       offlineAccess: true,
+    });
+
+    // Check for re-auth email (for account deletion flow)
+    AsyncStorage.getItem('temp_reauth_email').then(savedEmail => {
+      if (savedEmail) {
+        setEmail(savedEmail);
+        AsyncStorage.removeItem('temp_reauth_email'); // One-time use
+      }
     });
   }, []);
 

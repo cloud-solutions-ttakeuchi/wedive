@@ -4,6 +4,7 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { AppState, type AppStateStatus } from 'react-native';
 import 'react-native-reanimated';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -51,10 +52,26 @@ export default function RootLayout() {
   useEffect(() => {
     if (loaded) {
       // マスターデータの同期をバックグラウンドで開始
-      MasterDataSyncService.syncMasterData().catch(err => {
-        console.error('Initial master data sync failed:', err);
-      });
+      const runSync = () => {
+        MasterDataSyncService.syncMasterData().catch(err => {
+          console.error('Master data sync failed:', err);
+        });
+      };
+
+      runSync();
       SplashScreen.hideAsync();
+
+      // フォアグラウンド復帰時にも同期を実行
+      const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+        if (nextAppState === 'active') {
+          console.log('App returned to foreground, checking for master data updates...');
+          runSync();
+        }
+      });
+
+      return () => {
+        subscription.remove();
+      };
     }
   }, [loaded]);
 

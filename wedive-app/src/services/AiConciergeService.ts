@@ -97,7 +97,7 @@ export class AiConciergeService extends BaseAiConciergeService {
         const newTicket = this.createTicketBase({
           id: ticketId,
           type: 'daily',
-          count: 1,
+          count: 5,
           reason: 'ログインボーナス',
           expirationDays: CONCIERGE_CAMPAIGN.DAILY_EXPIRATION_DAYS
         });
@@ -106,7 +106,7 @@ export class AiConciergeService extends BaseAiConciergeService {
         transaction.set(userRef, {
           aiConciergeTickets: {
             lastDailyGrant: today,
-            totalAvailable: increment(1)
+            totalAvailable: increment(5)
           }
         }, { merge: true });
 

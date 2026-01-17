@@ -11,6 +11,7 @@ import { usePoints } from '../../src/hooks/usePoints';
 import { useCreatures } from '../../src/hooks/useCreatures';
 import { useHomeData } from '../../src/hooks/useHomeData';
 import { FEATURE_FLAGS } from '../../src/constants/features';
+import { useAuth } from '../../src/context/AuthContext';
 
 const { width } = Dimensions.get('window');
 
@@ -20,6 +21,7 @@ const NO_IMAGE_USER = require('../../assets/images/no-image-user.png');
 
 export default function TabOneScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const { data: allPoints = [], isLoading: pLoading } = usePoints();
   const { data: allCreatures = [], isLoading: cLoading } = useCreatures();
   const { latestReviews, isLoading: rLoading } = useHomeData();
@@ -41,6 +43,7 @@ export default function TabOneScreen() {
     .slice(0, 5);
 
   const creatures = allCreatures.filter(c => c.status === 'approved').slice(0, 10);
+
 
   /*
   useEffect(() => {
@@ -167,7 +170,7 @@ export default function TabOneScreen() {
                         />
                         <View style={{ flex: 1 }}>
                           <Text style={styles.reviewPointName} numberOfLines={1}>
-                            {point ? point.name : 'Unknown Point'}
+                            {point ? point.name : ((item as any).pointName || 'Unknown Point')}
                           </Text>
                           <View style={styles.ratingRow}>
                             {[...Array(5)].map((_, i) => (
@@ -236,13 +239,15 @@ export default function TabOneScreen() {
         </View>
       </ScrollView>
 
-      {/* Floating Action Button for Add Log */}
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => router.push('/log/add')}
-      >
-        <Plus size={28} color="#fff" />
-      </TouchableOpacity>
+      {/* Floating Action Button for Add Log - only for logged in users */}
+      {user && (
+        <TouchableOpacity
+          style={styles.fab}
+          onPress={() => router.push('/log/add')}
+        >
+          <Plus size={28} color="#fff" />
+        </TouchableOpacity>
+      )}
     </View>
   );
 }

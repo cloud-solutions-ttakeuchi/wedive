@@ -15,6 +15,7 @@ type AuthContextType = {
   signOut: () => Promise<void>;
   updateUser: (userData: Partial<User>) => Promise<void>;
   refreshProfile: () => Promise<void>;
+  refreshLogs: () => Promise<void>;
   deleteAccount: () => Promise<void>;
 };
 
@@ -27,6 +28,7 @@ const AuthContext = createContext<AuthContextType>({
   signOut: async () => { },
   updateUser: async () => { },
   refreshProfile: async () => { },
+  refreshLogs: async () => { },
   deleteAccount: async () => { },
 });
 
@@ -49,11 +51,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(null);
           setIsLoading(true);
 
-          // 1. UIDベースでのSQLite初期化と、他人のデータの掃除
-          await userDataService.initialize(fbUser.uid);
+          // 1. 他人のデータの掃除を先に行う (DBロック回避)
           await userDataService.cleanupOtherUsersData(fbUser.uid);
+          // 2. その後、自分のDBを初期化・接続
+          await userDataService.initialize(fbUser.uid);
 
-          // 2. 必要に応じた初回同期（Firestore -> SQLite）
+          // 3. 必要に応じた初回同期（Firestore -> SQLite）
           // Issue #146: ログインの度にデータを同期する仕様のため、force=true で実行
           await userDataService.syncInitialData(fbUser.uid, true);
 
@@ -174,10 +177,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const deleteAccount = async () => {
     if (!firebaseUser) return;
     try {
-      // 1. Firestoreデータ削除
+      // 1. 全関連データの削除 (サブコレクション、レビュー、PublicLogs、ローカル含む)
+      await userDataService.deleteAllUserData(firebaseUser.uid);
+
+      // 2. Firestoreユーザードキュメント削除
+      // Note: userDataService内で削除しても良いが、明示的にここで行う
       await deleteDoc(doc(db, 'users', firebaseUser.uid));
-      // 2. ローカルデータ削除 (不具合報告に基づき追加)
-      await userDataService.clearUserData();
       // 3. 認証ユーザー削除
       await firebaseUser.delete();
     } catch (error) {
@@ -196,6 +201,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       signOut,
       updateUser,
       refreshProfile,
+      refreshLogs: async () => {
+        if (firebaseUser) {
+          const localLogs = await userDataService.getLogs();
+          setLogs(localLogs);
+        }
+      },
       deleteAccount
     }}>
       {children}

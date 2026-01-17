@@ -36,10 +36,9 @@ export class UserDataService {
     const dbName = `user_${targetUserId}.db`;
 
     // 既に同じユーザーのDBが開いている場合は何もしない
-    // FIX: テーブル追加等があるため、接続済みでも初期化SQL（CREATE IF NOT EXISTS）を通すようにする
-    // if (this.sqliteDb && this.currentUserId === targetUserId) {
-    //   return true;
-    // }
+    if (this.sqliteDb && this.currentUserId === targetUserId) {
+      return true;
+    }
 
     if (this.isInitializing) return false;
     if (!SQLite || !SQLite.openDatabaseAsync) {
@@ -50,7 +49,11 @@ export class UserDataService {
     try {
       // 別のユーザーのDBが開いている場合は一度閉じる
       if (this.sqliteDb) {
-        // 接続をクリア
+        try {
+          await this.sqliteDb.closeAsync();
+        } catch (e) {
+          console.warn('[UserDataService] Failed to close DB:', e);
+        }
         this.sqliteDb = null;
       }
 
@@ -199,6 +202,63 @@ export class UserDataService {
   }
 
   /**
+   * サーバー上の全データを削除（退会処理用）
+   * 本来はCloud Functionsで行うべきだが、クライアントサイドで可能な限り消す
+   */
+  async deleteAllUserData(userId: string): Promise<void> {
+    try {
+      console.log(`[UserDataService] Starting full data deletion for user: ${userId}`);
+
+      // 1. サブコレクションの削除 (logs, aiConciergeTickets, stats)
+      // bookmarks, favorites はドキュメント内フィールドのためサブコレクション削除は不要
+      const subcollections = ['logs', 'aiConciergeTickets', 'stats'];
+      for (const subName of subcollections) {
+        try {
+          const subRef = collection(firestoreDb, 'users', userId, subName);
+          const subSnap = await getDocs(subRef);
+          console.log(`[UserDataService] Deleting ${subSnap.size} docs from ${subName}...`);
+
+          const deletePromises = subSnap.docs.map(async (d) => {
+            await deleteDoc(d.ref);
+          });
+          await Promise.all(deletePromises);
+        } catch (e: any) {
+          console.warn(`[UserDataService] Check/Delete failed for subcollection ${subName} (skipping):`, e);
+          // 権限エラー等で削除できなくても、アカウント削除フロー自体は止めずに続行する (Best Effort)
+        }
+      }
+
+      // 2. 自分が投稿したレビューの削除
+      try {
+        const reviewsQ = query(collection(firestoreDb, 'reviews'), where('userId', '==', userId));
+        const reviewsSnap = await getDocs(reviewsQ);
+        console.log(`[UserDataService] Deleting ${reviewsSnap.size} reviews...`);
+        await Promise.all(reviewsSnap.docs.map(d => deleteDoc(d.ref)));
+      } catch (e: any) {
+        console.warn('[UserDataService] Failed to delete user reviews (skipping):', e);
+      }
+
+      // 3. ローカルデータの完全消去
+      await this.clearUserData();
+
+      // 4. ユーザープロフィール(ルートドキュメント)の削除
+      // ※これを最後にやらないと、セキュリティルールで「isOwner」判定ができなくなる可能性があるため最後に実行
+      // ただし、Auth削除前ならOK。Auth削除後だとルールで弾かれるが、この関数はAuth削除前に呼ばれる前提。
+      try {
+        await deleteDoc(doc(firestoreDb, 'users', userId));
+        console.log('[UserDataService] Deleted user profile document.');
+      } catch (e: any) {
+        console.warn('[UserDataService] Failed to delete user profile (skipping):', e);
+      }
+
+      console.log('[UserDataService] Full data deletion completed.');
+    } catch (error) {
+      console.error('[UserDataService] Failed to delete all user data:', error);
+      throw error;
+    }
+  }
+
+  /**
    * ログアウト処理
    */
   async logout(): Promise<void> {
@@ -209,6 +269,13 @@ export class UserDataService {
     } catch (e) {
       console.error('Failed to clear data on logout:', e);
     } finally {
+      if (this.sqliteDb) {
+        try {
+          await this.sqliteDb.closeAsync();
+        } catch (e) {
+          console.warn('[UserDataService] Failed to close DB on logout:', e);
+        }
+      }
       this.sqliteDb = null;
       this.currentUserId = null;
     }

@@ -23,10 +23,25 @@ service cloud.firestore {
       }
 
       // AI Concierge Tickets Subcollection
-      // Reviews Collection
       match /aiConciergeTickets/{aiConciergeTicketsId} {
         allow read, create, update, delete: if isOwner(userId);
       }
+
+      // Stats Subcollection (Explicit definition)
+      match /stats/{statId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Permit all other subcollections for the owner (covers bookmarks, favorites, etc. if they become subcollections)
+      match /{subcollection}/{docId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // Public Logs (if used)
+    match /public_logs/{logId} {
+      allow read: if true;
+      allow write: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid);
     }
 
     // Collection Group Rule (Global Logs access)

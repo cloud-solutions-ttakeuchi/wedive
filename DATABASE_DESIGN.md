@@ -47,6 +47,7 @@ Usage of Firestore `onSnapshot` (real-time listeners) is **STRICTLY PROHIBITED**
 | `reviews` | 19 | `master_point_reviews` | 21 | `my_reviews` | 12 |
 | `users` | 16 | － | － | `my_settings` | 2 |
 | `users/{uid}/aiConciergeTickets` | 9 | － | － | `my_ai_concierge_tickets` | 8 |
+| `users/{uid}/stats` | 3 | － | － | `my_mastery` | 5 |
 | `users/{uid}/logs` | 21 | `master_public_logs` | 24 | `my_logs` | 24 |
 | `certifications` | 4 | `master_certifications` | 4 | － | － |
 | `badges` | 4 | `master_badges` | 4 | － | － |
@@ -425,7 +426,7 @@ sequenceDiagram
 AIコンシェルジュ（チャット）の利用権を管理します。一回使い切りのチケット形式で、有効期限を持ちます。
 | フィールド | 型 | 説明 |
 | :--- | :--- | :--- |
-| `id` | string | ドキュメントID |
+| `id` | string | ドキュメントID (ticketId) |
 | `type` | string | `daily` (ログイン), `contribution` (貢献), `bonus` (特別), `purchased` (購入) |
 | `count` | number | 付与されたチケット数 |
 | `remainingCount`| number | 残りのチケット数 |
@@ -435,7 +436,15 @@ AIコンシェルジュ（チャット）の利用権を管理します。一回
 | `reason` | string | 付与理由（例: "伊豆海洋公園 ポイント登録承認"） |
 | `metadata` | map | キャンペーンID等の追加情報 |
 
-### 4.7 `users/{uid}/logs` (ダイビングログ - サブコレクション)
+### 4.7 `users/{uid}/stats` (ユーザー統計 - サブコレクション)
+ユーザーの活動統計（ダイビング本数、経験地点数など）を保持するサブコレクション。
+| フィールド | 型 | 説明 |
+| :--- | :--- | :--- |
+| `id` | string | 統計種別ID（例: `summary`, `monthly`） |
+| `data` | map | 統計データ（内容は統計種別による） |
+| `updatedAt` | string | 最終更新日時 |
+
+### 4.8 `users/{uid}/logs` (ダイビングログ - サブコレクション)
 WeDive では、スケーラビリティとクエリ効率を考慮し、ユーザーのダイビングログをルートの `logs` コレクションではなく、各ユーザーの **サブコレクション** として配置します。
 | フィールド | 型 | 説明 |
 | :--- | :--- | :--- |
@@ -461,7 +470,7 @@ WeDive では、スケーラビリティとクエリ効率を考慮し、ユー�
 | `reviewId` | string | 関連レビューID (双方向リンク用) |
 | `profile` | array(map) | `{depth, temp, hr, time}` ダイブプロファイルデータ |
 
-### 4.8 `reviews` (ポイントレビュー)
+### 4.9 `reviews` (ポイントレビュー)
 ポイントに対するユーザーの生の声と環境実測値を管理します。
 | フィールド | 型 | 説明 |
 | :--- | :--- | :--- |
@@ -483,7 +492,7 @@ WeDive では、スケーラビリティとクエリ効率を考慮し、ユー�
 | `helpfulBy` | array(string)| ユーザーIDリスト |
 | `createdAt` | string | 投稿日時 |
 
-### 4.9 `ai_grounding_cache` (AI事実確認キャッシュ)
+### 4.10 `ai_grounding_cache` (AI事実確認キャッシュ)
 AIによる再構築結果や検索結果を保存し、費用の抑制と高速化を図る。
 | フィールド | 型 | 説明 |
 | :--- | :--- | :--- |
@@ -492,7 +501,7 @@ AIによる再構築結果や検索結果を保存し、費用の抑制と高速
 | `result` | map | 検索結果データ |
 | `expiresAt` | string | 有効期限 |
 
-### 4.10 `*_proposals` (マスタ申請データ群)
+### 4.11 `*_proposals` (マスタ申請データ群)
 `creature_proposals`, `point_proposals` など。
 | フィールド | 型 | 説明 |
 | :--- | :--- | :--- |
@@ -504,7 +513,7 @@ AIによる再構築結果や検索結果を保存し、費用の抑制と高速
 | `status` | string | pending, approved, rejected |
 | `createdAt`, `processedAt` | string | 申請日時 / 承認・却下日時 |
 
-### 4.11 `point_creature_proposals` (ポイント-生物紐付け申請)
+### 4.12 `point_creature_proposals` (ポイント-生物紐付け申請)
 | フィールド | 型 | 説明 |
 | :--- | :--- | :--- |
 | `id` | string | `proppc` + タイムスタンプ |
@@ -517,7 +526,7 @@ AIによる再構築結果や検索結果を保存し、費用の抑制と高速
 | `createdAt`, `processedAt` | string | 申請日時 / 承認・却下日時 |
 | `reasoning` | string | (Option) 申請理由・根拠 |
 
-### 4.12 `certifications` (認定資格マスタ)
+### 4.13 `certifications` (認定資格マスタ)
 | フィールド | 型 | 説明 |
 | :--- | :--- | :--- |
 | `id` | string | `cert` + 文字列 |
@@ -525,7 +534,7 @@ AIによる再構築結果や検索結果を保存し、費用の抑制と高速
 | `organization` | string | 団体名 (PADI, NAUI, etc.) |
 | `ranks` | array(map) | `{rankId, name}` ランク情報のリスト |
 
-### 4.13 `badges` (バッジマスタ)
+### 4.14 `badges` (バッジマスタ)
 | フィールド | 型 | 説明 |
 | :--- | :--- | :--- |
 | `id` | string | `bdg` + 文字列 |
@@ -533,7 +542,7 @@ AIによる再構築結果や検索結果を保存し、費用の抑制と高速
 | `iconUrl` | string | アイコン画像URL |
 | `condition` | map | 獲得条件定義 |
 
-### 4.14 管理機能におけるデータフロー (Admin Data Flow)
+### 4.15 管理機能におけるデータフロー (Admin Data Flow)
 
 管理者（Admin/Moderator）用のデータ操作も、Local-First の原則に従い **SQLite をプライマリ・ストレージ**とする。Firestore への直接アクセスは、初期同期と確定した書き込みのみに限定する。
 
@@ -559,7 +568,7 @@ AIによる再構築結果や検索結果を保存し、費用の抑制と高速
 3.  **データ復旧 (Hard Reset)**:
     - 必要に応じて Firestore の全ドキュメントを削除し、完全なシードデータから再構築する。この際、全ユーザーに対して次回の起動時にマスタの再ダウンロードを促す。
 
-#### 4.16 複数管理者間での競合解決 (Multi-Admin Conflict Resolution)
+#### 4.17 複数管理者間での競合解決 (Multi-Admin Conflict Resolution)
 
 複数の管理者が同時に操作する際の整合性は、操作対象の「バージョン（日時）」を比較する楽観的ロック方式で担保する。
 
