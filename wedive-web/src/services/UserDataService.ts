@@ -143,8 +143,8 @@ export class UserDataService {
   private async saveAdminProposal(type: string, id: string, data: any): Promise<void> {
     try {
       await userDbEngine.runAsync(
-        'INSERT OR REPLACE INTO admin_proposals (id, type, data_json) VALUES (?, ?, ?)',
-        [id, type, JSON.stringify(data)]
+        'INSERT OR REPLACE INTO admin_proposals (id, type, data_json, status) VALUES (?, ?, ?, ?)',
+        [id, type, JSON.stringify(data), data.status || 'pending']
       );
     } catch (error) {
       console.error('[UserDataService] Failed to save admin proposal:', error);
@@ -207,7 +207,7 @@ export class UserDataService {
   /**
    * レビューを保存
    */
-  async saveReview(userId: string, review: Review): Promise<string> {
+  async saveReview(userId: string, review: Review, skipFirestore = false): Promise<string> {
     const now = new Date().toISOString();
     const profile = await this.getSetting<any>('profile');
     const isAdmin = profile?.role === 'admin' || profile?.role === 'moderator';
@@ -224,10 +224,12 @@ export class UserDataService {
         [reviewData.id, reviewData.pointId, JSON.stringify(reviewData), finalStatus, reviewData.date || now, now]
       );
 
-      const reviewRef = doc(firestoreDb, 'reviews', reviewData.id);
-      // Remove undefined fields
-      const firestoreData = JSON.parse(JSON.stringify({ ...reviewData, userId, updatedAt: now }));
-      await setDoc(reviewRef, firestoreData, { merge: true });
+      if (!skipFirestore) {
+        const reviewRef = doc(firestoreDb, 'reviews', reviewData.id);
+        // Remove undefined fields
+        const firestoreData = JSON.parse(JSON.stringify({ ...reviewData, userId, updatedAt: now }));
+        await setDoc(reviewRef, firestoreData, { merge: true });
+      }
       return reviewData.id;
     } catch (error) {
       console.error('[UserDataService] Failed to save review:', error);
@@ -356,9 +358,15 @@ export class UserDataService {
         await this.saveSetting('profile', { ...userSnap.docs[0].data(), id: userId });
       }
 
+      // 3. 自分のレビューの取得
+      const reviewsSnap = await getDocs(query(collection(firestoreDb, 'reviews'), where('userId', '==', userId)));
+      for (const doc of reviewsSnap.docs) {
+        await this.saveReview(userId, { id: doc.id, ...doc.data() } as Review, true);
+      }
+
       console.log('[Sync] Initial sync completed.');
 
-      // 3. 管理者データの同期 (Role が admin/moderator の場合)
+      // 4. 管理者データの同期 (Role が admin/moderator の場合)
       const isAdmin = (localProfile as User | null)?.role === 'admin' || (localProfile as User | null)?.role === 'moderator';
       if (isAdmin) {
         console.log('[Sync] Starting admin data sync...');
