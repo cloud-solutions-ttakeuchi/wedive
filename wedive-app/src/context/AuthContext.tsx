@@ -16,6 +16,7 @@ type AuthContextType = {
   updateUser: (userData: Partial<User>) => Promise<void>;
   refreshProfile: () => Promise<void>;
   refreshLogs: () => Promise<void>;
+  syncData: () => Promise<void>;
   deleteAccount: () => Promise<void>;
 };
 
@@ -29,6 +30,7 @@ const AuthContext = createContext<AuthContextType>({
   updateUser: async () => { },
   refreshProfile: async () => { },
   refreshLogs: async () => { },
+  syncData: async () => { },
   deleteAccount: async () => { },
 });
 
@@ -189,6 +191,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (localProfile) setUser(localProfile);
     } catch (error) {
       console.error("Error executing force sync:", error);
+      throw error;
+    }
+  };
+
+  const deleteAccount = async () => {
+    if (!firebaseUser) return;
+    try {
+      // 1. 全関連データの削除 (サブコレクション、レビュー、PublicLogs、ローカル含む)
+      await userDataService.deleteAllUserData(firebaseUser.uid);
+
+      // 2. Firestoreユーザードキュメント削除
+      // Note: userDataService内で削除しても良いが、明示的にここで行う
+      await deleteDoc(doc(db, 'users', firebaseUser.uid));
+      // 3. 認証ユーザー削除
+      await firebaseUser.delete();
+    } catch (error) {
+      console.error("Error deleting account:", error);
       throw error;
     }
   };
