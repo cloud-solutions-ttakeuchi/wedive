@@ -209,15 +209,26 @@ export class UserDataService {
    */
   async saveReview(userId: string, review: Review): Promise<string> {
     const now = new Date().toISOString();
+    const profile = await this.getSetting<any>('profile');
+    const isAdmin = profile?.role === 'admin' || profile?.role === 'moderator';
+    const defaultStatus = isAdmin ? 'approved' : 'pending';
+    const finalStatus = review.status || defaultStatus;
+    const reviewData = { ...review, status: finalStatus };
+
+    // Ensure ID exists
+    if (!reviewData.id) reviewData.id = `rv${Date.now()}`;
+
     try {
       await userDbEngine.runAsync(
         'INSERT OR REPLACE INTO my_reviews (id, point_id, data_json, status, created_at, synced_at) VALUES (?, ?, ?, ?, ?, ?)',
-        [review.id, review.pointId, JSON.stringify(review), review.status || 'approved', review.date || now, now]
+        [reviewData.id, reviewData.pointId, JSON.stringify(reviewData), finalStatus, reviewData.date || now, now]
       );
 
-      const reviewRef = doc(firestoreDb, 'reviews', review.id);
-      await setDoc(reviewRef, { ...review, userId, updatedAt: now });
-      return review.id;
+      const reviewRef = doc(firestoreDb, 'reviews', reviewData.id);
+      // Remove undefined fields
+      const firestoreData = JSON.parse(JSON.stringify({ ...reviewData, userId, updatedAt: now }));
+      await setDoc(reviewRef, firestoreData, { merge: true });
+      return reviewData.id;
     } catch (error) {
       console.error('[UserDataService] Failed to save review:', error);
       throw error;

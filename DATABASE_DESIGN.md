@@ -678,9 +678,11 @@ Firestore からのマスタデータの直接読み取りは **厳格に禁止*
    - アプリ版、Web版ともに共通のこの戦略に従う。
 
 2. **Status Handling (承認ステータス)**:
-   - **デフォルト**: 指定がない場合は **`pending`**（承認待ち）とする。
-   - **ステータス決定の責務**: ステータスの決定（`approved` か `pending` か）は、**呼び出し元（UI/Context/EditPage）** が担う。`UserDataService` などのデータ最下層で自動判定ロジック（`isAdmin` チェック等）を持たせないこと。
-   - **補完**: ただし、呼び出し元からのデータに `status` が欠落していた場合（`undefined`）は、データ不整合を防ぐため、`UserDataService` 層で安全側に倒して **`pending`** を補完する。
+   - **自動判定**: 保存時にユーザー権限（Profile）を確認し、ステータスを自動設定する。
+     - **Admin/Moderator**: **`approved`**（承認済み）
+     - **General User**: **`pending`**（承認待ち）
+   - **明示指定**: 呼び出し元から `status` が渡された場合はそれを優先する（例: 下書き保存など）。
+   - **補完**: `status` が `undefined` の場合、上記の自動判定ルールで補完し、Firestoreエラーを防ぐ。
 
 3. **Data Sanitization (データ整形)**:
    - Firestoreは `undefined` 値を受け付けない。
@@ -692,13 +694,13 @@ Firestore からのマスタデータの直接読み取りは **厳格に禁止*
 
 | データ種別 (Target) | 操作 (C/U) | Web版 Service Method | App版 Service Method | 備考 |
 | :--- | :--- | :--- | :--- | :--- |
-| **Review** | 登録・更新 | `userDataService.saveReview` | `userDataService.saveMyReview` | Dual-Write。ステータス管理は呼び出し元責務。 |
+| **Review** | 登録・更新 | `userDataService.saveReview` | `userDataService.saveMyReview` | Dual-Write。Adminは自動承認。 |
 | **Log** | 登録・更新 | `userDataService.saveLog` | `userDataService.saveLog` | Dual-Write。 |
 | **Profile** | 更新 | `userDataService.saveSetting` | `userDataService.saveSetting` | プロフィール更新。 |
-| **Proposal** | 申請 | `userDataService.save*Proposal` | `userDataService.saveMyProposal` | 一般ユーザー用。デフォルト `status='pending'`。 |
+| **Proposal** | 申請 | `userDataService.save*Proposal` | `userDataService.saveMyProposal` | 一般ユーザーはPending。AdminはApproved。 |
 | **Master** | 直接登録 (Admin) | `userDataService.savePoint` 等 | (N/A) | 管理者用。マスタ直接更新。Web管理画面のみ。 |
 
-※ App版の `saveMyProposal` は、引数 `data` 内に `status` が含まれない場合、自動的に `pending` を補完してFirestoreへ送信する。
+※ App版の `saveMyProposal` 等は、権限チェックを含んだロジックを実装する。
 
 ### 8.4 重要なデータの一貫性 (Transaction Policy)
 チケット消費やユーザー情報更新など、資産性のあるデータについては、以下の4モデル間の一貫性を保証します。
@@ -794,17 +796,29 @@ classDiagram
         +updatePointInCache(point)
     }
 
+    class UserDataService {
+        +saveLog(userId, log)
+        +saveMyReview(userId, review)
+        +saveMyProposal(userId, type, data)
+        +saveSetting(key, value)
+        -initialize(userId)
+    }
+
     %% --- 依存と継承 ---
     SQLiteExecutor <|.. WebSQLiteEngine : Implements
     BaseMasterDataService <|-- WebMasterDataService : 継承 (SQLロジックの共通化)
     BaseMasterDataService o-- SQLiteExecutor : 依存注入 (プラットフォーム非依存)
     WebMasterDataService ..> WebSQLiteEngine : 利用 (superへ渡す)
+    
+    UserDataService ..> SQLiteExecutor : Utilizes (Local DB)
+    UserDataService ..> Firestore : Utilizes (Cloud DB)
 
     %% --- 利用者 ---
     class AppContext {
         +initMasterData()
     }
     AppContext ..> WebMasterDataService : Calls
+    AppContext ..> UserDataService : Calls
 ```
 
 ### 9.2 初期化と同期フロー
