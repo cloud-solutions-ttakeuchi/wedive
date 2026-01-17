@@ -140,6 +140,9 @@ export const EditCreaturePage = () => {
         } : undefined,
       };
 
+      // Clean undefined fields to prevents Firestore errors
+      Object.keys(fullUpdateState).forEach(key => fullUpdateState[key] === undefined && delete fullUpdateState[key]);
+
       // Admin/Mod: Direct Update
       if (currentUser.role === 'admin' || currentUser.role === 'moderator') {
         const diff = getDiff(fullUpdateState, existingCreature);

@@ -3,7 +3,7 @@ import { Modal, View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet,
 import { X, Check, Award, Star, Activity, User as UserIcon, RefreshCw } from 'lucide-react-native';
 import { useAgencies } from '../hooks/useAgencies';
 import { User, AgencyMaster } from '../types';
-import { userDataService } from '../services/UserDataService';
+import { useAuth } from '../context/AuthContext';
 
 type Props = {
   visible: boolean;
@@ -14,6 +14,7 @@ type Props = {
 
 export const ProfileEditModal = ({ visible, onClose, initialData, onSave }: Props) => {
   const { agencies, isLoading: loadingAgencies } = useAgencies();
+  const { syncData } = useAuth();
   const [formData, setFormData] = useState<Partial<User>>({});
   const [saving, setSaving] = useState(false);
 
@@ -154,8 +155,7 @@ export const ProfileEditModal = ({ visible, onClose, initialData, onSave }: Prop
                       onPress: async () => {
                         setSaving(true);
                         try {
-                          await userDataService.syncInitialData(initialData.id, true);
-                          await userDataService.syncLogs(initialData.id);
+                          await syncData();
                           Alert.alert('完了', 'データの同期が完了しました。');
                         } catch (e: any) {
                           Alert.alert('エラー', `同期に失敗しました: ${e.message}`);

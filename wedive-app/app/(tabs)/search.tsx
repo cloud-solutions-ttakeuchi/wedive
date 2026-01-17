@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, TextInput, TouchableOpacity, FlatList, Dimensions, ActivityIndicator, Platform, BackHandler } from 'react-native';
 import { Text, View } from '@/components/Themed';
-import { Search as SearchIcon, MapPin, Star, ChevronRight, Anchor, Clock, Plus as PlusIcon, ArrowLeft } from 'lucide-react-native';
+import { Search as SearchIcon, MapPin, Star, ChevronRight, Anchor, BookOpen, Clock, Plus as PlusIcon, ArrowLeft } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Point, Creature } from '../../src/types';
 import { ImageWithFallback } from '../../src/components/ImageWithFallback';
 import { useMasterSearch } from '../../src/hooks/useMasterSearch';
 import { masterDataService } from '../../src/services/MasterDataService';
+
 import { ReviewCard } from '../../src/components/ReviewCard';
+
+const { width } = Dimensions.get('window');
 
 const NO_IMAGE_POINT = require('../../assets/images/no-image-point.png');
 const NO_IMAGE_CREATURE = require('../../assets/images/no-image-creature.png');
@@ -27,14 +30,7 @@ export default function SearchScreen() {
   const [mode, setMode] = useState<SearchMode>((tab as SearchMode) || 'spots');
 
   // 爆速検索フック！
-  const {
-    keyword,
-    setKeyword,
-    points: masterPoints,
-    creatures: masterCreatures,
-    reviews: foundReviews,
-    isLoading: isSearchLoading
-  } = useMasterSearch();
+  const { keyword, setKeyword, points: masterPoints, creatures: masterCreatures, reviews: foundReviews, isLoading: isSearchLoading } = useMasterSearch();
 
   // 階層ナビゲーション用State
   const [navStack, setNavStack] = useState<NavItem[]>([{ type: 'root', name: 'エリア選択' }]);
@@ -45,16 +41,13 @@ export default function SearchScreen() {
   const [latestReviews, setLatestReviews] = useState<any[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
 
-  // 生物データ (初期表示)
-  const [initialCreatures, setInitialCreatures] = useState<Creature[]>([]);
-
   useEffect(() => {
     if (tab && ['spots', 'creatures', 'reviews'].includes(tab as string)) {
       setMode(tab as SearchMode);
     }
   }, [tab]);
 
-  // データ読み込み (フィード/初期表示)
+  // レビュー読み込み
   useEffect(() => {
     if (mode === 'reviews') {
       const loadReviews = async () => {
@@ -70,17 +63,6 @@ export default function SearchScreen() {
         }
       };
       loadReviews();
-    } else if (mode === 'creatures' && initialCreatures.length === 0) {
-      const loadCreatures = async () => {
-        try {
-          // 生物一覧を取得して、先頭20件を表示（Apple審査対策：空コンテンツ防止）
-          const all = await masterDataService.getAllCreatures();
-          setInitialCreatures(all.slice(0, 20));
-        } catch (e) {
-          console.error("Failed to load creatures:", e);
-        }
-      };
-      loadCreatures();
     }
   }, [mode]);
 
@@ -115,6 +97,7 @@ export default function SearchScreen() {
           } else if (current.type === 'area') {
             // ポイント一覧
             const points = await masterDataService.getPointsByArea(current.id!);
+            // マッピング済みのPointが返ってくる
             data = points;
           }
           setHierarchyData(data);
@@ -302,10 +285,8 @@ export default function SearchScreen() {
       dataToRender = hierarchyData;
       ItemRenderer = renderHierarchyItem;
     } else if (mode === 'creatures') {
-      // 先頭20件を表示（空にならないように）
       isLoading = false;
-      dataToRender = initialCreatures;
-      ItemRenderer = renderCreatureItem;
+      dataToRender = [];
     } else if (mode === 'reviews') {
       isLoading = loadingReviews;
       dataToRender = latestReviews;
@@ -673,7 +654,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 14,
-    marginLeft: 4,
   },
   pendingBadge: {
     position: 'absolute',

@@ -16,6 +16,7 @@ type AuthContextType = {
   updateUser: (userData: Partial<User>) => Promise<void>;
   refreshProfile: () => Promise<void>;
   refreshLogs: () => Promise<void>;
+  syncData: () => Promise<void>;
   deleteAccount: () => Promise<void>;
 };
 
@@ -29,6 +30,7 @@ const AuthContext = createContext<AuthContextType>({
   updateUser: async () => { },
   refreshProfile: async () => { },
   refreshLogs: async () => { },
+  syncData: async () => { },
   deleteAccount: async () => { },
 });
 
@@ -64,8 +66,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           await aiConciergeService.grantDailyTicket(fbUser.uid);
           await aiConciergeService.syncTickets(fbUser.uid);
 
-          // 3.5. ユーザーデータの差分同期 (ログ、レビュー、提案)
-          await userDataService.syncUserData(fbUser.uid);
+          // 3.5. ログの差分同期
+          await userDataService.syncLogs(fbUser.uid);
 
           // 4. 常に最新の SQLite からデータをロード
           const [localLogs, localProfile] = await Promise.all([
@@ -174,6 +176,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const syncData = async () => {
+    if (!firebaseUser) return;
+    try {
+      await userDataService.syncInitialData(firebaseUser.uid, true);
+      await userDataService.syncLogs(firebaseUser.uid);
+
+      // Refresh local state after sync
+      const [localLogs, localProfile] = await Promise.all([
+        userDataService.getLogs(),
+        userDataService.getSetting<User>('profile')
+      ]);
+      setLogs(localLogs || []);
+      if (localProfile) setUser(localProfile);
+    } catch (error) {
+      console.error("Error executing force sync:", error);
+      throw error;
+    }
+  };
+
   const deleteAccount = async () => {
     if (!firebaseUser) return;
     try {
@@ -201,6 +222,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       signOut,
       updateUser,
       refreshProfile,
+      syncData,
       refreshLogs: async () => {
         if (firebaseUser) {
           const localLogs = await userDataService.getLogs();

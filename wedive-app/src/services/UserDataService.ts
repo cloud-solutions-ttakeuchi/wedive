@@ -352,87 +352,14 @@ export class UserDataService {
     if (skipFirestore) return;
 
     const logRef = doc(firestoreDb, 'users', userId, 'logs', log.id);
-    const firestoreData = JSON.parse(JSON.stringify({ ...log, updatedAt: now }));
-    setDoc(logRef, firestoreData).catch(err => {
+    setDoc(logRef, { ...log, updatedAt: now }).catch(err => {
       console.error('Failed to sync log to Firestore:', err);
     });
   }
 
   /**
-   * 自分のレビューを保存（Dual-Write用）
+   * ログを削除
    */
-  async saveMyReview(userId: string, review: any, skipFirestore = false): Promise<void> {
-    const isAvailable = await this.initialize(userId);
-    const now = new Date().toISOString();
-
-    if (isAvailable && this.sqliteDb) {
-      try {
-        await this.sqliteDb.runAsync(
-          `INSERT OR REPLACE INTO my_reviews (
-            id, point_id, rating, comment, images_json, condition_json,
-            metrics_json, radar_json, tags_json, status, created_at, synced_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            review.id,
-            review.pointId,
-            review.rating,
-            review.comment,
-            JSON.stringify(review.images || []),
-            JSON.stringify(review.condition || {}),
-            JSON.stringify(review.metrics || {}),
-            JSON.stringify(review.radar || {}),
-            JSON.stringify(review.tags || []),
-            review.status || 'pending',
-            review.createdAt || now,
-            now
-          ]
-        );
-      } catch (error) {
-        console.error('Failed to save review to SQLite:', error);
-      }
-    }
-
-    if (skipFirestore) return;
-
-    // Firestoreへの書き込み (userIdも含める)
-    const reviewRef = doc(firestoreDb, 'reviews', review.id);
-    // Remove undefined fields
-    const firestoreData = JSON.parse(JSON.stringify({ ...review, userId, updatedAt: now }));
-    setDoc(reviewRef, firestoreData, { merge: true }).catch(err => {
-      console.error('Failed to sync review to Firestore:', err);
-    });
-  }
-
-  /**
-   * 自分のレビューを取得
-   */
-  async getMyReviews(): Promise<any[]> {
-    const isAvailable = await this.initialize();
-    if (isAvailable && this.sqliteDb) {
-      try {
-        const results = await this.sqliteDb.getAllAsync(
-          'SELECT * FROM my_reviews ORDER BY created_at DESC'
-        );
-        return results.map((row: any) => ({
-          id: row.id,
-          pointId: row.point_id,
-          rating: row.rating,
-          comment: row.comment,
-          images: JSON.parse(row.images_json || '[]'),
-          condition: JSON.parse(row.condition_json || '{}'),
-          metrics: JSON.parse(row.metrics_json || '{}'),
-          radar: JSON.parse(row.radar_json || '{}'),
-          tags: JSON.parse(row.tags_json || '[]'),
-          status: row.status,
-          createdAt: row.created_at,
-          userId: this.currentUserId
-        }));
-      } catch (error) {
-        console.error('Failed to get reviews from SQLite:', error);
-      }
-    }
-    return [];
-  }
   async deleteLog(userId: string, logId: string): Promise<void> {
     const isAvailable = await this.initialize(userId);
 
@@ -481,40 +408,58 @@ export class UserDataService {
   }
 
   /**
-   * レビューの差分同期
+   * 自分のレビューを保存（Dual-Write用）
    */
-  async syncReviews(userId: string): Promise<void> {
+  async saveMyReview(userId: string, review: any, skipFirestore = false): Promise<void> {
     const isAvailable = await this.initialize(userId);
-    if (!isAvailable || !this.sqliteDb) return;
+    const now = new Date().toISOString();
 
-    try {
-      const lastSync = await this.getSetting<string>('last_review_sync_at');
-      const lastSyncIso = lastSync || '1970-01-01T00:00:00.000Z'; // 初回は全件
+    const profile = await this.getSetting<any>('profile');
+    const isAdmin = profile?.role === 'admin' || profile?.role === 'moderator';
+    const defaultStatus = isAdmin ? 'approved' : 'pending';
+    const finalStatus = review.status || defaultStatus;
 
-      console.log(`[Sync] Checking for reviews updated after: ${lastSyncIso}`);
-
-      const reviewsRef = collection(firestoreDb, 'reviews');
-      const q = query(
-        reviewsRef,
-        where('userId', '==', userId),
-        where('updatedAt', '>', lastSyncIso)
-      );
-
-      const snapshot = await getDocs(q);
-
-      if (!snapshot.empty) {
-        console.log(`[Sync] Found ${snapshot.size} reviews to update.`);
-        for (const doc of snapshot.docs) {
-          const data = doc.data();
-          await this.saveMyReview(userId, { id: doc.id, ...data }, true);
-        }
+    if (isAvailable && this.sqliteDb) {
+      try {
+        await this.sqliteDb.runAsync(
+          `INSERT OR REPLACE INTO my_reviews (
+            id, point_id, rating, comment, images_json, condition_json,
+            metrics_json, radar_json, tags_json, status, created_at, synced_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            review.id,
+            review.pointId,
+            review.rating,
+            review.comment,
+            JSON.stringify(review.images || []),
+            JSON.stringify(review.condition || {}),
+            JSON.stringify(review.metrics || {}),
+            JSON.stringify(review.radar || {}),
+            JSON.stringify(review.tags || []),
+            finalStatus,
+            review.createdAt || now,
+            now
+          ]
+        );
+      } catch (error) {
+        console.error('Failed to save review to SQLite:', error);
       }
-
-      await this.saveSetting('last_review_sync_at', new Date().toISOString());
-
-    } catch (error) {
-      console.error('[Sync] Review sync failed:', error);
     }
+
+    if (skipFirestore) return;
+
+    // Firestoreへの書き込み (userIdも含める)
+    const reviewRef = doc(firestoreDb, 'reviews', review.id);
+    // Remove undefined fields and ensure status is set
+    const firestoreData = JSON.parse(JSON.stringify({
+      ...review,
+      status: finalStatus,
+      userId,
+      updatedAt: now
+    }));
+    setDoc(reviewRef, firestoreData, { merge: true }).catch(err => {
+      console.error('Failed to sync review to Firestore:', err);
+    });
   }
 
   /**
@@ -549,64 +494,18 @@ export class UserDataService {
     // Firestoreへの書き込み
     const colName = type === 'point-creature' ? 'point_creature_proposals' : `${type}_proposals`;
     const ref = doc(firestoreDb, colName, docId);
-    const firestoreData = JSON.parse(JSON.stringify({ ...data, submitterId: userId, updatedAt: now }));
+    const firestoreData = JSON.parse(JSON.stringify({
+      ...data,
+      status: data.status || 'pending', // Ensure status is set
+      submitterId: userId,
+      updatedAt: now
+    }));
     setDoc(ref, firestoreData, { merge: true }).catch(err => {
       console.error('Failed to sync proposal to Firestore:', err);
     });
   }
 
-  /**
-   * 提案データの差分同期
-   */
-  async syncProposals(userId: string): Promise<void> {
-    const isAvailable = await this.initialize(userId);
-    if (!isAvailable || !this.sqliteDb) return;
 
-    try {
-      const lastSync = await this.getSetting<string>('last_proposal_sync_at');
-      const lastSyncIso = lastSync || '1970-01-01T00:00:00.000Z';
-      console.log(`[Sync] Checking for proposals updated after: ${lastSyncIso}`);
-
-      const collections = [
-        { name: 'point_proposals', type: 'point' },
-        { name: 'creature_proposals', type: 'creature' },
-        { name: 'point_creature_proposals', type: 'point-creature' }
-      ];
-
-      let count = 0;
-      for (const col of collections) {
-        const q = query(
-          collection(firestoreDb, col.name),
-          where('submitterId', '==', userId),
-          where('updatedAt', '>', lastSyncIso) // processedAt or updatedAt
-        );
-        const snapshot = await getDocs(q);
-        for (const d of snapshot.docs) {
-          await this.saveMyProposal(userId, col.type, d.id, d.data(), true);
-          count++;
-        }
-      }
-
-      if (count > 0) console.log(`[Sync] Synced ${count} proposals.`);
-      await this.saveSetting('last_proposal_sync_at', new Date().toISOString());
-
-    } catch (e) {
-      console.error('[Sync] Proposal sync failed:', e);
-    }
-  }
-
-  /**
-   * ユーザーデータ全体の一括同期 (Logs, Reviews, Proposals)
-   */
-  async syncUserData(userId: string): Promise<void> {
-    console.log('[Sync] Starting full user data sync...');
-    await Promise.all([
-      this.syncLogs(userId),
-      this.syncReviews(userId),
-      this.syncProposals(userId)
-    ]);
-    console.log('[Sync] Full user data sync completed.');
-  }
 
   /**
    * 初回同期：SQLiteが空の場合にFirestoreから全件取得
@@ -647,8 +546,11 @@ export class UserDataService {
       ));
       for (const doc of reviewSnapshot.docs) {
         const data = doc.data();
-        // 重複コード排除: saveMyReview を使用 (Firestoreへの書き込みはスキップ)
-        await this.saveMyReview(userId, { id: doc.id, ...data }, true);
+        await this.sqliteDb.runAsync(
+          `INSERT OR REPLACE INTO my_reviews (id, point_id, rating, comment, images_json, condition_json, metrics_json, radar_json, tags_json, status, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [doc.id, data.pointId, data.rating, data.comment, JSON.stringify(data.images || []), JSON.stringify(data.condition || {}), JSON.stringify(data.metrics || {}), JSON.stringify(data.radar || {}), JSON.stringify(data.tags || []), data.status, data.createdAt]
+        );
       }
 
       // 3 & 4. ブックマークとお気に入り
