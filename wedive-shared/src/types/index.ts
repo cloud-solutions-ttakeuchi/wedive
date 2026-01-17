@@ -180,6 +180,7 @@ export type PointCreature = {
 export interface User {
   id: string;
   name: string;
+  email?: string;
   role: 'user' | 'moderator' | 'admin';
   trustScore: number;
   profileImage?: string;
@@ -199,6 +200,7 @@ export interface User {
   wanted: string[];
   bookmarkedPointIds: string[];
   createdAt?: string;
+  updatedAt?: string;
   status?: UserStatus;
   certification?: {
     orgId: string;

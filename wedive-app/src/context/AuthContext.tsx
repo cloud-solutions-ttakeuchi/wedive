@@ -94,6 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               const newUser: any = {
                 id: fbUser.uid,
                 name: fbUser.displayName || 'Diver',
+                email: fbUser.email || undefined,
 
                 role: 'user',
                 trustScore: 0,
@@ -104,6 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 wanted: [],
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
+
               };
 
               // Firestore保存
