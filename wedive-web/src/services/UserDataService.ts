@@ -209,15 +209,19 @@ export class UserDataService {
    */
   async saveReview(userId: string, review: Review): Promise<string> {
     const now = new Date().toISOString();
+    // ID生成: 新規作成時はIDがないためここで生成する
+    const reviewId = review.id || `rv${Date.now()}`;
+    const reviewData = { ...review, id: reviewId };
+
     try {
       await userDbEngine.runAsync(
         'INSERT OR REPLACE INTO my_reviews (id, point_id, data_json, status, created_at, synced_at) VALUES (?, ?, ?, ?, ?, ?)',
-        [review.id, review.pointId, JSON.stringify(review), review.status || 'approved', review.date || now, now]
+        [reviewId, reviewData.pointId, JSON.stringify(reviewData), reviewData.status || 'approved', reviewData.date || now, now]
       );
 
-      const reviewRef = doc(firestoreDb, 'reviews', review.id);
-      await setDoc(reviewRef, { ...review, userId, updatedAt: now });
-      return review.id;
+      const reviewRef = doc(firestoreDb, 'reviews', reviewId);
+      await setDoc(reviewRef, { ...reviewData, userId, updatedAt: now });
+      return reviewId;
     } catch (error) {
       console.error('[UserDataService] Failed to save review:', error);
       throw error;
