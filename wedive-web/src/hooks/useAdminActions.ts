@@ -1,9 +1,12 @@
 import { db } from '../lib/firebase';
 import { doc, getDoc, updateDoc, setDoc, deleteDoc, writeBatch, increment } from 'firebase/firestore';
 import { masterDataService } from '../services/MasterDataService';
+import { userDataService } from '../services/UserDataService';
 import type { Point, Creature } from '../types';
+import { useQueryClient } from '@tanstack/react-query';
 
 export const useAdminActions = () => {
+  const queryClient = useQueryClient();
   /**
    * 申請の承認
    */
@@ -90,6 +93,14 @@ export const useAdminActions = () => {
         await updateDoc(userRef, { trustScore: increment(5) });
       }
 
+      // 4. Remove from local admin cache to update dashboard count
+      await userDataService.deleteAdminProposal(id);
+
+      // Invalidate query to update UI
+      if (type === 'point') queryClient.invalidateQueries({ queryKey: ['proposalPoints'] });
+      else if (type === 'creature') queryClient.invalidateQueries({ queryKey: ['proposalCreatures'] });
+      else if (type === 'point-creature') queryClient.invalidateQueries({ queryKey: ['proposalPointCreatures'] });
+
     } catch (e) {
       console.error('Approve failed:', e);
       alert('承認処理中にエラーが発生しました。');
@@ -115,6 +126,14 @@ export const useAdminActions = () => {
       status: 'rejected',
       processedAt: now
     });
+
+    // Remove from local admin cache
+    await userDataService.deleteAdminProposal(id);
+
+    // Invalidate query to update UI
+    if (type === 'point') queryClient.invalidateQueries({ queryKey: ['proposalPoints'] });
+    else if (type === 'creature') queryClient.invalidateQueries({ queryKey: ['proposalCreatures'] });
+    else if (type === 'point-creature') queryClient.invalidateQueries({ queryKey: ['proposalPointCreatures'] });
   };
 
   /**
@@ -145,6 +164,11 @@ export const useAdminActions = () => {
       updatedAt: now
     });
 
+    // Remove from local admin cache
+    await userDataService.deleteAdminProposal(id);
+    // UI Update
+    queryClient.invalidateQueries({ queryKey: ['proposalReviews'] });
+
     // TODO: Trigger aggregation or other side effects if needed
   };
 
@@ -158,6 +182,11 @@ export const useAdminActions = () => {
       rejectedAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     });
+
+    // Remove from local admin cache
+    await userDataService.deleteAdminProposal(id);
+    // UI Update
+    queryClient.invalidateQueries({ queryKey: ['proposalReviews'] });
   };
 
   return {
