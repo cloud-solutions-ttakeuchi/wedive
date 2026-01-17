@@ -352,7 +352,8 @@ export class UserDataService {
     if (skipFirestore) return;
 
     const logRef = doc(firestoreDb, 'users', userId, 'logs', log.id);
-    setDoc(logRef, { ...log, updatedAt: now }).catch(err => {
+    const firestoreData = JSON.parse(JSON.stringify({ ...log, updatedAt: now }));
+    setDoc(logRef, firestoreData).catch(err => {
       console.error('Failed to sync log to Firestore:', err);
     });
   }
@@ -395,8 +396,9 @@ export class UserDataService {
 
     // Firestoreへの書き込み (userIdも含める)
     const reviewRef = doc(firestoreDb, 'reviews', review.id);
-    // merge: trueを使うことで部分更新にも対応
-    setDoc(reviewRef, { ...review, userId, updatedAt: now }, { merge: true }).catch(err => {
+    // Remove undefined fields
+    const firestoreData = JSON.parse(JSON.stringify({ ...review, userId, updatedAt: now }));
+    setDoc(reviewRef, firestoreData, { merge: true }).catch(err => {
       console.error('Failed to sync review to Firestore:', err);
     });
   }
@@ -547,7 +549,8 @@ export class UserDataService {
     // Firestoreへの書き込み
     const colName = type === 'point-creature' ? 'point_creature_proposals' : `${type}_proposals`;
     const ref = doc(firestoreDb, colName, docId);
-    setDoc(ref, { ...data, submitterId: userId, updatedAt: now }, { merge: true }).catch(err => {
+    const firestoreData = JSON.parse(JSON.stringify({ ...data, submitterId: userId, updatedAt: now }));
+    setDoc(ref, firestoreData, { merge: true }).catch(err => {
       console.error('Failed to sync proposal to Firestore:', err);
     });
   }
