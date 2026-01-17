@@ -85,9 +85,10 @@ export const useAdminActions = () => {
       });
 
       // 3. User Trust Score Bonus
+      // 3. User Trust Score Bonus
       if (item.submitterId) {
         const userRef = doc(db, 'users', item.submitterId);
-        await updateDoc(userRef, { trustScore: increment(5) });
+        await updateDoc(userRef, { trustScore: increment(5) }).catch(e => console.error("Score bump failed", e));
       }
 
     } catch (e) {

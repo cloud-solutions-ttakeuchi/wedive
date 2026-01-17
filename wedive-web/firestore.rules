@@ -13,7 +13,11 @@ service cloud.firestore {
     // Users Collection
     match /users/{userId} {
       allow read: if isAuthenticated(); // Or public? For profiles.
-      allow write: if isOwner(userId);
+      allow create, delete: if isOwner(userId);
+      allow update: if isOwner(userId) || (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'moderator'] &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['trustScore'])
+      );
 
       // Logs Subcollection (Specific path access)
       // This is primarily for "List Collection" operations where you list documents in a specific parent.

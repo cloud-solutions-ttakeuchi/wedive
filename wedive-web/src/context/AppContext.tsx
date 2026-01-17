@@ -85,7 +85,7 @@ interface AppContextType {
   removePointCreatureProposal: (id: string) => Promise<void>;
   approveProposal: (type: 'creature' | 'point' | 'point-creature', id: string, item: any) => Promise<void>;
   rejectProposal: (type: 'creature' | 'point' | 'point-creature', id: string) => Promise<void>;
-  approveReview: (id: string) => Promise<void>;
+  approveReview: (id: string, item: any) => Promise<void>;
   rejectReview: (id: string) => Promise<void>;
 }
 
@@ -271,6 +271,31 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const value = useMemo(() => ({
     ...auth,
     ...adminActions,
+    // Override admin actions to sync local state
+    approveProposal: async (type: 'creature' | 'point' | 'point-creature', id: string, item: any) => {
+      await adminActions.approveProposal(type, id, item);
+      await userDataService.deleteAdminProposal(id);
+      if (type === 'creature') proposalCreaturesQuery.refetch();
+      if (type === 'point') proposalPointsQuery.refetch();
+      if (type === 'point-creature') proposalPointCreaturesQuery.refetch();
+    },
+    rejectProposal: async (type: 'creature' | 'point' | 'point-creature', id: string) => {
+      await adminActions.rejectProposal(type, id);
+      await userDataService.deleteAdminProposal(id);
+      if (type === 'creature') proposalCreaturesQuery.refetch();
+      if (type === 'point') proposalPointsQuery.refetch();
+      if (type === 'point-creature') proposalPointCreaturesQuery.refetch();
+    },
+    approveReview: async (id: string, item: any) => { // Fixed signature to match useAdminActions
+      await adminActions.approveReview(id, item);
+      await userDataService.deleteAdminProposal(id);
+      proposalReviewsQuery.refetch();
+    },
+    rejectReview: async (id: string) => {
+      await adminActions.rejectReview(id);
+      await userDataService.deleteAdminProposal(id);
+      proposalReviewsQuery.refetch();
+    },
     points: points.data || [],
     creatures: creatures.data || [],
     pointCreatures: pointCreatures.data || [],
