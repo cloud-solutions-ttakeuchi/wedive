@@ -17,7 +17,7 @@ import { FEATURE_FLAGS } from '../config/features';
 import { BADGE_MASTER, TRUST_RANKS } from '../constants/masterData';
 
 export const MyPage = () => {
-  const { currentUser, logs, points, zones, areas, creatures, pointCreatures, isAuthenticated, toggleLikeLog, deleteLogs, updateLogs, proposalReviews, deleteReview, agencies } = useApp();
+  const { currentUser, logs, points, zones, areas, creatures, pointCreatures, isAuthenticated, toggleLikeLog, deleteLogs, updateLogs, reviews, deleteReview, agencies } = useApp();
   const { t } = useLanguage();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [activeTab, setActiveTab] = useState<'dashboard' | 'logbook' | 'collection' | 'favorites' | 'wanted' | 'bookmarks' | 'reviews'>('dashboard');
@@ -896,19 +896,19 @@ export const MyPage = () => {
           <div className="flex justify-between items-center px-1">
             <h3 className="font-bold text-deepBlue-900 flex items-center gap-2">
               <MessageSquare size={18} className="text-ocean" />
-              投稿したレビュー <span className="text-gray-400 text-sm font-normal">({proposalReviews.length})</span>
+              投稿したレビュー <span className="text-gray-400 text-sm font-normal">({reviews.length})</span>
             </h3>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {proposalReviews.length === 0 ? (
+            {reviews.length === 0 ? (
               <div className="col-span-full py-20 text-center bg-white rounded-3xl border border-dashed border-gray-200">
                 <MessageSquare size={48} className="mx-auto text-gray-200 mb-4" />
                 <p className="text-gray-400 font-bold">まだレビューを投稿していません</p>
               </div>
             ) : (
               // Use regular div with styled card for MyPage
-              proposalReviews.map((rv: any) => (
+              reviews.map((rv: any) => (
                 <div key={rv.id} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all group">
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex gap-1">

@@ -63,6 +63,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const user = { ...docSnap.data(), id: fbUser.uid } as User;
             setCurrentUser(user);
             await userDataService.saveSetting('profile', user);
+          } else {
+            // Create new user if not exists
+            const newUser: User = {
+              id: fbUser.uid,
+              name: fbUser.displayName || 'Diver',
+              email: fbUser.email || '',
+              role: 'user', // Default role
+              trustScore: 0,
+              favoriteCreatureIds: [],
+              favorites: { points: [], areas: [], shops: [], gear: { tanks: [] } },
+              wanted: [],
+              bookmarkedPointIds: [],
+              profileImage: fbUser.photoURL || undefined,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            };
+            await setDoc(doc(firestore, 'users', fbUser.uid), newUser);
+            setCurrentUser(newUser);
+            await userDataService.saveSetting('profile', newUser);
           }
         }
         setIsLoading(false);

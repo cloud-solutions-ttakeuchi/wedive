@@ -282,6 +282,37 @@ export class UserDataService {
   }
 
   /**
+   * 自分のレビューを取得
+   */
+  async getReviews(): Promise<any[]> {
+    const isAvailable = await this.initialize();
+    if (isAvailable && this.sqliteDb) {
+      try {
+        const results = await this.sqliteDb.getAllAsync(
+          'SELECT * FROM my_reviews ORDER BY created_at DESC'
+        );
+        return results.map((row: any) => ({
+          id: row.id,
+          pointId: row.point_id,
+          rating: row.rating,
+          comment: row.comment,
+          images: row.images_json ? JSON.parse(row.images_json) : [],
+          condition: row.condition_json ? JSON.parse(row.condition_json) : {},
+          metrics: row.metrics_json ? JSON.parse(row.metrics_json) : {},
+          radar: row.radar_json ? JSON.parse(row.radar_json) : {},
+          tags: row.tags_json ? JSON.parse(row.tags_json) : [],
+          status: row.status,
+          createdAt: row.created_at,
+          userId: this.currentUserId
+        }));
+      } catch (error) {
+        console.error('Failed to get reviews from SQLite:', error);
+      }
+    }
+    return [];
+  }
+
+  /**
    * 個人のログを取得
    */
   async getLogs(): Promise<DiveLog[]> {
