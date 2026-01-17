@@ -122,29 +122,54 @@ export const useAdminActions = () => {
    */
   const approveReview = async (id: string) => {
     const now = new Date().toISOString();
-    const proposalRef = doc(db, 'unapproved_reviews', id);
-    const snap = await getDoc(proposalRef);
-    if (!snap.exists()) return;
+    const reviewRef = doc(db, 'reviews', id);
+    const snap = await getDoc(reviewRef);
+    if (!snap.exists()) {
+      alert('レビューが見つかりません。');
+      return;
+    }
     const data = snap.data();
 
-    if (data.status !== 'pending' && data.processedAt) {
-      alert('このレビューは既に処理されました。');
+    if (data.status === 'approved') {
+      alert('このレビューは既に承認されています。');
       return;
     }
 
-    const targetRef = doc(db, 'reviews', id);
-    await setDoc(targetRef, { ...data, status: 'approved', approvedAt: now });
-    await deleteDoc(proposalRef);
+    try {
+      // 1. Approve
+      await updateDoc(reviewRef, {
+        status: 'approved',
+        approvedAt: now,
+        updatedAt: now
+      });
 
-    // TODO: Update Point average rating in Firestore and Local Cache?
+      // 2. User Trust Score Bonus
+      if (data.userId) {
+        const userRef = doc(db, 'users', data.userId);
+        await updateDoc(userRef, { trustScore: increment(5) }).catch(e => console.error("Score bump failed", e));
+      }
+    } catch (e) {
+      console.error('Approve review failed:', e);
+      alert('承認処理中にエラーが発生しました。');
+      throw e;
+    }
   };
 
   /**
    * レビューの却下
    */
   const rejectReview = async (id: string) => {
-    const proposalRef = doc(db, 'unapproved_reviews', id);
-    await updateDoc(proposalRef, { status: 'rejected', processedAt: new Date().toISOString() });
+    const reviewRef = doc(db, 'reviews', id);
+    try {
+      await updateDoc(reviewRef, {
+        status: 'rejected',
+        processedAt: new Date().toISOString()
+      });
+    } catch (e) {
+      console.error('Reject review failed:', e);
+      alert('却下処理中にエラーが発生しました。');
+      throw e;
+    }
   };
 
   return {

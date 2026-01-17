@@ -246,16 +246,25 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   });
 
   useEffect(() => {
-    const syncAdmin = async () => {
-      if (auth.isAuthenticated && (auth.currentUser?.role === 'admin' || auth.currentUser?.role === 'moderator')) {
-        await userDataService.syncAdminData(auth.currentUser.id);
-        proposalPointsQuery.refetch();
-        proposalCreaturesQuery.refetch();
-        proposalPointCreaturesQuery.refetch();
-        proposalReviewsQuery.refetch();
+    const syncUser = async () => {
+      if (auth.isAuthenticated && auth.currentUser?.id && auth.currentUser.id !== 'guest') {
+        console.log('[App] Syncing user data for:', auth.currentUser.id);
+        // Myログ、Myレビュー、プロフィールの同期
+        await userDataService.syncInitialData(auth.currentUser.id);
+        logsQuery.refetch();
+        reviewsQuery.refetch();
+
+        // Adminデータ同期
+        if (auth.currentUser.role === 'admin' || auth.currentUser.role === 'moderator') {
+          await userDataService.syncAdminData(auth.currentUser.id);
+          proposalPointsQuery.refetch();
+          proposalCreaturesQuery.refetch();
+          proposalPointCreaturesQuery.refetch();
+          proposalReviewsQuery.refetch();
+        }
       }
     };
-    syncAdmin();
+    syncUser();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auth.isAuthenticated, auth.currentUser?.role, auth.currentUser?.id]);
 
