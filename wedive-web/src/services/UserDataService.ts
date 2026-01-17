@@ -155,6 +155,7 @@ export class UserDataService {
    * ログを保存
    */
   async saveLog(userId: string, log: Log, skipFirestore = false): Promise<string> {
+    await this.initialize(userId);
     const now = new Date().toISOString();
     try {
       await userDbEngine.runAsync(
@@ -208,6 +209,7 @@ export class UserDataService {
    * レビューを保存
    */
   async saveReview(userId: string, review: Review): Promise<string> {
+    await this.initialize(userId);
     const now = new Date().toISOString();
     // ID生成: 新規作成時はIDがないためここで生成する
     const reviewId = review.id || `rv${Date.now()}`;
@@ -244,6 +246,7 @@ export class UserDataService {
    * 地点を保存
    */
   async savePoint(userId: string, point: any): Promise<void> {
+    await this.initialize(userId);
     const pointRef = doc(firestoreDb, 'points', point.id || `p${Date.now()}`);
     await setDoc(pointRef, { ...point, updatedAt: new Date().toISOString() });
     await masterDataService.updatePointInCache({ ...point, id: pointRef.id });
@@ -253,6 +256,7 @@ export class UserDataService {
    * 生物申請を保存
    */
   async saveCreatureProposal(userId: string, proposal: any): Promise<void> {
+    await this.initialize(userId);
     const propId = proposal.id || `propc${Date.now()}`;
     const propRef = doc(firestoreDb, 'creature_proposals', propId);
     const data = { ...proposal, id: propId, userId, status: 'pending', updatedAt: new Date().toISOString() };
@@ -264,6 +268,7 @@ export class UserDataService {
    * 地点申請を保存
    */
   async savePointProposal(userId: string, proposal: any): Promise<void> {
+    await this.initialize(userId);
     const propId = proposal.id || `propp${Date.now()}`;
     const propRef = doc(firestoreDb, 'point_proposals', propId);
     const data = { ...proposal, id: propId, userId, status: 'pending', updatedAt: new Date().toISOString() };
@@ -275,6 +280,7 @@ export class UserDataService {
    * 生物を保存
    */
   async saveCreature(userId: string, creature: any): Promise<void> {
+    await this.initialize(userId);
     const creatureRef = doc(firestoreDb, 'creatures', creature.id || `c${Date.now()}`);
     await setDoc(creatureRef, { ...creature, updatedAt: new Date().toISOString() });
     await masterDataService.updateCreatureInCache({ ...creature, id: creatureRef.id });

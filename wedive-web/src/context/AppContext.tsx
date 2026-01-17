@@ -126,6 +126,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ユーザーデータの初期化 (ログイン時)
+  useEffect(() => {
+    if (auth.isAuthenticated && auth.currentUser?.id) {
+      console.log('[App] Initializing UserDataService for user:', auth.currentUser.id);
+      userDataService.initialize(auth.currentUser.id).then(() => {
+        // 初期化完了後にクエリをリフレッシュ
+        logsQuery.refetch();
+        reviewsQuery.refetch();
+      }).catch(err => {
+        console.error('[App] UserDataService init failed:', err);
+      });
+    }
+  }, [auth.isAuthenticated, auth.currentUser?.id]);
+
   // 1. 最近のパブリックログを取得（Home画面用）
   const recentLogsQuery = useQuery({
     queryKey: ['recentLogs'],
