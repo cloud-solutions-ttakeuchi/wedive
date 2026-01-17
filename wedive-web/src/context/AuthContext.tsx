@@ -68,7 +68,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const newUser: User = {
               id: fbUser.uid,
               name: fbUser.displayName || 'Diver',
-              email: fbUser.email || '',
+              email: fbUser.email || undefined,
+
               role: 'user', // Default role
               trustScore: 0,
               favoriteCreatureIds: [],
@@ -78,6 +79,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               profileImage: fbUser.photoURL || undefined,
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString()
+
             };
             await setDoc(doc(firestore, 'users', fbUser.uid), newUser);
             setCurrentUser(newUser);
