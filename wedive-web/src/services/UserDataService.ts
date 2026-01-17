@@ -222,7 +222,9 @@ export class UserDataService {
       );
 
       const reviewRef = doc(firestoreDb, 'reviews', reviewId);
-      await setDoc(reviewRef, { ...reviewData, userId, updatedAt: now });
+      // Remove undefined fields
+      const firestoreData = JSON.parse(JSON.stringify({ ...reviewData, userId, updatedAt: now }));
+      await setDoc(reviewRef, firestoreData);
       return reviewId;
     } catch (error) {
       console.error('[UserDataService] Failed to save review:', error);
