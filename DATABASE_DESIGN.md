@@ -121,198 +121,169 @@ erDiagram
 
 以下の図は、Webおよびアプリのアーキテクチャにおける主要コンポーネント間の正確な関係とデータフローを示しています。これにより、明確さと正確性を担保します。
 
-### 1. コンポーネントとサービスの依存関係 (クラス図)
+### 9.1 コンポーネントとサービスの依存関係
 
 ```mermaid
 classDiagram
-    class AppContext {
-        +initMasterData()
-        +addCreatureProposal(proposal)
-        +updateCreature(id, data)
-        +updatePoint(id, data)
+    %% --- 抽象層 (Shared Library: wedive-shared) ---
+    class SQLiteExecutor {
+        <<Interface>>
+        +getAllAsync(sql, params)
+        +runAsync(sql, params)
+        +initialize(dbName)
     }
 
-    class MasterDataSyncService {
-        +syncMasterData() : static
-        -fallbackToLocalTables()
-        -updateSQLiteDatabase(data)
+    class BaseMasterDataService {
+        <<Abstract>>
+        #sqlite : SQLiteExecutor
+        +constructor(sqlite: SQLiteExecutor)
+        +searchPoints(text) : Point[]
+        +searchCreatures(text) : Creature[]
+        +getAgencies() : Agency[]
+        #mapPointFromSQLite(row)
+        #mapCreatureFromSQLite(row)
     }
 
-    class MasterDataService {
+    %% --- 実装層 (Web/App Local) ---
+    class WebSQLiteEngine {
+        +getAllAsync()
+        +runAsync()
         +initialize()
-        +searchPoints(text)
-        +searchCreatures(text)
-        +savePoint(point)
-        +saveCreature(creature)
+    }
+    
+    class WebMasterDataService {
+        -isInitialized : boolean
+        +initialize()
+        +searchPoints(text) : Override (Super + Fallback)
+        +searchCreatures(text) : Override (Super + Fallback)
+        +getAgencies() : Override (Super + Fallback)
+        +getAllPoints()
+        +updatePointInCache(point)
     }
 
     class UserDataService {
-        +syncInitialData()
-        +savePointProposal(proposal)
-        +saveCreatureProposal(proposal)
-        +saveMyProposal(type, id, data) : private
+        +saveLog(userId, log)
+        +saveMyReview(userId, review)
+        +saveMyProposal(userId, type, data)
+        +saveSetting(key, value)
+        -initialize(userId)
     }
 
-    class WebSQLiteEngine {
-        +importDatabase(data)
-        +runAsync(sql)
-        +getAllAsync(sql)
+    %% --- 依存と継承 ---
+    SQLiteExecutor <|.. WebSQLiteEngine : Implements
+    BaseMasterDataService <|-- WebMasterDataService : 継承 (SQLロジックの共通化)
+    BaseMasterDataService o-- SQLiteExecutor : 依存注入 (プラットフォーム非依存)
+    WebMasterDataService ..> WebSQLiteEngine : 利用 (superへ渡す)
+    
+    UserDataService ..> SQLiteExecutor : Utilizes (Local DB)
+    UserDataService ..> Firestore : Utilizes (Cloud DB)
+
+    %% --- 利用者 ---
+    class AppContext {
+        +initMasterData()
+        +addReview(review)
+        +deleteReview(id)
+        +addLog(log)
+        +deleteLog(id)
+        +deleteAccount()
+        +toggleLikeLog(logOrId)
+        +updateUserRole(uid, role)
+        +addCreatureProposal(proposal)
+        +addPointProposal(proposal)
     }
-
-    class Firestore {
-        +setDoc()
-        +getDocs()
-    }
-
-    class GCS {
-        +getDownloadURL()
-        +v1/master/latest.db.gz
-    }
-
-    %% Relationships
-    AppContext ..> MasterDataSyncService : 初期化時に syncMasterData() を呼出
-    AppContext ..> MasterDataService : データを読み取り (Hooks経由)
-    AppContext ..> UserDataService : 書き込み・同期処理を委譲
-
-    MasterDataSyncService ..> GCS : DBをダウンロード
-    MasterDataSyncService ..> WebSQLiteEngine : バイナリインポート / テーブル作成
-
-    MasterDataService ..> WebSQLiteEngine : キャッシュの読み書き
-    UserDataService ..> Firestore : 申請 / 管理データの書き込み
-    UserDataService ..> WebSQLiteEngine : my_proposals (userDb) の書き込み
+    AppContext ..> WebMasterDataService : Calls
+    AppContext ..> UserDataService : Calls
 ```
 
-### 2. 初期化と同期フロー (シーケンス図)
+### 9.2 初期化と同期フロー
 
 ```mermaid
 sequenceDiagram
-    participant UI as App/Pages
+    participant UI
     participant CTX as AppContext
     participant MDSync as MasterDataSyncService
     participant UDS as UserDataService
     participant GCS
-    participant SQLite as SQLiteEngine
-    participant FS as Firestore
+    participant SQLite
 
-    UI->>CTX: マウント (AppProvider)
+    UI->>CTX: マウント
     CTX->>MDSync: syncMasterData()
-    
-    rect rgb(240, 248, 255)
-    note over MDSync: マスタデータ同期フェーズ
-    MDSync->>GCS: メタデータ確認 & ダウンロード (v1/master/latest.db.gz)
-    alt ダウンロード成功
-        GCS-->>MDSync: latest.db.gz
-        MDSync->>SQLite: importDatabase(解凍済みデータ)
-    else ダウンロード失敗 (オフライン/404)
-        MDSync->>SQLite: fallbackToLocalTables() (空スキーマ作成)
+    MDSync->>GCS: latest.db.gz のダウンロード
+    alt 成功
+        MDSync->>SQLite: DBインポート
+    else 失敗
+        MDSync->>SQLite: 空テーブル作成 (master_geography...)
     end
-    end
-
-    CTX->>UDS: syncInitialData() (認証済みの場合)
-    
-    rect rgb(255, 250, 240)
-    note over UDS: ユーザーデータ同期フェーズ
-    UDS->>FS: 自身の提案を取得 (submitterId==me)
-    FS-->>UDS: ドキュメント群
-    UDS->>SQLite: saveMyProposal() (ローカル my_proposals 更新)
-    
-    alt 管理者ユーザー
-        UDS->>FS: 管理データを取得 (未承認レビュー等)
-        FS-->>UDS: ドキュメント群
-        UDS->>SQLite: ローカル管理テーブルへ保存
-    end
-    end
-    
-    CTX->>UI: 準備完了 (isLoading = false)
+    CTX->>UDS: syncInitialData()
+    UDS->>SQLite: my_logs, my_proposals 等の更新
+    CTX->>UI: 準備完了
 ```
 
-### 3. ユーザー提案データのフロー (シーケンス図)
+### 9.3 ユーザー申請データのフロー
 
 ```mermaid
 sequenceDiagram
     participant User
-    participant Page as EditCreaturePage
-    participant CTX as AppContext
+    participant Page
     participant UDS as UserDataService
     participant FS as Firestore
-    participant SQLite as SQLiteEngine (my_proposals)
+    participant SQLite
 
-    User->>Page: 「変更を提案」をクリック
-    Page->>CTX: addCreatureProposal(proposalData)
-    CTX->>UDS: saveCreatureProposal(userId, proposalData)
-    
-    rect rgb(230, 255, 230)
-    note over UDS: Dual Write Strategy (同時書き込み)
-    
-    par Firestore 書き込み
-        UDS->>FS: setDoc(creature_proposals/{id})
-    and Local 書き込み
-        UDS->>SQLite: saveMyProposal('creature', id, data)
-        note right of SQLite: ステータス: 'pending'<br>同期日時: Now
+    User->>Page: 変更を提案
+    Page->>UDS: saveCreatureProposal()
+    par Firestore
+        UDS->>FS: setDoc(*_proposals)
+    and Local
+        UDS->>SQLite: insert(my_proposals)
     end
-    end
-    
-    UDS-->>CTX: 成功
-    CTX-->>Page: 成功
-    Page-->>User: 「送信完了」ダイアログを表示
+    Page-->>User: 完了
 ```
 
-### 1. マスタデータ同期戦略 (更新版)
+### 9.4 アプリ固有アーキテクチャ
+Web版の OPFS と異なり、ネイティブアプリでは `FileSystem` と `GzipHelper` を使用して効率的なファイル操作を行います。
 
-**以前:** Firestore `onSnapshot` リスナー（廃止・禁止）
-**新戦略:** GCS + SQLite (Web: OPFS / Mobile: Native SQLite)
+### 9.5 UIアーキテクチャ (AppContext Facade)
+**重要**: アーキテクチャの統一性を保つため、以下のルールを厳守すること。
+1.  **禁止事項**: 各ページ（UIコンポーネント）において、`UserDataService` や `MasterDataService` を直接インポートし、メソッドを実行することを禁止する。
+2.  **アクセス経路**: データ操作は必ず **`AppContext` (Web)** または **`AuthContext` (App)** が公開するラッパーメソッドを経由して行うこと。
+    - **目的**: エラーハンドリング、ローディング状態 (`isLoading`)、キャッシュ更新 (`invalidateQueries`) の一元管理。
+    - **実装**: `AppContext` は `UserDataService` メソッドをラップし、`refetch()` 等の副作用を管理する。
 
-#### ワークフロー (バックエンド Exporter と一致):
-1.  **バックエンド (Exporter)**:
-    *   BigQuery Views (`v_app_points_master` 等) -> SQLite DB (`master.db`)
-    *   圧縮: `gzip`
-    *   アップロード: `gs://[BUCKET]/v1/master/latest.db.gz`
-    *   トリガー: オンデマンド または 定期実行 (Cloud Scheduler)
+### 9.6 個人データとAIコンシェルジュのフロー（コスト視点）
+**Local-First のコスト優位性**: 画面表示ごとの Firestore 読み取り（課金）を排除し、必要なアクション（消費・同期）のみにコストを限定します。
 
-2.  **クライアント (Web/App)**:
-    *   **サービス**: `MasterDataSyncService` (`MasterDataService` ではなくこちらを使用)
-    *   **チェック**: ローカルのチェックサム/タイムスタンプと GCS メタデータを比較。
-    *   **ダウンロード**: `v1/master/latest.db.gz` を取得。
-    *   **解凍**:
-        *   **Web**: `DecompressionStream` または `pako`
-        *   **App**: `GzipHelper` 経由の `pako`
-    *   **ロード**: SQLite エンジンにインポート (Web: wa-sqlite/OPFS, App: expo-sqlite)。
-    *   **フォールバック (重要)**:
-        *   GCS ダウンロード失敗時 (オフライン, 404等):
-        *   **アクション**: スキーマに適合した **空のテーブル** をローカルに作成する。
-        *   **理由**: アプリクラッシュ ("no such table") を防ぎ、キャッシュ済みログの閲覧など限定的な機能を提供するため。
+```mermaid
+sequenceDiagram
+    participant User
+    participant UI
+    participant LocalDB as SQLite (Local)
+    participant BE as Cloud Functions
+    participant FS as Firestore (Cloud)
 
-#### スキーマの一貫性
-*   **正解データ (Source of Truth)**: BigQuery Views が `master.db` のスキーマを定義する。
-*   **updatedAt**: クライアント編集時の楽観ロックを有効にするため、BigQuery Views に必ず含めること。
+    rect rgb(240, 255, 240)
+    note over UI, LocalDB: 【画面表示フェーズ】 $0 Cost
+    User->>UI: マイページ表示 / 残高確認
+    UI->>LocalDB: select * from my_tickets
+    LocalDB-->>UI: 残数表示 (Firestoreアクセスなし)
+    end
 
-### 2. ユーザーデータと同期ポリシー (Local-First + Firestore)
+    rect rgb(255, 240, 240)
+    note over UI, FS: 【チケット消費フェーズ】 Transaction Cost
+    User->>UI: チャット送信 (消費)
+    UI->>BE: callFunction
+    BE->>FS: runTransaction (Read + Write)
+    FS-->>BE: Success
+    BE-->>UI: Response
+    UI->>LocalDB: update my_tickets (ローカル同期)
+    end
 
-#### ユーザー提案 (編集)
-一般ユーザーが変更（ポイント編集、生物編集など）を提案する場合:
-
-1.  **Firestore**: `*_proposals` コレクションに保存（管理者レビュー用）。
-2.  **Local SQLite**: `my_proposals` テーブルに **同時** に保存。
-    *   **理由**: 「履歴確認」の即時サポートとオフライン機能のため。
-    *   **テーブル**: `my_proposals (id, type, target_id, data_json, status, synced_at)`
-3.  **同期**:
-    *   アプリ起動時 (`syncInitialData`)、`submitterId == me` の `*_proposals` を取得し、`my_proposals` を最新化（ステータス変更など）。
-4.  **クリーンアップ**:
-    *   マスタデータ同期時に、提案された変更が適用されたか確認。
-    *   新しいマスタ DB に `target_id`（生物ID等）が存在し、更新内容が含まれていれば、`my_proposals` から削除（または統合済みとマーク）。
-
-#### 管理者データ
-*   **書き込み**: `saveCreature` / `savePoint` を使用してマスタデータ (Firestore `points`/`creatures`) に直接書き込む。
-*   **競合解決**: 書き込み前に Firestore の `updatedAt` とローカルキャッシュを比較。
-*   **ローカルキャッシュ**: 次回の GCS 同期を待たずに変更を反映するため、書き込み直後に更新必須。
-
-### 関連用語の凡例 (Legend)
-- **Sub-collection**: Firestore の物理的な階層構造。親のパス (`/users/uid`) の下に配置される。
-- **Ref ID**: 他ドキュメントの ID を単一の `string` フィールドとして保持。
-- **Ref ID List**: 他ドキュメントの ID を `string[]` (配列) 形式で保持。
-- **Root Mapping**: 多対多を実現するため、Root に配置した中間テーブル的役割のコレクション。
-- **Embedded**: 正規化せず、ドキュメント内に直接持っている属性情報（Map/独自オブジェクト）。
-- **Denormalized**: 結合（Join）を避けるため、正規化を崩して重複して持たせているデータ。
+    rect rgb(240, 240, 255)
+    note over UI, FS: 【初期同期フェーズ】 Sync Cost (起動時のみ)
+    User->>UI: アプリ起動 / リロード
+    UI->>FS: getDocs (aiConciergeTickets)
+    FS-->>LocalDB: insert/update (マスターデータ同期)
+    end
+```
 
 ---
 
