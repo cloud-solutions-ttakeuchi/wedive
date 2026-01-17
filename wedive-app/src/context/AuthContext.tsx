@@ -75,19 +75,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             userDataService.getSetting<User>('profile')
           ]);
 
+          const sanitizeUser = (u: any): User => ({
+            ...u,
+            favoriteCreatureIds: Array.isArray(u.favoriteCreatureIds) ? u.favoriteCreatureIds : [],
+            bookmarkedPointIds: Array.isArray(u.bookmarkedPointIds) ? u.bookmarkedPointIds : [],
+            wanted: Array.isArray(u.wanted) ? u.wanted : [],
+          });
+
           setLogs(localLogs || []);
 
           if (localProfile) {
-            setUser(localProfile);
+            setUser(sanitizeUser(localProfile));
           } else {
             // SQLiteにない場合(初回ログイン等)、Firestoreから取得
             const userDocRef = doc(db, 'users', fbUser.uid);
             const userDocSnap = await getDoc(userDocRef);
             if (userDocSnap.exists()) {
               const remoteUser = userDocSnap.data() as User;
-              setUser(remoteUser);
+              const sanitized = sanitizeUser(remoteUser);
+              setUser(sanitized);
               // 次回のために保存
-              await userDataService.saveSetting('profile', remoteUser);
+              await userDataService.saveSetting('profile', sanitized);
             } else {
               // Not found in Firestore -> Create new user (Auto-Provisioning)
               console.log("[AuthContext] User document not found. Creating new user profile.");

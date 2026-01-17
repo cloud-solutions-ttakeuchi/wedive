@@ -54,15 +54,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         // 4. Load from SQLite
         const localProfile = await userDataService.getSetting<User>('profile');
+
+        const sanitizeUser = (u: any): User => ({
+          ...u,
+          favoriteCreatureIds: Array.isArray(u.favoriteCreatureIds) ? u.favoriteCreatureIds : [],
+          bookmarkedPointIds: Array.isArray(u.bookmarkedPointIds) ? u.bookmarkedPointIds : [],
+          wanted: Array.isArray(u.wanted) ? u.wanted : [],
+        });
+
         if (localProfile) {
-          setCurrentUser(localProfile);
+          setCurrentUser(sanitizeUser(localProfile));
         } else {
           // Fallback to Firestore if SQLite is somehow empty
           const docSnap = await getDoc(doc(firestore, 'users', fbUser.uid));
           if (docSnap.exists()) {
             const user = { ...docSnap.data(), id: fbUser.uid } as User;
-            setCurrentUser(user);
-            await userDataService.saveSetting('profile', user);
+            const sanitized = sanitizeUser(user);
+            setCurrentUser(sanitized);
+            await userDataService.saveSetting('profile', sanitized);
           } else {
             // Create new user if not exists
             const newUser: User = {

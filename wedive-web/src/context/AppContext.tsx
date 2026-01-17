@@ -167,21 +167,27 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const toggleFavorite = async (id: string) => {
-    const isFav = auth.currentUser.favoriteCreatureIds?.includes(id);
+    if (!auth.isAuthenticated) return;
+    const currentIds = Array.isArray(auth.currentUser.favoriteCreatureIds) ? auth.currentUser.favoriteCreatureIds : [];
+    const isFav = currentIds.includes(id);
     await auth.updateUser({
       favoriteCreatureIds: isFav ? arrayRemove(id) : arrayUnion(id) as any
     });
   };
 
   const toggleWanted = async (id: string) => {
-    const isWanted = auth.currentUser.wanted?.includes(id);
+    if (!auth.isAuthenticated) return;
+    const currentWanted = Array.isArray(auth.currentUser.wanted) ? auth.currentUser.wanted : [];
+    const isWanted = currentWanted.includes(id);
     await auth.updateUser({
       wanted: isWanted ? arrayRemove(id) : arrayUnion(id) as any
     });
   };
 
   const toggleBookmarkPoint = async (id: string) => {
-    const isBookmarked = auth.currentUser.bookmarkedPointIds?.includes(id);
+    if (!auth.isAuthenticated) return;
+    const currentBookmarks = Array.isArray(auth.currentUser.bookmarkedPointIds) ? auth.currentUser.bookmarkedPointIds : [];
+    const isBookmarked = currentBookmarks.includes(id);
     await auth.updateUser({
       bookmarkedPointIds: isBookmarked ? arrayRemove(id) : arrayUnion(id) as any
     });
