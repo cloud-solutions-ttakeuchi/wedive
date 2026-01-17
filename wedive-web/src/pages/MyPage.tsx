@@ -18,6 +18,10 @@ import { BADGE_MASTER, TRUST_RANKS } from '../constants/masterData';
 
 export const MyPage = () => {
   const { currentUser, logs, points, zones, areas, creatures, pointCreatures, isAuthenticated, toggleLikeLog, deleteLogs, updateLogs, reviews, deleteReview, agencies } = useApp();
+
+  const favIds = Array.isArray(currentUser?.favoriteCreatureIds) ? currentUser.favoriteCreatureIds : [];
+  const wantedIds = Array.isArray(currentUser?.wanted) ? currentUser.wanted : [];
+  const bookmarkIds = Array.isArray(currentUser?.bookmarkedPointIds) ? currentUser.bookmarkedPointIds : [];
   const { t } = useLanguage();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [activeTab, setActiveTab] = useState<'dashboard' | 'logbook' | 'collection' | 'favorites' | 'wanted' | 'bookmarks' | 'reviews'>('dashboard');
@@ -690,10 +694,10 @@ export const MyPage = () => {
           <div className="space-y-4">
             <h3 className="font-bold text-deepBlue-900 flex items-center gap-2 px-1">
               <Heart size={18} className="text-red-500" />
-              Favorites <span className="text-gray-400 text-sm font-normal">({currentUser.favoriteCreatureIds?.length || 0})</span>
+              Favorites <span className="text-gray-400 text-sm font-normal">({favIds.length})</span>
             </h3>
             <div className="grid grid-cols-2 gap-4">
-              {currentUser.favoriteCreatureIds?.map((id: string) => {
+              {favIds.map((id: string) => {
                 const creature = creatures.find((c: any) => c.id === id);
                 if (!creature) return null;
                 return (
@@ -725,7 +729,7 @@ export const MyPage = () => {
                   </Link>
                 );
               })}
-              {(currentUser.favoriteCreatureIds?.length || 0) === 0 && (
+              {(favIds.length) === 0 && (
                 <div className="col-span-2 text-center py-12 text-gray-400 text-sm bg-white rounded-2xl border border-gray-100 border-dashed">
                   No favorites yet.
                 </div>
@@ -741,10 +745,10 @@ export const MyPage = () => {
           <div className="space-y-4">
             <h3 className="font-bold text-deepBlue-900 flex items-center gap-2 px-1">
               <Bookmark size={18} className="text-yellow-500" />
-              Wanted <span className="text-gray-400 text-sm font-normal">({currentUser.wanted.length})</span>
+              Wanted <span className="text-gray-400 text-sm font-normal">({wantedIds.length})</span>
             </h3>
             <div className="grid grid-cols-2 gap-4">
-              {currentUser.wanted.map((id: string) => {
+              {wantedIds.map((id: string) => {
                 const creature = creatures.find((c: any) => c.id === id);
                 if (!creature) return null;
                 const isDiscovered = userLogs.some((l: any) => l.creatureId === id);
@@ -784,7 +788,7 @@ export const MyPage = () => {
                   </Link>
                 );
               })}
-              {currentUser.wanted.length === 0 && (
+              {wantedIds.length === 0 && (
                 <div className="col-span-2 text-center py-12 text-gray-400 text-sm bg-white rounded-2xl border border-gray-100 border-dashed">
                   No wanted creatures yet.
                 </div>
@@ -803,7 +807,7 @@ export const MyPage = () => {
               Bookmarked Points <span className="text-gray-400 text-sm font-normal">({currentUser.bookmarkedPointIds.length})</span>
             </h3>
 
-            {currentUser.bookmarkedPointIds.length === 0 ? (
+            {bookmarkIds.length === 0 ? (
               <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-200">
                 <div className="text-4xl mb-4">🗺️</div>
                 <h3 className="text-lg font-bold text-deepBlue-900 mb-2">気になるポイントを探そう！</h3>
@@ -828,7 +832,7 @@ export const MyPage = () => {
                     .filter((p: any) => p !== undefined)
                     .map((p: any) => p!.zone)
                 )).map((zoneName: any) => {
-                  const zonePoints = currentUser.bookmarkedPointIds
+                  const zonePoints = bookmarkIds
                     .map((id: string) => points.find((p: any) => p.id === id))
                     .filter((p: any) => p !== undefined && p!.zone === zoneName);
 
