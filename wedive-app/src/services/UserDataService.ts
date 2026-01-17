@@ -358,8 +358,79 @@ export class UserDataService {
   }
 
   /**
-   * ログを削除
+   * 自分のレビューを保存（Dual-Write用）
    */
+  async saveMyReview(userId: string, review: any, skipFirestore = false): Promise<void> {
+    const isAvailable = await this.initialize(userId);
+    const now = new Date().toISOString();
+
+    if (isAvailable && this.sqliteDb) {
+      try {
+        await this.sqliteDb.runAsync(
+          `INSERT OR REPLACE INTO my_reviews (
+            id, point_id, rating, comment, images_json, condition_json,
+            metrics_json, radar_json, tags_json, status, created_at, synced_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            review.id,
+            review.pointId,
+            review.rating,
+            review.comment,
+            JSON.stringify(review.images || []),
+            JSON.stringify(review.condition || {}),
+            JSON.stringify(review.metrics || {}),
+            JSON.stringify(review.radar || {}),
+            JSON.stringify(review.tags || []),
+            review.status || 'pending',
+            review.createdAt || now,
+            now
+          ]
+        );
+      } catch (error) {
+        console.error('Failed to save review to SQLite:', error);
+      }
+    }
+
+    if (skipFirestore) return;
+
+    // Firestoreへの書き込み (userIdも含める)
+    const reviewRef = doc(firestoreDb, 'reviews', review.id);
+    // merge: trueを使うことで部分更新にも対応
+    setDoc(reviewRef, { ...review, userId, updatedAt: now }, { merge: true }).catch(err => {
+      console.error('Failed to sync review to Firestore:', err);
+    });
+  }
+
+  /**
+   * 自分のレビューを取得
+   */
+  async getMyReviews(): Promise<any[]> {
+    const isAvailable = await this.initialize();
+    if (isAvailable && this.sqliteDb) {
+      try {
+        const results = await this.sqliteDb.getAllAsync(
+          'SELECT * FROM my_reviews ORDER BY created_at DESC'
+        );
+        return results.map((row: any) => ({
+          id: row.id,
+          pointId: row.point_id,
+          rating: row.rating,
+          comment: row.comment,
+          images: JSON.parse(row.images_json || '[]'),
+          condition: JSON.parse(row.condition_json || '{}'),
+          metrics: JSON.parse(row.metrics_json || '{}'),
+          radar: JSON.parse(row.radar_json || '{}'),
+          tags: JSON.parse(row.tags_json || '[]'),
+          status: row.status,
+          createdAt: row.created_at,
+          userId: this.currentUserId
+        }));
+      } catch (error) {
+        console.error('Failed to get reviews from SQLite:', error);
+      }
+    }
+    return [];
+  }
   async deleteLog(userId: string, logId: string): Promise<void> {
     const isAvailable = await this.initialize(userId);
 
@@ -446,11 +517,8 @@ export class UserDataService {
       ));
       for (const doc of reviewSnapshot.docs) {
         const data = doc.data();
-        await this.sqliteDb.runAsync(
-          `INSERT OR REPLACE INTO my_reviews (id, point_id, rating, comment, images_json, condition_json, metrics_json, radar_json, tags_json, status, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [doc.id, data.pointId, data.rating, data.comment, JSON.stringify(data.images || []), JSON.stringify(data.condition || {}), JSON.stringify(data.metrics || {}), JSON.stringify(data.radar || {}), JSON.stringify(data.tags || []), data.status, data.createdAt]
-        );
+        // 重複コード排除: saveMyReview を使用 (Firestoreへの書き込みはスキップ)
+        await this.saveMyReview(userId, { id: doc.id, ...data }, true);
       }
 
       // 3 & 4. ブックマークとお気に入り

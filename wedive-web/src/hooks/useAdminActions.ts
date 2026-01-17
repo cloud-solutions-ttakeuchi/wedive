@@ -122,29 +122,42 @@ export const useAdminActions = () => {
    */
   const approveReview = async (id: string) => {
     const now = new Date().toISOString();
-    const proposalRef = doc(db, 'unapproved_reviews', id);
-    const snap = await getDoc(proposalRef);
-    if (!snap.exists()) return;
+    const reviewRef = doc(db, 'reviews', id);
+
+    // 1. Check current status
+    const snap = await getDoc(reviewRef);
+    if (!snap.exists()) {
+      alert('レビューが見つかりません。');
+      return;
+    }
     const data = snap.data();
 
-    if (data.status !== 'pending' && data.processedAt) {
-      alert('このレビューは既に処理されました。');
+    // Already processed?
+    if (data.status === 'approved') {
+      alert('このレビューは既に承認済みです。');
       return;
     }
 
-    const targetRef = doc(db, 'reviews', id);
-    await setDoc(targetRef, { ...data, status: 'approved', approvedAt: now });
-    await deleteDoc(proposalRef);
+    // 2. Update status to approved
+    await updateDoc(reviewRef, {
+      status: 'approved',
+      approvedAt: now,
+      updatedAt: now
+    });
 
-    // TODO: Update Point average rating in Firestore and Local Cache?
+    // TODO: Trigger aggregation or other side effects if needed
   };
 
   /**
    * レビューの却下
    */
   const rejectReview = async (id: string) => {
-    const proposalRef = doc(db, 'unapproved_reviews', id);
-    await updateDoc(proposalRef, { status: 'rejected', processedAt: new Date().toISOString() });
+    const reviewRef = doc(db, 'reviews', id);
+    await updateDoc(reviewRef, {
+      status: 'rejected',
+      rejectedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
   };
 
   return {

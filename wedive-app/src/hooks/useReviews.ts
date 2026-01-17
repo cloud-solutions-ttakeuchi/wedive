@@ -23,9 +23,8 @@ export function useReviews(pointId?: string, areaId?: string) {
     queryKey: ['reviews', pointId, user?.id],
     enabled: !!pointId && !!user && user.id !== 'guest',
     queryFn: async () => {
-      // 本来は UserDataService に getReviewsByPoint(userId, pointId) があると良い
-      // 一旦 getLogs のような一括取得からフィルタするか、Serviceに追加する
-      const allMyReviews = await userDataService.getSetting<any[]>('my_reviews') || [];
+      // 修正: my_settings参照ではなく、正しい my_reviews テーブルから取得する
+      const allMyReviews = await userDataService.getMyReviews();
       return allMyReviews.filter(r => r.pointId === pointId) as Review[];
     },
     staleTime: 1000 * 60 * 5, // 5 mins
