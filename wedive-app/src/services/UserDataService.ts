@@ -479,6 +479,133 @@ export class UserDataService {
   }
 
   /**
+   * レビューの差分同期
+   */
+  async syncReviews(userId: string): Promise<void> {
+    const isAvailable = await this.initialize(userId);
+    if (!isAvailable || !this.sqliteDb) return;
+
+    try {
+      const lastSync = await this.getSetting<string>('last_review_sync_at');
+      const lastSyncIso = lastSync || '1970-01-01T00:00:00.000Z'; // 初回は全件
+
+      console.log(`[Sync] Checking for reviews updated after: ${lastSyncIso}`);
+
+      const reviewsRef = collection(firestoreDb, 'reviews');
+      const q = query(
+        reviewsRef,
+        where('userId', '==', userId),
+        where('updatedAt', '>', lastSyncIso)
+      );
+
+      const snapshot = await getDocs(q);
+
+      if (!snapshot.empty) {
+        console.log(`[Sync] Found ${snapshot.size} reviews to update.`);
+        for (const doc of snapshot.docs) {
+          const data = doc.data();
+          await this.saveMyReview(userId, { id: doc.id, ...data }, true);
+        }
+      }
+
+      await this.saveSetting('last_review_sync_at', new Date().toISOString());
+
+    } catch (error) {
+      console.error('[Sync] Review sync failed:', error);
+    }
+  }
+
+  /**
+   * 自分の提案を保存 (Local & Firestore Dual-Write)
+   */
+  async saveMyProposal(userId: string, type: string, docId: string, data: any, skipFirestore = false): Promise<void> {
+    const isAvailable = await this.initialize(userId);
+    const now = new Date().toISOString();
+
+    if (isAvailable && this.sqliteDb) {
+      try {
+        await this.sqliteDb.runAsync(
+          `INSERT OR REPLACE INTO my_proposals (
+            id, target_id, proposal_type, status, data_json, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?)`,
+          [
+            docId,
+            data.targetId || '',
+            data.proposalType || '',
+            data.status || 'pending',
+            JSON.stringify(data),
+            data.createdAt || now
+          ]
+        );
+      } catch (error) {
+        console.error('Failed to save proposal to SQLite:', error);
+      }
+    }
+
+    if (skipFirestore) return;
+
+    // Firestoreへの書き込み
+    const colName = type === 'point-creature' ? 'point_creature_proposals' : `${type}_proposals`;
+    const ref = doc(firestoreDb, colName, docId);
+    setDoc(ref, { ...data, submitterId: userId, updatedAt: now }, { merge: true }).catch(err => {
+      console.error('Failed to sync proposal to Firestore:', err);
+    });
+  }
+
+  /**
+   * 提案データの差分同期
+   */
+  async syncProposals(userId: string): Promise<void> {
+    const isAvailable = await this.initialize(userId);
+    if (!isAvailable || !this.sqliteDb) return;
+
+    try {
+      const lastSync = await this.getSetting<string>('last_proposal_sync_at');
+      const lastSyncIso = lastSync || '1970-01-01T00:00:00.000Z';
+      console.log(`[Sync] Checking for proposals updated after: ${lastSyncIso}`);
+
+      const collections = [
+        { name: 'point_proposals', type: 'point' },
+        { name: 'creature_proposals', type: 'creature' },
+        { name: 'point_creature_proposals', type: 'point-creature' }
+      ];
+
+      let count = 0;
+      for (const col of collections) {
+        const q = query(
+          collection(firestoreDb, col.name),
+          where('submitterId', '==', userId),
+          where('updatedAt', '>', lastSyncIso) // processedAt or updatedAt
+        );
+        const snapshot = await getDocs(q);
+        for (const d of snapshot.docs) {
+          await this.saveMyProposal(userId, col.type, d.id, d.data(), true);
+          count++;
+        }
+      }
+
+      if (count > 0) console.log(`[Sync] Synced ${count} proposals.`);
+      await this.saveSetting('last_proposal_sync_at', new Date().toISOString());
+
+    } catch (e) {
+      console.error('[Sync] Proposal sync failed:', e);
+    }
+  }
+
+  /**
+   * ユーザーデータ全体の一括同期 (Logs, Reviews, Proposals)
+   */
+  async syncUserData(userId: string): Promise<void> {
+    console.log('[Sync] Starting full user data sync...');
+    await Promise.all([
+      this.syncLogs(userId),
+      this.syncReviews(userId),
+      this.syncProposals(userId)
+    ]);
+    console.log('[Sync] Full user data sync completed.');
+  }
+
+  /**
    * 初回同期：SQLiteが空の場合にFirestoreから全件取得
    */
   async syncInitialData(userId: string, force = false): Promise<void> {
