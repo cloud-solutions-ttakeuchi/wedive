@@ -88,6 +88,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setUser(remoteUser);
               // 次回のために保存
               await userDataService.saveSetting('profile', remoteUser);
+            } else {
+              // Not found in Firestore -> Create new user (Auto-Provisioning)
+              console.log("[AuthContext] User document not found. Creating new user profile.");
+              const newUser: any = {
+                id: fbUser.uid,
+                name: fbUser.displayName || 'Diver',
+                email: fbUser.email || '',
+                role: 'user',
+                trustScore: 0,
+                profileImage: fbUser.photoURL || null,
+                aiConciergeTickets: { totalAvailable: 0, periodContribution: { points: 0, creatures: 0, reviews: 0 } },
+                favoriteCreatureIds: [],
+                bookmarkedPointIds: [],
+                wanted: [],
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+              };
+
+              // Firestore保存
+              await setDoc(doc(db, 'users', fbUser.uid), newUser);
+              setUser(newUser);
+              await userDataService.saveSetting('profile', newUser);
             }
           }
 
