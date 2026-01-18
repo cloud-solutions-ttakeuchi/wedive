@@ -357,7 +357,7 @@ export class MasterDataService extends BaseMasterDataService {
   async updatePointCreatureInCache(item: any): Promise<void> {
     if (await this.initialize()) {
       await masterDbEngine.runAsync(
-        'INSERT OR REPLACE INTO master_point_creatures (id, point_id, creature_id, localRarity) VALUES (?, ?, ?, ?)',
+        'INSERT OR REPLACE INTO master_point_creatures (id, point_id, creature_id, local_rarity) VALUES (?, ?, ?, ?)',
         [item.id, item.pointId, item.creatureId, item.localRarity]
       );
     }
