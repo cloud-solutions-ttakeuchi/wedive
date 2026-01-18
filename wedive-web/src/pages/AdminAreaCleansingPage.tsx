@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useApp } from '../context/AppContext';
 import { ArrowLeft, Edit2, Trash2, Save, X, RefreshCw, Layers, Map as MapIcon, Globe, MapPin, ChevronDown, ChevronUp, AlertTriangle, GitMerge, Plus, Download, Check, CircleOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -12,6 +13,7 @@ type TargetField = 'area' | 'zone' | 'region' | 'point';
 
 export const AdminAreaCleansingPage = () => {
   const { regions, zones, areas, points, creatures, pointCreatures, currentUser } = useApp();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [targetField, setTargetField] = useState<TargetField>('area');
   const [editingValue, setEditingValue] = useState<string | null>(null);
@@ -320,6 +322,7 @@ export const AdminAreaCleansingPage = () => {
       setEditingValue(null);
       setNewValue('');
       alert('Updated.');
+      queryClient.invalidateQueries({ queryKey: ['areas', 'zones', 'regions', 'points'] });
     } catch (e: any) {
       console.error(e);
       alert('Error: ' + e.message);
@@ -330,15 +333,45 @@ export const AdminAreaCleansingPage = () => {
 
 
   // Operation: Rename Individual Point
-  const handleRenamePoint = async (pointId: string, currentName: string) => {
+  const handleRenamePoint = async (pointId: string, currentName: string, currentUpdatedAt?: string) => {
     if (!newPointName.trim() || newPointName === currentName) return;
 
     if (!window.confirm(`このポイントの名前を「${currentName}」から「${newPointName}」に変更しますか？`)) return;
 
+    const currentPoint = points.find(p => p.id === pointId);
+    if (!currentPoint) {
+      alert('Local point data not found.');
+      return;
+    }
+
     setProcessing(true);
     try {
+      const now = new Date().toISOString();
       const pointRef = doc(db, 'points', pointId);
-      await updateDoc(pointRef, { name: newPointName.trim() });
+
+      // 1. Optimistic Locking
+      const snap = await getDoc(pointRef);
+      if (snap.exists()) {
+        const latest = snap.data();
+        if (currentUpdatedAt && latest.updatedAt && latest.updatedAt > currentUpdatedAt) {
+          alert(`【競合検知】他の管理者がこのポイントを更新しました。\n最新データを読み込んでからやり直してください。`);
+          queryClient.invalidateQueries({ queryKey: ['points'] });
+          return;
+        }
+      }
+
+      // 2. Update Firestore
+      await updateDoc(pointRef, { name: newPointName.trim(), updatedAt: now });
+
+      // 3. Update Local SQLite
+      const { masterDataService } = await import('../services/MasterDataService');
+      await masterDataService.updatePointInCache({
+        ...currentPoint,
+        name: newPointName.trim(),
+        updatedAt: now
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['points'] });
 
       alert('ポイント名を更新しました。');
       setEditingPointId(null);
@@ -645,6 +678,7 @@ export const AdminAreaCleansingPage = () => {
       }
 
       alert(`統合完了: ${updatedCount} 件のポイントを「${targetItem.name}」に統合しました。`);
+      queryClient.invalidateQueries({ queryKey: ['areas', 'zones', 'regions', 'points'] });
       setGroupMergeModalOpen(false);
       setGroupMergeSourceKey('');
       setGroupMergeTargetKey('');
@@ -797,7 +831,18 @@ export const AdminAreaCleansingPage = () => {
       // We don't have a bulk local PC update yet, but we can iterate or just rely on next sync.
       // However, for Local-First, let's at least delete source point from local points.
       localPromises.push(masterDataService.deletePointFromCache(mergeSource.id));
-      // Update Target point in local cache with latest data
+      localPromises.push(masterDataService.updatePointInCache(targetPoint));
+      // Re-fetch target point to see if we need to merge fields? (Assuming targetPoint in memory is stale?)
+      // For now, just invalidate.
+
+      await Promise.all(localPromises);
+
+      queryClient.invalidateQueries({ queryKey: ['points', 'users', 'logs'] });
+
+      alert('統合完了しました。');
+      setMergeModalOpen(false);
+      setMergeSource(null);
+      setMergeTargetId('');
       localPromises.push(masterDataService.updatePointInCache({ ...targetPoint, id: mergeTargetId, updatedAt: now } as Point));
 
       await Promise.all(localPromises);
@@ -2013,7 +2058,7 @@ export const AdminAreaCleansingPage = () => {
                                             placeholder="新しい名前"
                                           />
                                           <button
-                                            onClick={() => handleRenamePoint(p.id, p.name)}
+                                            onClick={() => handleRenamePoint(p.id, p.name, p.updatedAt)}
                                             className="text-green-600 hover:bg-green-50 p-0.5 rounded"
                                           >
                                             <Save size={14} />
