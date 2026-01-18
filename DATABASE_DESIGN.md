@@ -577,8 +577,43 @@ Firebase Storage (GCS) から配信され、全ユーザーが読み取り専用
 | `region_name` | TEXT | リージョン名 |
 | `full_path` | TEXT | 検索用パス文字列 |
 
+#### `master_points`
+| フィールド | 型 | 説明 |
+| :--- | :--- | :--- |
+| `id` | TEXT | ポイントID |
+| `name` | TEXT | ポイント名 |
+| `name_kana` | TEXT | ポイント名カナ |
+| `area_id` | TEXT | 親エリアID |
+| `zone_id` | TEXT | 親ゾーンID |
+| `region_id` | TEXT | 親リージョンID |
+| `region_name`, `area_name`, `zone_name` | TEXT | 非正規化名称 |
+| `latitude`, `longitude` | REAL | 座標 |
+| `level` | TEXT | レベル |
+| `search_text` | TEXT | 検索用テキスト |
+| `updated_at` | TEXT | 最終更新日時 |
+| `...` | ... | (その他詳細はFirestore定義に対応するスネークケースカラム) |
+
+#### `master_creatures`
+| フィールド | 型 | 説明 |
+| :--- | :--- | :--- |
+| `id` | TEXT | 生物ID |
+| `name` | TEXT | 和名 |
+| `name_kana` | TEXT | 和名カナ |
 | `scientific_name` | TEXT | 学名 |
+| `english_name` | TEXT | 英名 |
 | `rarity` | TEXT | レア度 |
+| `image_url` | TEXT | 画像URL |
+| `description` | TEXT | 説明 |
+| `updated_at` | TEXT | 最終更新日時 |
+| `...` | ... | (その他詳細はFirestore定義に対応するスネークケースカラム) |
+
+#### `master_point_creatures`
+| フィールド | 型 | 説明 |
+| :--- | :--- | :--- |
+| `id` | TEXT | ID |
+| `point_id` | TEXT | ポイントID |
+| `creature_id` | TEXT | 生物ID |
+| `local_rarity` | TEXT | その地点でのレア度 |
 | `updated_at` | TEXT | 最終更新日時 |
 
 ### 5.2 Personal Data (`user.db`)
