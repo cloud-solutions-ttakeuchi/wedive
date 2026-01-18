@@ -84,10 +84,10 @@ export const AdminProposalsPage = () => {
     setProcessingId(null);
   };
 
-  const handleApproveReview = async (id: string) => {
+  const handleApproveReview = async (item: any) => {
     if (!window.confirm('このレビューを承認しますか？')) return;
-    setProcessingId(id);
-    await approveReview(id);
+    setProcessingId(item.id);
+    await approveReview(item.id);
     setProcessingId(null);
   }
 
@@ -552,7 +552,7 @@ export const AdminProposalsPage = () => {
                           <Eye size={14} /> 詳細
                         </button>
                         <button
-                          onClick={() => handleApproveReview(rv.id)}
+                          onClick={() => handleApproveReview(rv)}
                           disabled={processingId === rv.id}
                           className="flex items-center justify-center gap-2 bg-green-500 text-white px-4 py-2.5 rounded-lg font-bold hover:bg-green-600 transition-colors disabled:opacity-50 shadow-sm"
                         >
@@ -587,7 +587,7 @@ export const AdminProposalsPage = () => {
         proposal={selectedProposal}
         type={activeCategory}
         onApprove={(item) => {
-          if (activeCategory === 'review') handleApproveReview(item.id);
+          if (activeCategory === 'review') handleApproveReview(item);
           else if (activeCategory === 'rel') handleApproveRel(item);
           else handleApprove(activeCategory as 'creature' | 'point', item);
           setSelectedProposal(null);

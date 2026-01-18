@@ -85,7 +85,7 @@ interface AppContextType {
   removePointCreatureProposal: (id: string) => Promise<void>;
   approveProposal: (type: 'creature' | 'point' | 'point-creature', id: string, item: any) => Promise<void>;
   rejectProposal: (type: 'creature' | 'point' | 'point-creature', id: string) => Promise<void>;
-  approveReview: (id: string, item: any) => Promise<void>;
+  approveReview: (id: string) => Promise<void>;
   rejectReview: (id: string) => Promise<void>;
 }
 
@@ -286,8 +286,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (type === 'point') proposalPointsQuery.refetch();
       if (type === 'point-creature') proposalPointCreaturesQuery.refetch();
     },
-    approveReview: async (id: string, item: any) => { // Fixed signature to match useAdminActions
-      await adminActions.approveReview(id, item);
+    approveReview: async (id: string) => { // Reverted to single argument
+      await adminActions.approveReview(id);
       await userDataService.deleteAdminProposal(id);
       proposalReviewsQuery.refetch();
     },

@@ -11,9 +11,20 @@ export default function DeleteAccountScreen() {
   const { signOut, firebaseUser } = useAuth();
 
   const handleProceed = () => {
+    const providerId = firebaseUser?.providerData?.[0]?.providerId;
+    let message = 'セキュリティ保護のため、退会処理の前にご本人確認（再ログイン）が必要です。\n\n「OK」を押すとログアウトします。';
+
+    if (providerId === 'google.com') {
+      message += '\n\n再ログイン時はログイン画面の「Googleでログイン」ボタンをご利用ください。';
+    } else if (providerId === 'apple.com') {
+      message += '\n\n再ログイン時はログイン画面下の「Appleでログイン」ボタン（黒いボタン）をご利用ください。';
+    } else {
+      message += '再ログイン後、自動的に最終確認画面が表示されます。';
+    }
+
     Alert.alert(
       '再ログインが必要です',
-      'セキュリティ保護のため、退会処理の前にご本人確認（再ログイン）が必要です。\n\n「OK」を押すとログアウトします。再ログイン後、自動的に最終確認画面が表示されます。',
+      message,
       [
         { text: 'キャンセル', style: 'cancel' },
         {
