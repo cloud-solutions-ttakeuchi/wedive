@@ -246,22 +246,56 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   });
 
   useEffect(() => {
-    const syncAdmin = async () => {
-      if (auth.isAuthenticated && (auth.currentUser?.role === 'admin' || auth.currentUser?.role === 'moderator')) {
-        await userDataService.syncAdminData(auth.currentUser.id);
-        proposalPointsQuery.refetch();
-        proposalCreaturesQuery.refetch();
-        proposalPointCreaturesQuery.refetch();
-        proposalReviewsQuery.refetch();
+    const syncUser = async () => {
+      if (auth.isAuthenticated && auth.currentUser?.id && auth.currentUser.id !== 'guest') {
+        console.log('[App] Syncing user data for:', auth.currentUser.id);
+        // Myログ、Myレビュー、プロフィールの同期
+        await userDataService.syncInitialData(auth.currentUser.id);
+        logsQuery.refetch();
+        reviewsQuery.refetch();
+
+        // Adminデータ同期
+        if (auth.currentUser.role === 'admin' || auth.currentUser.role === 'moderator') {
+          await userDataService.syncAdminData(auth.currentUser.id);
+          proposalPointsQuery.refetch();
+          proposalCreaturesQuery.refetch();
+          proposalPointCreaturesQuery.refetch();
+          proposalReviewsQuery.refetch();
+        }
       }
     };
-    syncAdmin();
+    syncUser();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auth.isAuthenticated, auth.currentUser?.role, auth.currentUser?.id]);
 
   const value = useMemo(() => ({
     ...auth,
     ...adminActions,
+    // Override admin actions to sync local state
+    approveProposal: async (type: 'creature' | 'point' | 'point-creature', id: string, item: any) => {
+      await adminActions.approveProposal(type, id, item);
+      await userDataService.deleteAdminProposal(id);
+      if (type === 'creature') proposalCreaturesQuery.refetch();
+      if (type === 'point') proposalPointsQuery.refetch();
+      if (type === 'point-creature') proposalPointCreaturesQuery.refetch();
+    },
+    rejectProposal: async (type: 'creature' | 'point' | 'point-creature', id: string) => {
+      await adminActions.rejectProposal(type, id);
+      await userDataService.deleteAdminProposal(id);
+      if (type === 'creature') proposalCreaturesQuery.refetch();
+      if (type === 'point') proposalPointsQuery.refetch();
+      if (type === 'point-creature') proposalPointCreaturesQuery.refetch();
+    },
+    approveReview: async (id: string) => { // Reverted to single argument
+      await adminActions.approveReview(id);
+      await userDataService.deleteAdminProposal(id);
+      proposalReviewsQuery.refetch();
+    },
+    rejectReview: async (id: string) => {
+      await adminActions.rejectReview(id);
+      await userDataService.deleteAdminProposal(id);
+      proposalReviewsQuery.refetch();
+    },
     points: points.data || [],
     creatures: creatures.data || [],
     pointCreatures: pointCreatures.data || [],

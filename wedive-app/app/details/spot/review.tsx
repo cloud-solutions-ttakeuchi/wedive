@@ -12,6 +12,7 @@ import type { Review, ReviewRadar } from '../../../src/types';
 import { Wind, Waves, Search, Maximize, Map, Mountain, Boxes } from 'lucide-react-native';
 import { useAgencies } from '../../../src/hooks/useAgencies';
 import { AgencyMaster } from 'wedive-shared';
+import { userDataService } from '../../../src/services/UserDataService';
 import React from 'react';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Platform } from 'react-native';
@@ -197,7 +198,7 @@ export default function AddReviewScreen() {
   const pointId = pointIdFromParams as string;
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { user, isAuthenticated, logs } = useAuth();
+  const { user, isAuthenticated, logs, firebaseUser } = useAuth();
   const { agencies = [] } = useAgencies();
 
   const [step, setStep] = useState(0);
@@ -402,17 +403,30 @@ export default function AddReviewScreen() {
       // Determine Approval Status (Only Official is auto-approved to prevent negative campaign)
       const isApproved = trustLevel === 'official';
 
+      // Use firebaseUser as fallback for ID if user context is not fully loaded
+      const currentUid = user?.id || firebaseUser?.uid;
+      const currentName = user?.name || firebaseUser?.displayName || 'Diver';
+      const pImage = user?.profileImage || firebaseUser?.photoURL || null;
+
+      if (!currentUid) {
+        Alert.alert('エラー', 'ユーザー情報の取得に失敗しました。再ログインをお試しください。');
+        setIsSubmitting(false);
+        return;
+      }
+
       let reviewData: any;
+
+      const reviewStatus = isApproved ? 'approved' : 'pending';
 
       if (isEdit && reviewId) {
         // Edit Mode: Update existing
         reviewData = {
           ...formData, // Contains original id, createdAt
-          userId: user.id,
-          userName: user.name,
-          userProfileImage: user.profileImage || null,
+          userId: currentUid,
+          userName: currentName,
+          userProfileImage: pImage,
           userLogsCount: formData.userLogsCount || logs.length,
-          status: isApproved ? 'approved' : 'pending', // Revert to pending
+          status: reviewStatus, // Revert to pending
           trustLevel,
           updatedAt: new Date().toISOString()
         };
@@ -423,11 +437,11 @@ export default function AddReviewScreen() {
         reviewData = {
           ...formData,
           id: `rv${Date.now()}`,
-          userId: user.id,
-          userName: user.name,
-          userProfileImage: user.profileImage || null,
+          userId: currentUid,
+          userName: currentName,
+          userProfileImage: pImage,
           userLogsCount: formData.userLogsCount || logs.length,
-          status: isApproved ? 'approved' : 'pending',
+          status: reviewStatus,
           trustLevel,
           helpfulCount: 0,
           helpfulBy: [],
@@ -442,22 +456,13 @@ export default function AddReviewScreen() {
         }
       });
 
-      console.log("[ReviewSubmit] Review data ready, sending to Firestore...", reviewData);
+      console.log("[ReviewSubmit] Review data ready, sending to SaveService...", reviewData);
 
-      if (isEdit && reviewId) {
-        const q = query(collection(db, 'reviews'), where('id', '==', reviewId));
-        const snap = await getDocs(q);
-        if (!snap.empty) {
-          await updateDoc(doc(db, 'reviews', snap.docs[0].id), reviewData);
-          console.log("[ReviewSubmit] Successfully updated Firestore!");
-          Alert.alert('完了', 'レビューを更新しました！');
-        } else {
-          throw new Error('Review document not found for update');
-        }
-      } else {
-        await setDoc(doc(db, 'reviews', reviewData.id), reviewData);
+      // Use userDataService to ensure both Local SQLite and Firestore are updated
+      await userDataService.saveMyReview(currentUid, reviewData);
 
-        // Update Log with reviewId if linked
+      if (!isEdit) {
+        // Update Log with reviewId if linked (Only needed for new reviews)
         if (formData.logId && user) {
           try {
             const logRef = doc(db, 'users', user.id, 'logs', formData.logId);
@@ -467,15 +472,16 @@ export default function AddReviewScreen() {
             console.error("[ReviewSubmit] Failed to link review to log:", e);
           }
         }
-        console.log("[ReviewSubmit] Successfully added to Firestore!");
-        Alert.alert('完了', 'レビューを投稿しました！');
       }
+
+      console.log("[ReviewSubmit] Successfully saved review!");
+      Alert.alert('完了', isEdit ? 'レビューを更新しました！' : 'レビューを投稿しました！');
 
       // 完了後はマイページのログブックタブへ遷移
       // router.back() だとログ登録画面に戻ってしまい、未登録と勘違いさせるため
       router.replace('/(tabs)/mypage?tab=logbook');
     } catch (error) {
-      console.error("[ReviewSubmit] Firestore Error:", error);
+      console.error("[ReviewSubmit] Save Error:", error);
       Alert.alert('エラー', '投稿に失敗しました');
     } finally {
       setIsSubmitting(false);

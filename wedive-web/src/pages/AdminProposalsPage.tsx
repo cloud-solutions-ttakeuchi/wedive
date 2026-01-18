@@ -84,10 +84,10 @@ export const AdminProposalsPage = () => {
     setProcessingId(null);
   };
 
-  const handleApproveReview = async (id: string) => {
+  const handleApproveReview = async (item: any) => {
     if (!window.confirm('このレビューを承認しますか？')) return;
-    setProcessingId(id);
-    await approveReview(id);
+    setProcessingId(item.id);
+    await approveReview(item.id);
     setProcessingId(null);
   }
 
@@ -510,15 +510,19 @@ export const AdminProposalsPage = () => {
               <div className="grid gap-6">
                 {proposalReviews.map((rv: any) => {
                   const targetPoint = points.find((p: any) => p.id === rv.pointId);
+                  const submitter = allUsers.find((u: any) => u.id === rv.userId);
+                  const displayName = submitter?.name || rv.userName || 'Unknown User';
+                  const displayImage = submitter?.profileImage || rv.userProfileImage;
+
                   return (
                     <div key={rv.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row gap-6">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-4">
                           <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100">
-                            {rv.userProfileImage ? <img src={rv.userProfileImage} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-400 font-bold">{rv.userName.charAt(0)}</div>}
+                            {displayImage ? <img src={displayImage} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-400 font-bold">{displayName.charAt(0)}</div>}
                           </div>
                           <div>
-                            <p className="font-bold text-gray-900">{rv.userName}</p>
+                            <p className="font-bold text-gray-900">{displayName}</p>
                             <p className="text-[10px] text-gray-400 uppercase tracking-widest">{rv.createdAt} ・ {targetPoint?.name}</p>
                           </div>
                         </div>
@@ -548,7 +552,7 @@ export const AdminProposalsPage = () => {
                           <Eye size={14} /> 詳細
                         </button>
                         <button
-                          onClick={() => handleApproveReview(rv.id)}
+                          onClick={() => handleApproveReview(rv)}
                           disabled={processingId === rv.id}
                           className="flex items-center justify-center gap-2 bg-green-500 text-white px-4 py-2.5 rounded-lg font-bold hover:bg-green-600 transition-colors disabled:opacity-50 shadow-sm"
                         >
@@ -583,7 +587,7 @@ export const AdminProposalsPage = () => {
         proposal={selectedProposal}
         type={activeCategory}
         onApprove={(item) => {
-          if (activeCategory === 'review') handleApproveReview(item.id);
+          if (activeCategory === 'review') handleApproveReview(item);
           else if (activeCategory === 'rel') handleApproveRel(item);
           else handleApprove(activeCategory as 'creature' | 'point', item);
           setSelectedProposal(null);
