@@ -335,7 +335,7 @@ export class MasterDataService extends BaseMasterDataService {
             zone_name as name,
             region_id as regionId
           FROM master_geography
-          WHERE (zone_status IS NULL OR zone_status != 'rejected')
+          WHERE (zone_status IS NULL OR zone_status != 'rejected') AND region_id IS NOT NULL
         `;
         const params: any[] = [];
         if (regionId) {
@@ -365,7 +365,7 @@ export class MasterDataService extends BaseMasterDataService {
             area_name as name,
             zone_id as zoneId
           FROM master_geography
-          WHERE (area_status IS NULL OR area_status != 'rejected')
+          WHERE (area_status IS NULL OR area_status != 'rejected') AND zone_id IS NOT NULL
         `;
         const params: any[] = [];
         if (zoneId) {

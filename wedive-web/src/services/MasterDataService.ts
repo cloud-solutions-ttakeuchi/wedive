@@ -102,12 +102,14 @@ export class MasterDataService extends BaseMasterDataService {
 
   // --- Adapter Methods: SQLite Data -> App Model ---
 
-  async getAllPoints(): Promise<Point[]> {
+  async getAllPoints(searchKeyword?: string, includeRejected: boolean = false): Promise<Point[]> {
     if (await this.initialize()) {
       try {
-        // master_geography と結合して、region_name / zone_name 等を補完する
-        // Note: BaseMasterDataServiceにはgetAllPointsがないか、もしくは単純な実装しかないため
-        // ここではJOINを含むアプリ要件に合わせたクエリを実行する
+        let whereClause = "";
+        if (!includeRejected) {
+          whereClause = "WHERE (p.status IS NULL OR p.status != 'rejected')";
+        }
+
         const sql = `
           SELECT
             p.*,
@@ -116,6 +118,7 @@ export class MasterDataService extends BaseMasterDataService {
             g.area_name
           FROM master_points p
           LEFT JOIN master_geography g ON p.area_id = g.area_id
+          ${whereClause}
           ORDER BY p.name ASC
         `;
         const results = await this.sqlite.getAllAsync<any>(sql);
@@ -138,19 +141,21 @@ export class MasterDataService extends BaseMasterDataService {
   }
 
   /**
-   * 地域一覧を取得
+   * リージョン一覧を取得
    */
-  async getRegions(): Promise<any[]> {
+  async getRegions(includeRejected: boolean = false): Promise<any[]> {
     await this.initialize();
     try {
       // master_geography から重複を除いて取得
+      const whereClause = includeRejected ? '' : "WHERE (region_status IS NULL OR region_status != 'rejected')";
       const res = await this.sqlite.getAllAsync(`
         SELECT DISTINCT
           region_id as id,
           region_name as name,
-          region_description as description
+          region_description as description,
+          region_status as status
         FROM master_geography
-        WHERE (region_status IS NULL OR region_status != 'rejected')
+        ${whereClause}
         ORDER BY region_id
       `);
       console.log(`[MasterData] getRegions: found ${res.length} rows`);
@@ -164,17 +169,21 @@ export class MasterDataService extends BaseMasterDataService {
   /**
    * ゾーン一覧を取得
    */
-  async getZones(): Promise<any[]> {
+  async getZones(includeRejected: boolean = false): Promise<any[]> {
     await this.initialize();
     try {
+      const whereClause = includeRejected
+        ? ''
+        : "WHERE (zone_status IS NULL OR zone_status != 'rejected') AND region_id IS NOT NULL";
       const res = await this.sqlite.getAllAsync(`
         SELECT DISTINCT
           zone_id as id,
           zone_name as name,
           zone_description as description,
+          zone_status as status,
           region_id as regionId
         FROM master_geography
-        WHERE (zone_status IS NULL OR zone_status != 'rejected')
+        ${whereClause}
         ORDER BY zone_id
       `);
       // parentId マッピング (互換性維持)
@@ -189,20 +198,23 @@ export class MasterDataService extends BaseMasterDataService {
   /**
    * エリア一覧を取得
    */
-  async getAreas(): Promise<any[]> {
+  async getAreas(includeRejected: boolean = false): Promise<any[]> {
     await this.initialize();
     try {
+      const whereClause = includeRejected
+        ? ''
+        : "WHERE (area_status IS NULL OR area_status != 'rejected') AND zone_id IS NOT NULL";
       const res = await this.sqlite.getAllAsync(`
         SELECT
           area_id as id,
           area_name as name,
           area_description as description,
+          area_status as status,
           zone_id as zoneId
         FROM master_geography
-        WHERE (area_status IS NULL OR area_status != 'rejected')
+        ${whereClause}
         ORDER BY area_id
       `);
-      // parentId マッピング
       console.log(`[MasterData] getAreas: found ${res.length} rows`);
       return (res as any[]).map((r: any) => ({ ...r, parentId: r.zoneId }));
     } catch (e) {
@@ -334,23 +346,48 @@ export class MasterDataService extends BaseMasterDataService {
     }
   }
 
-  async updateAreaInCache(area: Area): Promise<void> {
+  async updateAreaInCache(area: Area & { status?: string }): Promise<void> {
     if (await this.initialize()) {
-      // 仕様書準拠: master_areas の親IDカラムは parent_id
-      await masterDbEngine.runAsync('INSERT OR REPLACE INTO master_areas (id, name, parent_id) VALUES (?, ?, ?)', [area.id, area.name, area.zoneId]);
+      // Update master_geography
+      await masterDbEngine.runAsync(
+        'UPDATE master_geography SET area_name = ?, area_status = ?, zone_id = ? WHERE area_id = ?',
+        [area.name, area.status || 'approved', area.zoneId, area.id]
+      );
+      // Cascade update to master_points
+      await masterDbEngine.runAsync(
+        'UPDATE master_points SET area_name = ?, zone_id = ? WHERE area_id = ?',
+        [area.name, area.zoneId, area.id]
+      );
     }
   }
 
-  async updateZoneInCache(zone: Zone): Promise<void> {
+  async updateZoneInCache(zone: Zone & { status?: string }): Promise<void> {
     if (await this.initialize()) {
-      // 仕様書準拠: master_zones の親IDカラムは parent_id
-      await masterDbEngine.runAsync('INSERT OR REPLACE INTO master_zones (id, name, parent_id) VALUES (?, ?, ?)', [zone.id, zone.name, zone.regionId]);
+      // Update master_geography
+      await masterDbEngine.runAsync(
+        'UPDATE master_geography SET zone_name = ?, zone_status = ?, region_id = ? WHERE zone_id = ?',
+        [zone.name, zone.status || 'approved', zone.regionId, zone.id]
+      );
+      // Cascade update to master_points
+      await masterDbEngine.runAsync(
+        'UPDATE master_points SET zone_name = ?, region_id = ? WHERE zone_id = ?',
+        [zone.name, zone.regionId, zone.id]
+      );
     }
   }
 
   async updateRegionInCache(region: any): Promise<void> {
     if (await this.initialize()) {
-      await masterDbEngine.runAsync('INSERT OR REPLACE INTO master_regions (id, name) VALUES (?, ?)', [region.id, region.name]);
+      // Update master_geography
+      await masterDbEngine.runAsync(
+        'UPDATE master_geography SET region_name = ?, region_status = ? WHERE region_id = ?',
+        [region.name, region.status || 'approved', region.id]
+      );
+      // Cascade update to master_points
+      await masterDbEngine.runAsync(
+        'UPDATE master_points SET region_name = ? WHERE region_id = ?',
+        [region.name, region.id]
+      );
     }
   }
 
@@ -370,13 +407,28 @@ export class MasterDataService extends BaseMasterDataService {
     if (await this.initialize()) await masterDbEngine.runAsync('DELETE FROM master_creatures WHERE id = ?', [id]);
   }
   async deleteAreaFromCache(id: string): Promise<void> {
-    if (await this.initialize()) await masterDbEngine.runAsync('DELETE FROM master_areas WHERE id = ?', [id]);
+    if (await this.initialize()) {
+      // Area is the leaf of geography, so we can delete the record.
+      await masterDbEngine.runAsync('DELETE FROM master_geography WHERE area_id = ?', [id]);
+      // Cascade: Unlink points from this Area
+      await masterDbEngine.runAsync('UPDATE master_points SET area_id = NULL, area_name = NULL WHERE area_id = ?', [id]);
+    }
   }
   async deleteZoneFromCache(id: string): Promise<void> {
-    if (await this.initialize()) await masterDbEngine.runAsync('DELETE FROM master_zones WHERE id = ?', [id]);
+    if (await this.initialize()) {
+      // Zone deletion should NOT delete the geography row (Area still exists), just clear the zone link.
+      await masterDbEngine.runAsync('UPDATE master_geography SET zone_id = NULL, zone_name = NULL WHERE zone_id = ?', [id]);
+      // Cascade: Unlink points from this Zone
+      await masterDbEngine.runAsync('UPDATE master_points SET zone_id = NULL, zone_name = NULL WHERE zone_id = ?', [id]);
+    }
   }
   async deleteRegionFromCache(id: string): Promise<void> {
-    if (await this.initialize()) await masterDbEngine.runAsync('DELETE FROM master_regions WHERE id = ?', [id]);
+    if (await this.initialize()) {
+      // Region deletion should NOT delete the geography/zone row, just clear the region link.
+      await masterDbEngine.runAsync('UPDATE master_geography SET region_id = NULL, region_name = NULL WHERE region_id = ?', [id]);
+      // Cascade: Unlink points from this Region
+      await masterDbEngine.runAsync('UPDATE master_points SET region_id = NULL, region_name = NULL WHERE region_id = ?', [id]);
+    }
   }
 }
 
