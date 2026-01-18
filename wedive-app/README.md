@@ -40,24 +40,27 @@ Firebase コンソールから取得した設定値を入力してください�
 
 ---
 
-## 環境の切り替え方法
+### 接続先バックエンドの切り替えについて (重要)
 
-実行時に `APP_VARIANT` を指定することで、アプリ名やパッケージ ID を切り替えることができます。
+接続先の Firebase プロジェクトや GCS バケットデータは、`.env` ファイルの設定によって決まります。
+`APP_VARIANT`（アプリ名やID）を切り替えても、接続先サーバーは自動的には切り替わりません。意図した環境に接続するために、以下の手順に従ってください。
 
-- **開発環境 (Default)**:
-  ```bash
-  npx expo start
-  ```
-- **ステージング環境**:
-  ```bash
-  APP_VARIANT=staging npx expo start
-  ```
-- **本番環境**:
-  ```bash
-  APP_VARIANT=production npx expo start
-  ```
+#### 1. 開発環境 (Dev) のデータを使用する場合
+`.env` ファイルが開発環境の設定になっていることを確認するか、以下のように開発環境のバケット名 (`wedive-app-static-master-dev`) を明示的に指定して起動してください。
 
----
+**Stagingアプリ（アイコン識別用）で、データは開発環境 (Dev) を見る場合:**
+```bash
+cp env.local .env
+APP_VARIANT=staging npx expo start
+```
+
+#### 2. 本番環境 (Prod) のデータを使用する場合
+
+**本番アプリで、データも本番環境 (Prod) を見る場合:**
+```bash
+cp env.production .env
+APP_VARIANT=production npx expo start
+```
 
 ## 技術スタック
 - **Framework**: Expo (SDK 54)

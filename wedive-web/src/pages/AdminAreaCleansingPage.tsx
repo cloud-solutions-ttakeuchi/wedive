@@ -1,8 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useApp } from '../context/AppContext';
+import { masterDataService } from '../services/MasterDataService';
 import { ArrowLeft, Edit2, Trash2, Save, X, RefreshCw, Layers, Map as MapIcon, Globe, MapPin, ChevronDown, ChevronUp, AlertTriangle, GitMerge, Plus, Download, Check, CircleOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
 import { writeBatch, collection, getDocs, getDoc, query, where, doc, updateDoc, arrayRemove, arrayUnion, deleteDoc, setDoc, deleteField } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import type { Point } from '../types';
@@ -12,7 +14,36 @@ import { INITIAL_DATA } from '../data/initialData';
 type TargetField = 'area' | 'zone' | 'region' | 'point';
 
 export const AdminAreaCleansingPage = () => {
-  const { regions, zones, areas, points, creatures, pointCreatures, currentUser } = useApp();
+  const { currentUser } = useApp();
+
+  // Include rejected items for admin management
+  const { data: regions = [] } = useQuery({
+    queryKey: ['adminRegions'],
+    queryFn: () => masterDataService.getRegions(true)
+  });
+  const { data: zones = [] } = useQuery({
+    queryKey: ['adminZones'],
+    queryFn: () => masterDataService.getZones(true)
+  });
+  const { data: areas = [] } = useQuery({
+    queryKey: ['adminAreas'],
+    queryFn: () => masterDataService.getAreas(true)
+  });
+  const { data: points = [] } = useQuery({
+    queryKey: ['adminPoints'],
+    queryFn: () => masterDataService.getAllPoints('', true)
+  });
+
+  const { data: creatures = [] } = useQuery({
+    queryKey: ['adminCreatures'],
+    queryFn: () => masterDataService.getAllCreatures()
+  });
+
+  const { data: pointCreatures = [] } = useQuery({
+    queryKey: ['adminPointCreatures'],
+    queryFn: () => masterDataService.getAllPointCreatures()
+  });
+
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [targetField, setTargetField] = useState<TargetField>('area');
@@ -37,7 +68,7 @@ export const AdminAreaCleansingPage = () => {
   // Master Data Management State
   const [masterModalOpen, setMasterModalOpen] = useState(false);
   const [masterEditType, setMasterEditType] = useState<'region' | 'zone' | 'area' | 'point' | null>(null);
-  const [masterFormData, setMasterFormData] = useState({ id: '', name: '', description: '', parentId: '' });
+  const [masterFormData, setMasterFormData] = useState({ id: '', name: '', description: '', status: 'approved', parentId: '' });
   const [pointEditZoneId, setPointEditZoneId] = useState<string>(''); // For filtering Areas in Point Edit
   const [isNewMaster, setIsNewMaster] = useState(false);
   const [originalMasterName, setOriginalMasterName] = useState('');
@@ -1028,6 +1059,7 @@ export const AdminAreaCleansingPage = () => {
         id: fullData.id,
         name: fullData.name,
         description: fullData.description || '',
+        status: fullData.status || 'approved',
         // Use resolved fullData for parentId linkage
         parentId: fullData.parentId || (type === 'zone' ? fullData.regionId : type === 'area' ? fullData.zoneId : type === 'point' ? fullData.areaId : '')
       });
@@ -1040,7 +1072,7 @@ export const AdminAreaCleansingPage = () => {
         setPointEditZoneId('');
       }
     } else {
-      setMasterFormData({ id: '', name: '', description: '', parentId: '' });
+      setMasterFormData({ id: '', name: '', description: '', status: 'approved', parentId: '' });
       setPointEditZoneId('');
     }
     setMasterModalOpen(true);
@@ -1054,7 +1086,8 @@ export const AdminAreaCleansingPage = () => {
       const collectionName = masterEditType + 's'; // regions, zones, areas
       const data: any = {
         name: masterFormData.name,
-        description: masterFormData.description
+        description: masterFormData.description,
+        status: masterFormData.status || 'approved'
       };
 
       // Add Parent ID
@@ -1091,7 +1124,7 @@ export const AdminAreaCleansingPage = () => {
         await updateDoc(doc(db, 'points', masterFormData.id), updateData);
         alert(`Updated Point: ${masterFormData.name}`);
         setMasterModalOpen(false);
-        setMasterFormData({ id: '', name: '', description: '', parentId: '' });
+        setMasterFormData({ id: '', name: '', description: '', status: 'approved', parentId: '' });
         setProcessing(false);
         return; // Exit here for Point
       }
@@ -1195,11 +1228,28 @@ export const AdminAreaCleansingPage = () => {
 
           if (updatedCount > 0) await batch.commit();
         }
+
+        // Update Local Cache (SQLite)
+        const { masterDataService } = await import('../services/MasterDataService');
+        const cacheData = { ...data, id: docId };
+
+        // Remove regionId/zoneId from data if they are not in the interface expected by update...InCache (though SQLite methods expect Area object-like)
+        // Actually update...InCache takes { id, name, ... }.
+        // We should construct the object correctly.
+        if (masterEditType === 'area') {
+          await masterDataService.updateAreaInCache(cacheData);
+        } else if (masterEditType === 'zone') {
+          await masterDataService.updateZoneInCache(cacheData);
+        } else if (masterEditType === 'region') {
+          await masterDataService.updateRegionInCache(cacheData);
+        }
+
         alert(`Updated ${masterEditType}: ${masterFormData.name}` + (updatedCount > 0 ? ` & synced ${updatedCount} points` : ''));
       }
 
       setMasterModalOpen(false);
-      setMasterFormData({ id: '', name: '', description: '', parentId: '' });
+      setMasterModalOpen(false);
+      setMasterFormData({ id: '', name: '', description: '', status: 'approved', parentId: '' });
     } catch (e: any) {
       console.error(e);
       alert(`Error: ${e.message}`);
@@ -2322,6 +2372,24 @@ export const AdminAreaCleansingPage = () => {
                     placeholder="Description..."
                   />
                 </div>
+
+                {masterEditType !== 'point' && (
+                  <div>
+                    <label className="block text-sm font-semibold mb-1">Status</label>
+                    <select
+                      value={masterFormData.status || 'approved'}
+                      onChange={e => setMasterFormData({ ...masterFormData, status: e.target.value })}
+                      className={`w-full border rounded p-2 text-sm font-medium ${masterFormData.status === 'rejected' ? 'bg-red-50 text-red-600' :
+                        masterFormData.status === 'pending' ? 'bg-yellow-50 text-yellow-600' :
+                          'bg-green-50 text-green-600'
+                        }`}
+                    >
+                      <option value="approved">Approved</option>
+                      <option value="rejected">Rejected</option>
+                      <option value="pending">Pending</option>
+                    </select>
+                  </div>
+                )}
 
                 {masterEditType !== 'region' && (
                   <div>
