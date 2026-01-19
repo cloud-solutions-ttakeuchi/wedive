@@ -54,6 +54,7 @@ export const MapPickerModal: React.FC<MapPickerModalProps> = ({
     if (e.latLng) {
       const lat = e.latLng.lat();
       const lng = e.latLng.lng();
+      console.log('[MapPicker] Map clicked at:', lat, lng, 'Clearing Place ID');
       setSelectedPos({ lat, lng });
       setSelectedPlaceId(undefined);
       setFormattedAddress(undefined);
@@ -104,6 +105,8 @@ export const MapPickerModal: React.FC<MapPickerModalProps> = ({
       const lat = location.lat();
       const lng = location.lng();
 
+      console.log('[MapPicker] Place selected:', { name, placeId, address, lat, lng });
+
       setSelectedPos({ lat, lng });
       setSelectedPlaceId(placeId);
       setFormattedAddress(address || undefined);
@@ -118,6 +121,12 @@ export const MapPickerModal: React.FC<MapPickerModalProps> = ({
 
   const handleConfirm = () => {
     if (selectedPos) {
+      console.log('[MapPicker] Confirming selection:', {
+        lat: selectedPos.lat,
+        lng: selectedPos.lng,
+        placeId: selectedPlaceId,
+        address: formattedAddress
+      });
       onConfirm(
         String(selectedPos.lat),
         String(selectedPos.lng),
