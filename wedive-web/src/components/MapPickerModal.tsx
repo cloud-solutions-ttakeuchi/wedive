@@ -54,7 +54,6 @@ export const MapPickerModal: React.FC<MapPickerModalProps> = ({
     if (e.latLng) {
       const lat = e.latLng.lat();
       const lng = e.latLng.lng();
-      console.log('[MapPicker] Map clicked at:', lat, lng, 'Clearing Place ID');
       setSelectedPos({ lat, lng });
       setSelectedPlaceId(undefined);
       setFormattedAddress(undefined);
@@ -98,7 +97,7 @@ export const MapPickerModal: React.FC<MapPickerModalProps> = ({
   const selectPlace = (place: google.maps.places.Place) => {
     const location = place.location;
     const address = place.formattedAddress;
-    const placeId = place.id;
+    const placeId = place.id || (place as any).place_id;
     const name = place.displayName;
 
     if (location) {
@@ -108,7 +107,7 @@ export const MapPickerModal: React.FC<MapPickerModalProps> = ({
       console.log('[MapPicker] Place selected:', { name, placeId, address, lat, lng });
 
       setSelectedPos({ lat, lng });
-      setSelectedPlaceId(placeId);
+      setSelectedPlaceId(placeId || undefined);
       setFormattedAddress(address || undefined);
 
       map?.panTo({ lat, lng });
