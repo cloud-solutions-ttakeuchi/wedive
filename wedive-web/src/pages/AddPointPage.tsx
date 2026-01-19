@@ -235,6 +235,11 @@ export const AddPointPage = () => {
         bookmarkCount: 0
       };
 
+      // Remove undefined fields to prevent Firestore errors
+      Object.keys(pointData).forEach(key =>
+        (pointData as any)[key] === undefined && delete (pointData as any)[key]
+      );
+
       if (isAdmin) {
         await addPoint({ ...pointData, status: 'approved' });
         alert('ポイントを登録しました（マスタ直書き）');

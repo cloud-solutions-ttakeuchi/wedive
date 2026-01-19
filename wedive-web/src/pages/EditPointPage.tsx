@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { ChevronLeft, MapPin, Camera, Info, Anchor, Mountain } from 'lucide-react';
+import { ChevronLeft, MapPin, Camera, Info, Anchor, Mountain, Sparkles, Loader2 } from 'lucide-react';
 import { compressImage } from '../utils/imageUtils';
 import { MapPickerModal } from '../components/MapPickerModal';
 import { HierarchicalAreaSelector } from '../components/HierarchicalAreaSelector';
+import { auth } from '../lib/firebase';
+import { FEATURE_FLAGS } from '../config/features';
 
 export const EditPointPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -35,6 +37,10 @@ export const EditPointPage = () => {
     formattedAddress: undefined as string | undefined,
     images: [] as string[],
   });
+
+  const [isLoadingAI, setIsLoadingAI] = useState(false);
+  const [isVerifiedAI, setIsVerifiedAI] = useState(false);
+  const [groundingSources, setGroundingSources] = useState<string[]>([]);
 
   useEffect(() => {
     if (existingPoint) {
@@ -118,6 +124,108 @@ export const EditPointPage = () => {
     }
     return diff;
   };
+
+  const handleAIAutoFill = async () => {
+    if (!formData.name.trim()) return;
+    setIsLoadingAI(true);
+    setIsVerifiedAI(false);
+    setGroundingSources([]);
+
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error("Unauthenticated");
+
+      const response = await fetch('/api/spot-draft', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ data: { spotName: formData.name } })
+      });
+
+      if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+
+      const result = await response.json();
+      const aiResult = result.result;
+
+      if (!aiResult) throw new Error("No data returned from AI");
+
+      // Resolve IDs
+      let rId = formData.regionId;
+      let zId = formData.zoneId;
+      let aId = formData.areaId;
+      let rName = formData.region;
+      let zName = formData.zone;
+      let aName = formData.area;
+
+      const regionObj = regions.find((r: any) => r.name === aiResult.region);
+      if (regionObj) {
+        rId = regionObj.id;
+        rName = regionObj.name;
+        const zoneObj = zones.find((z: any) => z.name === aiResult.zone && z.regionId === rId);
+        if (zoneObj) {
+          zId = zoneObj.id;
+          zName = zoneObj.name;
+          const areaObj = areas.find((a: any) => a.name === aiResult.area && a.zoneId === zId);
+          if (areaObj) {
+            aId = areaObj.id;
+            aName = areaObj.name;
+          }
+        }
+      }
+
+      setFormData((prev: any) => ({
+        ...prev,
+        level: aiResult.level === '初級' ? 'Beginner' : aiResult.level === '中級' ? 'Intermediate' : 'Advanced',
+        maxDepth: String(aiResult.max_depth || prev.maxDepth),
+        entryType: aiResult.entry === 'ビーチ' ? 'beach' : aiResult.entry === 'ボート' ? 'boat' : 'entry_easy',
+        current: aiResult.flow === 'なし' ? 'none' : aiResult.flow === '弱' ? 'weak' : aiResult.flow === '強' ? 'strong' : 'drift',
+        topography: aiResult.terrain || prev.topography,
+        lat: aiResult.latitude ? String(aiResult.latitude) : prev.lat,
+        lng: aiResult.longitude ? String(aiResult.longitude) : prev.lng,
+        description: aiResult.description || prev.description,
+        features: (aiResult.tags || []).join(', '),
+        // Location
+        regionId: rId, zoneId: zId, areaId: aId,
+        region: rName, zone: zName, area: aName
+      }));
+
+      // Verification
+      if (aiResult.is_verified) {
+        setIsVerifiedAI(true);
+        setGroundingSources(aiResult.sources || []);
+      }
+
+    } catch (error) {
+      console.error("AI Auto-fill failed:", error);
+      alert("AIによる自動入力に失敗しました。");
+    } finally {
+      setIsLoadingAI(false);
+    }
+  };
+
+  const VerifiedBadge = () => (
+    <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-green-50 text-[10px] font-bold text-green-700 border border-green-200 animate-fade-in">
+      <Sparkles size={10} className="text-green-600" />
+      Google Search 検証済み
+    </div>
+  );
+
+  const GroundingSources = () => (
+    <div className="mt-2 p-2 bg-gray-50 rounded-lg border border-gray-100 animate-fade-in">
+      <div className="text-[10px] font-bold text-gray-500 mb-1 flex items-center gap-1">
+        <Info size={10} /> 引用元ソース
+      </div>
+      <ul className="space-y-0.5">
+        {groundingSources.map((source, i) => (
+          <li key={i} className="text-[10px] text-blue-600 truncate hover:underline cursor-pointer">
+            <a href={source} target="_blank" rel="noopener noreferrer">{source}</a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -225,10 +333,29 @@ export const EditPointPage = () => {
           <section className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-4">
             <h2 className="text-lg font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
               <MapPin size={20} className="text-blue-500" /> 基本情報
+              {isVerifiedAI && <VerifiedBadge />}
             </h2>
+            {isVerifiedAI && groundingSources.length > 0 && <GroundingSources />}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">ポイント名</label>
+              <div className="flex justify-between items-center mb-1.5">
+                <label className="block text-sm font-medium text-gray-700">ポイント名</label>
+                {(FEATURE_FLAGS.ENABLE_V2_AI_AUTO_FILL || currentUser?.role === 'admin') && (
+                  <button
+                    type="button"
+                    onClick={handleAIAutoFill}
+                    disabled={!formData.name.trim() || isLoadingAI}
+                    className="flex items-center gap-1.5 text-xs font-bold text-slate-900 transition-all bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-full hover:bg-slate-100 hover:border-slate-300 disabled:opacity-40 active:scale-95"
+                  >
+                    {isLoadingAI ? (
+                      <Loader2 size={13} className="animate-spin" />
+                    ) : (
+                      <Sparkles size={13} />
+                    )}
+                    AIで自動入力
+                  </button>
+                )}
+              </div>
               <input
                 type="text"
                 name="name"
