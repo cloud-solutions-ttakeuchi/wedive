@@ -1,5 +1,5 @@
 import { onCall } from "firebase-functions/v2/https";
-import { VertexAI, SchemaType, Tool } from "@google-cloud/vertexai";
+import { VertexAI, Tool } from "@google-cloud/vertexai";
 import { getFirestore } from "firebase-admin/firestore";
 import { initializeApp, getApps } from "firebase-admin/app";
 import * as logger from "firebase-functions/logger";
