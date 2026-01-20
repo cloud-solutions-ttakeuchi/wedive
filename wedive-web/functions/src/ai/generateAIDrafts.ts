@@ -189,9 +189,9 @@ Ensure all keys are present. If uncertain, set needs_search to true.
       logger.info("Step 2 Raw Response:", JSON.stringify(resultGrounded.response));
 
       const candidate = resultGrounded.response.candidates?.[0];
-      const groundedText = candidate?.content?.parts?.[0]?.text;
+      const groundedText = candidate?.content?.parts?.map((p: any) => p.text).join("\n") || "";
       if (groundedText) {
-        finalResult = JSON.parse(cleanJson(groundedText)); // Use cleanJson
+        finalResult = JSON.parse(cleanJson(groundedText)); // Use cleanJson on combined text
         const metadata = candidate?.groundingMetadata;
         const sources: string[] = [];
         metadata?.groundingChunks?.forEach((chunk: any) => {
@@ -334,9 +334,9 @@ Ensure all keys are present.
       logger.info("Step 2 Raw Response:", JSON.stringify(resultGrounded.response));
 
       const candidate = resultGrounded.response.candidates?.[0];
-      const groundedText = candidate?.content?.parts?.[0]?.text;
+      const groundedText = candidate?.content?.parts?.map((p: any) => p.text).join("\n") || "";
       if (groundedText) {
-        finalResult = JSON.parse(cleanJson(groundedText)); // Use cleanJson
+        finalResult = JSON.parse(cleanJson(groundedText)); // Use cleanJson on combined text
         const metadata = candidate?.groundingMetadata;
         const sources: string[] = [];
         metadata?.groundingChunks?.forEach((chunk: any) => {
