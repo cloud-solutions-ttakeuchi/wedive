@@ -246,6 +246,8 @@ Ensure all keys are present.
       generationConfig: { responseMimeType: "application/json" }
     });
 
+    logger.info("Step 1 Raw Response:", JSON.stringify(resultInternal.response)); // Debug Log
+
     let finalResult = JSON.parse(resultInternal.response.candidates?.[0]?.content?.parts?.[0]?.text || "{}");
 
     // --- Step 2: Conditional Grounding ---
@@ -261,6 +263,8 @@ Ensure all keys are present.
         contents: [{ role: "user", parts: [{ text: `「${creatureName}」についてGoogle検索で正確な情報を補完してください。` }] }],
         generationConfig: { responseMimeType: "application/json" }
       });
+
+      logger.info("Step 2 Raw Response:", JSON.stringify(resultGrounded.response)); // Debug Log
 
       const candidate = resultGrounded.response.candidates?.[0];
       const groundedText = candidate?.content?.parts?.[0]?.text;
