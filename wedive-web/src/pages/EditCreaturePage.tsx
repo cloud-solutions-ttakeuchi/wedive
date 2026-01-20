@@ -138,6 +138,8 @@ export const EditCreaturePage = () => {
           min: Number(formData.waterTempMin),
           max: Number(formData.waterTempMax)
         } : undefined,
+        imageCredit: formData.imageCredit || null,
+        imageLicense: formData.imageLicense || null,
       };
 
       // Clean undefined fields to prevents Firestore errors
@@ -203,8 +205,8 @@ export const EditCreaturePage = () => {
         setFormData(prev => ({
           ...prev,
           imageUrl: data.imageUrl,
-          imageCredit: data.imageCredit,
-          imageLicense: data.imageLicense
+          imageCredit: data.imageCredit || null,
+          imageLicense: data.imageLicense || null
         }));
       } else {
         alert('Wikipediaで画像が見つかりませんでした。');
