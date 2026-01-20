@@ -1,5 +1,5 @@
 import { onCall } from "firebase-functions/v2/https";
-import { VertexAI, Tool } from "@google-cloud/vertexai";
+import { VertexAI, SchemaType, Tool } from "@google-cloud/vertexai";
 import { getFirestore } from "firebase-admin/firestore";
 import { initializeApp, getApps } from "firebase-admin/app";
 import * as logger from "firebase-functions/logger";
@@ -34,6 +34,16 @@ async function setCachedGrounding(name: string, type: string, result: any) {
   });
 }
 
+function cleanJson(text: string): string {
+  // Remove markdown code blocks if present
+  let cleaned = text.trim();
+  if (cleaned.startsWith("```json")) {
+    cleaned = cleaned.replace(/^```json/, "").replace(/```$/, "");
+  } else if (cleaned.startsWith("```")) {
+    cleaned = cleaned.replace(/^```/, "").replace(/```$/, "");
+  }
+  return cleaned.trim();
+}
 
 /**
  * Verification logic for grounding
@@ -82,7 +92,31 @@ export const generateSpotDraft = onCall({
 
   const vertexAI = new VertexAI({ project: projectId, location: "us-central1" });
 
-  // --- JSON Prompt Definitions (Schema Replacement) ---
+  // Schema for Step 1 (Internal)
+  const spotSchema = {
+    type: SchemaType.OBJECT,
+    properties: {
+      name: { type: SchemaType.STRING },
+      region: { type: SchemaType.STRING },
+      zone: { type: SchemaType.STRING },
+      area: { type: SchemaType.STRING },
+      level: { type: SchemaType.STRING, enum: ["初級", "中級", "上級"] },
+      max_depth: { type: SchemaType.NUMBER },
+      entry: { type: SchemaType.STRING, enum: ["ビーチ", "ボート", "エントリー容易"] },
+      flow: { type: SchemaType.STRING, enum: ["なし", "弱", "強", "ドリフト"] },
+      terrain: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+      latitude: { type: SchemaType.NUMBER },
+      longitude: { type: SchemaType.NUMBER },
+      description: { type: SchemaType.STRING },
+      tags: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+      is_verified: { type: SchemaType.BOOLEAN },
+      sources: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+      needs_search: { type: SchemaType.BOOLEAN }
+    },
+    required: ["name", "region", "area", "description", "level"]
+  };
+
+  // Prompt for Step 2 (Grounding)
   const spotJsonPrompt = `
 You are a WeDive spot data manager.
 Output MUST be a valid JSON object following this structure:
@@ -122,13 +156,16 @@ Ensure all keys are present. If uncertain, set needs_search to true.
     const modelInternal = vertexAI.getGenerativeModel({
       model: "gemini-2.0-flash-exp",
       tools: internalTools,
-      systemInstruction: spotJsonPrompt
+      systemInstruction: "あなたはWeDiveのデータマスタ管理者です。内部データベース（データストア）の情報を基に、スポットのドラフトを作成してください。確証がない場合は needs_search を true にしてください。"
     });
 
+    // Step 1: Use Controlled Generation (Schema)
     const resultInternal = await modelInternal.generateContent({
       contents: [{ role: "user", parts: [{ text: `「${spotName}」を調査してください。` }] }],
-      generationConfig: { responseMimeType: "application/json" }
+      generationConfig: { responseMimeType: "application/json", responseSchema: spotSchema }
     });
+
+    logger.info("Step 1 Raw Response:", JSON.stringify(resultInternal.response));
 
     const draftText = resultInternal.response.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!draftText) throw new Error("empty-ai-response");
@@ -143,15 +180,18 @@ Ensure all keys are present. If uncertain, set needs_search to true.
         systemInstruction: spotJsonPrompt + "\nUse Google Search to verify facts."
       });
 
+      // Step 2: Use Prompt-based JSON to avoid Grounding conflict. NO Schema.
       const resultGrounded = await modelGrounded.generateContent({
         contents: [{ role: "user", parts: [{ text: `「${spotName}」について、Google検索で事実確認を行いドラフトを完成させてください。` }] }],
-        generationConfig: { responseMimeType: "application/json" }
+        generationConfig: {} // Empty config to avoid conflict
       });
+
+      logger.info("Step 2 Raw Response:", JSON.stringify(resultGrounded.response));
 
       const candidate = resultGrounded.response.candidates?.[0];
       const groundedText = candidate?.content?.parts?.[0]?.text;
       if (groundedText) {
-        finalResult = JSON.parse(groundedText);
+        finalResult = JSON.parse(cleanJson(groundedText)); // Use cleanJson
         const metadata = candidate?.groundingMetadata;
         const sources: string[] = [];
         metadata?.groundingChunks?.forEach((chunk: any) => {
@@ -199,6 +239,31 @@ export const generateCreatureDraft = onCall({
 
   const vertexAI = new VertexAI({ project: projectId, location: "us-central1" });
 
+  // Schema for Step 1 (Internal)
+  const creatureSchema = {
+    type: SchemaType.OBJECT,
+    properties: {
+      name: { type: SchemaType.STRING },
+      scientific_name: { type: SchemaType.STRING },
+      category: { type: SchemaType.STRING, enum: ["魚類", "軟骨魚類", "爬虫類", "甲殻類", "軟体動物", "刺胞動物", "哺乳類", "その他"] },
+      rarity: { type: SchemaType.STRING, enum: ["Common (★1)", "Rare (★2)", "Epic (★3)", "Legendary (★4)"] },
+      description: { type: SchemaType.STRING },
+      size: { type: SchemaType.STRING },
+      depth_min: { type: SchemaType.NUMBER },
+      depth_max: { type: SchemaType.NUMBER },
+      seasons: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING, enum: ["春", "夏", "秋", "冬"] } },
+      special_traits: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+      temp_min: { type: SchemaType.NUMBER },
+      temp_max: { type: SchemaType.NUMBER },
+      search_tags: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+      is_verified: { type: SchemaType.BOOLEAN },
+      sources: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+      needs_search: { type: SchemaType.BOOLEAN }
+    },
+    required: ["name", "scientific_name", "category", "rarity", "description"]
+  };
+
+  // Prompt for Step 2 (Grounding)
   const creatureJsonPrompt = `
 You are a marine biologist.
 Output MUST be a valid JSON object following this structure:
@@ -238,15 +303,16 @@ Ensure all keys are present.
     const modelInternal = vertexAI.getGenerativeModel({
       model: "gemini-2.0-flash-exp",
       tools: internalTools,
-      systemInstruction: creatureJsonPrompt + "\nUse internal datastores."
+      systemInstruction: "あなたは海洋生物学者です。内部データストアを元に生物情報をまとめてください。"
     });
 
+    // Step 1: Use Controlled Generation (Schema)
     const resultInternal = await modelInternal.generateContent({
       contents: [{ role: "user", parts: [{ text: `「${creatureName}」について調査してください。` }] }],
-      generationConfig: { responseMimeType: "application/json" }
+      generationConfig: { responseMimeType: "application/json", responseSchema: creatureSchema }
     });
 
-    logger.info("Step 1 Raw Response:", JSON.stringify(resultInternal.response)); // Debug Log
+    logger.info("Step 1 Raw Response:", JSON.stringify(resultInternal.response));
 
     let finalResult = JSON.parse(resultInternal.response.candidates?.[0]?.content?.parts?.[0]?.text || "{}");
 
@@ -259,17 +325,18 @@ Ensure all keys are present.
         systemInstruction: creatureJsonPrompt + "\nUse Google Search to verify facts."
       });
 
+      // Step 2: Use Prompt-based JSON to avoid Grounding conflict. NO Schema.
       const resultGrounded = await modelGrounded.generateContent({
         contents: [{ role: "user", parts: [{ text: `「${creatureName}」についてGoogle検索で正確な情報を補完してください。` }] }],
-        generationConfig: { responseMimeType: "application/json" }
+        generationConfig: {} // Empty config to avoid conflict
       });
 
-      logger.info("Step 2 Raw Response:", JSON.stringify(resultGrounded.response)); // Debug Log
+      logger.info("Step 2 Raw Response:", JSON.stringify(resultGrounded.response));
 
       const candidate = resultGrounded.response.candidates?.[0];
       const groundedText = candidate?.content?.parts?.[0]?.text;
       if (groundedText) {
-        finalResult = JSON.parse(groundedText);
+        finalResult = JSON.parse(cleanJson(groundedText)); // Use cleanJson
         const metadata = candidate?.groundingMetadata;
         const sources: string[] = [];
         metadata?.groundingChunks?.forEach((chunk: any) => {
