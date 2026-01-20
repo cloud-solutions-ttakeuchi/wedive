@@ -82,28 +82,28 @@ export const generateSpotDraft = onCall({
 
   const vertexAI = new VertexAI({ project: projectId, location: "us-central1" });
 
-  const spotSchema = {
-    type: SchemaType.OBJECT,
-    properties: {
-      name: { type: SchemaType.STRING },
-      region: { type: SchemaType.STRING },
-      zone: { type: SchemaType.STRING },
-      area: { type: SchemaType.STRING },
-      level: { type: SchemaType.STRING, enum: ["初級", "中級", "上級"] },
-      max_depth: { type: SchemaType.NUMBER },
-      entry: { type: SchemaType.STRING, enum: ["ビーチ", "ボート", "エントリー容易"] },
-      flow: { type: SchemaType.STRING, enum: ["なし", "弱", "強", "ドリフト"] },
-      terrain: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
-      latitude: { type: SchemaType.NUMBER },
-      longitude: { type: SchemaType.NUMBER },
-      description: { type: SchemaType.STRING },
-      tags: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
-      is_verified: { type: SchemaType.BOOLEAN },
-      sources: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
-      needs_search: { type: SchemaType.BOOLEAN }
-    },
-    required: ["name", "region", "area", "description", "level"]
-  };
+  // --- JSON Prompt Definitions (Schema Replacement) ---
+  const spotJsonPrompt = `
+You are a WeDive spot data manager.
+Output MUST be a valid JSON object following this structure:
+{
+  "name": "string",
+  "region": "string",
+  "zone": "string",
+  "area": "string",
+  "level": "初級|中級|上級",
+  "max_depth": number,
+  "entry": "ビーチ|ボート|エントリー容易",
+  "flow": "なし|弱|強|ドリフト",
+  "terrain": ["string", ...],
+  "latitude": number,
+  "longitude": number,
+  "description": "string",
+  "tags": ["string", ...],
+  "needs_search": boolean
+}
+Ensure all keys are present. If uncertain, set needs_search to true.
+`;
 
   try {
     // --- Step 1: Internal Search (Managed RAG for WeDive data) ---
@@ -122,12 +122,12 @@ export const generateSpotDraft = onCall({
     const modelInternal = vertexAI.getGenerativeModel({
       model: "gemini-2.0-flash-exp",
       tools: internalTools,
-      systemInstruction: "あなたはWeDiveのデータマスタ管理者です。内部データベース（データストア）の情報を基に、スポットのドラフトを作成してください。確証がない場合は needs_search を true にしてください。"
+      systemInstruction: spotJsonPrompt
     });
 
     const resultInternal = await modelInternal.generateContent({
       contents: [{ role: "user", parts: [{ text: `「${spotName}」を調査してください。` }] }],
-      generationConfig: { responseMimeType: "application/json", responseSchema: spotSchema }
+      generationConfig: { responseMimeType: "application/json" }
     });
 
     const draftText = resultInternal.response.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -139,12 +139,13 @@ export const generateSpotDraft = onCall({
       logger.info(`Grounding required for spot: ${spotName}`);
       const modelGrounded = vertexAI.getGenerativeModel({
         model: "gemini-2.0-flash-exp",
-        tools: [{ googleSearch: {} }] as any
+        tools: [{ googleSearch: {} }] as any,
+        systemInstruction: spotJsonPrompt + "\nUse Google Search to verify facts."
       });
 
       const resultGrounded = await modelGrounded.generateContent({
         contents: [{ role: "user", parts: [{ text: `「${spotName}」について、Google検索で事実確認を行いドラフトを完成させてください。` }] }],
-        generationConfig: { responseMimeType: "application/json", responseSchema: spotSchema }
+        generationConfig: { responseMimeType: "application/json" }
       });
 
       const candidate = resultGrounded.response.candidates?.[0];
@@ -198,28 +199,27 @@ export const generateCreatureDraft = onCall({
 
   const vertexAI = new VertexAI({ project: projectId, location: "us-central1" });
 
-  const creatureSchema = {
-    type: SchemaType.OBJECT,
-    properties: {
-      name: { type: SchemaType.STRING },
-      scientific_name: { type: SchemaType.STRING },
-      category: { type: SchemaType.STRING, enum: ["魚類", "軟骨魚類", "爬虫類", "甲殻類", "軟体動物", "刺胞動物", "哺乳類", "その他"] },
-      rarity: { type: SchemaType.STRING, enum: ["Common (★1)", "Rare (★2)", "Epic (★3)", "Legendary (★4)"] },
-      description: { type: SchemaType.STRING },
-      size: { type: SchemaType.STRING },
-      depth_min: { type: SchemaType.NUMBER },
-      depth_max: { type: SchemaType.NUMBER },
-      seasons: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING, enum: ["春", "夏", "秋", "冬"] } },
-      special_traits: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
-      temp_min: { type: SchemaType.NUMBER },
-      temp_max: { type: SchemaType.NUMBER },
-      search_tags: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
-      is_verified: { type: SchemaType.BOOLEAN },
-      sources: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
-      needs_search: { type: SchemaType.BOOLEAN }
-    },
-    required: ["name", "scientific_name", "category", "rarity", "description"]
-  };
+  const creatureJsonPrompt = `
+You are a marine biologist.
+Output MUST be a valid JSON object following this structure:
+{
+  "name": "string",
+  "scientific_name": "string",
+  "category": "魚類|軟骨魚類|爬虫類|甲殻類|軟体動物|刺胞動物|哺乳類|その他",
+  "rarity": "Common (★1)|Rare (★2)|Epic (★3)|Legendary (★4)",
+  "description": "string",
+  "size": "string (e.g. 30cm)",
+  "depth_min": number (m),
+  "depth_max": number (m),
+  "seasons": ["春", "夏", "秋", "冬"],
+  "special_traits": ["string", ...],
+  "temp_min": number (℃),
+  "temp_max": number (℃),
+  "search_tags": ["string", ...],
+  "needs_search": boolean
+}
+Ensure all keys are present.
+`;
 
   try {
     // --- Step 1: Internal Search ---
@@ -238,12 +238,12 @@ export const generateCreatureDraft = onCall({
     const modelInternal = vertexAI.getGenerativeModel({
       model: "gemini-2.0-flash-exp",
       tools: internalTools,
-      systemInstruction: "あなたは海洋生物学者です。内部データストアを元に生物情報をまとめてください。"
+      systemInstruction: creatureJsonPrompt + "\nUse internal datastores."
     });
 
     const resultInternal = await modelInternal.generateContent({
       contents: [{ role: "user", parts: [{ text: `「${creatureName}」について調査してください。` }] }],
-      generationConfig: { responseMimeType: "application/json", responseSchema: creatureSchema }
+      generationConfig: { responseMimeType: "application/json" }
     });
 
     let finalResult = JSON.parse(resultInternal.response.candidates?.[0]?.content?.parts?.[0]?.text || "{}");
@@ -253,12 +253,13 @@ export const generateCreatureDraft = onCall({
       logger.info(`Grounding required for creature: ${creatureName}`);
       const modelGrounded = vertexAI.getGenerativeModel({
         model: "gemini-2.0-flash-exp",
-        tools: [{ googleSearch: {} }] as any
+        tools: [{ googleSearch: {} }] as any,
+        systemInstruction: creatureJsonPrompt + "\nUse Google Search to verify facts."
       });
 
       const resultGrounded = await modelGrounded.generateContent({
         contents: [{ role: "user", parts: [{ text: `「${creatureName}」についてGoogle検索で正確な情報を補完してください。` }] }],
-        generationConfig: { responseMimeType: "application/json", responseSchema: creatureSchema }
+        generationConfig: { responseMimeType: "application/json" }
       });
 
       const candidate = resultGrounded.response.candidates?.[0];
