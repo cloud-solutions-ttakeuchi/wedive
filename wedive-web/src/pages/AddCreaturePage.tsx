@@ -79,7 +79,7 @@ export const AddCreaturePage = () => {
       const isAdmin = currentUser.role === 'admin' || currentUser.role === 'moderator';
 
       // Explicitly type the creature data
-      const creatureData: Omit<Creature, 'id'> = {
+      const creatureData: any = {
         name: formData.name!,
         scientificName: formData.scientificName,
         category: formData.category!,
@@ -102,9 +102,9 @@ export const AddCreaturePage = () => {
         } : undefined,
         gallery: [],
         submitterId: currentUser.id,
-        imageCredit: formData.imageCredit,
-        imageLicense: formData.imageLicense,
-        imageKeyword: undefined,
+        imageCredit: formData.imageCredit || null,
+        imageLicense: formData.imageLicense || null,
+        imageKeyword: null, // Avoid undefined
         stats: {
           popularity: 50,
           size: 50,
@@ -114,6 +114,11 @@ export const AddCreaturePage = () => {
           speed: 50
         }
       };
+
+      // Remove undefined fields to prevent Firestore errors
+      Object.keys(creatureData).forEach(key =>
+        creatureData[key] === undefined && delete creatureData[key]
+      );
 
       if (isAdmin) {
         await addCreature(creatureData);
