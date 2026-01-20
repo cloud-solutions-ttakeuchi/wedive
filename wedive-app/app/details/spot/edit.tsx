@@ -13,15 +13,16 @@ import {
   Modal,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { ChevronLeft, Save, MapPin, Info, Camera, X, Map as MapIcon } from 'lucide-react-native';
+import { ChevronLeft, Save, MapPin, Info, Camera, X, Map as MapIcon, Sparkles } from 'lucide-react-native';
 import MapView, { Marker } from 'react-native-maps';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../../src/context/AuthContext';
-import { db, storage } from '../../../src/firebase';
+import { db, storage, functions } from '../../../src/firebase';
 import { ProposalService } from '../../../src/services/ProposalService';
 import { Point } from '../../../src/types';
 import { doc, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { httpsCallable } from 'firebase/functions';
 
 const DELETE_REASONS = ['重複している', '存在しない', '名称が間違っている', '場所が不正確'];
 
@@ -187,6 +188,47 @@ export default function EditSpotProposalScreen() {
     }
   };
 
+  const handleAutoFillAI = async () => {
+    if (!formData.name) {
+      Alert.alert('入力エラー', 'ポイント名を入力してからAIボタンを押してください。');
+      return;
+    }
+    if (!formData.region && !formData.area) {
+      Alert.alert('入力エラー', '地域を選択すると精度が向上します（必須ではありません）。');
+    }
+
+    setSubmitting(true);
+    try {
+      const locationContext = `${formData.region} ${formData.zone} ${formData.area}`.trim();
+      const generateDraft = httpsCallable(functions, 'generateSpotDraft');
+      const result = await generateDraft({
+        spotName: formData.name,
+        locationContext: locationContext
+      });
+      const draft = result.data as any;
+
+      setFormData(prev => ({
+        ...prev,
+        description: draft.description || prev.description,
+        maxDepth: draft.depth_max?.toString() || prev.maxDepth,
+        level: (draft.level?.includes('Advanced') ? 'Advanced' :
+          draft.level?.includes('Intermediate') ? 'Intermediate' : 'Beginner') || prev.level,
+        current: (draft.current?.toLowerCase()?.includes('drift') ? 'drift' :
+          draft.current?.toLowerCase()?.includes('strong') ? 'strong' :
+            draft.current?.toLowerCase()?.includes('weak') ? 'weak' : 'none') || prev.current,
+        topography: draft.topography || prev.topography,
+        features: draft.features?.join(', ') || prev.features,
+      }));
+
+      Alert.alert('AI自動入力', '情報を入力しました。内容を確認・修正してください。');
+    } catch (error) {
+      console.error('AI Draft failed:', error);
+      Alert.alert('エラー', 'AI生成に失敗しました。');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handlePickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
@@ -342,6 +384,15 @@ export default function EditSpotProposalScreen() {
             onChangeText={(val) => setFormData(p => ({ ...p, name: val }))}
           />
         </View>
+
+        <TouchableOpacity
+          style={styles.aiBtn}
+          onPress={handleAutoFillAI}
+          disabled={submitting}
+        >
+          <Sparkles size={18} color="#fff" />
+          <Text style={styles.aiBtnText}>AIで情報を自動入力</Text>
+        </TouchableOpacity>
 
         <View style={styles.inputGroup}>
           <Text style={styles.label}>地域 (Region / Zone / Area)</Text>
@@ -668,4 +719,20 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, backgroundColor: '#f1f5f9', borderRadius: 8, paddingHorizontal: 12, paddingVertical: Platform.OS === 'ios' ? 12 : 8, fontSize: 14, color: '#1e293b' },
   searchBtn: { backgroundColor: '#0ea5e9', paddingHorizontal: 16, justifyContent: 'center', borderRadius: 8 },
   searchBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
+  aiBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#6366f1',
+    paddingVertical: 12,
+    borderRadius: 14,
+    marginBottom: 24,
+    gap: 8,
+    shadowColor: '#6366f1',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  aiBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
 });

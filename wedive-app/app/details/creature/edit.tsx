@@ -170,6 +170,46 @@ export default function EditCreatureProposalScreen() {
     }
   };
 
+  const handleAutoFillAI = async () => {
+    if (!formData.name) {
+      Alert.alert('入力エラー', '生物名を入力してからAIボタンを押してください。');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const generateDraft = httpsCallable(functions, 'generateCreatureDraft');
+      const result = await generateDraft({ creatureName: formData.name });
+      const draft = result.data as any;
+
+      setFormData(prev => ({
+        ...prev,
+        scientificName: draft.scientific_name || prev.scientificName,
+        category: draft.category || prev.category,
+        rarity: (String(draft.rarity || '').includes('Rare') ? 'Rare' :
+          String(draft.rarity || '').includes('Epic') ? 'Epic' :
+            String(draft.rarity || '').includes('Legendary') ? 'Legendary' : 'Common') || prev.rarity,
+        description: draft.description || prev.description,
+        size: draft.size || prev.size,
+        depthMin: draft.depth_min?.toString() || prev.depthMin,
+        depthMax: draft.depth_max?.toString() || prev.depthMax,
+        waterTempMin: draft.temp_min?.toString() || prev.waterTempMin,
+        waterTempMax: draft.temp_max?.toString() || prev.waterTempMax,
+        season: draft.seasons || prev.season,
+        specialAttributes: draft.special_traits || prev.specialAttributes,
+        tags: draft.search_tags?.join(', ') || prev.tags,
+      }));
+
+      Alert.alert('AI自動入力', '情報を入力しました。内容を確認・修正してください。');
+
+    } catch (error) {
+      console.error('AI Draft failed:', error);
+      Alert.alert('エラー', 'AI生成に失敗しました。');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleAutoFillImage = async () => {
     if (!formData.name && !formData.scientificName) {
       Alert.alert('入力エラー', '生物名または学名を入力してください。');
@@ -255,14 +295,25 @@ export default function EditCreatureProposalScreen() {
           />
         </View>
 
-        <TouchableOpacity
-          style={styles.wikiBtn}
-          onPress={handleAutoFillImage}
-          disabled={submitting}
-        >
-          <Sparkles size={18} color="#fff" />
-          <Text style={styles.wikiBtnText}>Wikipediaから画像を探す</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 24 }}>
+          <TouchableOpacity
+            style={[styles.wikiBtn, { backgroundColor: '#6366f1', flex: 1 }]}
+            onPress={handleAutoFillAI}
+            disabled={submitting}
+          >
+            <Sparkles size={18} color="#fff" />
+            <Text style={styles.wikiBtnText}>AIで自動入力</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.wikiBtn, { backgroundColor: '#8b5cf6', flex: 1 }]}
+            onPress={handleAutoFillImage}
+            disabled={submitting}
+          >
+            <Camera size={18} color="#fff" />
+            <Text style={styles.wikiBtnText}>画像検索</Text>
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.inputGroup}>
           <Text style={styles.label}>写真</Text>

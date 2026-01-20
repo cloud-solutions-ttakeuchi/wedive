@@ -50,7 +50,7 @@ Firebase コンソールから取得した設定値を入力してください�
 
 **Stagingアプリ（アイコン識別用）で、データは開発環境 (Dev) を見る場合:**
 ```bash
-cp env.local .env
+cp .env.local .env
 APP_VARIANT=staging npx expo start
 ```
 
@@ -58,7 +58,7 @@ APP_VARIANT=staging npx expo start
 
 **本番アプリで、データも本番環境 (Prod) を見る場合:**
 ```bash
-cp env.production .env
+cp .env.production .env
 APP_VARIANT=production npx expo start
 ```
 

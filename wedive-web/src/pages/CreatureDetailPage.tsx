@@ -126,15 +126,11 @@ export const CreatureDetailPage = () => {
               />
             )}
             {/* Copyright Credit */}
-            {creature.imageUrl && !imgError && (
-              (creature.imageCredit?.toLowerCase().includes('wikipedia') ||
-                creature.imageLicense?.toLowerCase().includes('cc') ||
-                creature.imageLicense?.toLowerCase().includes('creative commons'))
-            ) && (
-                <div className="absolute bottom-4 right-4 bg-black/50 backdrop-blur-sm text-white text-[10px] px-2 py-1 rounded z-20 pointer-events-none">
-                  © {creature.imageCredit || 'Unknown'} {creature.imageLicense && `(${creature.imageLicense})`}
-                </div>
-              )}
+            {creature.imageUrl && !imgError && (creature.imageCredit || creature.imageLicense) && (
+              <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md text-white text-[10px] px-2 py-1 rounded z-20 pointer-events-none max-w-[90%] truncate">
+                © {creature.imageCredit || 'Unknown'} {creature.imageLicense && `(${creature.imageLicense})`}
+              </div>
+            )}
           </div>
 
           {/* Name Card (Top Right) */}
